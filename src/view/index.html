@@ -1,15 +1,17 @@
-<html lang="zh-Hant">
+<html lang="en-us">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../css/index.css" />
-    <link rel="stylesheet" href="../css/main/eew.css" />
+    <link rel="stylesheet" href="../css/main/eew/eew.css" />
+    <link rel="stylesheet" href="../css/en_US/eew/eew.css" />
     <link rel="stylesheet" href="../css/core/maplibre-gl.css" />
   </head>
 
   <body>
     <div id="map" class="map"></div>
 
+    <!--緊急速報 info box-->
     <div class="info-wrapper">
       <div class="info-title">
         <div class="info-unit info-unit-none"></div>
@@ -42,6 +44,11 @@
           <div class="info-nsspe"><span></span></div>
         </div>
       </div>
+    </div>
+
+    <!--連線狀態 time-->
+    <div class="connect">
+      <div class="time" id="time">0000-00-00 00:00:00</div>
     </div>
 
     <script src="../js/require.js" defer></script>

@@ -1,9 +1,12 @@
 html[lang="zh-Hant"] {
-  .info-number-no::before {
-    content: "第";
-  }
-  .info-number-no::after {
-    content: "報";
+  .info-number-no {
+    &::before {
+      content: "第";
+    }
+
+    &::after {
+      content: "報";
+    }
   }
 
   .info-number-last::after {
