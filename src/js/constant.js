@@ -41,7 +41,8 @@ const TREM = {
     },
 
     HTTP_TIMEOUT: {
-      RTS: 1500,
+      RESOURCE : 3500,
+      RTS      : 1500,
     },
   },
 
@@ -56,7 +57,8 @@ const TREM = {
       eew       : null,
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
-    play_mode: 0,
+    play_mode : 0,
+    station   : null,
 
     // 不要動下方的東西
     cache: {
