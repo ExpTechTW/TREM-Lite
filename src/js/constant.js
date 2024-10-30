@@ -36,7 +36,7 @@ const TREM = {
       report    : null,
       eew       : null,
     },
-    // 0 realtime | 1 websocket | 2 replay
+    // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode: 0,
 
     // 不要動下方的東西

@@ -1,24 +1,24 @@
 const TREM = require("../constant");
 
-const realtime = require("./http/realtime");
-const replay = require("./http/replay");
+const http = require("./http");
+const file = require("./file");
 
 let last_fetch_time = 0;
 
-setInterval(() => {
+setInterval(async () => {
   const local_now = Date.now();
-  if (TREM.variable.play_mode == 2) {
-    // replay
+  if (TREM.variable.play_mode == 3) {
+    // replay (file)
     const data = null;
   } else if (TREM.variable.play_mode == 1) {
     // realtime (websocket)
     const data = null;
   } else {
-    // realtime (http)
+    // http (realtime/replay)
     if (local_now - last_fetch_time < 1000) return;
     last_fetch_time = local_now;
 
-    const data = realtime();
+    const data = await http((TREM.variable.play_mode == 0) ? null : local_now);
     TREM.variable.data.rts = data;
   }
 }, 0);
