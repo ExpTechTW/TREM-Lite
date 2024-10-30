@@ -20,5 +20,12 @@ setInterval(async () => {
 
     const data = await http((TREM.variable.play_mode == 0) ? null : local_now);
     TREM.variable.data.rts = data;
+
+    TREM.variable.events.emit("DataRts", {
+      info: {
+        type: TREM.variable.play_mode,
+      },
+      data,
+    });
   }
 }, 0);

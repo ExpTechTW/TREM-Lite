@@ -39,12 +39,17 @@ const TREM = {
       TSUNAMI   : new Audio("../audio/TSUNAMI.wav"),
       UPDATE    : new Audio("../audio/UPDATE.wav"),
     },
+
+    HTTP_TIMEOUT: {
+      RTS: 1500,
+    },
   },
 
   variable: {
-    map  : null,
-    time : null,
-    data : {
+    map    : null,
+    events : null,
+    time   : null,
+    data   : {
       rts       : null,
       intensity : null,
       report    : null,
