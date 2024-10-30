@@ -24,7 +24,7 @@ TREM.variable.map = new maplibregl.Map({
         id    : "background",
         type  : "background",
         paint : {
-          "background-color": "#ffffff",
+          "background-color": "#1f2025",
         },
       },
       {
@@ -33,7 +33,7 @@ TREM.variable.map = new maplibregl.Map({
         source         : "map",
         "source-layer" : "city",
         paint          : {
-          "fill-color"   : "#e3e3e3",
+          "fill-color"   : "#3F4045",
           "fill-opacity" : 1,
         },
       },
@@ -43,7 +43,7 @@ TREM.variable.map = new maplibregl.Map({
         source         : "map",
         "source-layer" : "town",
         paint          : {
-          "fill-color"   : "#e3e3e3",
+          "fill-color"   : "#3F4045",
           "fill-opacity" : 1,
         },
       },
@@ -53,7 +53,7 @@ TREM.variable.map = new maplibregl.Map({
         "source-layer" : "city",
         type           : "line",
         paint          : {
-          "line-color": "#79747e",
+          "line-color": "#a9b4bc",
         },
       },
       {
@@ -62,7 +62,7 @@ TREM.variable.map = new maplibregl.Map({
         source         : "map",
         "source-layer" : "global",
         paint          : {
-          "fill-color"   : "#f3f3f3",
+          "fill-color"   : "#3f4045",
           "fill-opacity" : 1,
         },
       },
