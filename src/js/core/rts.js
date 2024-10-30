@@ -39,24 +39,26 @@ TREM.variable.events.on("MapLoad", (map) => {
       ],
     },
   });
-
-  map.getSource("rts").setData({
-    type     : "FeatureCollection",
-    features : [
-      {
-        type     : "Feature",
-        geometry : {
-          type        : "Point",
-          coordinates : [121.5, 20.0],
-        },
-        properties: {
-          i: 3,
-        },
-      },
-    ],
-  });
 });
 
-TREM.variable.events.on("DataRts", (data) => {
-  console.log("事件觸發:", data);
+TREM.variable.events.on("DataRts", (ans) => {
+  const data_list = [];
+
+  for (const id of Object.keys(ans.data.station)) {
+    const station_info = TREM.variable.station[id];
+    if (!station_info) continue;
+    const station_location = station_info.info.at(-1);
+    data_list.push({
+      type     : "Feature",
+      geometry : {
+        type        : "Point",
+        coordinates : [station_location.lon, station_location.lat],
+      },
+      properties: {
+        i: ans.data.station[id].i,
+      },
+    });
+  }
+
+  if (TREM.variable.map) TREM.variable.map.getSource("rts").setData({ type: "FeatureCollection", features: data_list });
 });
