@@ -26,6 +26,13 @@ const TREM = {
         8 : "",
         9 : "",
       },
+      EEW: {
+        S: {
+          WARN  : "#ffaa00",
+          ALERT : "#ff0000",
+        },
+        P: "#00CACA",
+      },
     },
 
     URL: {
