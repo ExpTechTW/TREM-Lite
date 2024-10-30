@@ -1,3 +1,6 @@
+@import url("./eew/eew.css");
+@import url("./report/box.css");
+
 body {
   user-select: none;
   margin: 0;
