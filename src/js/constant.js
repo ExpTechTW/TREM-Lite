@@ -1,16 +1,31 @@
 const TREM = {
   constant: {
-    INTENSITY_COLOR: {
-      0 : "",
-      1 : "",
-      2 : "",
-      3 : "",
-      4 : "",
-      5 : "",
-      6 : "",
-      7 : "",
-      8 : "",
-      9 : "",
+    COLOR: {
+      RTS: {
+        intensity_3 : "#0005d0",
+        intensity_2 : "#004bf8",
+        intensity_1 : "#009EF8",
+        intensity0  : "#79E5FD",
+        intensity1  : "#49E9AD",
+        intensity2  : "#44fa34",
+        intensity3  : "#beff0c",
+        intensity4  : "#fff000",
+        intensity5  : "#ff9300",
+        intensity6  : "#fc5235",
+        intensity7  : "#b720e9",
+      },
+      INTENSITY: {
+        0 : "",
+        1 : "",
+        2 : "",
+        3 : "",
+        4 : "",
+        5 : "",
+        6 : "",
+        7 : "",
+        8 : "",
+        9 : "",
+      },
     },
 
     URL: {

@@ -1,60 +1,61 @@
 const TREM = require("../constant");
 
-TREM.variable.map.addSource("points", {
-  type : "geojson",
-  data : {
+TREM.variable.events.on("MapLoad", (map) => {
+  map.addSource("rts", {
+    type : "geojson",
+    data : {
+      type     : "FeatureCollection",
+      features : [],
+    },
+  });
+
+  map.addLayer({
+    id     : "rts-layer",
+    type   : "circle",
+    source : "rts",
+    paint  : {
+      "circle-color": [
+        "interpolate",
+        ["linear"],
+        ["get", "i"],
+        -3, TREM.constant.COLOR.RTS.intensity_3,
+        -2, TREM.constant.COLOR.RTS.intensity_2,
+        -1, TREM.constant.COLOR.RTS.intensity_1,
+        0, TREM.constant.COLOR.RTS.intensity0,
+        1, TREM.constant.COLOR.RTS.intensity1,
+        2, TREM.constant.COLOR.RTS.intensity2,
+        3, TREM.constant.COLOR.RTS.intensity3,
+        4, TREM.constant.COLOR.RTS.intensity4,
+        5, TREM.constant.COLOR.RTS.intensity5,
+        6, TREM.constant.COLOR.RTS.intensity6,
+        7, TREM.constant.COLOR.RTS.intensity7,
+      ],
+      "circle-radius": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        4, 2,
+        12, 8,
+      ],
+    },
+  });
+
+  map.getSource("rts").setData({
     type     : "FeatureCollection",
     features : [
       {
         type     : "Feature",
         geometry : {
           type        : "Point",
-          coordinates : [121.5, 25.0], // [經度, 緯度]
+          coordinates : [121.5, 20.0],
         },
         properties: {
-          intensity : 3, // 可以根據這個值來決定顏色
-          title     : "點位1",
+          i: 3,
         },
       },
-      // 更多點位...
     ],
-  },
+  });
 });
-
-// // 添加圖層並設置顏色
-// TREM.variable.map.addLayer({
-//   id     : "points-layer",
-//   type   : "circle",
-//   source : "points",
-//   paint  : {
-//     // 使用 match expression 根據 intensity 設置顏色
-//     "circle-color": [
-//       "match",
-//       ["get", "intensity"],
-//       0, "#FFFFFF",
-//       1, "#A8F1FF",
-//       2, "#A8FFB3",
-//       3, "#FCFF96",
-//       4, "#FFD17D",
-//       5, "#FF997D",
-//       6, "#FF7D7D",
-//       7, "#FF5959",
-//       8, "#FF3535",
-//       9, "#FF0000",
-//       "#000000", // 默認顏色
-//     ],
-//     "circle-radius"  : 8,
-//     "circle-opacity" : 0.8,
-//   },
-// });
-
-// // 如果需要動態更新數據
-// TREM.variable.map.getSource("points").setData({
-//   type     : "FeatureCollection",
-//   features : [
-//     // 新的點位數據...
-//   ],
-// });
 
 TREM.variable.events.on("DataRts", (data) => {
   console.log("事件觸發:", data);

@@ -2,7 +2,7 @@ const maplibregl = require("maplibre-gl");
 
 const TREM = require("../js/constant");
 
-TREM.variable.map = new maplibregl.Map({
+const map = new maplibregl.Map({
   container : "map",
   style     : {
     version : 8,
@@ -81,4 +81,9 @@ TREM.variable.map = new maplibregl.Map({
   center             : [120.85, 23.10],
   zoom               : 6.2,
   attributionControl : false,
+});
+
+map.on("load", () => {
+  TREM.variable.map = map;
+  TREM.variable.events.emit("MapLoad", map);
 });
