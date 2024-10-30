@@ -6,4 +6,4 @@ function loadCSS(href) {
   document.head.appendChild(link);
 }
 
-loadCSS("../css/main/index.css");
+loadCSS("../css/zh-Hant/index.css");
