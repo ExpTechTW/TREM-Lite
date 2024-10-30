@@ -7,8 +7,13 @@ const TREM = {
     map  : null,
     time : null,
     data : {
-      rts: null,
+      rts       : null,
+      intensity : null,
+      report    : null,
+      eew       : null,
     },
+    // 0 realtime | 1 replay
+    play_mode: 0,
 
     // 不要動下方的東西
     cache: {
