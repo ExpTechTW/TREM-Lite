@@ -25,6 +25,20 @@ const TREM = {
         "lb-4.exptech.dev",
       ],
     },
+
+    AUDIO: {
+      ALERT     : new Audio("../audio/ALERT.wav"),
+      EEW       : new Audio("../audio/EEW.wav"),
+      INTENSITY : new Audio("../audio/INTENSITY.wav"),
+      PGA1      : new Audio("../audio/PGA1.wav"),
+      PGA2      : new Audio("../audio/PGA2.wav"),
+      REPORT    : new Audio("../audio/REPORT.wav"),
+      SHINDO0   : new Audio("../audio/SHINDO0.wav"),
+      SHINDO1   : new Audio("../audio/SHINDO1.wav"),
+      SHINDO2   : new Audio("../audio/SHINDO2.wav"),
+      TSUNAMI   : new Audio("../audio/TSUNAMI.wav"),
+      UPDATE    : new Audio("../audio/UPDATE.wav"),
+    },
   },
 
   variable: {
