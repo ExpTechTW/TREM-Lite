@@ -1,6 +1,8 @@
 const maplibregl = require("maplibre-gl");
 
-const map = new maplibregl.Map({
+const TREM = require("../js/constant");
+
+TREM.variable.map = new maplibregl.Map({
   container : "map",
   style     : {
     version : 8,
