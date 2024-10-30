@@ -78,8 +78,8 @@ const map = new maplibregl.Map({
       },
     ],
   },
-  center             : [120.85, 23.10],
-  zoom               : 6.2,
+  center             : [121.6, 23.5],
+  zoom               : 6.8,
   attributionControl : false,
 });
 
