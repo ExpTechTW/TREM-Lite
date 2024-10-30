@@ -1,0 +1,239 @@
+html[lang="zh-Hant"] {
+  .info-number-no::before {
+    content: "第";
+  }
+  .info-number-no::after {
+    content: "報";
+  }
+
+  .info-number-last::after {
+    content: "最終報";
+  }
+
+  .info-unit-none::after {
+    content: "暫無生效中的地震預警";
+  }
+
+  .info-intensity::after {
+    content: "預估最大震度";
+  }
+
+  .info-nsspe span::before {
+    content: "NSSPE 無震源參數推算";
+  }
+
+  .info-mag-text::after {
+    content: "規模";
+    right: 0;
+    width: 3.5rem;
+  }
+
+  .info-depth-text::after {
+    content: "深度";
+  }
+}
+
+/**最外包**/
+.info-wrapper {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 5px;
+  padding: 8px;
+  background-color: #505050c7;
+  color: white;
+  z-index: 1001;
+  min-width: 20rem;
+
+  /**發報標題**/
+  .info-title {
+    display: flex;
+    padding: 0 8px;
+    font-size: 14px;
+    font-weight: bold;
+
+    /**發報單位**/
+    .info-unit {
+      flex: 1;
+      font-size: 17px;
+    }
+
+    /**發報報數**/
+    .info-number {
+      font-size: 17px;
+    }
+  }
+
+  /**標題外包**/
+  .info-title-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+
+    /**預估最大震度文字**/
+    .info-intensity {
+      opacity: 0.75;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+  }
+
+  /**body主體**/
+  .info-body-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border-radius: 10px;
+    background-color: #383838;
+    padding: 8px;
+
+    /**body內包**/
+    .info-box {
+      display: flex;
+      height: 72px;
+      gap: 8px;
+      opacity: 1;
+    }
+
+    /**預估最大震度**/
+    .info-title-box {
+      width: 75px;
+      height: 75px;
+      line-height: 60px;
+      font-size: 45px;
+      font-weight: bold;
+      text-align: center;
+      align-items: center;
+      display: grid;
+    }
+
+    /**標題盒、更多資訊**/
+    .info-title-box,
+    .info-more {
+      padding: 5px;
+      border-radius: 12px;
+    }
+
+    /**更多資訊**/
+    .info-more {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      /**震央**/
+      .info-loc {
+        font-size: 20px;
+        font-weight: bold;
+      }
+
+      /**規模、深度**/
+      .info-mag-dep {
+        display: flex;
+        justify-content: space-between;
+
+        .info-mag,
+        .info-depth {
+          position: relative;
+          display: flex;
+          gap: 4px;
+          height: 28px;
+          isolation: isolate;
+
+          .info-mag-text,
+          .info-depth-text {
+            position: absolute;
+            line-height: 28px;
+            font-size: 28px;
+            font-weight: bold;
+            opacity: 0.15;
+          }
+
+          .info-mag .info-mag-val::before,
+          .info-depth .info-depth-val::after {
+            opacity: 0.75;
+            line-height: 28px;
+          }
+        }
+
+        /**規模**/
+        .info-mag {
+          font-size: 28px;
+          width: 60px;
+
+          .info-mag-val {
+            margin-top: 5px;
+            font-size: 20px;
+            font-weight: bold;
+
+            &:before {
+              content: "𝖬";
+              font-size: 15px;
+              margin-right: 4px;
+            }
+          }
+        }
+
+        /**深度**/
+        .info-depth {
+          font-size: 28px;
+          width: 60px;
+          display: flex;
+          justify-content: flex-end;
+
+          .info-depth-val {
+            margin-top: 5px;
+            font-size: 20px;
+            font-weight: bold;
+
+            &:after {
+              margin-left: 4px;
+              content: "㎞";
+              font-size: 15px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**底部**/
+.info-footer {
+  display: flex;
+  font-size: 12px;
+  justify-content: flex-end;
+
+  .info-nsspe-title {
+    margin-right: 0.3em;
+  }
+
+  .info-nsspe {
+    font-weight: 700;
+    line-height: 20px;
+    margin-top: 0.5em;
+    font-size: 17px;
+    display: none;
+  }
+
+  /**發震時間外包**/
+  .info-footer-container {
+    gap: 5px;
+    display: flex;
+  }
+}
+
+.intensity-9 {
+  background-color: #9600c8;
+  box-sizing: border-box;
+
+  &:empty::after {
+    content: "7";
+  }
+}

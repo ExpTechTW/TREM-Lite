@@ -3,7 +3,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../css/index.css" />
-    <link rel="stylesheet" href="../css/eew/eew.css" />
+    <link rel="stylesheet" href="../css/main/eew.css" />
     <link rel="stylesheet" href="../css/core/maplibre-gl.css" />
   </head>
 
@@ -12,22 +12,24 @@
 
     <div class="info-wrapper">
       <div class="info-title">
-        <div class="info-unit">暫無生效中的地震預警</div>
-        <div class="info-number">最終報</div>
+        <div class="info-unit info-unit-none"></div>
+        <div class="info-number info-number-no">1</div>
       </div>
       <div class="info-body-wrapper">
         <div class="info-box">
           <div class="info-title-wrapper">
             <div class="info-title-box intensity-9" id="info-intensity">7</div>
-            <div class="info-intensity">預估最大震度</div>
+            <div class="info-intensity"></div>
           </div>
           <div class="info-more">
             <div class="info-loc">花蓮縣壽豐鄉</div>
             <div class="info-mag-dep">
-              <div class="info-mag" data-background-text="規模">
+              <div class="info-mag">
+                <div class="info-mag-text"></div>
                 <div class="info-mag-val">5.5</div>
               </div>
-              <div class="info-depth" data-background-text="深度">
+              <div class="info-depth">
+                <div class="info-depth-text"></div>
                 <div class="info-depth-val">20</div>
               </div>
             </div>
@@ -37,9 +39,7 @@
           <div class="info-footer-container">
             <span>2024-10-31 00:50:00</span>
           </div>
-          <div class="info-nsspe">
-            <span>NSSPE</span><span>無震源參數推算</span>
-          </div>
+          <div class="info-nsspe"><span></span></div>
         </div>
       </div>
     </div>
