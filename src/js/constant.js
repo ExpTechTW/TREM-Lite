@@ -65,6 +65,7 @@ const TREM = {
     HTTP_TIMEOUT: {
       RESOURCE : 3500,
       RTS      : 1500,
+      EEW      : 1500,
     },
   },
 

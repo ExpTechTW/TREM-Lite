@@ -19,13 +19,20 @@ setInterval(async () => {
     last_fetch_time = local_now;
 
     const data = await http((TREM.variable.play_mode == 0) ? null : local_now);
-    TREM.variable.data.rts = data;
+    TREM.variable.data.rts = data.rts;
+    TREM.variable.data.eew = data.eew;
 
     TREM.variable.events.emit("DataRts", {
       info: {
         type: TREM.variable.play_mode,
       },
-      data,
+      data: data.rts,
+    });
+    TREM.variable.events.emit("DataEew", {
+      info: {
+        type: TREM.variable.play_mode,
+      },
+      data: data.eew,
     });
   }
 }, 0);

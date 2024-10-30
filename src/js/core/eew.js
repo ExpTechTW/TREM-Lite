@@ -11,6 +11,9 @@ TREM.variable.events.on("MapLoad", (map) => {
   });
 });
 
+TREM.variable.events.on("DataEew", (ans) => {
+});
+
 function addEewCircle(map, eew) {
   const center = [eew.eq.longitude, eew.eq.latitude];
 
