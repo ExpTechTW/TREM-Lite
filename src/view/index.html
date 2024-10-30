@@ -1,14 +1,50 @@
 <html lang="zh-Hant">
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta charset="utf-8" />
-        <link rel="stylesheet" href="../css/index.css" />
-        <link rel="stylesheet" href="../css/core/maplibre-gl.css" />
-    </head>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../css/index.css" />
+    <link rel="stylesheet" href="../css/report_box.css" />
+    <link rel="stylesheet" href="../css/core/maplibre-gl.css" />
+  </head>
 
-    <body>
-        <div id="map" class="map"></div>
+  <body>
+    <div id="map" class="map"></div>
 
-        <script src="../js/require.js" defer></script>
-    </body>
+    <div class="info-wrapper">
+      <div class="info-title">
+        <div class="info-unit">暫無生效中的地震預警</div>
+        <div class="info-number">最終報</div>
+      </div>
+      <div class="info-body-wrapper">
+        <div class="info-box">
+          <div class="info-title-wrapper">
+            <div class="info-title-box intensity-9" id="info-intensity">7</div>
+            <div class="info-intensity">預估最大震度</div>
+          </div>
+          <div class="info-more">
+            <div class="info-loc">花蓮縣壽豐鄉</div>
+            <div class="info-mag-dep">
+              <div class="info-mag" data-background-text="規模">
+                <div class="info-mag-val"></div>
+              </div>
+              <div class="info-depth" data-background-text="深度">
+                <div class="info-depth-val"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="info-footer">
+          <div class="info-footer-container">
+            <span>2024-10-31 00:50:00</span>
+            <span>發震</span>
+          </div>
+          <div class="info-nsspe">
+            <span>NSSPE</span><span>無震源參數推算</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/require.js" defer></script>
+  </body>
 </html>
