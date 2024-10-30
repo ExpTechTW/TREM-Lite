@@ -4,3 +4,4 @@ logger.info("App start");
 
 require("../js/key");
 require("../js/map");
+require("../js/data/data");

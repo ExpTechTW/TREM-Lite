@@ -12,6 +12,19 @@ const TREM = {
       8 : "",
       9 : "",
     },
+
+    URL: {
+      API: [
+        "api-1.exptech.dev",
+        "api-2.exptech.dev",
+      ],
+      LB: [
+        "lb-1.exptech.dev",
+        "lb-2.exptech.dev",
+        "lb-3.exptech.dev",
+        "lb-4.exptech.dev",
+      ],
+    },
   },
 
   variable: {
@@ -23,7 +36,7 @@ const TREM = {
       report    : null,
       eew       : null,
     },
-    // 0 realtime | 1 replay
+    // 0 realtime | 1 websocket | 2 replay
     play_mode: 0,
 
     // 不要動下方的東西
