@@ -78,6 +78,7 @@ TREM.variable.map = new maplibregl.Map({
       },
     ],
   },
-  center : [120.85, 23.10],
-  zoom   : 6.2,
+  center             : [120.85, 23.10],
+  zoom               : 6.2,
+  attributionControl : false,
 });
