@@ -1,46 +1,38 @@
-html[lang="en-us"] {
+html[lang="ko_KR"] {
   .info-number-no {
-    &::before {
-      content: "No.";
+    &::after {
+      content: "위";
     }
   }
 
   .info-number-last::after {
-    content: "Final Report";
+    content: "최종 지진 경보 보고서";
   }
 
   .info-unit-none::after {
-    content: "No Earthquake Warnings";
+    content: "현재 지진 경보 없음";
   }
 
   .info-intensity::after {
-    content: "Est. Max Intensity";
+    content: "예상 최대 강도";
   }
 
   .info-nsspe span::before {
     content: "NSSPE";
   }
 
-  .info-footer-container::before {
-    content: "On";
-  }
-
   .info-footer-container::after {
-    content: "Occurred";
+    content: "에 생성됨";
   }
 
   .info-mag-text::after {
-    content: "Magnitude";
+    content: "크기";
     right: 0;
     width: 3.5rem;
   }
 
   .info-depth-text::after {
-    content: "Depth";
-  }
-
-  .info-title-box {
-    line-height: 75px !important;
+    content: "깊이";
   }
 
   .info-title-wrapper {

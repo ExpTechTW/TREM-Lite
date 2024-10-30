@@ -25,6 +25,10 @@ html[lang="zh-Hant"] {
     content: "NSSPE 無震源參數推算";
   }
 
+  .info-footer-container::after {
+    content: "發震";
+  }
+
   .info-mag-text::after {
     content: "規模";
     right: 0;

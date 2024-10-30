@@ -1,42 +1,41 @@
-html[lang="en-us"] {
+html[lang="ja"] {
   .info-number-no {
     &::before {
-      content: "No.";
+      content: "第";
+    }
+    &::after {
+      content: "報";
     }
   }
 
   .info-number-last::after {
-    content: "Final Report";
+    content: "最終報";
   }
 
   .info-unit-none::after {
-    content: "No Earthquake Warnings";
+    content: "緊急地震速報は発表されでいません";
   }
 
   .info-intensity::after {
-    content: "Est. Max Intensity";
+    content: "最大予想震度";
   }
 
   .info-nsspe span::before {
-    content: "NSSPE";
-  }
-
-  .info-footer-container::before {
-    content: "On";
+    content: "NSSPE法";
   }
 
   .info-footer-container::after {
-    content: "Occurred";
+    content: "発生";
   }
 
   .info-mag-text::after {
-    content: "Magnitude";
+    content: "M";
     right: 0;
     width: 3.5rem;
   }
 
   .info-depth-text::after {
-    content: "Depth";
+    content: "深さ";
   }
 
   .info-title-box {
