@@ -48,7 +48,6 @@ body {
   position: absolute;
   bottom: 0.3em;
   border-radius: 5px;
-  color: red;
   border: 2px solid #00000008;
   background-color: #00000075;
   display: flex;
@@ -59,6 +58,18 @@ body {
 
   .time {
     font-size: 15px;
+  }
+
+  .time-error {
+    color: red;
+  }
+
+  .time-normal {
+    color: white;
+  }
+
+  .time-replay {
+    color: yellow;
   }
 }
 
