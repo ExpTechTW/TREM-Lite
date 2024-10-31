@@ -51,8 +51,8 @@ TREM.variable.events.on("EewRelease", (ans) => {
 });
 
 TREM.variable.events.on("EewAlert", (ans) => {
-  TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-outline`);
-  TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
+  if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-outline`)) TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-outline`);
+  if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-background`)) TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
 
   const color =
   ans.data.status == 1

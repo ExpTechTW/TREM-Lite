@@ -26,7 +26,7 @@ const map = new maplibregl.Map({
         id    : "background",
         type  : "background",
         paint : {
-          "background-color": "#1f2025",
+          "background-color": TREM.constant.COLOR.MAP.BACKGROUND,
         },
       },
       {
@@ -35,7 +35,7 @@ const map = new maplibregl.Map({
         source         : "map",
         "source-layer" : "city",
         paint          : {
-          "fill-color"   : "#3F4045",
+          "fill-color"   : TREM.constant.COLOR.MAP.TW_COUNTY_FILL,
           "fill-opacity" : 1,
         },
       },
@@ -45,7 +45,7 @@ const map = new maplibregl.Map({
         source         : "map",
         "source-layer" : "town",
         paint          : {
-          "fill-color"   : "#3F4045",
+          "fill-color"   : TREM.constant.COLOR.MAP.TW_TOWN_FILL,
           "fill-opacity" : 1,
         },
       },
@@ -55,7 +55,7 @@ const map = new maplibregl.Map({
         "source-layer" : "city",
         type           : "line",
         paint          : {
-          "line-color": "#a9b4bc",
+          "line-color": TREM.constant.COLOR.MAP.TW_COUNTY_OUTLINE,
         },
       },
       {
@@ -64,7 +64,7 @@ const map = new maplibregl.Map({
         source         : "map",
         "source-layer" : "global",
         paint          : {
-          "fill-color"   : "#3f4045",
+          "fill-color"   : TREM.constant.COLOR.MAP.GLOBAL_FILL,
           "fill-opacity" : 1,
         },
       },

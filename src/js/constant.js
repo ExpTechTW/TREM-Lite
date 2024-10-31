@@ -1,6 +1,13 @@
 const TREM = {
   constant: {
     COLOR: {
+      MAP: {
+        BACKGROUND        : "#1f2025",
+        TW_COUNTY_FILL    : "#3F4045",
+        TW_TOWN_FILL      : "#3F4045",
+        TW_COUNTY_OUTLINE : "#a9b4bc",
+        GLOBAL_FILL       : "#3F4045",
+      },
       RTS: {
         intensity_3 : "#0005d0",
         intensity_2 : "#004bf8",

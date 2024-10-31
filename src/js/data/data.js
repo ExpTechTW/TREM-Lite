@@ -84,14 +84,6 @@ function EEWData(newData = []) {
           },
           data: data,
         });
-
-        if (data.status == 1)
-          TREM.variable.events.emit("EewAlert", {
-            info: {
-              type: TREM.variable.play_mode,
-            },
-            data: data,
-          });
       }
     } else if (data.EewEnd) {
       const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);

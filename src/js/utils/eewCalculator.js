@@ -1,3 +1,4 @@
+const region = require("../../resource/data/region.json");
 class EEWCalculator {
   constructor(timeTable) {
     this.timeTable = timeTable;
@@ -51,26 +52,24 @@ class EEWCalculator {
     return { p_dist: pDist, s_dist: sDist, s_t: sT };
   }
 
-  eewAreaPga(lat, lon, depth, mag, region) {
+  eewAreaPga(lat, lon, depth, mag) {
     const result = {};
     let eewMaxI = 0.0;
 
-    for (const [key, info] of Object.entries(region)) {
-      const distSurface = this.distance(lat, lon, info.lat, info.lng);
-      const dist = Math.sqrt(Math.pow(distSurface, 2) + Math.pow(depth, 2));
-      const pga = 1.657 * Math.exp(1.533 * mag) * Math.pow(dist, -1.607);
-      let i = this.pgaToFloat(pga);
+    for (const city of Object.keys(region))
+      for (const town of Object.keys(region[city])) {
+        const info = region[city][town];
+        const distSurface = this.distance(lat, lon, info.lat, info.lon);
+        const dist = Math.sqrt(Math.pow(distSurface, 2) + Math.pow(depth, 2));
+        const pga = 1.657 * Math.exp(1.533 * mag) * Math.pow(dist, -1.607);
+        let i = this.pgaToFloat(pga);
 
-      if (i >= 4.5)
-        i = this.eewAreaPgv([lat, lon], [info.lat, info.lng], depth, mag);
+        if (i >= 4.5) i = this.eewAreaPgv([lat, lon], [info.lat, info.lon], depth, mag);
 
+        if (i > eewMaxI) eewMaxI = i;
 
-      if (i > eewMaxI)
-        eewMaxI = i;
-
-
-      result[key] = { dist, i };
-    }
+        result[info.code] = { dist, i };
+      }
 
     result.max_i = eewMaxI;
     return result;
