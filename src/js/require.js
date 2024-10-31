@@ -15,3 +15,4 @@ require("../js/core/loop");
 require("../js/core/estimate");
 require("../js/core/audio");
 require("../js/core/text");
+require("../js/core/focus");
