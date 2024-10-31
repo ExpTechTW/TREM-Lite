@@ -22,7 +22,7 @@ html[lang="zh-Hant"] {
 
   /**盒容器**/
   .report-box-item-contain {
-    margin-bottom: 2;
+    margin-bottom: 4px;
     display: flex;
     gap: 8px;
     background-color: #292929;
@@ -116,7 +116,7 @@ html[lang="zh-Hant"] {
 
         &:before {
           content: "𝖬";
-          font-size: 15px;
+          font-size: 20px;
           margin-right: 4px;
         }
       }

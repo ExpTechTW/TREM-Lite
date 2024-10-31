@@ -122,8 +122,7 @@ html[lang="zh-Hant"] {
     }
 
     /**標題盒、更多資訊**/
-    .info-title-box,
-    .info-more {
+    .info-title-box {
       padding: 5px;
       border-radius: 12px;
     }
@@ -137,7 +136,7 @@ html[lang="zh-Hant"] {
 
       /**震央**/
       .info-loc {
-        font-size: 20px;
+        font-size: 24px;
         font-weight: bold;
       }
 
@@ -145,6 +144,7 @@ html[lang="zh-Hant"] {
       .info-mag-dep {
         display: flex;
         justify-content: space-between;
+        margin-top: 5;
 
         .info-mag,
         .info-depth {
@@ -182,7 +182,7 @@ html[lang="zh-Hant"] {
 
             &:before {
               content: "𝖬";
-              font-size: 15px;
+              font-size: 20px;
               margin-right: 4px;
             }
           }
@@ -225,8 +225,7 @@ html[lang="zh-Hant"] {
   .info-nsspe {
     font-weight: 700;
     line-height: 20px;
-    margin-top: 0.5em;
-    font-size: 17px;
+    font-size: 15px;
     display: none;
   }
 
