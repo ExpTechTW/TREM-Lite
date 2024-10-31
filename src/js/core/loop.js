@@ -15,7 +15,9 @@ setInterval(() => {
   time.textContent = formatTime(now());
 }, 1000);
 
-setInterval(() => {
-  flash = !flash;
-  refresh_cross(flash);
-}, 500);
+TREM.variable.events.on("MapLoad", (map) => {
+  setInterval(() => {
+    flash = !flash;
+    refresh_cross(flash);
+  }, 500);
+});

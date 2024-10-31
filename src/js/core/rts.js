@@ -98,6 +98,8 @@ TREM.variable.events.on("DataRts", (ans) => {
   const data_alert_0_list = [];
   const data_alert_list = [];
 
+  const coordinates = [];
+
   let pga = 0;
 
   if (!TREM.variable.station) return;
@@ -120,6 +122,8 @@ TREM.variable.events.on("DataRts", (ans) => {
           data_alert_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
         else if (TREM.variable.data.eew)
           data_alert_0_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: {} });
+
+        coordinates.push({ lon: station_location.lon, lat: station_location.lat });
       } else if (!eew_alert)
         data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: ans.data.station[id].i } });
     }
@@ -133,7 +137,7 @@ TREM.variable.events.on("DataRts", (ans) => {
     }
 
     const box_list = getTopIntensities(
-      updateIntensityHistory(ans.data.int, ans.data.time),
+      updateIntensityHistory(ans.data?.int ?? [], ans.data.time),
     ).sort((a, b) => b.i - a.i)
       .map(loc => intensity_item(loc.i, loc.name));
 
@@ -143,7 +147,9 @@ TREM.variable.events.on("DataRts", (ans) => {
 
     max_pga.textContent = `${pga.toFixed(2)} gal`;
     max_pga.className = `max-station-pga ${(!alert) ? "intensity-0" : `intensity-${calculator.pgaToIntensity(pga)}`}`;
-    max_intensity.className = `max-station-intensity intensity-${(ans.data?.int) ? ans.data.int[0].i : 0}`;
+    max_intensity.className = `max-station-intensity intensity-${ans.data?.int?.[0]?.i ?? 0}`;
+
+    TREM.variable.cache.bounds.rts = coordinates;
   }
 });
 
@@ -180,7 +186,7 @@ function updateIntensityHistory(newData, time) {
   return maxIntensities;
 }
 
-function getTopIntensities(intensities, maxCount = 7) {
+function getTopIntensities(intensities, maxCount = 6) {
   if (intensities.length <= maxCount)
     return intensities.map(loc => {
       const name = search_loc_name(loc.code);
