@@ -12,6 +12,10 @@ function generateColorCSS() {
     css += `  --intensity-${key}: ${value};\n`;
   });
 
+  Object.entries(TREM.constant.COLOR.INTENSITY_TEXT).forEach(([key, value]) => {
+    css += `  --intensity-text-${key}: ${value};\n`;
+  });
+
   css += `  --eew-s-warn: ${TREM.constant.COLOR.EEW.S.WARN};\n`;
   css += `  --eew-s-alert: ${TREM.constant.COLOR.EEW.S.ALERT};\n`;
   css += `  --eew-p: ${TREM.constant.COLOR.EEW.P};\n`;
