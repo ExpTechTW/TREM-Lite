@@ -110,7 +110,6 @@ html[lang="zh-Hant"] {
 
       /**規模文字**/
       .report-mag-val {
-        margin-top: 5px;
         font-size: 20px;
         font-weight: bold;
 
@@ -182,6 +181,10 @@ html[lang="zh-Hant"] {
     .report-mag-dep {
       width: 100%;
       margin-top: 0.3em;
+
+      .report-mag-val {
+        margin-top: 5px;
+      }
 
       /**規模文字**/
       .report-mag-text {
