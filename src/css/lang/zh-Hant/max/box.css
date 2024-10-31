@@ -1,63 +1,86 @@
 ﻿html[lang="zh-Hant"] {
-  .max-station-pga-text::before {
-    content: "最大測站";
+  .current-station-intensity-text::before {
+    content: "震度";
   }
 
   .current-station-pga-text::before {
-    content: "目前測站";
+    content: "加速度";
   }
 }
 
 .station-pga-wrapper {
   position: absolute;
   right: 19.5rem;
-  bottom: 0px;
+  bottom: 5px;
   color: white;
   font-size: 11px;
   font-weight: 500;
   width: 220px;
-  height: 55px;
+  height: 50px;
   display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
   margin-right: 5px;
 
-  #max-station-pga,
   #current-station-pga {
     margin-top: 5px;
     border-radius: 5px;
     padding: 2px;
   }
 
-  .max-pga {
-    margin-top: 5px;
-    border-radius: 5px;
-    padding: 2px;
-    border: 1px solid #2f2f2f;
-  }
-
-  .rts-info-box {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .max-station-pga,
-  .current-station-pga,
-  .rts-info-box-contain {
+  .current-station-pga {
     background-color: #505050c7;
-    width: 60px;
     color: white;
     font-size: 11px;
     border: 2px solid #00000008;
-    padding: 3px;
     border-radius: 5px;
     z-index: 1000;
     text-align: center;
     font-weight: 500;
     pointer-events: none;
-    min-height: 41px;
+    display: flex;
+    flex-direction: row;
+    width: 215px;
+  }
+
+  .current-station-intensity {
+    height: 45px;
+    width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+    font-weight: bold;
+    border-radius: 5px;
+  }
+
+  .current-station-info {
     display: flex;
     flex-direction: column;
+    flex-wrap: wrap;
+    width: 170px;
+  }
+
+  .current-station-intensity-pga {
+    display: flex;
     justify-content: space-around;
+    font-size: 14px;
+    margin-top: 2;
+    font-weight: bold;
+  }
+
+  .current-station-intensity-box {
+    display: flex;
+  }
+
+  .current-station-loc {
+    font-size: 17px;
+    font-weight: bold;
+  }
+
+  .current-station-intensity-text {
+    margin-right: 3;
+  }
+
+  .current-station-pga-text {
+    margin-right: 3;
   }
 }
