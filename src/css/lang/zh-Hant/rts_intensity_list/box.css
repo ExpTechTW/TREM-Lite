@@ -76,9 +76,9 @@
 .rts-intensity-list-wrapper {
   position: absolute;
   display: flex;
-  bottom: 60px;
+  bottom: 5px;
   max-height: 300px;
-  width: 215px;
+  width: 180px;
   margin-right: 8px;
   right: 19.5rem;
   min-height: 180px;
@@ -141,7 +141,7 @@
 
           /**位置**/
           .rts-loc {
-            padding-left: 27px;
+            padding-left: 10px;
             font-size: 13px;
             font-weight: 500;
             display: flex;
