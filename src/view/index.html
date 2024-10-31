@@ -14,7 +14,7 @@
         <div class="info-unit info-unit-none"></div>
         <div class="info-number info-number-no"></div>
       </div>
-      <div class="info-body-wrapper no_eew">
+      <div class="info-body-wrapper no_eew" id="info-body-wrapper">
         <div class="info-box">
           <div class="info-title-wrapper">
             <div class="info-title-box intensity-4"></div>
@@ -76,7 +76,7 @@
       </ul>
     </div>
 
-    <!--最大震度、PGA-->
+    <!--最大震度、PGA & level、trigger-->
     <div class="max-intensity-pga-wrapper">
       <div class="max-intensity">
         <div class="max-intensity-text"></div>
@@ -85,6 +85,16 @@
       <div class="max-pga">
         <div class="max-pga-text"></div>
         <div id="max-pga" class="max-station-pga intensity-0">0.00 gal</div>
+      </div>
+      <div class="rts-info-box">
+        <div class="rts-info-item">
+          <div>level</div>
+          <div class="rts-info-level">0</div>
+        </div>
+        <div class="rts-info-item">
+          <div>trigger</div>
+          <div class="rts-info-trigger">0</div>
+        </div>
       </div>
     </div>
 
@@ -105,6 +115,52 @@
           </div>
         </div>
         <div class="current-station-intensity intensity-6"></div>
+      </div>
+    </div>
+
+    <!--按鈕列表-->
+    <div class="nav-bar-buttons-wrapper">
+      <div class="nav-bar-buttons">
+        <nav class="nav-bar">
+          <div class="nav-item">
+            <button class="nav-btn on" type="button" data-panel="home">
+              <span class="nav-item-icon material-symbols-rounded">home</span>
+              <span class="nav-item-label">震度速報</span>
+            </button>
+          </div>
+          <div class="nav-item">
+            <button class="nav-btn" type="button" data-panel="report">
+              <span class="nav-item-icon material-symbols-rounded"
+                >earthquake</span
+              >
+              <span class="nav-item-label">震源速報</span>
+            </button>
+          </div>
+          <div class="nav-item">
+            <button class="nav-btn" type="button" data-panel="tsunami">
+              <span class="nav-item-icon material-symbols-rounded"
+                >tsunami</span
+              >
+              <span class="nav-item-label">地震報告</span>
+            </button>
+          </div>
+          <div class="nav-item">
+            <button class="nav-btn" type="button" data-panel="tsunami">
+              <span class="nav-item-icon material-symbols-rounded"
+                >tsunami</span
+              >
+              <span class="nav-item-label">海嘯警報</span>
+            </button>
+          </div>
+          <div class="nav-item">
+            <button class="nav-btn" type="button" data-panel="tsunami">
+              <span class="nav-item-icon material-symbols-rounded"
+                >tsunami</span
+              >
+              <span class="nav-item-label">地震速報</span>
+            </button>
+          </div>
+        </nav>
       </div>
     </div>
 
@@ -436,7 +492,7 @@
 
     <div class="nav-bar-wrapper">
       <div class="nav-bar-buttons">
-        <div class="nav-bar-buttons-setting">
+        <div class="nav-bar-setting">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             x="0px"

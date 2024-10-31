@@ -1,0 +1,108 @@
+.nav-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 0;
+
+  .nav-item {
+    display: flex;
+  }
+
+  .below-nav .nav-item {
+    display: flex;
+  }
+}
+
+.nav-bar-buttons-wrapper {
+  position: absolute;
+  top: 25rem;
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  padding: 8px;
+  border-radius: 5px;
+  flex-direction: column;
+  flex-wrap: wrap;
+  text-align: center;
+  width: 0;
+
+  .on {
+    opacity: 1 !important;
+  }
+
+  .nav-btn {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    padding-right: 16px;
+    border-radius: 32px;
+    background-color: #fff;
+    font-size: 16px;
+    line-height: 20px;
+    overflow: hidden;
+    height: 24px;
+    white-space: nowrap;
+    flex: 16px 0;
+    opacity: 0.6;
+    transition: flex 0.2s cubic-bezier(0.2, 0, 0, 1),
+      opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
+
+    .nav-item-icon {
+      height: 24px;
+      aspect-ratio: 1;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .nav-item-label {
+      opacity: 0;
+      transition: opacity 0.1s cubic-bezier(0.2, 0, 0, 1);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &.active {
+      opacity: 1;
+    }
+
+    &.active,
+    &:hover {
+      flex: 1;
+
+      .nav-item-label {
+        opacity: 1;
+      }
+    }
+
+    cursor: pointer;
+  }
+}
+
+.nav-bar-wrapper {
+  left: 3px;
+  bottom: 5px;
+  font-size: 15px;
+  position: absolute;
+  color: #fff;
+  cursor: pointer;
+
+  .nav-bar-setting {
+    height: 30px;
+    width: 30px;
+    border: 1px solid #00000008;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    background: #505050c7;
+  }
+}
