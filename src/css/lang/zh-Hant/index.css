@@ -49,6 +49,7 @@ body {
 
 .connect {
   position: absolute;
+  left: 33px;
   bottom: 0.3em;
   border-radius: 5px;
   border: 2px solid #00000008;
@@ -58,10 +59,6 @@ body {
   z-index: 1001;
   margin-left: 5px;
   padding: 3px;
-
-  .time {
-    font-size: 15px;
-  }
 
   .time-error {
     color: red;
@@ -94,7 +91,7 @@ html[lang="zh-Hant"] {
 
 .version-check {
   bottom: 0.3em;
-  left: 170px;
+  left: 205px;
   margin: 1px;
   margin-left: 5px;
   position: absolute;
@@ -154,4 +151,26 @@ html[lang="zh-Hant"] {
   100% {
     border-color: transparent;
   }
+}
+
+.nav-bar-wrapper {
+  left: 3px;
+  bottom: 5px;
+  font-size: 15px;
+  position: absolute;
+  color: #fff;
+  cursor: pointer;
+}
+
+.nav-bar-buttons-setting {
+  height: 30px;
+  width: 30px;
+  border: 1px solid #272727;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  background: #00000075;
 }
