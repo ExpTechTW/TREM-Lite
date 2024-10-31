@@ -78,8 +78,7 @@
 .rts-intensity-list-wrapper {
   position: absolute;
   display: flex;
-  bottom: 0px;
-  padding-bottom: 60px;
+  bottom: 60px;
   max-height: 300px;
   width: 215px;
   margin-right: 8px;
@@ -93,6 +92,7 @@
     min-height: 0;
     color: white;
     z-index: 1001;
+    justify-content: flex-end;
 
     .rts-intensity-list-container {
       display: flex;
