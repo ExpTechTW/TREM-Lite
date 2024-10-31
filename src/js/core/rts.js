@@ -3,8 +3,6 @@ const TREM = require("../constant");
 const { intensity_float_to_int } = require("../utils/utils");
 
 TREM.variable.events.on("MapLoad", (map) => {
-  map.addSource("rts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-
   map.addLayer({
     id     : "rts-layer",
     type   : "circle",
@@ -36,8 +34,6 @@ TREM.variable.events.on("MapLoad", (map) => {
     },
   });
 
-  map.addSource("markers-geojson-0", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-
   map.addLayer({
     id     : "markers-0",
     type   : "circle",
@@ -54,8 +50,6 @@ TREM.variable.events.on("MapLoad", (map) => {
     },
   });
 
-  map.addSource("markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-
   map.addLayer({
     id     : "markers",
     type   : "symbol",
@@ -66,7 +60,6 @@ TREM.variable.events.on("MapLoad", (map) => {
       "icon-image"      : [
         "match",
         ["get", "i"],
-        1, "intensity-1",
         2, "intensity-2",
         3, "intensity-3",
         4, "intensity-4",
@@ -75,8 +68,7 @@ TREM.variable.events.on("MapLoad", (map) => {
         7, "intensity-7",
         8, "intensity-8",
         9, "intensity-9",
-        10, "cross",
-        "gps",
+        "intensity-1",
       ],
       "icon-size": [
         "interpolate",

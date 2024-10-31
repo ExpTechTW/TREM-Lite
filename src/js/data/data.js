@@ -57,14 +57,24 @@ function EEWData(newData = []) {
       const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);
 
       if (existingIndex !== -1) {
-        if (data.serial > TREM.variable.data.eew[existingIndex].serial)
+        if (data.serial > TREM.variable.data.eew[existingIndex].serial) {
+          TREM.variable.events.emit("EewUpdate", {
+            info: {
+              type: TREM.variable.play_mode,
+            },
+            data: data,
+          });
+
+          if (!TREM.variable.data.eew[existingIndex].status && data.status == 1)
+            TREM.variable.events.emit("EewAlert", {
+              info: {
+                type: TREM.variable.play_mode,
+              },
+              data: data,
+            });
+
           TREM.variable.data.eew[existingIndex] = data;
-        TREM.variable.events.emit("EewUpdate", {
-          info: {
-            type: TREM.variable.play_mode,
-          },
-          data: data,
-        });
+        }
       } else {
         TREM.variable.data.eew.push(data);
 
@@ -74,6 +84,14 @@ function EEWData(newData = []) {
           },
           data: data,
         });
+
+        if (data.status == 1)
+          TREM.variable.events.emit("EewAlert", {
+            info: {
+              type: TREM.variable.play_mode,
+            },
+            data: data,
+          });
       }
     } else if (data.EewEnd) {
       const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);

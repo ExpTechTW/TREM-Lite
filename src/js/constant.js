@@ -55,6 +55,7 @@ const TREM = {
         "lb-3.exptech.dev",
         "lb-4.exptech.dev",
       ],
+      REPLAY: ["api-2.exptech.dev"],
     },
 
     AUDIO: {
@@ -78,6 +79,8 @@ const TREM = {
     },
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
+
+    EEW_AUTHOR: ["trem"],
   },
 
   variable: {

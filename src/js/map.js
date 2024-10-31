@@ -86,16 +86,50 @@ const map = new maplibregl.Map({
 });
 
 map.on("load", async () => {
-  for (const i of intensityIcons) {
-    const image = await map.loadImage(`../resource/image/intensity-${i}-dark.png`);
-    map.addImage(`intensity-${i}`, image.data);
-  }
+  for (const i of intensityIcons)
+    map.addImage(`intensity-${i}`, (await map.loadImage(`../resource/image/intensity-${i}-dark.png`)).data);
 
-  const gpsImage = await map.loadImage("../resource/image/gps.png");
-  map.addImage("gps", gpsImage.data);
+  map.addImage("gps", (await map.loadImage("../resource/image/gps.png")).data);
 
-  const crossImage = await map.loadImage("../resource/image/cross.png");
-  map.addImage("cross", crossImage.data);
+  map.addImage("cross", (await map.loadImage("../resource/image/cross.png")).data);
+
+  map.addImage("cross1", (await map.loadImage("../resource/image/cross1.png")).data);
+  map.addImage("cross2", (await map.loadImage("../resource/image/cross2.png")).data);
+  map.addImage("cross3", (await map.loadImage("../resource/image/cross3.png")).data);
+  map.addImage("cross4", (await map.loadImage("../resource/image/cross4.png")).data);
+
+  map.addSource("cross-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("markers-geojson-0", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("rts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+
+  map.addLayer({
+    id     : "cross",
+    type   : "symbol",
+    source : "cross-geojson",
+    layout : {
+      "symbol-sort-key" : ["get", "no"],
+      "symbol-z-order"  : "source",
+      "icon-image"      : [
+        "match",
+        ["get", "no"],
+        1, "cross1",
+        2, "cross2",
+        3, "cross3",
+        4, "cross4",
+        "cross",
+      ],
+      "icon-size": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        5, 0.02,
+        10, 0.1,
+      ],
+      "icon-allow-overlap"    : true,
+      "icon-ignore-placement" : true,
+    },
+  });
 
   TREM.variable.map = map;
   TREM.variable.events.emit("MapLoad", map);
