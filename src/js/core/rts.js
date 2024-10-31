@@ -1,13 +1,7 @@
 const TREM = require("../constant");
 
 TREM.variable.events.on("MapLoad", (map) => {
-  map.addSource("rts", {
-    type : "geojson",
-    data : {
-      type     : "FeatureCollection",
-      features : [],
-    },
-  });
+  map.addSource("rts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
 
   map.addLayer({
     id     : "rts-layer",
@@ -38,6 +32,58 @@ TREM.variable.events.on("MapLoad", (map) => {
         12, 8,
       ],
     },
+  });
+
+  map.addSource("markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+
+  map.addLayer({
+    id     : "markers",
+    type   : "symbol",
+    source : "markers-geojson",
+    layout : {
+      "symbol-sort-key" : ["get", "intensity"],
+      "symbol-z-order"  : "source",
+      "icon-image"      : [
+        "match",
+        ["get", "intensity"],
+        1, "intensity-1",
+        2, "intensity-2",
+        3, "intensity-3",
+        4, "intensity-4",
+        5, "intensity-5",
+        6, "intensity-6",
+        7, "intensity-7",
+        8, "intensity-8",
+        9, "intensity-9",
+        10, "cross",
+        "gps",
+      ],
+      "icon-size": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        5, 0.2,
+        10, 0.6,
+      ],
+      "icon-allow-overlap"    : true,
+      "icon-ignore-placement" : true,
+    },
+  });
+
+  map.getSource("markers-geojson").setData({
+    type     : "FeatureCollection",
+    features : [
+      {
+        type     : "Feature",
+        geometry : {
+          type        : "Point",
+          coordinates : [121.5, 25.0],
+        },
+        properties: {
+          intensity: 5,
+        },
+      },
+    ],
   });
 });
 

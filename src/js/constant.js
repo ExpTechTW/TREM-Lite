@@ -105,4 +105,7 @@ const TREM = {
   },
 };
 
+TREM.constant.AUDIO.SHINDO0.volume = 0.4;
+TREM.constant.AUDIO.UPDATE.volume = 0.2;
+
 module.exports = TREM;
