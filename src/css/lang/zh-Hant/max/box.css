@@ -83,4 +83,26 @@
   .current-station-pga-text {
     margin-right: 3;
   }
+
+  .rts-info-box {
+    background-color: #505050c7;
+    color: white;
+    font-size: 11px;
+    border: 2px solid #00000008;
+    border-radius: 5px;
+    z-index: 1000;
+    text-align: center;
+    font-weight: 500;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    width: 65px;
+    margin-top: 5;
+  }
+
+  .rts-info-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
 }

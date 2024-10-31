@@ -50,7 +50,7 @@ body {
 
 .connect {
   position: absolute;
-  left: 33px;
+  left: 68px;
   bottom: 0.3em;
   border-radius: 5px;
   border: 2px solid #00000008;
@@ -92,7 +92,7 @@ html[lang="zh-Hant"] {
 
 .version-check {
   bottom: 0.3em;
-  left: 200px;
+  left: 235px;
   margin: 1px;
   margin-left: 5px;
   position: absolute;

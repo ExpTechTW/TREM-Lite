@@ -2,6 +2,7 @@ const logger = require("../js/utils/logger");
 
 logger.info("App start");
 
+require("../js/nav");
 require("../js/lang");
 require("../js/key");
 require("../js/event");
