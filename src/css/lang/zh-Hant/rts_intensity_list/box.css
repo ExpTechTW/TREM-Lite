@@ -57,7 +57,7 @@
           display: flex;
           background-color: #383838;
           border-radius: 10px;
-          border: 1px solid #272727;
+          border: 1px solid #27272778;
 
           /**震度**/
           .rts-intensity {

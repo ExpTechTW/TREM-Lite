@@ -53,7 +53,7 @@ body {
   bottom: 0.3em;
   border-radius: 5px;
   border: 2px solid #00000008;
-  background-color: #00000075;
+  background-color: #505050c7;
   display: flex;
   align-items: center;
   z-index: 1001;
@@ -95,7 +95,7 @@ html[lang="zh-Hant"] {
   margin: 1px;
   margin-left: 5px;
   position: absolute;
-  background-color: #00000075;
+  background-color: #505050c7;
   width: auto;
   color: white;
   border: 2px solid #00000008;
@@ -171,6 +171,6 @@ html[lang="zh-Hant"] {
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    background: #00000075;
+    background: #505050c7;
   }
 }
