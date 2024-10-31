@@ -6,7 +6,7 @@ const refresh_cross = require("./cross");
 const calculator = new EEWCalculator(require("../../resource/data/time.json"));
 
 TREM.variable.events.on("EewRelease", (ans) => {
-  // if (!TREM.constant.EEW_AUTHOR.includes(ans.data.author)) return;
+  if (!TREM.constant.EEW_AUTHOR.includes(ans.data.author)) return;
 
   TREM.variable.map.addSource(`${ans.data.id}-s-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
   TREM.variable.map.addSource(`${ans.data.id}-p-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
