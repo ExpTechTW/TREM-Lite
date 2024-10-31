@@ -17,6 +17,7 @@ html[lang="zh-Hant"] {
     overflow: hidden;
 
     &:hover {
+      bottom: -8px;
       overflow: scroll;
     }
   }
@@ -27,7 +28,7 @@ html[lang="zh-Hant"] {
     padding-top: 3px;
     position: absolute;
     top: 0px;
-    bottom: -8px;
+    bottom: 10px;
     right: 0px;
     width: 310px;
   }
