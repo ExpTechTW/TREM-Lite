@@ -2,6 +2,7 @@
 @import url("./report/box.css");
 @import url("./max/box.css");
 @import url("./intensity_color/box.css");
+@import url("./rts_intensity_list/box.css");
 @import url("../intensity.css");
 
 body {

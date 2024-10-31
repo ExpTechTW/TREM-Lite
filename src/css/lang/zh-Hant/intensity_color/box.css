@@ -2,12 +2,13 @@
   display: flex;
   height: auto;
   position: absolute;
-  right: 20rem;
-  bottom: 65px;
+  left: 0rem;
+  bottom: 50px;
   align-items: flex-end;
   flex-direction: column;
   flex-wrap: nowrap;
   pointer-events: none;
+  width: 45px;
 
   .intensity-color-list {
     display: flex;
@@ -43,19 +44,14 @@
       }
     }
 
-    li:not(.intensity-num-8) {
+    li {
       padding-left: 18px;
     }
 
-    li:not(.intensity-num-8) span {
+    li span {
       position: absolute;
       left: -10px;
     }
-  }
-
-  .intensity-text {
-    color: #fff;
-    font-size: 12px;
   }
 
   .intensity-num-1 {

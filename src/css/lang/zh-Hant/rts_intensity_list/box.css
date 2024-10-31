@@ -1,0 +1,85 @@
+﻿html[lang="zh-Hant"] {
+  .rts-intenisty-list-text::before {
+    content: "即時震度";
+  }
+}
+
+/**即時震度列表外包**/
+.rts-intensity-list-wrapper {
+  position: absolute;
+  display: flex;
+  bottom: 0;
+  padding-bottom: 60px;
+  max-height: 300px;
+  width: 215px;
+  margin: 8px;
+  right: 19.5rem;
+  min-height: 180px;
+
+  .rts-intensity-list-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    color: white;
+    z-index: 1001;
+
+    .rts-intensity-list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-height: 0;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #0000002b;
+
+      /**標題**/
+      .rts-intenisty-list-text {
+        font-size: 17px;
+        font-weight: 700;
+      }
+
+      /**列表**/
+      .rts-intensity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-height: 0;
+        border-radius: 10px;
+        overflow-y: hidden;
+
+        &:hover {
+          overflow-y: auto;
+        }
+
+        /**物件**/
+        .rts-intensity-item {
+          display: flex;
+          background-color: #0000002e;
+          border-radius: 10px;
+
+          /**震度**/
+          .rts-intensity {
+            width: 44px;
+            height: 23px;
+            border-radius: 10px;
+            font-family: "Open Sans", sans-serif;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          /**位置**/
+          .rts-loc {
+            padding-left: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+          }
+        }
+      }
+    }
+  }
+}
