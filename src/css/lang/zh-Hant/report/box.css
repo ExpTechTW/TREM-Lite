@@ -10,8 +10,9 @@ html[lang="zh-Hant"] {
   top: 0px;
   bottom: -15px;
   right: 0px;
-  width: 310px;
+  width: 340px;
   max-width: 340px;
+  z-index: 1001;
 
   .report-box-items {
     overflow: hidden;
@@ -20,6 +21,17 @@ html[lang="zh-Hant"] {
       bottom: -8px;
       overflow: scroll;
     }
+  }
+
+  .report-list-btn {
+    cursor: pointer;
+    width: 20px;
+    background: #fff;
+    margin-top: 5;
+  }
+
+  .off {
+    transform: scaleX(-1);
   }
 
   .report-box-items {
