@@ -2,6 +2,76 @@
   .rts-intenisty-list-text::before {
     content: "即時震度";
   }
+  .max-intensity-text::before {
+    content: "強震最大震度";
+  }
+  .max-pga-text::before {
+    content: "最大加速度";
+  }
+}
+
+.max-intensity-pga-wrapper {
+  position: absolute;
+  left: 0.3rem;
+  top: 10rem;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  margin-right: 5px;
+  padding: 8px;
+  border-radius: 5px;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+
+.max-station-intensity {
+  height: 85px;
+  width: 85px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 50px;
+  margin-top: 5;
+  border-radius: 12px;
+}
+
+.max-intensity-text {
+  font-size: 14px;
+}
+
+.max-pga {
+  border-radius: 5px;
+  background: #505050c7;
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  text-align: center;
+}
+
+.max-intensity {
+  padding: 8px;
+  border-radius: 5px;
+  background: #505050c7;
+}
+
+.max-station-pga {
+  background-color: #000;
+  border-radius: 0px;
+  font-size: 12px;
+  margin-top: 5;
+  height: 20px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.max-pga-text {
+  font-size: 14px;
 }
 
 /**即時震度列表外包**/
