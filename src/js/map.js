@@ -94,8 +94,6 @@ map.on("load", async () => {
       console.error(`Failed to load intensity-${i} icon:`, error);
     }
 
-
-  // 載入 GPS 圖標
   try {
     const gpsImage = await map.loadImage("../resource/image/gps.png");
     map.addImage("gps", gpsImage.data);
@@ -103,7 +101,6 @@ map.on("load", async () => {
     console.error("Failed to load GPS icon:", error);
   }
 
-  // 載入 cross 圖標
   try {
     const crossImage = await map.loadImage("../resource/image/cross.png");
     map.addImage("cross", crossImage.data);
