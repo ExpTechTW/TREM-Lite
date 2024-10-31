@@ -137,10 +137,12 @@ TREM.variable.events.on("DataRts", (ans) => {
     ).sort((a, b) => b.i - a.i)
       .map(loc => intensity_item(loc.i, loc.name));
 
+    const alert = (!ans.data?.box) ? false : Object.keys(ans.data.box).length;
+
     rts_intensity_list.replaceChildren(...box_list);
 
     max_pga.textContent = `${pga.toFixed(2)} gal`;
-    max_pga.className = `max-station-pga ${(pga < 4) ? "intensity-0" : `intensity-${calculator.pgaToIntensity(pga)}`}`;
+    max_pga.className = `max-station-pga ${(!alert) ? "intensity-0" : `intensity-${calculator.pgaToIntensity(pga)}`}`;
     max_intensity.className = `max-station-intensity intensity-${(ans.data?.int) ? ans.data.int[0].i : 0}`;
   }
 });
