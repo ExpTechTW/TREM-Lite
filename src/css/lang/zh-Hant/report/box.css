@@ -28,7 +28,7 @@ html[lang="zh-Hant"] {
     background-color: #292929;
     color: #fff;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 12px;
 
     /**觀測最大震度**/
     .report-intensity-val {
@@ -40,6 +40,7 @@ html[lang="zh-Hant"] {
       border-radius: 2px;
       font-size: 30px;
       font-weight: bold;
+      border-radius: 12px;
     }
 
     /**震央、時間**/
