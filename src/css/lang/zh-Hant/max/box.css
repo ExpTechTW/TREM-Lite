@@ -74,6 +74,8 @@
   .current-station-loc {
     font-size: 17px;
     font-weight: bold;
+    text-align: start;
+    margin-left: 13px;
   }
 
   .current-station-intensity-text {
