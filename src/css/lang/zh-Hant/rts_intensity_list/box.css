@@ -3,7 +3,7 @@
     content: "震度排序";
   }
   .max-intensity-text::before {
-    content: "強震最大震度";
+    content: "最大震度";
   }
   .max-pga-text::before {
     content: "最大加速度";
@@ -21,6 +21,7 @@
   border-radius: 5px;
   flex-direction: column;
   flex-wrap: wrap;
+  text-align: center;
 }
 
 .max-station-intensity {
@@ -134,7 +135,7 @@
           /**震度**/
           .rts-intensity {
             font-family: "Open Sans", sans-serif;
-            width: 30px;
+            width: 33px;
             height: 30px;
             display: flex;
             align-items: center;

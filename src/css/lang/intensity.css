@@ -12,6 +12,9 @@
   box-sizing: border-box;
   font-size: 14px;
 }
+#max-pga[class*="intensity-"]::after {
+  content: none;
+}
 
 .intensity-0 {
   color: var(--intensity-text-0);
@@ -21,14 +24,6 @@
   &::after {
     content: "0";
   }
-}
-
-#max-pga[class*="intensity-"]::after {
-  content: none;
-}
-
-#max-intensity.intensity-0::after {
-  content: none;
 }
 
 .intensity-1 {

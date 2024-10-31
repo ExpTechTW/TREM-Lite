@@ -91,7 +91,7 @@ html[lang="zh-Hant"] {
 
 .version-check {
   bottom: 0.3em;
-  left: 205px;
+  left: 200px;
   margin: 1px;
   margin-left: 5px;
   position: absolute;
@@ -164,7 +164,7 @@ html[lang="zh-Hant"] {
   .nav-bar-buttons-setting {
     height: 30px;
     width: 30px;
-    border: 1px solid #272727;
+    border: 1px solid #00000008;
     border-radius: 5px;
     display: flex;
     flex-direction: column;
