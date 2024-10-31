@@ -61,6 +61,11 @@ html[lang="zh-Hant"] {
     color: #fff;
     cursor: pointer;
     border-radius: 12px;
+    transition: background-color 0.4s ease;
+
+    &:hover {
+      background-color: #8a8a8ac7;
+    }
 
     /**觀測最大震度**/
     .report-intensity-val {
