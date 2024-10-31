@@ -1,63 +1,43 @@
 const TREM = require("../constant");
+const EEWCalculator = require("../utils/eewCalculator");
+const now = require("../utils/ntp");
 
-TREM.variable.events.on("MapLoad", (map) => {
-  // addEewCircle(map, {
-  //   id     : "eew1",
-  //   status : 1,
-  //   eq     : {
-  //     latitude  : 25.0,
-  //     longitude : 121.5,
-  //   },
-  // });
-});
+const calculator = new EEWCalculator(require("../../resource/data/time.json"));
 
-TREM.variable.events.on("DataEew", (ans) => {
-  console.log(ans.data);
-});
+TREM.variable.events.on("EewRelease", (ans) => {
+  TREM.variable.map.addSource(`${ans.data.id}-s-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
+  TREM.variable.map.addSource(`${ans.data.id}-p-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
 
-function addEewCircle(map, eew) {
-  const center = [eew.eq.longitude, eew.eq.latitude];
-
-  map.addSource(`${eew.id}-s-wave`, {
-    type : "geojson",
-    data : {
-      type     : "FeatureCollection",
-      features : [createCircleFeature(center, 100)],
+  TREM.variable.map.addLayer({
+    id     : `${ans.data.id}-p-wave-outline`,
+    type   : "line",
+    source : `${ans.data.id}-p-wave`,
+    paint  : {
+      "line-color" : TREM.constant.COLOR.EEW.P,
+      "line-width" : 1,
     },
-    tolerance : 0.5,
-    buffer    : 128,
-  });
-
-  map.addSource(`${eew.id}-p-wave`, {
-    type : "geojson",
-    data : {
-      type     : "FeatureCollection",
-      features : [createCircleFeature(center, 150)],
-    },
-    tolerance : 0.5,
-    buffer    : 128,
   });
 
   const color =
-    eew.status == 1
-      ? TREM.constant.COLOR.EEW.S.ALERT
-      : TREM.constant.COLOR.EEW.S.WARN;
+  ans.data.status == 1
+    ? TREM.constant.COLOR.EEW.S.ALERT
+    : TREM.constant.COLOR.EEW.S.WARN;
 
-  map.addLayer({
-    id     : `${eew.id}-s-wave-outline`,
+  TREM.variable.map.addLayer({
+    id     : `${ans.data.id}-s-wave-outline`,
     type   : "line",
-    source : `${eew.id}-s-wave`,
+    source : `${ans.data.id}-s-wave`,
     paint  : {
       "line-color" : color,
       "line-width" : 2,
     },
   });
 
-  map.addLayer(
+  TREM.variable.map.addLayer(
     {
-      id     : `${eew.id}-s-wave-background`,
+      id     : `${ans.data.id}-s-wave-background`,
       type   : "fill",
-      source : `${eew.id}-s-wave`,
+      source : `${ans.data.id}-s-wave`,
       paint  : {
         "fill-color"   : color,
         "fill-opacity" : 0.25,
@@ -65,17 +45,16 @@ function addEewCircle(map, eew) {
     },
     "county",
   );
+});
 
-  map.addLayer({
-    id     : `${eew.id}-p-wave-outline`,
-    type   : "line",
-    source : `${eew.id}-p-wave`,
-    paint  : {
-      "line-color" : TREM.constant.COLOR.EEW.P,
-      "line-width" : 1,
-    },
-  });
-}
+setInterval(() => {
+  for (const eew of TREM.variable.data.eew) {
+    const center = [eew.eq.lon, eew.eq.lat];
+    const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
+    TREM.variable.map.getSource(`${eew.id}-s-wave`).setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.s_dist)] });
+    TREM.variable.map.getSource(`${eew.id}-p-wave`).setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.p_dist)] });
+  }
+}, 100);
 
 function createCircleFeature(center, radius, steps = 256) {
   const coordinates = [[]];
