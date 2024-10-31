@@ -61,3 +61,83 @@ body {
     font-size: 15px;
   }
 }
+
+/**版本號**/
+html[lang="zh-Hant"] {
+  .version-check-text::before {
+    content: "新版本";
+  }
+}
+
+.current-version-view {
+  top: 0.3em;
+  right: 320px;
+  font-size: 15px;
+  position: absolute;
+  color: #fff;
+  opacity: 0.1;
+}
+
+.version-check {
+  bottom: 0.3em;
+  left: 160px;
+  margin: 1px;
+  margin-left: 5px;
+  position: absolute;
+  background-color: #00000075;
+  width: auto;
+  color: white;
+  border: 2px solid #00000008;
+  padding: 3px;
+  border-radius: 5px;
+  z-index: 1000;
+  text-align: center;
+  font-weight: 500;
+  font-size: 13px;
+  min-height: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: space-around;
+
+  .version-check-body {
+    display: flex;
+    justify-content: space-between;
+
+    .version-check-box {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .version-check-text {
+      margin-right: 10px;
+    }
+
+    .current-version {
+      margin-right: 5;
+    }
+
+    .new-version {
+      min-width: 25px;
+      margin-left: 5;
+    }
+  }
+}
+
+.version-check.new {
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease-in-out;
+  animation: new_version 3s infinite;
+}
+
+@keyframes new_version {
+  0% {
+    border-color: transparent;
+  }
+  50% {
+    border-color: #fff900;
+  }
+  100% {
+    border-color: transparent;
+  }
+}
