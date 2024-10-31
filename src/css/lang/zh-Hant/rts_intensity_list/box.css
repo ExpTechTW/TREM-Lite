@@ -1,10 +1,10 @@
 ﻿html[lang="zh-Hant"] {
   .rts-intenisty-list-text::before {
-    content: "震度排序";
+    content: "各地震度排序";
   }
 
   .max-intensity-text::before {
-    content: "最大震度";
+    content: "最大觀測震度";
   }
 
   .max-pga-text::before {
@@ -133,7 +133,7 @@
 
       /**標題**/
       .rts-intenisty-list-text {
-        font-size: 17px;
+        font-size: 14px;
         font-weight: 700;
         text-align: center;
       }

@@ -180,7 +180,7 @@ function updateIntensityHistory(newData, time) {
   return maxIntensities;
 }
 
-function getTopIntensities(intensities, maxCount = 7) {
+function getTopIntensities(intensities, maxCount = 6) {
   if (intensities.length <= maxCount)
     return intensities.map(loc => {
       const name = search_loc_name(loc.code);
