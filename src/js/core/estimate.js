@@ -17,6 +17,7 @@ TREM.variable.events.on("EewEnd", (ans) => {
 });
 
 function updateEewArea(ans) {
+  if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") return;
   eewIntensityArea[ans.data.id] =
     calculator.eewAreaPga(ans.data.eq.lat, ans.data.eq.lon, ans.data.eq.depth, ans.data.eq.mag);
   drawEewArea();
