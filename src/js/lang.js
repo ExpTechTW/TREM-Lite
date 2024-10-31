@@ -4,7 +4,8 @@ function generateColorCSS() {
   let css = ":root {\n";
 
   Object.entries(TREM.constant.COLOR.RTS).forEach(([key, value]) => {
-    css += `  --rts-${key}: ${value};\n`;
+    const cssKey = key.replace("_", "-");
+    css += `  --rts-${cssKey}: ${value};\n`;
   });
 
   Object.entries(TREM.constant.COLOR.INTENSITY).forEach(([key, value]) => {
