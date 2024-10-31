@@ -13,17 +13,17 @@
   .intensity-color-list {
     display: flex;
     flex-direction: column-reverse;
-    height: 200px;
+    height: 250px;
 
     li {
       display: flex;
       margin: 0 0 0 30px;
       position: relative;
       height: 100%;
-      color: #fff;
+      color: #ffffff91;
       font-size: 13px;
 
-      span {
+      .color {
         font-size: 0;
         width: 10px;
         height: 100%;
@@ -36,7 +36,7 @@
           content: "";
           width: 5px;
           height: 1px;
-          background-color: #ffffff;
+          background-color: #ffffff91;
           position: absolute;
           top: 0px;
           right: -6px;
@@ -48,7 +48,7 @@
       padding-left: 18px;
     }
 
-    li span {
+    li .color {
       position: absolute;
       left: -10px;
     }
@@ -82,37 +82,54 @@
     order: 10;
   }
 
-  .intensity-num-0 span {
-    background: linear-gradient(#0fb02b, #71a2cb 40%, #90b3ca 80%, #97b7cc);
+  .intensity-num-8 {
+    order: 11;
+  }
+
+  .intensity-num-9 {
+    order: 12;
+  }
+
+  .intensity-num-1 .color {
+    background: linear-gradient(
+      var(--intensity-1),
+      var(--intensity-0) 80%,
+      var(--intensity-0) 40%,
+      var(--intensity-0)
+    );
     border-bottom: solid 1px #2b2b2b;
   }
 
-  .intensity-num-1 span {
-    background: linear-gradient(#fbc300 20%, #0fb02b);
+  .intensity-num-2 .color {
+    background: linear-gradient(var(--intensity-2), var(--intensity-1));
   }
 
-  .intensity-num-2 span {
-    background: linear-gradient(#f90, #fbc300);
+  .intensity-num-3 .color {
+    background: linear-gradient(var(--intensity-3), var(--intensity-2));
   }
 
-  .intensity-num-3 span {
-    background: linear-gradient(#ff6200, #f90);
+  .intensity-num-4 .color {
+    background: linear-gradient(var(--intensity-4), var(--intensity-3));
   }
 
-  .intensity-num-4 span {
-    background: linear-gradient(#f53605, #ff6200);
+  .intensity-num-5 .color {
+    background: linear-gradient(var(--intensity-5), var(--intensity-4));
   }
 
-  .intensity-num-5 span {
-    background: linear-gradient(#f11520, #f53605);
+  .intensity-num-6 .color {
+    background: linear-gradient(var(--intensity-6), var(--intensity-5));
   }
 
-  .intensity-num-6 span {
-    background: linear-gradient(#e30071, #f11520);
+  .intensity-num-7 .color {
+    background: linear-gradient(var(--intensity-7), var(--intensity-6));
   }
 
-  .intensity-num-7 span {
-    background: linear-gradient(#b600d7, #e30071);
+  .intensity-num-8 .color {
+    background: linear-gradient(var(--intensity-8), var(--intensity-7));
+  }
+
+  .intensity-num-9 .color {
+    background: linear-gradient(var(--intensity-9), var(--intensity-8));
     border-top: solid 1px #2b2b2b;
   }
 }
