@@ -1,5 +1,7 @@
 const TREM = require("../constant");
 
+const now = require("../utils/ntp");
+
 const http = require("./http");
 const file = require("./file");
 
@@ -18,7 +20,7 @@ setInterval(async () => {
     if (local_now - last_fetch_time < 1000) return;
     last_fetch_time = local_now;
 
-    const data = await http((TREM.variable.play_mode == 0) ? null : local_now);
+    const data = await http((TREM.variable.play_mode == 0) ? null : now());
     TREM.variable.data.rts = data.rts;
     TREM.variable.data.eew = data.eew;
 
@@ -34,5 +36,7 @@ setInterval(async () => {
       },
       data: data.eew,
     });
+
+    if (data.rts) TREM.variable.cache.last_data_time = local_now;
   }
 }, 0);

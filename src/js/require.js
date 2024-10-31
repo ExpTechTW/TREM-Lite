@@ -11,3 +11,4 @@ require("../js/data/data");
 require("../js/core/resource");
 require("../js/core/rts");
 require("../js/core/eew");
+require("../js/core/loop");
