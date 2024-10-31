@@ -2,6 +2,8 @@ const TREM = require("../constant");
 
 const maplibregl = require("maplibre-gl");
 
+const focus_button = document.getElementById("focus");
+
 let lock = false;
 
 setInterval(focus, 3000);
@@ -15,16 +17,24 @@ TREM.variable.events.on("EewEnd", focus);
 TREM.variable.events.on("MapLoad", (map) => {
   TREM.variable.map.on("click", (e) => {
     lock = true;
-    console.log(1);
+    focus_button.style.color = "red";
   });
   TREM.variable.map.on("movestart", (e) => {
     lock = true;
-    console.log(1);
+    focus_button.style.color = "red";
   });
   TREM.variable.map.on("contextmenu", (e) => {
     lock = false;
-    console.log(2);
+    focus_button.style.color = "white";
   });
+});
+
+focus_button.addEventListener("click", () => {
+  TREM.variable.map.flyTo({ center: [121.6, 23.5], zoom: 6.8, duration: 0 });
+  setTimeout(() => {
+    lock = false;
+    focus_button.style.color = "white";
+  }, 100);
 });
 
 function focus() {
