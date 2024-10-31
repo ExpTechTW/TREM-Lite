@@ -88,7 +88,7 @@ const TREM = {
       rts       : null,
       intensity : null,
       report    : null,
-      eew       : null,
+      eew       : [],
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode : 2,

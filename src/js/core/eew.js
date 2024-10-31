@@ -12,7 +12,7 @@ TREM.variable.events.on("MapLoad", (map) => {
 });
 
 TREM.variable.events.on("DataEew", (ans) => {
-
+  console.log(ans.data);
 });
 
 function addEewCircle(map, eew) {
