@@ -1,3 +1,5 @@
+const region = require("../../resource/data/region.json");
+
 function distance(latA, lngA) {
   return function(latB, lngB) {
     latA = latA * Math.PI / 180;
@@ -24,28 +26,20 @@ function formatTime(timestamp) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-function search_loc_name(global_data, int) {
-  for (const city of Object.keys(global_data.region))
-    for (const town of Object.keys(global_data.region[city]))
-      if (global_data.region[city][town].code == int)
-        return `${city}${town}`;
-  return undefined;
+function search_loc_name(int) {
+  for (const city of Object.keys(region))
+    for (const town of Object.keys(region[city]))
+      if (region[city][town].code == int)
+        return { city, town };
+  return null;
 }
 
-function search_loc_code(global_data, str) {
-  for (const city of Object.keys(global_data.region))
-    for (const town of Object.keys(global_data.region[city]))
+function search_loc_code(str) {
+  for (const city of Object.keys(region))
+    for (const town of Object.keys(region[city]))
       if (`${city}${town}` == str)
-        return global_data.region[city][town].code;
-  return undefined;
-}
-
-function includes_search_loc_code(global_data, str) {
-  for (const city of Object.keys(global_data.region))
-    for (const town of Object.keys(global_data.region[city]))
-      if (str.includes(`${city}${town}`))
-        return global_data.region[city][town].code;
-  return undefined;
+        return region[city][town].code;
+  return null;
 }
 
 function formatTimestamp(Timestamp) {
@@ -65,6 +59,5 @@ module.exports = {
   formatTimestamp,
   search_loc_name,
   search_loc_code,
-  includes_search_loc_code,
   intensity_float_to_int,
 };

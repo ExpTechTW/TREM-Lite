@@ -163,7 +163,6 @@ function createCircleFeature(center, radius, steps = 256) {
 }
 
 function removeEewLayersAndSources(eewId) {
-  console.log(123);
   const layerIds = [
     `${eewId}-p-wave-outline`,
     `${eewId}-s-wave-outline`,

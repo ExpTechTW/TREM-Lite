@@ -1,6 +1,6 @@
 ﻿html[lang="zh-Hant"] {
   .rts-intenisty-list-text::before {
-    content: "即時震度";
+    content: "震度排序";
   }
 }
 

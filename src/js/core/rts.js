@@ -1,6 +1,10 @@
 const TREM = require("../constant");
 
-const { intensity_float_to_int } = require("../utils/utils");
+const { intensity_float_to_int, search_loc_name } = require("../utils/utils");
+
+const rts_intensity_list = document.getElementById("rts-intensity-list");
+
+const int_cache_list = {};
 
 TREM.variable.events.on("MapLoad", (map) => {
   map.addLayer({
@@ -117,4 +121,75 @@ TREM.variable.events.on("DataRts", (ans) => {
       TREM.variable.map.getSource("markers-geojson").setData({ type: "FeatureCollection", features: data_alert_list });
       TREM.variable.map.getSource("markers-geojson-0").setData({ type: "FeatureCollection", features: data_alert_0_list });
     }
+
+  const box_list = getTopIntensities(
+    updateIntensityHistory(ans.data.int),
+  ).sort((a, b) => b.i - a.i)
+    .map(loc => intensity_item(loc.i, loc.name));
+
+  rts_intensity_list.replaceChildren(...box_list);
 });
+
+function updateIntensityHistory(newData) {
+  for (const int of newData) {
+    if (!int_cache_list[int.code])
+      int_cache_list[int.code] = [];
+
+    int_cache_list[int.code].push(int.i);
+
+    if (int_cache_list[int.code].length > 60)
+      int_cache_list[int.code].shift();
+  }
+
+  const maxIntensities = Object.entries(int_cache_list).map(([code, values]) => ({
+    code : code,
+    i    : Math.max(...values),
+  }));
+
+  return maxIntensities;
+}
+
+function getTopIntensities(intensities, maxCount = 8) {
+  if (intensities.length <= maxCount)
+    return intensities.map(loc => {
+      const name = search_loc_name(loc.code);
+      return {
+        i    : loc.i,
+        name : name ? `${name.city}${name.town}` : "",
+      };
+    });
+
+
+  const cityGroups = new Map();
+  intensities.forEach(loc => {
+    const name = search_loc_name(loc.code);
+    if (!name) return;
+
+    const current = cityGroups.get(name.city);
+    if (!current || loc.i > current.i)
+      cityGroups.set(name.city, {
+        i    : loc.i,
+        name : name.city,
+      });
+
+  });
+
+  return Array.from(cityGroups.values())
+    .sort((a, b) => b.i - a.i)
+    .slice(0, maxCount);
+}
+
+function intensity_item(i, loc) {
+  const box = document.createElement("div");
+  box.className = "rts-intensity-item";
+
+  const intensity = document.createElement("div");
+  intensity.className = `rts-intensity intensity-${i}`;
+
+  const location = document.createElement("div");
+  location.className = "rts-loc";
+  location.textContent = loc;
+
+  box.append(intensity, location);
+  return box;
+}
