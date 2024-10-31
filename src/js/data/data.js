@@ -75,16 +75,18 @@ function EEWData(newData = []) {
 
           TREM.variable.data.eew[existingIndex] = data;
         }
-      } else {
-        TREM.variable.data.eew.push(data);
+      } else
+        if (TREM.constant.EEW_AUTHOR.includes(data.author)) {
+          TREM.variable.data.eew.push(data);
 
-        TREM.variable.events.emit("EewRelease", {
-          info: {
-            type: TREM.variable.play_mode,
-          },
-          data: data,
-        });
-      }
+          TREM.variable.events.emit("EewRelease", {
+            info: {
+              type: TREM.variable.play_mode,
+            },
+            data: data,
+          });
+        }
+
     } else if (data.EewEnd) {
       const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);
       if (existingIndex !== -1) {
