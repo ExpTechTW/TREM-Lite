@@ -40,19 +40,21 @@ setInterval(async () => {
 }, 0);
 
 function EEWData(newData = []) {
-  const currentTime = Date.now();
+  const currentTime = now();
   const EXPIRY_TIME = 240 * 1000;
 
   TREM.variable.data.eew = TREM.variable.data.eew.filter(item => item.eq && item.eq.time && (currentTime - item.eq.time <= EXPIRY_TIME));
 
   newData.forEach(data => {
-    const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);
+    if (currentTime - data.eq.time <= EXPIRY_TIME) {
+      const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);
 
-    if (existingIndex !== -1) {
-      if (data.serial > TREM.variable.data.eew[existingIndex].serial)
-        TREM.variable.data.eew[existingIndex] = data;
-    } else
-      TREM.variable.data.eew.push(data);
+      if (existingIndex !== -1) {
+        if (data.serial > TREM.variable.data.eew[existingIndex].serial)
+          TREM.variable.data.eew[existingIndex] = data;
+      } else
+        TREM.variable.data.eew.push(data);
+    }
   });
 
   TREM.variable.events.emit("DataEew", {
