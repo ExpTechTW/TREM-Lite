@@ -2,9 +2,11 @@
   .rts-intenisty-list-text::before {
     content: "震度排序";
   }
+
   .max-intensity-text::before {
     content: "最大震度";
   }
+
   .max-pga-text::before {
     content: "最大加速度";
   }
@@ -106,7 +108,7 @@
   display: flex;
   bottom: 5px;
   max-height: 300px;
-  width: 180px;
+  width: 145px;
   margin-right: 8px;
   right: 19.5rem;
   min-height: 180px;
@@ -125,7 +127,7 @@
       flex-direction: column;
       gap: 5px;
       min-height: 0;
-      padding: 10px;
+      padding: 6px;
       border-radius: 5px;
       background-color: #505050c7;
 
@@ -159,23 +161,27 @@
           /**震度**/
           .rts-intensity {
             font-family: "Open Sans", sans-serif;
-            width: 33px;
-            height: 30px;
+            width: 24px;
+            min-width: 24px;
+            min-height: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             border-radius: 5px;
           }
 
           /**位置**/
           .rts-loc {
-            padding-left: 10px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             display: flex;
             align-items: center;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
           }
         }
       }

@@ -55,7 +55,7 @@ TREM.variable.events.on("EewAlert", (ans) => {
   if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-background`)) TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
 
   const color = (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? TREM.constant.COLOR.TREM.S :
-    TREM.constant.COLOR.EEW.S.WARN;
+    TREM.constant.COLOR.EEW.S.ALERT;
 
   TREM.variable.map.addLayer({
     id     : `${ans.data.id}-s-wave-outline`,
