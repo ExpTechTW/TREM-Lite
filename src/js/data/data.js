@@ -43,17 +43,42 @@ function EEWData(newData = []) {
   const currentTime = now();
   const EXPIRY_TIME = 240 * 1000;
 
-  TREM.variable.data.eew = TREM.variable.data.eew.filter(item => item.eq && item.eq.time && (currentTime - item.eq.time <= EXPIRY_TIME));
+  TREM.variable.data.eew = TREM.variable.data.eew.filter(item =>
+    item.eq &&
+           item.eq.time &&
+           (currentTime - item.eq.time <= EXPIRY_TIME + 1000) &&
+           !item.EewEnd,
+  );
 
   newData.forEach(data => {
-    if (currentTime - data.eq.time <= EXPIRY_TIME) {
+    if (currentTime - data.eq.time <= EXPIRY_TIME && !data.EewEnd) {
       const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);
 
       if (existingIndex !== -1) {
         if (data.serial > TREM.variable.data.eew[existingIndex].serial)
           TREM.variable.data.eew[existingIndex] = data;
-      } else
+
+      } else {
         TREM.variable.data.eew.push(data);
+
+        TREM.variable.events.emit("EewRelease", {
+          info: {
+            type: TREM.variable.play_mode,
+          },
+          data: data,
+        });
+      }
+    } else if (data.EewEnd) {
+      const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);
+      if (existingIndex !== -1) {
+        TREM.variable.data.eew.splice(existingIndex, 1);
+        TREM.variable.events.emit("EewEnd", {
+          info: {
+            type: TREM.variable.play_mode,
+          },
+          data: data,
+        });
+      }
     }
   });
 
