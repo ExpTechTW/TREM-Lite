@@ -8,11 +8,11 @@
 .rts-intensity-list-wrapper {
   position: absolute;
   display: flex;
-  bottom: 0;
+  bottom: 0px;
   padding-bottom: 60px;
   max-height: 300px;
   width: 215px;
-  margin: 8px;
+  margin-right: 8px;
   right: 19.5rem;
   min-height: 180px;
 

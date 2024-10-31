@@ -160,17 +160,17 @@ html[lang="zh-Hant"] {
   position: absolute;
   color: #fff;
   cursor: pointer;
-}
 
-.nav-bar-buttons-setting {
-  height: 30px;
-  width: 30px;
-  border: 1px solid #272727;
-  border-radius: 5px;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  background: #00000075;
+  .nav-bar-buttons-setting {
+    height: 30px;
+    width: 30px;
+    border: 1px solid #272727;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    background: #00000075;
+  }
 }
