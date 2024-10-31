@@ -86,27 +86,16 @@ const map = new maplibregl.Map({
 });
 
 map.on("load", async () => {
-  for (const i of intensityIcons)
-    try {
-      const image = await map.loadImage(`../resource/image/intensity-${i}-dark.png`);
-      map.addImage(`intensity-${i}`, image.data);
-    } catch (error) {
-      console.error(`Failed to load intensity-${i} icon:`, error);
-    }
-
-  try {
-    const gpsImage = await map.loadImage("../resource/image/gps.png");
-    map.addImage("gps", gpsImage.data);
-  } catch (error) {
-    console.error("Failed to load GPS icon:", error);
+  for (const i of intensityIcons) {
+    const image = await map.loadImage(`../resource/image/intensity-${i}-dark.png`);
+    map.addImage(`intensity-${i}`, image.data);
   }
 
-  try {
-    const crossImage = await map.loadImage("../resource/image/cross.png");
-    map.addImage("cross", crossImage.data);
-  } catch (error) {
-    console.error("Failed to load cross icon:", error);
-  }
+  const gpsImage = await map.loadImage("../resource/image/gps.png");
+  map.addImage("gps", gpsImage.data);
+
+  const crossImage = await map.loadImage("../resource/image/cross.png");
+  map.addImage("cross", crossImage.data);
 
   TREM.variable.map = map;
   TREM.variable.events.emit("MapLoad", map);

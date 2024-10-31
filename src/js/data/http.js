@@ -9,8 +9,8 @@ module.exports = async (time) => {
 
   let rts = null, eew = null;
 
-  if (rts_ans) rts = await rts_ans.json();
-  if (eew_ans) eew = await eew_ans.json();
+  if (rts_ans && rts_ans.ok) rts = await rts_ans.json();
+  if (eew_ans && eew_ans.ok) eew = await eew_ans.json();
 
   return { rts, eew };
 };

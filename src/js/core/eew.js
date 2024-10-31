@@ -1,17 +1,19 @@
 const TREM = require("../constant");
 
 TREM.variable.events.on("MapLoad", (map) => {
-  addEewCircle(map, {
-    id     : "eew1",
-    status : 1,
-    eq     : {
-      latitude  : 25.0,
-      longitude : 121.5,
-    },
-  });
+  // addEewCircle(map, {
+  //   id     : "eew1",
+  //   status : 1,
+  //   eq     : {
+  //     latitude  : 25.0,
+  //     longitude : 121.5,
+  //   },
+  // });
 });
 
-TREM.variable.events.on("DataEew", (ans) => {});
+TREM.variable.events.on("DataEew", (ans) => {
+
+});
 
 function addEewCircle(map, eew) {
   const center = [eew.eq.longitude, eew.eq.latitude];

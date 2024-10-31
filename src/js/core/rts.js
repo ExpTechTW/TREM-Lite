@@ -1,5 +1,7 @@
 const TREM = require("../constant");
 
+const { intensity_float_to_int } = require("../utils/utils");
+
 TREM.variable.events.on("MapLoad", (map) => {
   map.addSource("rts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
 
@@ -34,6 +36,24 @@ TREM.variable.events.on("MapLoad", (map) => {
     },
   });
 
+  map.addSource("markers-geojson-0", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+
+  map.addLayer({
+    id     : "markers-0",
+    type   : "circle",
+    source : "markers-geojson-0",
+    paint  : {
+      "circle-color"  : TREM.constant.COLOR.INTENSITY[0],
+      "circle-radius" : [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        4, 2,
+        12, 8,
+      ],
+    },
+  });
+
   map.addSource("markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
 
   map.addLayer({
@@ -41,11 +61,11 @@ TREM.variable.events.on("MapLoad", (map) => {
     type   : "symbol",
     source : "markers-geojson",
     layout : {
-      "symbol-sort-key" : ["get", "intensity"],
+      "symbol-sort-key" : ["get", "i"],
       "symbol-z-order"  : "source",
       "icon-image"      : [
         "match",
-        ["get", "intensity"],
+        ["get", "i"],
         1, "intensity-1",
         2, "intensity-2",
         3, "intensity-3",
@@ -69,44 +89,38 @@ TREM.variable.events.on("MapLoad", (map) => {
       "icon-ignore-placement" : true,
     },
   });
-
-  map.getSource("markers-geojson").setData({
-    type     : "FeatureCollection",
-    features : [
-      {
-        type     : "Feature",
-        geometry : {
-          type        : "Point",
-          coordinates : [121.5, 25.0],
-        },
-        properties: {
-          intensity: 5,
-        },
-      },
-    ],
-  });
 });
 
 TREM.variable.events.on("DataRts", (ans) => {
   const data_list = [];
+  const data_alert_0_list = [];
+  const data_alert_list = [];
 
   if (!TREM.variable.station) return;
 
-  for (const id of Object.keys(ans.data.station)) {
-    const station_info = TREM.variable.station[id];
-    if (!station_info) continue;
-    const station_location = station_info.info.at(-1);
-    data_list.push({
-      type     : "Feature",
-      geometry : {
-        type        : "Point",
-        coordinates : [station_location.lon, station_location.lat],
-      },
-      properties: {
-        i: ans.data.station[id].i,
-      },
-    });
+  if (ans.data) {
+    const alert = Object.keys(ans.data.box).length;
+
+    for (const id of Object.keys(ans.data.station)) {
+      const station_info = TREM.variable.station[id];
+      if (!station_info) continue;
+      const station_location = station_info.info.at(-1);
+
+      if (alert && ans.data.station[id].alert) {
+        const I = intensity_float_to_int(ans.data.station[id].I);
+        if (I > 0)
+          data_alert_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
+        else if (TREM.variable.data.eew)
+          data_alert_0_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: {} });
+      } else if (!TREM.variable.data.eew)
+        data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: ans.data.station[id].i } });
+    }
   }
 
-  if (TREM.variable.map) TREM.variable.map.getSource("rts").setData({ type: "FeatureCollection", features: data_list });
+  if (ans.data || (Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR)
+    if (TREM.variable.map) {
+      TREM.variable.map.getSource("rts").setData({ type: "FeatureCollection", features: data_list });
+      TREM.variable.map.getSource("markers-geojson").setData({ type: "FeatureCollection", features: data_alert_list });
+      TREM.variable.map.getSource("markers-geojson-0").setData({ type: "FeatureCollection", features: data_alert_0_list });
+    }
 });

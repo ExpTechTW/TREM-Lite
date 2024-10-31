@@ -1,11 +1,3 @@
-function parseJSON(jsonString) {
-  try {
-    return JSON.parse(jsonString);
-  } catch (err) {
-    return null;
-  }
-}
-
 function distance(latA, lngA) {
   return function(latB, lngB) {
     latA = latA * Math.PI / 180;
@@ -63,27 +55,16 @@ function formatTimestamp(Timestamp) {
   return `${hours}:${minutes}`;
 }
 
-async function fetchData(Logger, url, timeout = 1000) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    if (error.name === "AbortError") Logger.error(`[fetchData] => time out | ${url}`);
-    else Logger.error(`[fetchData] => fetch error: ${error.message} | ${url}`);
-    return null;
-  }
+function intensity_float_to_int(float) {
+  return float < 0 ? 0 : float < 4.5 ? Math.round(float) : float < 5 ? 5 : float < 5.5 ? 6 : float < 6 ? 7 : float < 6.5 ? 8 : 9;
 }
 
 module.exports = {
-  parseJSON,
   formatTime,
   distance,
   formatTimestamp,
   search_loc_name,
-  fetchData,
   search_loc_code,
   includes_search_loc_code,
+  intensity_float_to_int,
 };

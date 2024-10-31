@@ -76,6 +76,8 @@ const TREM = {
       RTS      : 1500,
       EEW      : 1500,
     },
+
+    LAST_DATA_TIMEOUT_ERROR: 3000,
   },
 
   variable: {
@@ -89,8 +91,12 @@ const TREM = {
       eew       : null,
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
-    play_mode : 0,
-    station   : null,
+    play_mode : 2,
+    replay    : {
+      start_time : 1730024511712,
+      local_time : 0,
+    },
+    station: null,
 
     // 不要動下方的東西
     cache: {
