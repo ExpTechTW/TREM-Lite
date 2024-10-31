@@ -13,3 +13,4 @@ require("../js/core/rts");
 require("../js/core/eew");
 require("../js/core/loop");
 require("../js/core/estimate");
+require("../js/core/audio");
