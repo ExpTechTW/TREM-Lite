@@ -1,10 +1,10 @@
 html[lang="zh-Hant"] {
   .info-number-no {
-    &::before {
+    &:not(:empty)::before {
       content: "第";
     }
 
-    &::after {
+    &:not(:empty)::after {
       content: "報";
     }
   }
@@ -92,6 +92,14 @@ html[lang="zh-Hant"] {
     }
   }
 
+  /**沒有速報時隱藏**/
+  .no_eew {
+    .info-box,
+    .info-footer {
+      display: none !important;
+    }
+  }
+
   /**body主體**/
   .info-body-wrapper {
     display: flex;
@@ -100,6 +108,7 @@ html[lang="zh-Hant"] {
     border-radius: 10px;
     background-color: #383838;
     padding: 8px;
+    min-height: 93px;
 
     /**body內包**/
     .info-box {
