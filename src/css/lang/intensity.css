@@ -18,7 +18,7 @@
   background-color: var(--intensity-0);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "0";
   }
 }
@@ -28,7 +28,7 @@
   background-color: var(--intensity-1);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "1";
   }
 }
@@ -38,7 +38,7 @@
   background-color: var(--intensity-2);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "2";
   }
 }
@@ -48,7 +48,7 @@
   background-color: var(--intensity-3);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "3";
   }
 }
@@ -58,7 +58,7 @@
   background-color: var(--intensity-4);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "4";
   }
 }
@@ -68,7 +68,7 @@
   background-color: var(--intensity-5);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "5⁻";
   }
 }
@@ -78,7 +78,7 @@
   background-color: var(--intensity-6);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "5⁺";
   }
 }
@@ -88,7 +88,7 @@
   background-color: var(--intensity-7);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "6⁻";
   }
 }
@@ -98,7 +98,7 @@
   background-color: var(--intensity-8);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "6⁺";
   }
 }
@@ -108,7 +108,7 @@
   background-color: var(--intensity-9);
   box-sizing: border-box;
 
-  &:empty::after {
+  &::after {
     content: "7";
   }
 }

@@ -31,7 +31,7 @@
       min-height: 0;
       padding: 10px;
       border-radius: 5px;
-      background-color: #0000002b;
+      background-color: #505050c7;
 
       /**標題**/
       .rts-intenisty-list-text {
@@ -55,7 +55,7 @@
         /**物件**/
         .rts-intensity-item {
           display: flex;
-          background-color: #0000002e;
+          background-color: #383838;
           border-radius: 10px;
           border: 1px solid #272727;
 
