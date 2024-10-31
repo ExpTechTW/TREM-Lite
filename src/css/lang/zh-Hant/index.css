@@ -112,10 +112,10 @@ html[lang="zh-Hant"] {
   font-weight: 500;
   font-size: 13px;
   min-height: 20px;
-  display: flex;
   flex-direction: column;
   flex-wrap: wrap;
   justify-content: space-around;
+  display: none;
 
   .version-check-body {
     display: flex;
@@ -145,6 +145,7 @@ html[lang="zh-Hant"] {
   border: 2px solid transparent;
   transition: border-color 0.3s ease-in-out;
   animation: new_version 3s infinite;
+  display: flex;
 }
 
 @keyframes new_version {
