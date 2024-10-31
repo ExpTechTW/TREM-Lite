@@ -88,6 +88,11 @@ html[lang="zh-Hant"] {
   position: absolute;
   color: #fff;
   opacity: 0.1;
+  transition: transform 0.6s ease;
+}
+
+.report-wrapper.hidden ~ .current-version-view {
+  transform: translateX(420%);
 }
 
 .version-check {
