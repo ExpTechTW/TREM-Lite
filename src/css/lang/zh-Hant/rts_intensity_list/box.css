@@ -12,13 +12,11 @@
 
 .max-intensity-pga-wrapper {
   position: absolute;
-  left: 0.3rem;
   top: 10rem;
   color: white;
   font-size: 11px;
   font-weight: 500;
   display: flex;
-  margin-right: 5px;
   padding: 8px;
   border-radius: 5px;
   flex-direction: column;
@@ -143,7 +141,7 @@
 
           /**位置**/
           .rts-loc {
-            padding-left: 25px;
+            padding-left: 27px;
             font-size: 13px;
             font-weight: 500;
             display: flex;
