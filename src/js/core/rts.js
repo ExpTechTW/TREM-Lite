@@ -115,35 +115,50 @@ TREM.variable.events.on("DataRts", (ans) => {
     }
   }
 
-  if (ans.data || (Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR)
+  if (ans.data || (Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) {
     if (TREM.variable.map) {
       TREM.variable.map.getSource("rts").setData({ type: "FeatureCollection", features: data_list });
       TREM.variable.map.getSource("markers-geojson").setData({ type: "FeatureCollection", features: data_alert_list });
       TREM.variable.map.getSource("markers-geojson-0").setData({ type: "FeatureCollection", features: data_alert_0_list });
     }
 
-  const box_list = getTopIntensities(
-    updateIntensityHistory(ans.data.int),
-  ).sort((a, b) => b.i - a.i)
-    .map(loc => intensity_item(loc.i, loc.name));
+    const box_list = getTopIntensities(
+      updateIntensityHistory(ans.data.int, ans.data.time),
+    ).sort((a, b) => b.i - a.i)
+      .map(loc => intensity_item(loc.i, loc.name));
 
-  rts_intensity_list.replaceChildren(...box_list);
+    rts_intensity_list.replaceChildren(...box_list);
+  }
 });
 
-function updateIntensityHistory(newData) {
+function updateIntensityHistory(newData, time) {
+  const updatedCodes = new Set();
+
   for (const int of newData) {
+    updatedCodes.add(int.code);
+
     if (!int_cache_list[int.code])
-      int_cache_list[int.code] = [];
+      int_cache_list[int.code] = {
+        values     : [],
+        lastUpdate : time,
+      };
 
-    int_cache_list[int.code].push(int.i);
+    int_cache_list[int.code].values.push(int.i);
+    int_cache_list[int.code].lastUpdate = time;
 
-    if (int_cache_list[int.code].length > 60)
-      int_cache_list[int.code].shift();
+    if (int_cache_list[int.code].values.length > 30)
+      int_cache_list[int.code].values.shift();
   }
 
-  const maxIntensities = Object.entries(int_cache_list).map(([code, values]) => ({
+  const cutoff = time - 30000;
+  Object.keys(int_cache_list).forEach(code => {
+    if (int_cache_list[code].lastUpdate < cutoff)
+      delete int_cache_list[code];
+  });
+
+  const maxIntensities = Object.entries(int_cache_list).map(([code, data]) => ({
     code : code,
-    i    : Math.max(...values),
+    i    : Math.max(...data.values),
   }));
 
   return maxIntensities;
