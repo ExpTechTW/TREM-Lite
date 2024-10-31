@@ -14,13 +14,13 @@
   bottom: 0px;
   color: white;
   font-size: 11px;
-  padding: 3px;
   font-weight: 500;
   width: 220px;
   height: 55px;
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
+  margin: 5px;
 
   #max-station-pga,
   #current-station-pga {

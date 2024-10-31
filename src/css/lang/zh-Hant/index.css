@@ -19,11 +19,12 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 0px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-button {
   background: transparent;
+
   border-radius: 4px;
 }
 
@@ -33,6 +34,8 @@ body {
 
 ::-webkit-scrollbar-thumb {
   border-radius: 4px;
+  background-color: rgb(0 0 0 / 40%);
+  border: 1px solid #393939;
 }
 
 ::-webkit-scrollbar-track {

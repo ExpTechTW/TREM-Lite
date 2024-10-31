@@ -12,12 +12,24 @@ html[lang="zh-Hant"] {
   right: 0px;
   width: 310px;
   max-width: 340px;
-  overflow: scroll;
+
+  .report-box-items {
+    overflow: hidden;
+
+    &:hover {
+      overflow: scroll;
+    }
+  }
 
   .report-box-items {
     background-color: #464646;
     padding: 3px;
     padding-top: 3px;
+    position: absolute;
+    top: 0px;
+    bottom: -8px;
+    right: 0px;
+    width: 310px;
   }
 
   /**盒容器**/
