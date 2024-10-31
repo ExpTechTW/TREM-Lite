@@ -54,6 +54,7 @@ html[lang="zh-Hant"] {
   color: white;
   z-index: 1001;
   min-width: 20rem;
+  border-radius: 5px;
 
   /**發報標題**/
   .info-title {
