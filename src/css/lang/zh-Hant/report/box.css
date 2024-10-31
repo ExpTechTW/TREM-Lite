@@ -5,6 +5,10 @@ html[lang="zh-Hant"] {
 }
 
 /**最外包**/
+.report-wrapper.hidden {
+  translate: 93%;
+}
+
 .report-wrapper {
   position: absolute;
   top: 0px;
@@ -13,6 +17,9 @@ html[lang="zh-Hant"] {
   width: 340px;
   max-width: 340px;
   z-index: 1001;
+  transition-property: opacity, translate;
+  transition-duration: 0.2s;
+  transition-timing-function: cubic-bezier(0.3, 0, 0.8, 0.15);
 
   .report-box-items {
     overflow: hidden;
