@@ -90,6 +90,8 @@ TREM.variable.events.on("DataRts", (ans) => {
 
   if (!TREM.variable.station) return;
 
+  const eew_alert = TREM.variable.data.eew.some(item => item.author != "trem");
+
   if (ans.data) {
     const alert = Object.keys(ans.data.box).length;
 
@@ -104,7 +106,7 @@ TREM.variable.events.on("DataRts", (ans) => {
           data_alert_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
         else if (TREM.variable.data.eew)
           data_alert_0_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: {} });
-      } else if (!TREM.variable.data.eew.length)
+      } else if (!eew_alert)
         data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: ans.data.station[id].i } });
     }
   }

@@ -5,6 +5,8 @@ const refresh_cross = require("./cross");
 
 const calculator = new EEWCalculator(require("../../resource/data/time.json"));
 
+let flash = false;
+
 TREM.variable.events.on("EewRelease", (ans) => {
   TREM.variable.map.addSource(`${ans.data.id}-s-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
   TREM.variable.map.addSource(`${ans.data.id}-p-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
@@ -15,14 +17,14 @@ TREM.variable.events.on("EewRelease", (ans) => {
     source : `${ans.data.id}-p-wave`,
     paint  : {
       "line-color" : TREM.constant.COLOR.EEW.P,
-      "line-width" : 1,
+      "line-width" : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? 0.2 : 1,
     },
   });
 
-  const color =
-  ans.data.status == 1
-    ? TREM.constant.COLOR.EEW.S.ALERT
-    : TREM.constant.COLOR.EEW.S.WARN;
+  const color = (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? TREM.constant.COLOR.TREM.S :
+    ans.data.status == 1
+      ? TREM.constant.COLOR.EEW.S.ALERT
+      : TREM.constant.COLOR.EEW.S.WARN;
 
   TREM.variable.map.addLayer({
     id     : `${ans.data.id}-s-wave-outline`,
@@ -30,7 +32,7 @@ TREM.variable.events.on("EewRelease", (ans) => {
     source : `${ans.data.id}-s-wave`,
     paint  : {
       "line-color" : color,
-      "line-width" : 2,
+      "line-width" : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? 0.6 : 2,
     },
   });
 
@@ -40,8 +42,8 @@ TREM.variable.events.on("EewRelease", (ans) => {
       type   : "fill",
       source : `${ans.data.id}-s-wave`,
       paint  : {
-        "fill-color"   : color,
-        "fill-opacity" : 0.25,
+        "fill-color"   : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? TREM.constant.COLOR.TREM.P : color,
+        "fill-opacity" : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? 0 : 0.25,
       },
     },
     "county",
@@ -52,10 +54,8 @@ TREM.variable.events.on("EewAlert", (ans) => {
   if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-outline`)) TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-outline`);
   if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-background`)) TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
 
-  const color =
-  ans.data.status == 1
-    ? TREM.constant.COLOR.EEW.S.ALERT
-    : TREM.constant.COLOR.EEW.S.WARN;
+  const color = (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? TREM.constant.COLOR.TREM.S :
+    TREM.constant.COLOR.EEW.S.WARN;
 
   TREM.variable.map.addLayer({
     id     : `${ans.data.id}-s-wave-outline`,
@@ -63,7 +63,7 @@ TREM.variable.events.on("EewAlert", (ans) => {
     source : `${ans.data.id}-s-wave`,
     paint  : {
       "line-color" : color,
-      "line-width" : 2,
+      "line-width" : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? 0.6 : 2,
     },
   });
 
@@ -74,7 +74,7 @@ TREM.variable.events.on("EewAlert", (ans) => {
       source : `${ans.data.id}-s-wave`,
       paint  : {
         "fill-color"   : color,
-        "fill-opacity" : 0.25,
+        "fill-opacity" : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") ? 0 : 0.25,
       },
     },
     "county",
@@ -86,6 +86,7 @@ TREM.variable.events.on("EewEnd", (ans) => removeEewLayersAndSources(ans.data.id
 
 setInterval(() => {
   for (const eew of TREM.variable.data.eew) {
+    if (!TREM.constant.SHOW_TREM_EEW && eew.author == "trem") continue;
     const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
     const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
     if (sWaveSource && pWaveSource) {
@@ -96,6 +97,28 @@ setInterval(() => {
     }
   }
 }, 100);
+
+if (!TREM.constant.SHOW_TREM_EEW)
+  setInterval(() => {
+    for (const eew of TREM.variable.data.eew) {
+      if (!eew.author == "trem") continue;
+      const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
+      const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
+      if (sWaveSource && pWaveSource) {
+        const center = [eew.eq.lon, eew.eq.lat];
+        const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
+        if (flash) {
+          sWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.s_dist)] });
+          pWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.p_dist)] });
+        } else {
+          sWaveSource.setData({ type: "FeatureCollection", features: [] });
+          pWaveSource.setData({ type: "FeatureCollection", features: [] });
+        }
+      }
+    }
+
+    flash = !flash;
+  }, 500);
 
 function createCircleFeature(center, radius, steps = 256) {
   const coordinates = [[]];
