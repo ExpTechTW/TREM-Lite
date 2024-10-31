@@ -1,5 +1,6 @@
 @import url("./eew/eew.css");
 @import url("./report/box.css");
+@import url("../intensity.css");
 
 body {
   user-select: none;
@@ -12,6 +13,27 @@ body {
   --surface-variant-hsl: 0deg 0% 20%;
   --background-hsl: 0deg 0% 13%;
   --background-variant-hsl: 0deg 0% 16%;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+::-webkit-scrollbar-button {
+  background: transparent;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: transparent;
 }
 
 .map {

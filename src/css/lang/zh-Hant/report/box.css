@@ -1,0 +1,228 @@
+html[lang="zh-Hant"] {
+  .report-intensity-text::before {
+    content: "觀測最大震度";
+  }
+}
+
+/**最外包**/
+.report-wrapper {
+  position: absolute;
+  top: 0px;
+  bottom: -15px;
+  right: 0px;
+  width: 310px;
+  max-width: 340px;
+  overflow: scroll;
+
+  .report-box-items {
+    background-color: #464646;
+    padding: 3px;
+    padding-top: 3px;
+  }
+
+  /**盒容器**/
+  .report-box-item-contain {
+    margin-bottom: 2;
+    display: flex;
+    gap: 8px;
+    background-color: #292929;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+
+    /**觀測最大震度**/
+    .report-intensity-val {
+      width: 65px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      font-size: 30px;
+      font-weight: bold;
+    }
+
+    /**震央、時間**/
+    .report-info-item {
+      font-weight: bold;
+
+      .report-loc {
+        font-size: 21px;
+      }
+
+      .report-time {
+        font-size: 13px;
+      }
+    }
+
+    /**資訊盒**/
+    .report-info-box {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      justify-content: space-between;
+
+      /**規模**/
+      .report-mag {
+        font-size: 28px;
+        width: 60px;
+
+        /**規模文字**/
+        .report-mag-text {
+          font-size: 23px;
+          font-weight: bold;
+
+          span {
+            font-size: 30px;
+          }
+        }
+
+        /**沒有地震編號**/
+        .normal {
+          color: #fff;
+        }
+      }
+    }
+
+    /**震度、深度**/
+    .report-mag-dep {
+      display: flex;
+      justify-content: space-between;
+      margin-right: 0.3em;
+
+      .report-mag,
+      .report-depth {
+        position: relative;
+        display: flex;
+        gap: 4px;
+        height: 28px;
+        isolation: isolate;
+
+        .report-mag-text,
+        .report-depth-text {
+          position: absolute;
+          line-height: 28px;
+          font-size: 28px;
+          font-weight: bold;
+          opacity: 0.15;
+        }
+      }
+
+      /**規模文字**/
+      .report-mag-val {
+        font-size: 20px;
+        font-weight: bold;
+
+        &:before {
+          content: "𝖬";
+          font-size: 15px;
+          margin-right: 4px;
+        }
+      }
+
+      /**深度**/
+      .report-depth {
+        font-size: 28px;
+        width: 60px;
+        display: flex;
+        justify-content: flex-end;
+
+        /**深度值**/
+        .report-depth-val {
+          font-size: 20px;
+          font-weight: bold;
+
+          &:after {
+            margin-left: 4px;
+            content: "㎞";
+            font-size: 15px;
+          }
+        }
+      }
+    }
+  }
+
+  /**第一則的盒容器**/
+  .first {
+    padding: 10px;
+
+    /**觀測最大震度文字**/
+    .report-intensity-text {
+      font-size: 13px;
+      font-weight: bold;
+      margin-top: 0.3em;
+    }
+
+    /**資訊盒**/
+    .report-info-box {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+
+      /**資訊盒物件**/
+      .report-info-item {
+        height: auto;
+
+        /**震央**/
+        .report-loc {
+          font-size: 28px;
+        }
+      }
+    }
+
+    /**震度值**/
+    .report-intensity-val {
+      height: 80px;
+      width: 80px;
+      font-size: 3em;
+    }
+
+    /**規模、深度**/
+    .report-mag-dep {
+      width: 100%;
+      margin-top: 0.3em;
+
+      /**規模文字**/
+      .report-mag-text {
+        position: relative;
+        display: flex;
+        gap: 4px;
+        height: 28px;
+        isolation: isolate;
+        font-size: 28px;
+        flex: 1 1 0%;
+      }
+
+      /**深度文字**/
+      .report-depth-text {
+        color: #fff;
+        position: relative;
+        gap: 4px;
+        height: 28px;
+        width: 100%;
+        isolation: isolate;
+        font-size: 23px;
+        font-weight: bold;
+        display: flex;
+        align-items: baseline;
+        justify-content: flex-end;
+      }
+
+      /**深度值**/
+      .report-depth-val {
+        font-size: 24px;
+        line-height: 36px;
+
+        &:after {
+          margin-left: 4px;
+          content: "km";
+          font-size: 14px;
+          font-weight: bold;
+          display: inline-block;
+          line-height: 28px;
+          font-weight: 400;
+        }
+      }
+    }
+  }
+}

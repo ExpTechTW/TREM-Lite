@@ -29,13 +29,14 @@ html[lang="zh-Hant"] {
     content: "發震";
   }
 
-  .info-mag-text::after {
+  .info-mag-text::after,
+  .first .report-mag-text::after {
     content: "規模";
-    right: 0;
     width: 3.5rem;
   }
 
-  .info-depth-text::after {
+  .info-depth-text::after,
+  .report-depth-text::after {
     content: "深度";
   }
 }
@@ -233,14 +234,5 @@ html[lang="zh-Hant"] {
   .info-footer-container {
     gap: 5px;
     display: flex;
-  }
-}
-
-.intensity-9 {
-  background-color: #9600c8;
-  box-sizing: border-box;
-
-  &:empty::after {
-    content: "7";
   }
 }
