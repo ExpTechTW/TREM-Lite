@@ -44,6 +44,8 @@ TREM.variable.events.on("MapLoad", (map) => {
 TREM.variable.events.on("DataRts", (ans) => {
   const data_list = [];
 
+  if (!TREM.variable.station) return;
+
   for (const id of Object.keys(ans.data.station)) {
     const station_info = TREM.variable.station[id];
     if (!station_info) continue;

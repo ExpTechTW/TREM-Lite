@@ -2,6 +2,8 @@ const maplibregl = require("maplibre-gl");
 
 const TREM = require("../js/constant");
 
+const intensityIcons = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
 const map = new maplibregl.Map({
   container : "map",
   style     : {
@@ -83,7 +85,32 @@ const map = new maplibregl.Map({
   attributionControl : false,
 });
 
-map.on("load", () => {
+map.on("load", async () => {
+  for (const i of intensityIcons)
+    try {
+      const image = await map.loadImage(`../resource/image/intensity-${i}-dark.png`);
+      map.addImage(`intensity-${i}`, image.data);
+    } catch (error) {
+      console.error(`Failed to load intensity-${i} icon:`, error);
+    }
+
+
+  // 載入 GPS 圖標
+  try {
+    const gpsImage = await map.loadImage("../resource/image/gps.png");
+    map.addImage("gps", gpsImage.data);
+  } catch (error) {
+    console.error("Failed to load GPS icon:", error);
+  }
+
+  // 載入 cross 圖標
+  try {
+    const crossImage = await map.loadImage("../resource/image/cross.png");
+    map.addImage("cross", crossImage.data);
+  } catch (error) {
+    console.error("Failed to load cross icon:", error);
+  }
+
   TREM.variable.map = map;
   TREM.variable.events.emit("MapLoad", map);
 });
