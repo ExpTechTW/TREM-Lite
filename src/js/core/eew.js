@@ -140,8 +140,7 @@ function createCircleFeature(center, radius, steps = 256) {
 }
 
 function removeEewLayersAndSources(eewId) {
-  if (!TREM.variable.map || !eewId) return;
-
+  console.log(123);
   const layerIds = [
     `${eewId}-p-wave-outline`,
     `${eewId}-s-wave-outline`,

@@ -13,7 +13,7 @@ TREM.variable.events.on("EewUpdate", (ans) => updateEewArea(ans));
 
 TREM.variable.events.on("EewEnd", (ans) => {
   delete eewIntensityArea[ans.data.id];
-  drawEewArea();
+  drawEewArea(true);
 });
 
 function updateEewArea(ans) {
@@ -22,7 +22,7 @@ function updateEewArea(ans) {
   drawEewArea();
 }
 
-function drawEewArea() {
+function drawEewArea(end = false) {
   const eewArea = {};
 
   Object.entries(eewIntensityArea).forEach(([key, intensity]) => {
@@ -52,6 +52,6 @@ function drawEewArea() {
   TREM.variable.map.setPaintProperty(
     "town",
     "fill-color",
-    matchExpression,
+    (end) ? TREM.constant.COLOR.MAP.TW_COUNTY_FILL : matchExpression,
   );
 }
