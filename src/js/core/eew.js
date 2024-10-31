@@ -2,11 +2,11 @@ const TREM = require("../constant");
 
 TREM.variable.events.on("MapLoad", (map) => {
   addEewCircle(map, {
-    id: "eew1",
-    status: 1,
-    eq: {
-      latitude: 25.0,
-      longitude: 121.5,
+    id     : "eew1",
+    status : 1,
+    eq     : {
+      latitude  : 25.0,
+      longitude : 121.5,
     },
   });
 });
@@ -17,23 +17,23 @@ function addEewCircle(map, eew) {
   const center = [eew.eq.longitude, eew.eq.latitude];
 
   map.addSource(`${eew.id}-s-wave`, {
-    type: "geojson",
-    data: {
-      type: "FeatureCollection",
-      features: [createCircleFeature(center, 100)],
+    type : "geojson",
+    data : {
+      type     : "FeatureCollection",
+      features : [createCircleFeature(center, 100)],
     },
-    tolerance: 0.5,
-    buffer: 128,
+    tolerance : 0.5,
+    buffer    : 128,
   });
 
   map.addSource(`${eew.id}-p-wave`, {
-    type: "geojson",
-    data: {
-      type: "FeatureCollection",
-      features: [createCircleFeature(center, 150)],
+    type : "geojson",
+    data : {
+      type     : "FeatureCollection",
+      features : [createCircleFeature(center, 150)],
     },
-    tolerance: 0.5,
-    buffer: 128,
+    tolerance : 0.5,
+    buffer    : 128,
   });
 
   const color =
@@ -42,35 +42,35 @@ function addEewCircle(map, eew) {
       : TREM.constant.COLOR.EEW.S.WARN;
 
   map.addLayer({
-    id: `${eew.id}-s-wave-outline`,
-    type: "line",
-    source: `${eew.id}-s-wave`,
-    paint: {
-      "line-color": color,
-      "line-width": 2,
+    id     : `${eew.id}-s-wave-outline`,
+    type   : "line",
+    source : `${eew.id}-s-wave`,
+    paint  : {
+      "line-color" : color,
+      "line-width" : 2,
     },
   });
 
   map.addLayer(
     {
-      id: `${eew.id}-s-wave-background`,
-      type: "fill",
-      source: `${eew.id}-s-wave`,
-      paint: {
-        "fill-color": color,
-        "fill-opacity": 0.25,
+      id     : `${eew.id}-s-wave-background`,
+      type   : "fill",
+      source : `${eew.id}-s-wave`,
+      paint  : {
+        "fill-color"   : color,
+        "fill-opacity" : 0.25,
       },
     },
-    "county"
+    "county",
   );
 
   map.addLayer({
-    id: `${eew.id}-p-wave-outline`,
-    type: "line",
-    source: `${eew.id}-p-wave`,
-    paint: {
-      "line-color": TREM.constant.COLOR.EEW.P,
-      "line-width": 1,
+    id     : `${eew.id}-p-wave-outline`,
+    type   : "line",
+    source : `${eew.id}-p-wave`,
+    paint  : {
+      "line-color" : TREM.constant.COLOR.EEW.P,
+      "line-width" : 1,
     },
   });
 }
@@ -89,14 +89,14 @@ function createCircleFeature(center, radius, steps = 256) {
     const θ = rad;
 
     const φ2 = Math.asin(
-      Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ)
+      Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ),
     );
 
     const λ2 =
       λ1 +
       Math.atan2(
         Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
-        Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2)
+        Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2),
       );
 
     const lat = (φ2 * 180) / Math.PI;
@@ -108,11 +108,11 @@ function createCircleFeature(center, radius, steps = 256) {
   coordinates[0].push(coordinates[0][0]);
 
   return {
-    type: "Feature",
-    properties: {},
-    geometry: {
-      type: "Polygon",
-      coordinates: coordinates,
+    type       : "Feature",
+    properties : {},
+    geometry   : {
+      type        : "Polygon",
+      coordinates : coordinates,
     },
   };
 }
