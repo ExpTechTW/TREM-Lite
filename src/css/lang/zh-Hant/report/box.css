@@ -62,6 +62,7 @@ html[lang="zh-Hant"] {
     cursor: pointer;
     border-radius: 12px;
     transition: background-color 0.4s ease;
+    border: 1px solid #ffffff38;
 
     &:hover {
       background-color: #8a8a8ac7;
