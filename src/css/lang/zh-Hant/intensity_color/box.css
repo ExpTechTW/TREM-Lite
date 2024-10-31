@@ -20,7 +20,7 @@
       margin: 0 0 0 30px;
       position: relative;
       height: 100%;
-      color: #fff;
+      color: #ffffff91;
       font-size: 13px;
 
       .color {
@@ -36,7 +36,7 @@
           content: "";
           width: 5px;
           height: 1px;
-          background-color: #ffffff;
+          background-color: #ffffff91;
           position: absolute;
           top: 0px;
           right: -6px;
@@ -90,17 +90,14 @@
     order: 12;
   }
 
-  .intensity-num-0 .color {
+  .intensity-num-1 .color {
     background: linear-gradient(
-      var(--intensity-2),
-      var(--intensity-1) 40%,
-      var(--intensity-0) 80%
+      var(--intensity-1),
+      var(--intensity-0) 80%,
+      var(--intensity-0) 40%,
+      var(--intensity-0)
     );
     border-bottom: solid 1px #2b2b2b;
-  }
-
-  .intensity-num-1 .color {
-    background: linear-gradient(var(--intensity-1), var(--intensity-0));
   }
 
   .intensity-num-2 .color {
@@ -125,12 +122,10 @@
 
   .intensity-num-7 .color {
     background: linear-gradient(var(--intensity-7), var(--intensity-6));
-    border-top: solid 1px #2b2b2b;
   }
 
   .intensity-num-8 .color {
     background: linear-gradient(var(--intensity-8), var(--intensity-7));
-    border-top: solid 1px #2b2b2b;
   }
 
   .intensity-num-9 .color {
