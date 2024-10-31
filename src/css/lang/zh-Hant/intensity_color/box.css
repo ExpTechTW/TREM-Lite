@@ -1,0 +1,122 @@
+﻿.intensity-color-list-wrapper {
+  display: flex;
+  height: auto;
+  position: absolute;
+  right: 20rem;
+  bottom: 65px;
+  align-items: flex-end;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  pointer-events: none;
+
+  .intensity-color-list {
+    display: flex;
+    flex-direction: column-reverse;
+    height: 200px;
+
+    li {
+      display: flex;
+      margin: 0 0 0 30px;
+      position: relative;
+      height: 100%;
+      color: #fff;
+      font-size: 13px;
+
+      span {
+        font-size: 0;
+        width: 10px;
+        height: 100%;
+        margin: 0 7px 0 0;
+        top: 0.5rem;
+        border-right: solid 1px #2b2b2b;
+        border-left: solid 1px #2b2b2b;
+
+        &::after {
+          content: "";
+          width: 5px;
+          height: 1px;
+          background-color: #ffffff;
+          position: absolute;
+          top: 0px;
+          right: -6px;
+        }
+      }
+    }
+
+    li:not(.intensity-num-8) {
+      padding-left: 18px;
+    }
+
+    li:not(.intensity-num-8) span {
+      position: absolute;
+      left: -10px;
+    }
+  }
+
+  .intensity-text {
+    color: #fff;
+    font-size: 12px;
+  }
+
+  .intensity-num-1 {
+    order: 4;
+  }
+
+  .intensity-num-2 {
+    order: 5;
+  }
+
+  .intensity-num-3 {
+    order: 6;
+  }
+
+  .intensity-num-4 {
+    order: 7;
+  }
+
+  .intensity-num-5 {
+    order: 8;
+  }
+
+  .intensity-num-6 {
+    order: 9;
+  }
+
+  .intensity-num-7 {
+    order: 10;
+  }
+
+  .intensity-num-0 span {
+    background: linear-gradient(#0fb02b, #71a2cb 40%, #90b3ca 80%, #97b7cc);
+    border-bottom: solid 1px #2b2b2b;
+  }
+
+  .intensity-num-1 span {
+    background: linear-gradient(#fbc300 20%, #0fb02b);
+  }
+
+  .intensity-num-2 span {
+    background: linear-gradient(#f90, #fbc300);
+  }
+
+  .intensity-num-3 span {
+    background: linear-gradient(#ff6200, #f90);
+  }
+
+  .intensity-num-4 span {
+    background: linear-gradient(#f53605, #ff6200);
+  }
+
+  .intensity-num-5 span {
+    background: linear-gradient(#f11520, #f53605);
+  }
+
+  .intensity-num-6 span {
+    background: linear-gradient(#e30071, #f11520);
+  }
+
+  .intensity-num-7 span {
+    background: linear-gradient(#b600d7, #e30071);
+    border-top: solid 1px #2b2b2b;
+  }
+}
