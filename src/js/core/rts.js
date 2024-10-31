@@ -1,8 +1,14 @@
 const TREM = require("../constant");
 
+const EEWCalculator = require("../utils/eewCalculator");
+
 const { intensity_float_to_int, search_loc_name } = require("../utils/utils");
 
+const calculator = new EEWCalculator();
+
 const rts_intensity_list = document.getElementById("rts-intensity-list");
+const max_pga = document.getElementById("max-pga");
+const max_intensity = document.getElementById("max-intensity");
 
 const int_cache_list = {};
 
@@ -92,6 +98,8 @@ TREM.variable.events.on("DataRts", (ans) => {
   const data_alert_0_list = [];
   const data_alert_list = [];
 
+  let pga = 0;
+
   if (!TREM.variable.station) return;
 
   const eew_alert = TREM.variable.data.eew.some(item => item.author != "trem");
@@ -103,6 +111,8 @@ TREM.variable.events.on("DataRts", (ans) => {
       const station_info = TREM.variable.station[id];
       if (!station_info) continue;
       const station_location = station_info.info.at(-1);
+
+      if (ans.data.station[id].pga > pga) pga = ans.data.station[id].pga;
 
       if (alert && ans.data.station[id].alert) {
         const I = intensity_float_to_int(ans.data.station[id].I);
@@ -128,6 +138,10 @@ TREM.variable.events.on("DataRts", (ans) => {
       .map(loc => intensity_item(loc.i, loc.name));
 
     rts_intensity_list.replaceChildren(...box_list);
+
+    max_pga.textContent = `${pga.toFixed(2)} gal`;
+    max_pga.className = `max-station-pga ${(pga < 4) ? "intensity-0" : `intensity-${calculator.pgaToIntensity(pga)}`}`;
+    max_intensity.className = `max-station-intensity intensity-${(ans.data?.int) ? ans.data.int[0].i : 0}`;
   }
 });
 
@@ -164,7 +178,7 @@ function updateIntensityHistory(newData, time) {
   return maxIntensities;
 }
 
-function getTopIntensities(intensities, maxCount = 8) {
+function getTopIntensities(intensities, maxCount = 7) {
   if (intensities.length <= maxCount)
     return intensities.map(loc => {
       const name = search_loc_name(loc.code);

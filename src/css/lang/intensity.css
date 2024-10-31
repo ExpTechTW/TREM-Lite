@@ -23,6 +23,14 @@
   }
 }
 
+#max-pga[class*="intensity-"]::after {
+  content: none;
+}
+
+#max-intensity.intensity-0::after {
+  content: none;
+}
+
 .intensity-1 {
   color: var(--intensity-text-1);
   background-color: var(--intensity-1);
