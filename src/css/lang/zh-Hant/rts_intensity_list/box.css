@@ -10,6 +10,10 @@
   .max-pga-text::before {
     content: "最大加速度";
   }
+
+  .max-station-pga:empty::before {
+    content: "0.00 gal";
+  }
 }
 
 .max-intensity-pga-wrapper {

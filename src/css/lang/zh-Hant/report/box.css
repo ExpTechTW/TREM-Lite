@@ -30,6 +30,10 @@ html[lang="zh-Hant"] {
       .report-mag-dep {
         display: none;
       }
+
+      .report-loc:before {
+        content: "震源調查中";
+      }
     }
 
     &:hover {
