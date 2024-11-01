@@ -82,7 +82,6 @@
 }
 
 .max-station-pga {
-  background-color: #000;
   border-radius: 0px;
   font-size: 12px;
   margin-top: 5;
@@ -103,7 +102,7 @@
 }
 
 /**即時震度列表外包**/
-.report-wrapper.hidden ~ .rts-intensity-list-wrapper {
+.report-wrapper.hidden~.rts-intensity-list-wrapper {
   transform: translateX(215%);
 }
 
