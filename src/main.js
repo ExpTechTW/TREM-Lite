@@ -9,7 +9,6 @@ const {
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const yaml = require("js-yaml");
 
 /**
  * @type {BrowserWindow}
@@ -20,28 +19,6 @@ const hide = process.argv.includes("--start") ? true : false;
 
 const test = process.argv.includes("--raw") ? 0 : 1;
 
-const configFilePath = path.join(app.getPath("userData"), "config.yaml");
-
-const defaultConfig = {
-  setting: {
-    "user-checkbox": {
-      "other-auto-launch": 1,
-    },
-  },
-};
-
-function readConfig() {
-  try {
-    if (!fs.existsSync(configFilePath))
-      fs.writeFileSync(configFilePath, yaml.dump(defaultConfig), "utf8");
-    const config = yaml.load(fs.readFileSync(configFilePath, "utf8"));
-    return config.setting["user-checkbox"]["other-auto-launch"];
-  } catch (e) {
-    console.error("Error reading config file:", e);
-    return false;
-  }
-}
-
 function updateAutoLaunchSetting(value) {
   app.setLoginItemSettings({
     openAtLogin : value ? true : false,
@@ -50,7 +27,7 @@ function updateAutoLaunchSetting(value) {
   });
 }
 
-function createWindow(value) {
+function createWindow() {
   win = new BrowserWindow({
     title          : `TREM Lite v${app.getVersion()}`,
     minWidth       : 760,
@@ -73,7 +50,7 @@ function createWindow(value) {
   require("@electron/remote/main").initialize();
   require("@electron/remote/main").enable(win.webContents);
 
-  updateAutoLaunchSetting(value);
+  updateAutoLaunchSetting(true);
 
   win.setMenu(null);
 
@@ -114,8 +91,7 @@ else {
   });
   app.whenReady().then(() => {
     trayIcon();
-    const autoLaunchEnabled = readConfig();
-    createWindow(autoLaunchEnabled);
+    createWindow();
   });
 }
 
@@ -159,15 +135,6 @@ ipcMain.on("hide", () => {
 
 ipcMain.on("toggleFullscreen", () => {
   if (win) win.setFullScreen(!win.isFullScreen());
-});
-
-ipcMain.on("updateAutoLaunch", (_, value) => {
-  updateAutoLaunchSetting(value);
-  const config = yaml.load(fs.readFileSync(configFilePath, "utf8"));
-  if (config) {
-    config.setting["user-checkbox"]["other-auto-launch"] = value;
-    fs.writeFileSync(configFilePath, yaml.dump(config), "utf8");
-  }
 });
 
 function trayIcon() {
