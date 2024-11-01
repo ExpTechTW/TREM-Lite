@@ -36,7 +36,7 @@
     pointer-events: none;
     display: flex;
     flex-direction: row-reverse;
-    width: 215px;
+    width: 213px;
   }
 
   .current-station-intensity {
@@ -103,6 +103,7 @@
   .rts-info-item {
     display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: space-between;
+    padding: 0 4 0 4;
   }
 }
