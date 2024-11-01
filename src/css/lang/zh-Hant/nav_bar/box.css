@@ -241,7 +241,7 @@
 
     .open-icon {
       position: fixed;
-      left: 999;
+      left: -999;
     }
   }
 }
