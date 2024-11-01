@@ -30,10 +30,12 @@ function refresh_cross(show) {
             },
             properties: {
               no,
-              markerType: eew.eq.mag === 1 ? "dot" : "cross",
+              markerType   : eew.eq.mag === 1 ? "dot" : "cross",
+              maxIntensity : eew.eq.max,
+              fillColor    : TREM.constant.COLOR.INTENSITY[eew.eq.max],
+              strokeColor  : TREM.constant.COLOR.INTENSITY_TEXT[eew.eq.max],
             },
           });
-
       }
     }
   }
@@ -50,10 +52,10 @@ function refresh_cross(show) {
       source : "cross-geojson",
       filter : ["==", ["get", "markerType"], "dot"],
       paint  : {
-        "circle-radius"       : 6,
-        "circle-color"        : "#ff0000",
-        "circle-stroke-width" : 2,
-        "circle-stroke-color" : "#ffffff",
+        "circle-radius"       : 10,
+        "circle-color"        : ["get", "fillColor"],
+        "circle-stroke-width" : 4,
+        "circle-stroke-color" : ["get", "strokeColor"],
       },
     });
 
