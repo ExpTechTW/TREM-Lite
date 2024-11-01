@@ -56,11 +56,11 @@ html[lang="zh-Hant"] {
 }
 
 .eew-warn {
-  background-color: var(--eew-s-warn);
+  background-color: var(--eew-s-warn) !important;
 }
 
 .eew-alert {
-  background-color: var(--eew-s-alert);
+  background-color: var(--eew-s-alert) !important;
 }
 
 .info-wrapper {
