@@ -14,12 +14,12 @@
 
 .max-intensity-pga-wrapper {
   position: absolute;
-  top: 10rem;
+  top: 9.8rem;
   color: white;
   font-size: 11px;
   font-weight: 500;
   display: flex;
-  padding: 8px;
+  padding: 5px;
   border-radius: 5px;
   flex-direction: column;
   flex-wrap: wrap;
@@ -102,7 +102,7 @@
 }
 
 /**即時震度列表外包**/
-.report-wrapper.hidden~.rts-intensity-list-wrapper {
+.report-wrapper.hidden ~ .rts-intensity-list-wrapper {
   transform: translateX(215%);
 }
 
