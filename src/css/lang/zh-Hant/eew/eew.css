@@ -242,8 +242,8 @@ html[lang="zh-Hant"] {
 .info-footer {
   display: flex;
   font-size: 12px;
-  justify-content: flex-end;
-  margin-top: 25px;
+  justify-content: space-evenly;
+  flex-direction: column;
 
   .info-nsspe-title {
     margin-right: 0.3em;
@@ -260,9 +260,10 @@ html[lang="zh-Hant"] {
 .nsspe {
   .info-nsspe {
     display: block;
+    margin-top: 10px;
   }
 
-  .info-footer-container {
-    display: none;
+  .info-mag-dep {
+    display: none !important;
   }
 }
