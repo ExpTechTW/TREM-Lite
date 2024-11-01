@@ -104,7 +104,7 @@ TREM.variable.events.on("DataRts", (ans) => {
 
   if (!TREM.variable.station) return;
 
-  const eew_alert = TREM.variable.data.eew.some(item => item.author != "trem");
+  const eew_alert = (TREM.variable.data.eew.length && TREM.constant.SHOW_TREM_EEW) ? true : TREM.variable.data.eew.some(item => item.author != "trem");
 
   if (ans.data) {
     const alert = Object.keys(ans.data.box).length;
