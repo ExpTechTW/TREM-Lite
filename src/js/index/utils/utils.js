@@ -1,5 +1,7 @@
 const region = require("../../../resource/data/region.json");
 
+const intensity_list = ["0", "1", "2", "3", "4", "5⁻", "5⁺", "6⁻", "6⁺", "7"];
+
 function distance(latA, lngA) {
   return function(latB, lngB) {
     latA = latA * Math.PI / 180;
@@ -60,4 +62,5 @@ module.exports = {
   search_loc_name,
   search_loc_code,
   intensity_float_to_int,
+  intensity_list,
 };

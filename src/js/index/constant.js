@@ -112,7 +112,9 @@ const TREM = {
       start_time : 1730012211816,
       local_time : 0,
     },
-    station: null,
+    station : null,
+    speech  : null,
+    tts     : true,
 
     // 不要動下方的東西
     cache: {
