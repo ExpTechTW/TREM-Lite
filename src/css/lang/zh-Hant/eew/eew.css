@@ -10,7 +10,7 @@ html[lang="zh-Hant"] {
   }
 
   .info-number-last::after {
-    content: "最終報";
+    content: "報(最終報)" !important;
   }
 
   .no-eew .info-unit::after {
@@ -25,7 +25,7 @@ html[lang="zh-Hant"] {
     content: "NSSPE 無震源參數推算";
   }
 
-  .info-footer-container::after {
+  .info-time::after {
     content: "發震";
   }
 
@@ -89,6 +89,14 @@ html[lang="zh-Hant"] {
     .info-number {
       font-size: 17px;
     }
+  }
+
+  /**發震時間**/
+  .info-time {
+    gap: 5px;
+    display: flex;
+    font-size: 12px;
+    font-weight: bold;
   }
 
   /**標題外包**/
@@ -235,6 +243,7 @@ html[lang="zh-Hant"] {
   display: flex;
   font-size: 12px;
   justify-content: flex-end;
+  margin-top: 25px;
 
   .info-nsspe-title {
     margin-right: 0.3em;
@@ -245,12 +254,6 @@ html[lang="zh-Hant"] {
     line-height: 20px;
     font-size: 15px;
     display: none;
-  }
-
-  /**發震時間外包**/
-  .info-footer-container {
-    gap: 5px;
-    display: flex;
   }
 }
 
