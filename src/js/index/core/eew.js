@@ -102,7 +102,10 @@ TREM.variable.events.on("EewUpdate", (ans) => {
   show_eew(false);
   refresh_cross(true);
 });
-TREM.variable.events.on("EewEnd", (ans) => removeEewLayersAndSources(ans.data.id));
+TREM.variable.events.on("EewEnd", (ans) => {
+  delete eew_cache[ans.data.id];
+  removeEewLayersAndSources(ans.data.id);
+});
 
 setInterval(() => {
   for (const eew of TREM.variable.data.eew) {
