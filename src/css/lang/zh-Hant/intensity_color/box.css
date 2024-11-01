@@ -13,7 +13,7 @@
   .intensity-color-list {
     display: flex;
     flex-direction: column-reverse;
-    height: 250px;
+    height: 210px;
 
     li {
       display: flex;
