@@ -26,6 +26,10 @@ html[lang="zh-Hant"] {
 
     .survey {
       background-color: #292929 !important;
+
+      .report-mag-dep {
+        display: none;
+      }
     }
 
     &:hover {
@@ -73,8 +77,12 @@ html[lang="zh-Hant"] {
     }
 
     /**觀測最大震度**/
+    .report-intensity-text {
+      display: none;
+    }
+
     .report-intensity-val {
-      width: 65px;
+      width: 55px;
       height: 50px;
       display: flex;
       align-items: center;
@@ -127,7 +135,6 @@ html[lang="zh-Hant"] {
       }
     }
 
-    /**震度、深度**/
     .report-mag-dep {
       display: flex;
       justify-content: space-between;
@@ -167,7 +174,7 @@ html[lang="zh-Hant"] {
       .report-depth {
         font-size: 28px;
         width: 60px;
-        display: flex;
+        display: none;
         justify-content: flex-end;
 
         /**深度值**/
@@ -185,8 +192,8 @@ html[lang="zh-Hant"] {
     }
   }
 
-  /**第一則的盒容器**/
-  .first {
+  /**震度、深度**/
+  .report-box-item-contain:first-child {
     padding: 10px;
 
     /**觀測最大震度文字**/
@@ -194,6 +201,32 @@ html[lang="zh-Hant"] {
       font-size: 13px;
       font-weight: bold;
       margin-top: 0.3em;
+      display: block;
+    }
+
+    /**觀測最大震度值**/
+    .report-intensity-val {
+      height: 80px;
+      width: 80px;
+      font-size: 3em;
+    }
+
+    /**震度值**/
+    .report-intensity-val {
+      height: 80px;
+      width: 80px;
+      font-size: 3em;
+    }
+
+    /**規模、深度**/
+    .report-mag-dep {
+      width: 100%;
+      margin-top: 0.3em;
+    }
+
+    /**規模值**/
+    .report-mag-val {
+      margin-top: 5px;
     }
 
     /**資訊盒**/
@@ -213,62 +246,34 @@ html[lang="zh-Hant"] {
       }
     }
 
-    /**震度值**/
-    .report-intensity-val {
-      height: 80px;
-      width: 80px;
-      font-size: 3em;
+    /**規模文字**/
+    .report-mag-text {
+      position: relative;
+      display: flex;
+      gap: 4px;
+      height: 28px;
+      isolation: isolate;
+      font-size: 28px;
+      flex: 1 1 0%;
     }
 
-    /**規模、深度**/
-    .report-mag-dep {
-      width: 100%;
-      margin-top: 0.3em;
+    /**深度**/
+    .report-depth {
+      display: flex;
+    }
 
-      .report-mag-val {
-        margin-top: 5px;
-      }
+    .report-depth-val {
+      font-size: 24px;
+      line-height: 36px;
 
-      /**規模文字**/
-      .report-mag-text {
-        position: relative;
-        display: flex;
-        gap: 4px;
-        height: 28px;
-        isolation: isolate;
-        font-size: 28px;
-        flex: 1 1 0%;
-      }
-
-      /**深度文字**/
-      .report-depth-text {
-        color: #fff;
-        position: relative;
-        gap: 4px;
-        height: 28px;
-        width: 100%;
-        isolation: isolate;
-        font-size: 23px;
+      &:after {
+        margin-left: 4px;
+        content: "km";
+        font-size: 14px;
         font-weight: bold;
-        display: flex;
-        align-items: baseline;
-        justify-content: flex-end;
-      }
-
-      /**深度值**/
-      .report-depth-val {
-        font-size: 24px;
-        line-height: 36px;
-
-        &:after {
-          margin-left: 4px;
-          content: "km";
-          font-size: 14px;
-          font-weight: bold;
-          display: inline-block;
-          line-height: 28px;
-          font-weight: 400;
-        }
+        display: inline-block;
+        line-height: 28px;
+        font-weight: 400;
       }
     }
   }

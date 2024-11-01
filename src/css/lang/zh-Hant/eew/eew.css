@@ -38,7 +38,7 @@ html[lang="zh-Hant"] {
   }
 
   .info-mag-text::after,
-  .first .report-mag-text::after {
+  .report-box-item-contain:first-child .report-mag-text::after {
     content: "規模";
     width: 3.5rem;
   }
