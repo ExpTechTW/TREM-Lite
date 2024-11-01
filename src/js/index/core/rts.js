@@ -137,7 +137,7 @@ TREM.variable.events.on("DataRts", (ans) => {
     }
 
     const box_list = getTopIntensities(
-      updateIntensityHistory(ans.data?.int ?? [], ans.data.time),
+      updateIntensityHistory(ans.data?.int ?? [], ans.data?.time ?? 0),
     ).sort((a, b) => b.i - a.i)
       .map(loc => intensity_item(loc.i, loc.name));
 

@@ -9,7 +9,7 @@ const speech = new Speech.default();
   speech.setLanguage("zh-TW");
   // speech.setLanguage("ja-JP");
   // speech.setVoice("O-Ren");
-  speech.setVoice("Meijia");
+  // speech.setVoice("Meijia");
   speech.setRate(1.2);
   TREM.variable.speech = speech;
 })();
