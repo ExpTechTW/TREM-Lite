@@ -97,10 +97,11 @@ const TREM = {
   },
 
   variable: {
-    map    : null,
-    events : null,
-    time   : null,
-    data   : {
+    rts_station_id : 6110036,
+    map            : null,
+    events         : null,
+    time           : null,
+    data           : {
       rts       : null,
       intensity : null,
       report    : null,

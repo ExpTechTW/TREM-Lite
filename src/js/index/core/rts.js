@@ -9,6 +9,10 @@ const calculator = new EEWCalculator();
 const rts_intensity_list = document.getElementById("rts-intensity-list");
 const max_pga = document.getElementById("max-pga");
 const max_intensity = document.getElementById("max-intensity");
+const current_station_loc = document.getElementById("current-station-loc");
+const current_station_pga = document.getElementById("current-station-pga");
+const current_station_intensity = document.getElementById("current-station-intensity");
+const current_station_intensity_text = document.getElementById("current-station-intensity-text");
 
 const int_cache_list = {};
 
@@ -115,6 +119,15 @@ TREM.variable.events.on("DataRts", (ans) => {
       const station_location = station_info.info.at(-1);
 
       if (ans.data.station[id].pga > pga) pga = ans.data.station[id].pga;
+
+      if (id == TREM.variable.rts_station_id) {
+        const I = (alert && ans.data.station[id].alert) ? ans.data.station[id].I : ans.data.station[id].i;
+        const loc = search_loc_name(station_location.code);
+        current_station_loc.textContent = `${loc.city}${loc.town}`;
+        current_station_pga.textContent = ans.data.station[id].pga.toFixed(2);
+        current_station_intensity.className = `current-station-intensity intensity-${intensity_float_to_int(I)}`;
+        current_station_intensity_text.textContent = I.toFixed(1);
+      }
 
       if (alert && ans.data.station[id].alert) {
         const I = intensity_float_to_int(ans.data.station[id].I);
