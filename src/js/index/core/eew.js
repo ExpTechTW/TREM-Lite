@@ -1,6 +1,7 @@
 const TREM = require("../constant");
 const EEWCalculator = require("../utils/eewCalculator");
 const now = require("../utils/ntp");
+const { formatTime } = require("../utils/utils");
 const refresh_cross = require("./cross");
 
 const calculator = new EEWCalculator(require("../../../resource/data/time.json"));
@@ -13,6 +14,7 @@ const info_mag = document.getElementById("info-mag");
 const info_depth = document.getElementById("info-depth");
 const info_intensity = document.getElementById("info-intensity");
 const info_footer = document.getElementById("info-footer");
+const info_time = document.getElementById("info-time");
 
 let flash = false;
 let eew_rotation = 0;
@@ -162,6 +164,7 @@ function show_eew(rotation = true) {
     info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
     if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) info_footer.className = "info-footer nsspe";
     else info_footer.className = "info-footer";
+    info_time.textContent = formatTime(eew_cache[eew_list[eew_rotation]].eq.time);
 
     if (rotation) {
       eew_rotation++;
