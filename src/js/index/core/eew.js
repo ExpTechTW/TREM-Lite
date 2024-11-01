@@ -153,7 +153,7 @@ function show_eew(rotation = true) {
   }
 
   if (count) {
-    info_wrapper.className = "info-wrapper";
+    info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? "eew-alert" : "eew-warn"}`;
     info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
     if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-no info-number-last";
     else info_number.className = "info-number info-number-no";
