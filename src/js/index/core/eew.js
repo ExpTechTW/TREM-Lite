@@ -12,6 +12,7 @@ const info_loc = document.getElementById("info-loc");
 const info_mag = document.getElementById("info-mag");
 const info_depth = document.getElementById("info-depth");
 const info_intensity = document.getElementById("info-intensity");
+const info_footer = document.getElementById("info-footer");
 
 let flash = false;
 let eew_rotation = 0;
@@ -159,6 +160,8 @@ function show_eew(rotation = true) {
     info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
     info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
     info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
+    if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) info_footer.className = "info-footer nsspe";
+    else info_footer.className = "info-footer";
 
     if (rotation) {
       eew_rotation++;
