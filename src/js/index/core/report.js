@@ -1,4 +1,4 @@
-const close_button = document.querySelector("#close_btn");
+const close_button = document.querySelector("#close-btn");
 const reportWrapper = document.querySelector(".report-wrapper");
 
 close_button.addEventListener("click", () => {
