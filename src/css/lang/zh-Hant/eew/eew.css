@@ -245,3 +245,13 @@ html[lang="zh-Hant"] {
     display: flex;
   }
 }
+
+.nsspe {
+  .info-nsspe {
+    display: block;
+  }
+
+  .info-footer-container {
+    display: none;
+  }
+}
