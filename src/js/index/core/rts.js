@@ -13,8 +13,11 @@ const current_station_loc = document.getElementById("current-station-loc");
 const current_station_pga = document.getElementById("current-station-pga");
 const current_station_intensity = document.getElementById("current-station-intensity");
 const current_station_intensity_text = document.getElementById("current-station-intensity-text");
+const rts_info_trigger = document.getElementById("rts-info-trigger");
+const rts_info_level = document.getElementById("rts-info-level");
 
 const int_cache_list = {};
+const level_list = {};
 
 TREM.variable.events.on("MapLoad", (map) => {
   map.addLayer({
@@ -105,6 +108,8 @@ TREM.variable.events.on("DataRts", (ans) => {
   const coordinates = [];
 
   let pga = 0;
+  let trigger = 0;
+  let level = 0;
 
   if (!TREM.variable.station) return;
 
@@ -128,6 +133,11 @@ TREM.variable.events.on("DataRts", (ans) => {
         current_station_intensity.className = `current-station-intensity intensity-${intensity_float_to_int(I)}`;
         current_station_intensity_text.textContent = I.toFixed(1);
       }
+
+      if (ans.data.station[id].alert) {
+        trigger++;
+        if (!level_list[id] || level_list[id] < ans.data.station[id].pga) level_list[id] = ans.data.station[id].pga;
+      } else delete level_list[id];
 
       if (alert && ans.data.station[id].alert) {
         const I = intensity_float_to_int(ans.data.station[id].I);
@@ -161,6 +171,12 @@ TREM.variable.events.on("DataRts", (ans) => {
     max_pga.textContent = `${pga.toFixed(2)} gal`;
     max_pga.className = `max-station-pga ${(!alert) ? "intensity-0" : `intensity-${calculator.pgaToIntensity(pga)}`}`;
     max_intensity.className = `max-station-intensity intensity-${ans.data?.int?.[0]?.i ?? 0}`;
+
+    for (const id of Object.keys(level_list))
+      level += level_list[id];
+
+    rts_info_level.textContent = Math.round(level);
+    rts_info_trigger.textContent = trigger;
 
     TREM.variable.cache.bounds.rts = coordinates;
   }
