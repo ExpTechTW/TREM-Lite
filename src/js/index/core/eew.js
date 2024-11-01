@@ -100,7 +100,7 @@ TREM.variable.events.on("EewAlert", (ans) => {
 TREM.variable.events.on("EewUpdate", (ans) => {
   eew_cache[ans.data.id] = ans.data;
   show_eew(false);
-  refresh_cross(true);
+  refresh_cross(false);
 });
 TREM.variable.events.on("EewEnd", (ans) => {
   removeEewLayersAndSources(ans.data.id);
