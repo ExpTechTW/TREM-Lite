@@ -5,9 +5,21 @@ const refresh_cross = require("./cross");
 
 const calculator = new EEWCalculator(require("../../../resource/data/time.json"));
 
+const info_wrapper = document.getElementById("info-wrapper");
+const info_unit = document.getElementById("info-unit");
+const info_number = document.getElementById("info-number");
+const info_loc = document.getElementById("info-loc");
+const info_mag = document.getElementById("info-mag");
+const info_depth = document.getElementById("info-depth");
+
 let flash = false;
+let eew_rotation = 0;
+const eew_cache = {};
 
 TREM.variable.events.on("EewRelease", (ans) => {
+  eew_cache[ans.data.id] = ans.data;
+  show_eew(false);
+
   TREM.variable.map.addSource(`${ans.data.id}-s-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
   TREM.variable.map.addSource(`${ans.data.id}-p-wave`, { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 1, buffer: 128 });
 
@@ -81,7 +93,11 @@ TREM.variable.events.on("EewAlert", (ans) => {
   );
 });
 
-TREM.variable.events.on("EewUpdate", (ans) => refresh_cross(true));
+TREM.variable.events.on("EewUpdate", (ans) => {
+  eew_cache[ans.data.id] = ans.data;
+  show_eew(false);
+  refresh_cross(true);
+});
 TREM.variable.events.on("EewEnd", (ans) => removeEewLayersAndSources(ans.data.id));
 
 setInterval(() => {
@@ -120,6 +136,34 @@ if (!TREM.constant.SHOW_TREM_EEW)
 
     flash = !flash;
   }, 500);
+
+setInterval(show_eew, 5000);
+
+function show_eew(rotation = true) {
+  let count = 0;
+  const eew_list = Object.keys(eew_cache);
+
+  for (const eew of TREM.variable.data.eew) {
+    if (!TREM.constant.SHOW_TREM_EEW && eew.author == "trem") continue;
+    count++;
+  }
+
+  if (count) {
+    info_wrapper.className = "info-wrapper";
+    info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
+    if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-no info-number-last";
+    else info_number.className = "info-number info-number-no";
+    info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? "" : ` ${eew_rotation + 1}/${count}`}`;
+    info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
+    info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
+    info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
+
+    if (rotation) {
+      eew_rotation++;
+      if (eew_rotation >= eew_list.length) eew_rotation = 0;
+    }
+  } else info_wrapper.className = "info-wrapper no-eew";
+}
 
 function createCircleFeature(center, radius, steps = 256) {
   const coordinates = [[]];
