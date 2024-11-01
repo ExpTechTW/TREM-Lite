@@ -216,6 +216,12 @@
     justify-content: center;
     overflow: hidden;
     border-radius: 5px;
+    border: 1px solid #00000008;
+
+    &:hover {
+      background-color: #252424c7;
+      border: 1px solid #ffffff47;
+    }
 
     .close-icon,
     .open-icon {
@@ -228,6 +234,7 @@
       transform: scale(1);
       left: 8px;
       position: relative;
+      margin-bottom: 3px;
     }
   }
 
