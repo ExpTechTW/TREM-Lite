@@ -46,7 +46,11 @@ focus_button.addEventListener("click", () => {
 
 function focus() {
   if (lock) return;
-  if (TREM.variable.cache.bounds.rts.length) updateMapBounds(TREM.variable.cache.bounds.rts);
+  const eew_bounds = [];
+  for (const eew of TREM.variable.data.eew)
+    eew_bounds.push({ lon: eew.eq.lon, lat: eew.eq.lat });
+
+  if (TREM.variable.cache.bounds.rts.length) updateMapBounds([...TREM.variable.cache.bounds.rts, ...eew_bounds]);
   else TREM.variable.map.flyTo({ center: [121.6, 23.5], zoom: 6.8, duration: 500 });
 }
 
@@ -64,7 +68,7 @@ function updateMapBounds(coordinates, options = {}) {
       left   : options.paddingLeft || 150,
       right  : options.paddingRight || 150,
     },
-    maxZoom  : options.maxZoom || 8.5,
+    maxZoom  : options.maxZoom || 8,
     duration : options.duration || 500,
   });
 }
