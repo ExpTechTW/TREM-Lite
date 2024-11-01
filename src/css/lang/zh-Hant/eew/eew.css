@@ -9,9 +9,12 @@ html[lang="zh-Hant"] {
     }
   }
 
-  .eew-warn .info-unit::before,
-  .eew-alert .info-unit::before {
+  .eew-warn .info-unit::before {
     content: "地震速報 ";
+  }
+
+  .eew-alert .info-unit::before {
+    content: "緊急地震速報 ";
   }
 
   .info-number-last::after {
@@ -87,12 +90,12 @@ html[lang="zh-Hant"] {
     /**發報單位**/
     .info-unit {
       flex: 1;
-      font-size: 17px;
+      font-size: 15px;
     }
 
     /**發報報數**/
     .info-number {
-      font-size: 17px;
+      font-size: 15px;
     }
   }
 
