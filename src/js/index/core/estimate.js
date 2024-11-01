@@ -1,11 +1,12 @@
 const TREM = require("../constant");
 
 const EEWCalculator = require("../utils/eewCalculator");
-const { intensity_float_to_int } = require("../utils/utils");
+const { intensity_float_to_int, search_loc_name } = require("../utils/utils");
 
 const calculator = new EEWCalculator(require("../../../resource/data/time.json"));
 
 const eewIntensityArea = {};
+const alertedCities = new Set();
 
 TREM.variable.events.on("EewRelease", (ans) => updateEewArea(ans));
 
@@ -32,9 +33,42 @@ function updateEewArea(ans) {
 function drawEewArea(ans, end = false) {
   const eewArea = processIntensityAreas();
   const mergedArea = mergeEqArea(eewArea, ans.data.eq.area);
+
+  const highIntensityAreas = {};
+  const highIntensityCities = new Set();
+
+  Object.entries(mergedArea).forEach(([code, intensity]) => {
+    if (intensity >= 5) {
+      highIntensityAreas[code] = intensity;
+      const location = search_loc_name(parseInt(code));
+      if (location) highIntensityCities.add(location.city);
+    }
+  });
+
+  const newHighIntensityCities = new Set(
+    [...highIntensityCities].filter(city => !alertedCities.has(city)),
+  );
+
+  if (newHighIntensityCities.size > 0) {
+    TREM.variable.events.emit("EewNewAreaAlert", {
+      info : {},
+      data : { city_alert_list: Array.from(highIntensityCities), new_city_alert_list: Array.from(newHighIntensityCities) },
+    });
+    newHighIntensityCities.forEach(city => alertedCities.add(city));
+  }
+
   const mapStyle = generateMapStyle(mergedArea, end);
   TREM.variable.map.setPaintProperty("town", "fill-color", mapStyle);
+
+  if (end) alertedCities.clear();
+
+  return {
+    highIntensityAreas,
+    highIntensityCities    : Array.from(highIntensityCities),
+    newHighIntensityCities : Array.from(newHighIntensityCities),
+  };
 }
+
 
 function mergeEqArea(eewArea, eqArea) {
   const mergedArea = { ...eewArea };

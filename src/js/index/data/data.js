@@ -86,7 +86,6 @@ function EEWData(newData = []) {
       if (!TREM.variable.data.eew[existingIndex].status && data.status === 1)
         TREM.variable.events.emit("EewAlert", eventData);
 
-
       TREM.variable.data.eew[existingIndex] = data;
     }
   });
