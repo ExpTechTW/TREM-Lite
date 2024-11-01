@@ -13,7 +13,7 @@ html[lang="zh-Hant"] {
     content: "最終報";
   }
 
-  .info-unit-none::after {
+  .no-eew .info-unit::after {
     content: "暫無生效中的地震預警";
   }
 
@@ -42,6 +42,14 @@ html[lang="zh-Hant"] {
 }
 
 /**最外包**/
+/**沒有速報時隱藏**/
+.no-eew {
+  .info-box,
+  .info-footer {
+    display: none !important;
+  }
+}
+
 .info-wrapper {
   position: absolute;
   top: 0;
@@ -90,14 +98,6 @@ html[lang="zh-Hant"] {
       opacity: 0.75;
       font-size: 12px;
       margin-top: 5px;
-    }
-  }
-
-  /**沒有速報時隱藏**/
-  .no-eew {
-    .info-box,
-    .info-footer {
-      display: none !important;
     }
   }
 
