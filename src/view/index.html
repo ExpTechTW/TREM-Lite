@@ -10,10 +10,10 @@
     <div id="map" class="map"></div>
 
     <!--緊急速報 info box-->
-    <div class="info-wrapper no-eew">
+    <div id="info-wrapper" class="info-wrapper no-eew">
       <div class="info-title">
-        <div class="info-unit"></div>
-        <div class="info-number info-number-no"></div>
+        <div id="info-unit" class="info-unit"></div>
+        <div id="info-number" class="info-number info-number-no"></div>
       </div>
       <div class="info-body-wrapper" id="info-body-wrapper">
         <div class="info-box">
@@ -22,21 +22,23 @@
             <div class="info-intensity"></div>
           </div>
           <div class="info-more">
-            <div class="info-loc">花蓮縣壽豐鄉</div>
-            <div class="info-time">2024-10-31 00:50:00</div>
+            <div id="info-loc" class="info-loc"></div>
             <div class="info-mag-dep">
               <div class="info-mag">
                 <div class="info-mag-text"></div>
-                <div class="info-mag-val">5.5</div>
+                <div id="info-mag" class="info-mag-val"></div>
               </div>
               <div class="info-depth">
                 <div class="info-depth-text"></div>
-                <div class="info-depth-val">20</div>
+                <div id="info-depth" class="info-depth-val"></div>
               </div>
             </div>
           </div>
         </div>
         <div class="info-footer">
+          <div class="info-footer-container">
+            <span>2024-10-31 00:50:00</span>
+          </div>
           <div class="info-nsspe"><span></span></div>
         </div>
       </div>
