@@ -24,6 +24,10 @@ html[lang="zh-Hant"] {
   .report-box-items {
     overflow: hidden;
 
+    .survey {
+      background-color: #292929 !important;
+    }
+
     &:hover {
       bottom: -8px;
       overflow: scroll;
