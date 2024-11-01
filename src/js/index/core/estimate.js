@@ -3,7 +3,7 @@ const TREM = require("../constant");
 const EEWCalculator = require("../utils/eewCalculator");
 const { intensity_float_to_int } = require("../utils/utils");
 
-const calculator = new EEWCalculator(require("../../resource/data/time.json"));
+const calculator = new EEWCalculator(require("../../../resource/data/time.json"));
 
 const eewIntensityArea = {};
 

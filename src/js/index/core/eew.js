@@ -3,7 +3,7 @@ const EEWCalculator = require("../utils/eewCalculator");
 const now = require("../utils/ntp");
 const refresh_cross = require("./cross");
 
-const calculator = new EEWCalculator(require("../../resource/data/time.json"));
+const calculator = new EEWCalculator(require("../../../resource/data/time.json"));
 
 let flash = false;
 

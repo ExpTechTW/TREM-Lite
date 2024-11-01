@@ -1,6 +1,6 @@
 const maplibregl = require("maplibre-gl");
 
-const TREM = require("../js/constant");
+const TREM = require("./constant");
 
 const intensityIcons = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 

@@ -1,4 +1,4 @@
-const region = require("../../resource/data/region.json");
+const region = require("../../../resource/data/region.json");
 
 function distance(latA, lngA) {
   return function(latB, lngB) {

@@ -1,4 +1,4 @@
-const region = require("../../resource/data/region.json");
+const region = require("../../../resource/data/region.json");
 class EEWCalculator {
   constructor(timeTable) {
     this.timeTable = timeTable;
