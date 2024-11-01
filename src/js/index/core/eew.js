@@ -103,8 +103,9 @@ TREM.variable.events.on("EewUpdate", (ans) => {
   refresh_cross(true);
 });
 TREM.variable.events.on("EewEnd", (ans) => {
-  delete eew_cache[ans.data.id];
   removeEewLayersAndSources(ans.data.id);
+  delete eew_cache[ans.data.id];
+  show_eew(true);
 });
 
 setInterval(() => {
@@ -156,24 +157,31 @@ function show_eew(rotation = true) {
   }
 
   if (count) {
-    info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? "eew-alert" : "eew-warn"}`;
-    info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
-    if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-no info-number-last";
-    else info_number.className = "info-number info-number-no";
-    info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? "" : ` ${eew_rotation + 1}/${count}`}`;
-    info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
-    info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
-    info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
-    info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
-    if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) info_footer.className = "info-footer nsspe";
-    else info_footer.className = "info-footer";
-    info_time.textContent = formatTime(eew_cache[eew_list[eew_rotation]].eq.time);
+    if (eew_cache[eew_list[eew_rotation]]) {
+      info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? "eew-alert" : "eew-warn"}`;
+      info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
+      if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-no info-number-last";
+      else info_number.className = "info-number info-number-no";
+      info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? "" : ` ${eew_rotation + 1}/${count}`}`;
+      info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
+      info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
+      info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
+      info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
+      if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) info_footer.className = "info-footer nsspe";
+      else info_footer.className = "info-footer";
+      info_time.textContent = formatTime(eew_cache[eew_list[eew_rotation]].eq.time);
+    }
 
     if (rotation) {
       eew_rotation++;
       if (eew_rotation >= eew_list.length) eew_rotation = 0;
     }
-  } else info_wrapper.className = "info-wrapper no-eew";
+  } else {
+    info_wrapper.className = "info-wrapper no-eew";
+    info_number.textContent = "";
+    info_number.className = "info-number info-number-no";
+    info_unit.textContent = "";
+  }
 }
 
 function createCircleFeature(center, radius, steps = 256) {

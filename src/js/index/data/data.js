@@ -43,19 +43,19 @@ TREM.variable.events.on("MapLoad", (map) => {
 
 function EEWData(newData = []) {
   const currentTime = now();
-  const EXPIRY_TIME = 245 * 1000;
+  const EXPIRY_TIME = 255 * 1000;
 
   TREM.variable.data.eew
     .filter(item =>
       item.eq?.time &&
       (currentTime - item.eq.time > EXPIRY_TIME || item.EewEnd),
     )
-    .forEach(data =>
+    .forEach(data => {
       TREM.variable.events.emit("EewEnd", {
         info : { type: TREM.variable.play_mode },
         data : { ...data, EewEnd: true },
-      }),
-    );
+      });
+    });
 
   TREM.variable.data.eew = TREM.variable.data.eew.filter(item =>
     item.eq?.time &&
