@@ -6,6 +6,17 @@
   .current-station-pga-text::before {
     content: "加速度";
   }
+
+  .current-station-intensity-val:empty::before,
+  .current-station-pga-val:empty::before,
+  .current-station-loc:empty::before {
+    content: "---";
+  }
+
+  .rts-info-level:empty::before,
+  .rts-info-trigger:empty::before {
+    content: "0";
+  }
 }
 
 .station-pga-wrapper {
@@ -15,10 +26,7 @@
   color: white;
   font-size: 11px;
   font-weight: 500;
-  width: 220px;
-  height: 50px;
   display: flex;
-  margin-right: 5px;
   flex-direction: column;
 
   .current-station-pga {
@@ -55,12 +63,12 @@
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
-    width: 170px;
+    width: 160px;
   }
 
   .current-station-intensity-pga {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     font-size: 14px;
     margin-top: 2;
     font-weight: bold;
@@ -74,7 +82,6 @@
     font-size: 17px;
     font-weight: bold;
     text-align: start;
-    margin-left: 13px;
   }
 
   .current-station-intensity-text {
