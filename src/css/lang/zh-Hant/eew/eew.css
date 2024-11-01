@@ -192,9 +192,9 @@ html[lang="zh-Hant"] {
           .info-depth-text {
             position: absolute;
             line-height: 28px;
-            font-size: 28px;
+            font-size: 30px;
             font-weight: bold;
-            opacity: 0.15;
+            opacity: 0.1;
           }
 
           .info-mag .info-mag-val::before,
@@ -210,13 +210,13 @@ html[lang="zh-Hant"] {
           width: 60px;
 
           .info-mag-val {
-            margin-top: 5px;
-            font-size: 20px;
+            margin-top: -6px;
+            font-size: 28px;
             font-weight: bold;
 
             &:before {
               content: "𝖬";
-              font-size: 20px;
+              font-size: 30px;
               margin-right: 4px;
             }
           }
@@ -225,19 +225,19 @@ html[lang="zh-Hant"] {
         /**深度**/
         .info-depth {
           font-size: 28px;
-          width: 60px;
+          width: 110px;
           display: flex;
           justify-content: flex-end;
 
           .info-depth-val {
-            margin-top: 5px;
-            font-size: 20px;
+            margin-top: -2px;
+            font-size: 26px;
             font-weight: bold;
 
             &:after {
               margin-left: 4px;
               content: "㎞";
-              font-size: 15px;
+              font-size: 22px;
             }
           }
         }
@@ -260,7 +260,7 @@ html[lang="zh-Hant"] {
   .info-nsspe {
     font-weight: 700;
     line-height: 20px;
-    font-size: 15px;
+    font-size: 20px;
     display: none;
   }
 }
@@ -268,7 +268,7 @@ html[lang="zh-Hant"] {
 .nsspe {
   .info-nsspe {
     display: block;
-    margin-top: 10px;
+    margin-top: 6px;
   }
 
   .info-mag-dep {
