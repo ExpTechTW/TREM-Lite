@@ -9,6 +9,11 @@ html[lang="zh-Hant"] {
     }
   }
 
+  .eew-warn .info-unit::before,
+  .eew-alert .info-unit::before {
+    content: "地震速報 ";
+  }
+
   .info-number-last::after {
     content: "報(最終報)" !important;
   }
