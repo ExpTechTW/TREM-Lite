@@ -50,6 +50,14 @@ html[lang="zh-Hant"] {
   }
 }
 
+.eew-warn {
+  background-color: var(--eew-s-warn);
+}
+
+.eew-alert {
+  background-color: var(--eew-s-alert);
+}
+
 .info-wrapper {
   position: absolute;
   top: 0;
