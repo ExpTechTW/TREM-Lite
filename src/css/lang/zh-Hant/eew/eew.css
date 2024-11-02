@@ -9,8 +9,12 @@ html[lang="zh-Hant"] {
     }
   }
 
-  .eew-cancel .info-unit::after {
-    content: " (取消)";
+  .cancel-title span::before {
+    content: "取　消";
+  }
+
+  .cancel-body span::before {
+    content: "此地震速報已取消";
   }
 
   .eew-warn .info-unit::before {
@@ -304,8 +308,7 @@ html[lang="zh-Hant"] {
 
   .cancel-title {
     display: flex;
-    justify-content: space-between;
-    width: 30%;
+    justify-content: space-around;
     line-height: 36px;
     font-weight: 900;
     font-size: 36px;
