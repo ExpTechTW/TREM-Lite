@@ -109,31 +109,21 @@ TREM.variable.events.on("EewEnd", (ans) => {
 });
 
 setInterval(() => {
-  for (const eew of TREM.variable.data.eew) {
-    if (!TREM.constant.SHOW_TREM_EEW && eew.author == "trem") continue;
-    if (eew.eq.mag == 1) continue;
-    const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
-    const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
-    if (sWaveSource && pWaveSource) {
-      const center = [eew.eq.lon, eew.eq.lat];
-      const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
-      eew.dist = dist;
-      sWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.s_dist)] });
-      pWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.p_dist)] });
-    }
-  }
-}, 100);
+  flash = !flash;
+}, 500);
 
-if (!TREM.constant.SHOW_TREM_EEW)
-  setInterval(() => {
-    for (const eew of TREM.variable.data.eew) {
-      if (!eew.author == "trem") continue;
+setInterval(() => {
+  const alert = TREM.variable.data.eew.some(eew => eew.author != "trem");
+
+  for (const eew of TREM.variable.data.eew) {
+    if (!TREM.constant.SHOW_TREM_EEW && eew.author == "trem") {
       const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
       const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
       if (sWaveSource && pWaveSource) {
         const center = [eew.eq.lon, eew.eq.lat];
         const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
-        if (flash) {
+
+        if (!alert && flash) {
           sWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.s_dist)] });
           pWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.p_dist)] });
         } else {
@@ -141,10 +131,20 @@ if (!TREM.constant.SHOW_TREM_EEW)
           pWaveSource.setData({ type: "FeatureCollection", features: [] });
         }
       }
+      continue;
     }
 
-    flash = !flash;
-  }, 500);
+    if (eew.eq.mag == 1) continue;
+    const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
+    const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
+    if (sWaveSource && pWaveSource) {
+      const center = [eew.eq.lon, eew.eq.lat];
+      const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
+      sWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.s_dist)] });
+      pWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.p_dist)] });
+    }
+  }
+}, 100);
 
 setInterval(show_eew, 5000);
 
@@ -158,20 +158,24 @@ function show_eew(rotation = true) {
   }
 
   if (count) {
-    if (eew_cache[eew_list[eew_rotation]]) {
-      info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? "eew-alert" : "eew-warn"}`;
-      info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
-      if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-last";
-      else info_number.className = "info-number";
-      info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? "" : ` ${eew_rotation + 1}/${count}`}`;
-      info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
-      info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
-      info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
-      info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
-      if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) info_footer.className = "info-footer nsspe";
-      else info_footer.className = "info-footer";
-      info_time.textContent = formatTime(eew_cache[eew_list[eew_rotation]].eq.time);
-    }
+    if (eew_cache[eew_list[eew_rotation]])
+      if (!TREM.constant.SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == "trem") {
+        eew_rotation++;
+        if (eew_rotation >= eew_list.length) eew_rotation = 0;
+      } else {
+        info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? "eew-alert" : "eew-warn"}`;
+        info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
+        if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-last";
+        else info_number.className = "info-number";
+        info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? "" : ` ${eew_rotation + 1}/${count}`}`;
+        info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
+        info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
+        info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
+        info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
+        if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) info_footer.className = "info-footer nsspe";
+        else info_footer.className = "info-footer";
+        info_time.textContent = formatTime(eew_cache[eew_list[eew_rotation]].eq.time);
+      }
 
     if (rotation) {
       eew_rotation++;

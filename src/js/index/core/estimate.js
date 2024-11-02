@@ -32,7 +32,7 @@ function updateEewArea(ans) {
 
 function drawEewArea(ans, end = false) {
   const eewArea = processIntensityAreas();
-  const mergedArea = mergeEqArea(eewArea, ans.data.eq.area);
+  const mergedArea = mergeEqArea(eewArea, ans.data.eq.area ?? {});
 
   const highIntensityAreas = {};
   const highIntensityCities = new Set();

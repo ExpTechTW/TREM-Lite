@@ -15,6 +15,5 @@ require("../js/index/core/eew");
 require("../js/index/core/loop");
 require("../js/index/core/estimate");
 require("../js/index/core/audio");
-require("../js/index/core/text");
 require("../js/index/core/focus");
 require("../js/index/core/report");

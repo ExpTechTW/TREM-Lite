@@ -63,7 +63,7 @@ const TREM = {
       },
     },
 
-    SHOW_TREM_EEW: true,
+    SHOW_TREM_EEW: false,
 
     URL: {
       API : ["api-1.exptech.dev", "api-2.exptech.dev"],
@@ -98,7 +98,7 @@ const TREM = {
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
 
-    EEW_AUTHOR: ["trem"],
+    EEW_AUTHOR: ["trem", "cwa"],
   },
 
   variable: {
@@ -152,5 +152,8 @@ const TREM = {
 
 TREM.constant.AUDIO.SHINDO0.volume = 0.4;
 TREM.constant.AUDIO.UPDATE.volume = 0.2;
+
+if (TREM.constant.SHOW_TREM_EEW)
+  TREM.constant.EEW_AUTHOR = TREM.constant.EEW_AUTHOR.filter(author => author != "cwa");
 
 module.exports = TREM;

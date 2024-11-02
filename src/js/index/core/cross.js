@@ -6,7 +6,7 @@ function refresh_cross(show) {
 
   if (show) {
     for (const eew of TREM.variable.data.eew) {
-      if (!TREM.constant.SHOW_TREM_EEW && eew.author == "trem") return;
+      if (!TREM.constant.SHOW_TREM_EEW && eew.author == "trem") continue;
       const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
       const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
       if (sWaveSource && pWaveSource) eew_list.push(eew);
