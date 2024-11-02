@@ -1,4 +1,5 @@
 const { ipcRenderer } = require("electron");
+const { app } = require("@electron/remote");
 
 document.onkeydown = (e) => {
   if (e.key == "F11") ipcRenderer.send("toggleFullscreen");
@@ -17,3 +18,5 @@ document.querySelector(".fab").addEventListener("click", function() {
     close.classList.toggle("open");
   });
 });
+
+document.getElementById("current-version").textContent = app.getVersion();
