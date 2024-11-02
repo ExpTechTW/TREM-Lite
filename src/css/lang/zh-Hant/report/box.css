@@ -1,28 +1,32 @@
-html[lang="zh-Hant"] {
-  .report-intensity-text::before {
-    content: "觀測最大震度";
-  }
+.report-intensity-text::before {
+  content: "觀測最大震度";
 }
 
-/**最外包**/
+/** 最外包 **/
 .report-wrapper.hidden {
-  translate: 93%;
+  transform: translateX(93%);
 }
 
 .report-wrapper {
   position: absolute;
-  top: 0px;
+  top: 0;
   bottom: -15px;
-  right: 0px;
+  right: 0;
   width: 340px;
   max-width: 340px;
   z-index: 1001;
-  transition-property: opacity, translate;
-  transition-duration: 0.2s;
-  transition-timing-function: cubic-bezier(0.3, 0, 0.8, 0.15);
+  transition: opacity 0.2s cubic-bezier(0.3, 0, 0.8, 0.15), 
+              transform 0.2s cubic-bezier(0.3, 0, 0.8, 0.15);
 
   .report-box-items {
     overflow: hidden;
+    background-color: #464646;
+    padding-top: 3px;
+    position: absolute;
+    top: 0;
+    bottom: 10px;
+    right: 0;
+    width: 310px;
 
     .survey {
       background-color: #292929 !important;
@@ -46,25 +50,14 @@ html[lang="zh-Hant"] {
     cursor: pointer;
     width: 20px;
     background: #fff;
-    margin-top: 5;
+    margin-top: 5px;
   }
 
   .off {
     transform: scaleX(-1);
   }
 
-  .report-box-items {
-    background-color: #464646;
-    padding: 3px;
-    padding-top: 3px;
-    position: absolute;
-    top: 0px;
-    bottom: 10px;
-    right: 0px;
-    width: 310px;
-  }
-
-  /**盒容器**/
+  /** 盒容器 **/
   .report-box-item-contain {
     margin-bottom: 4px;
     display: flex;
@@ -73,31 +66,31 @@ html[lang="zh-Hant"] {
     color: #fff;
     cursor: pointer;
     border-radius: 12px;
-    transition: background-color 0.4s ease;
     border: 1px solid #ffffff38;
+    transition: background-color 0.4s ease;
 
     &:hover {
       background-color: #8a8a8ac7;
     }
 
-    /**觀測最大震度**/
+    /** 觀測最大震度 **/
     .report-intensity-text {
       display: none;
     }
 
     .report-intensity-val {
-      width: 55px;
-      height: 50px;
+      width: 80px;
+      height: 80px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 2px;
-      font-size: 30px;
-      font-weight: bold;
+      margin: 0 auto;
       border-radius: 12px;
+      font-size: 3em;
+      font-weight: bold;
     }
 
-    /**震央、時間**/
+    /** 震央、時間 **/
     .report-info-item {
       font-weight: bold;
 
@@ -110,19 +103,18 @@ html[lang="zh-Hant"] {
       }
     }
 
-    /**資訊盒**/
+    /** 資訊盒 **/
     .report-info-box {
       display: flex;
       align-items: center;
       width: 100%;
       justify-content: space-between;
 
-      /**規模**/
+      /** 規模 **/
       .report-mag {
         font-size: 28px;
         width: 60px;
 
-        /**規模文字**/
         .report-mag-text {
           font-size: 23px;
           font-weight: bold;
@@ -132,7 +124,6 @@ html[lang="zh-Hant"] {
           }
         }
 
-        /**沒有地震編號**/
         .normal {
           color: #fff;
         }
@@ -162,7 +153,6 @@ html[lang="zh-Hant"] {
         }
       }
 
-      /**規模文字**/
       .report-mag-val {
         font-size: 20px;
         font-weight: bold;
@@ -174,33 +164,30 @@ html[lang="zh-Hant"] {
         }
       }
 
-      /**深度**/
       .report-depth {
+        display: none;
         font-size: 28px;
         width: 60px;
-        display: none;
         justify-content: flex-end;
 
-        /**深度值**/
         .report-depth-val {
           font-size: 20px;
           font-weight: bold;
 
           &:after {
-            margin-left: 4px;
             content: "㎞";
             font-size: 15px;
+            margin-left: 4px;
           }
         }
       }
     }
   }
 
-  /**震度、深度**/
+  /** 震度、深度 **/
   .report-box-item-contain:first-child {
     padding: 10px;
 
-    /**觀測最大震度文字**/
     .report-intensity-text {
       font-size: 13px;
       font-weight: bold;
@@ -208,60 +195,41 @@ html[lang="zh-Hant"] {
       display: block;
     }
 
-    /**觀測最大震度值**/
     .report-intensity-val {
-      height: 80px;
       width: 80px;
+      height: 80px;
       font-size: 3em;
     }
 
-    /**震度值**/
-    .report-intensity-val {
-      height: 80px;
-      width: 80px;
-      font-size: 3em;
-    }
-
-    /**規模、深度**/
     .report-mag-dep {
       width: 100%;
       margin-top: 0.3em;
     }
 
-    /**規模值**/
     .report-mag-val {
       margin-top: 5px;
     }
 
-    /**資訊盒**/
     .report-info-box {
-      display: flex;
       flex-direction: column;
       align-items: stretch;
 
-      /**資訊盒物件**/
       .report-info-item {
         height: auto;
 
-        /**震央**/
         .report-loc {
           font-size: 28px;
         }
       }
     }
 
-    /**規模文字**/
     .report-mag-text {
-      position: relative;
       display: flex;
       gap: 4px;
-      height: 28px;
-      isolation: isolate;
       font-size: 28px;
       flex: 1 1 0%;
     }
 
-    /**深度**/
     .report-depth {
       display: flex;
     }
@@ -271,13 +239,10 @@ html[lang="zh-Hant"] {
       line-height: 36px;
 
       &:after {
-        margin-left: 4px;
         content: "km";
         font-size: 14px;
         font-weight: bold;
-        display: inline-block;
         line-height: 28px;
-        font-weight: 400;
       }
     }
   }
