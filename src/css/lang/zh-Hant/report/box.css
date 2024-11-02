@@ -23,6 +23,20 @@ html[lang="zh-Hant"] {
 
   .report-box-items {
     overflow-y: scroll;
+    scrollbar-color: transparent transparent;
+    scrollbar-width: thin;
+    background-color: #464646;
+    padding: 3px;
+    padding-top: 2px;
+    position: absolute;
+    top: 0px;
+    bottom: 10px;
+    right: 0px;
+    width: 310px;
+
+    &:hover {
+      scrollbar-color: #aaaaaa #464646;
+    }
 
     .survey {
       background-color: #292929 !important;
@@ -46,17 +60,6 @@ html[lang="zh-Hant"] {
 
   .off {
     transform: scaleX(-1);
-  }
-
-  .report-box-items {
-    background-color: #464646;
-    padding: 3px;
-    padding-top: 2px;
-    position: absolute;
-    top: 0px;
-    bottom: 10px;
-    right: 0px;
-    width: 310px;
   }
 
   :root {
