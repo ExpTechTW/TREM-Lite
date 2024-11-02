@@ -88,6 +88,7 @@ const map = new maplibregl.Map({
 });
 
 map.on("load", async () => {
+  map.resize();
   for (const i of intensityIcons)
     map.addImage(`intensity-${i}`, (await map.loadImage(`../resource/image/intensity-${i}-dark.png`)).data);
 
