@@ -34,11 +34,7 @@ TREM.variable.events.on("MapLoad", (map) => {
 });
 
 focus_button.addEventListener("click", () => {
-  TREM.variable.map.flyTo({
-    center   : [121.6, 23.5],
-    zoom     : 6.8,
-    duration : 0,
-  });
+  TREM.variable.map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 });
 
   lock = false;
   focus_button.style.color = "white";
@@ -51,7 +47,7 @@ function focus() {
     eew_bounds.push({ lon: eew.eq.lon, lat: eew.eq.lat });
 
   if (TREM.variable.cache.bounds.rts.length) updateMapBounds([...TREM.variable.cache.bounds.rts, ...eew_bounds]);
-  else TREM.variable.map.flyTo({ center: [121.6, 23.5], zoom: 6.8, duration: 500 });
+  else TREM.variable.map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 });
 }
 
 function updateMapBounds(coordinates, options = {}) {

@@ -9,8 +9,6 @@ const map = new maplibregl.Map({
   style     : {
     version : 8,
     name    : "ExpTech Studio",
-    center  : [120.85, 23.10],
-    zoom    : 6.2,
     sources : {
       map: {
         type     : "vector",
@@ -87,8 +85,12 @@ const map = new maplibregl.Map({
   dragRotate         : false,
 });
 
+map.on("resize", () => map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 }));
+
 map.on("load", async () => {
   map.resize();
+  map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 });
+
   for (const i of intensityIcons)
     map.addImage(`intensity-${i}`, (await map.loadImage(`../resource/image/intensity-${i}-dark.png`)).data);
 

@@ -4,10 +4,22 @@ const TREM = require("../constant");
 const close_button = document.querySelector("#close-btn");
 const reportWrapper = document.querySelector(".report-wrapper");
 
-close_button.addEventListener("click", () => {
+let close = false;
+
+close_button.addEventListener("click", toggleReport);
+
+function toggleReport() {
   close_button.classList.toggle("off");
   reportWrapper.classList.toggle("hidden");
-});
+  close = !close;
+}
+
+function initReportToggle() {
+  if (!close && window.innerWidth < 1080) toggleReport();
+}
+
+window.addEventListener("resize", initReportToggle);
+if (window.innerWidth < 1080) toggleReport();
 
 function formatTime(timestamp) {
   const date = new Date(timestamp);

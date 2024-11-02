@@ -72,20 +72,20 @@ function EEWData(newData = []) {
       data,
     };
 
-    if (existingIndex === -1)
+    if (existingIndex == -1)
       if (!TREM.variable.cache.eew_last[data.id]) {
-        TREM.variable.cache.eew_last[data.id] = {
-          last_time : currentTime,
-          serial    : 1,
-        };
         if (TREM.constant.EEW_AUTHOR.includes(data.author)) {
+          TREM.variable.cache.eew_last[data.id] = {
+            last_time : currentTime,
+            serial    : 1,
+          };
           TREM.variable.data.eew.push(data);
           TREM.variable.events.emit("EewRelease", eventData);
         }
         return;
       }
 
-    if (TREM.variable.cache.eew_last[data.id].serial < data.serial) {
+    if (TREM.variable.cache.eew_last[data.id] && TREM.variable.cache.eew_last[data.id].serial < data.serial) {
       TREM.variable.cache.eew_last[data.id].serial = data.serial;
       TREM.variable.events.emit("EewUpdate", eventData);
 
