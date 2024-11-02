@@ -68,7 +68,7 @@ const TREM = {
         "lb-3.exptech.dev",
         "lb-4.exptech.dev",
       ],
-      REPLAY: ["api-1.exptech.dev"],
+      REPLAY: ["api-2.exptech.dev"],
     },
 
     AUDIO: {
@@ -110,7 +110,7 @@ const TREM = {
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode : 2,
     replay    : {
-      start_time : 1730012211818,
+      start_time : 1730391501543,
       local_time : 0,
     },
     station : null,

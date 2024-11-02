@@ -296,7 +296,7 @@ function updateIntensityHistory(newData, time) {
     int_cache_list[int.code].values.push(int.i);
     int_cache_list[int.code].lastUpdate = time;
 
-    if (int_cache_list[int.code].values.length > 30)
+    if (int_cache_list[int.code].values.length > 45)
       int_cache_list[int.code].values.shift();
   }
 
