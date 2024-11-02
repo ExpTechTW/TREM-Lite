@@ -60,6 +60,7 @@ body {
   z-index: 1001;
   margin-left: 5px;
   padding: 3px;
+  pointer-events: none;
 
   .time-error {
     color: red;

@@ -28,6 +28,7 @@
   font-weight: 500;
   display: flex;
   flex-direction: column;
+  pointer-events: none;
 
   .current-station-pga {
     margin-top: 5px;

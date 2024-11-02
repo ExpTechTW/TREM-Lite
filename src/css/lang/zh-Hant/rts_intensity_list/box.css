@@ -28,6 +28,7 @@
   flex-direction: column;
   flex-wrap: wrap;
   text-align: center;
+  pointer-events: none;
 
   .rts-info-box {
     background-color: #505050c7;
@@ -120,6 +121,7 @@
   right: 19.5rem;
   min-height: 180px;
   transition: transform 0.6s ease;
+  pointer-events: none;
 
   .rts-intensity-list-box {
     flex: 1;
