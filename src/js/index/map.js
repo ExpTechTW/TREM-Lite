@@ -104,6 +104,7 @@ map.on("load", async () => {
   map.addSource("markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addSource("markers-geojson-0", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addSource("rts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("box-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
 
   map.addLayer({
     id     : "cross",
@@ -134,6 +135,28 @@ map.on("load", async () => {
       ],
       "icon-allow-overlap"    : true,
       "icon-ignore-placement" : true,
+    },
+  });
+  map.addLayer({
+    id     : "box-geojson",
+    type   : "line",
+    source : "box-geojson",
+    paint  : {
+      "line-width" : 2,
+      "line-color" : [
+        "match",
+        ["get", "i"],
+        9, TREM.constant.COLOR.BOX[2],
+        8, TREM.constant.COLOR.BOX[2],
+        7, TREM.constant.COLOR.BOX[2],
+        6, TREM.constant.COLOR.BOX[2],
+        5, TREM.constant.COLOR.BOX[2],
+        4, TREM.constant.COLOR.BOX[2],
+        3, TREM.constant.COLOR.BOX[1],
+        2, TREM.constant.COLOR.BOX[1],
+        1, TREM.constant.COLOR.BOX[0],
+        TREM.constant.COLOR.BOX[0],
+      ],
     },
   });
 

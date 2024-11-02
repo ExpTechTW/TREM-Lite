@@ -56,6 +56,11 @@ const TREM = {
         S : "#beff0c",
         P : "#beff0c",
       },
+      BOX: {
+        0 : "#00DB00",
+        1 : "#EAC100",
+        2 : "#FF0000",
+      },
     },
 
     SHOW_TREM_EEW: true,

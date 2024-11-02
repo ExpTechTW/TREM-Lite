@@ -3,6 +3,7 @@ const TREM = require("../constant");
 const { formatTime } = require("../utils/utils");
 const now = require("../utils/ntp");
 const refresh_cross = require("./cross");
+const refresh_box = require("./box");
 
 const time = document.getElementById("time");
 
@@ -19,5 +20,6 @@ TREM.variable.events.on("MapLoad", (map) => {
   setInterval(() => {
     flash = !flash;
     refresh_cross(flash);
+    refresh_box(flash);
   }, 500);
 });
