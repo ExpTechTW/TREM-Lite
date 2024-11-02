@@ -90,5 +90,3 @@ async function initializeStyles() {
 }
 
 initializeStyles();
-
-initializeStyles();
