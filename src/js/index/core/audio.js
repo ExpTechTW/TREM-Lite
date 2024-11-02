@@ -113,8 +113,6 @@ TREM.variable.events.on("EewUpdate", (ans) => {
   audioQueues.update.clear();
   audioQueues.update.add(TREM.constant.AUDIO.UPDATE);
 
-  console.log(ans.data, tts_cache);
-
   tts_cache[ans.data.id].now.loc = ans.data.eq.loc;
   tts_cache[ans.data.id].now.i = ans.data.eq.max;
 });
