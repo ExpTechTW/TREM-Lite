@@ -45,6 +45,7 @@ body {
 .map {
   height: 100%;
   width: 100%;
+  outline: none;
 }
 
 .connect {
@@ -90,7 +91,7 @@ html[lang="zh-Hant"] {
   transition: transform 0.6s ease;
 }
 
-.report-wrapper.hidden ~ .current-version-view {
+.report-wrapper.hidden~.current-version-view {
   transform: translateX(420%);
 }
 
@@ -151,9 +152,11 @@ html[lang="zh-Hant"] {
   0% {
     border-color: transparent;
   }
+
   50% {
     border-color: #fff900;
   }
+
   100% {
     border-color: transparent;
   }

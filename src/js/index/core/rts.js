@@ -198,57 +198,56 @@ TREM.variable.events.on("DataRts", (ans) => {
           if (I > 1) TREM.variable.cache.audio.count.shindo_1 = 0;
           TREM.variable.cache.audio.shindo = I;
         }
-      }
-
-      if (TREM.variable.cache.audio.pga && rts_max_pga < TREM.variable.cache.audio.pga) {
-        if (TREM.variable.cache.audio.status.pga == 2)
-          if (rts_max_pga < 200) {
-            TREM.variable.cache.audio.count.pga_2++;
-            if (TREM.variable.cache.audio.count.pga_2 >= 30) {
-              TREM.variable.cache.audio.count.pga_2 = 0;
-              TREM.variable.cache.audio.status.pga = 1;
-            }
-          } else
-            TREM.variable.cache.audio.count.pga_2 = 0;
-
-        else if (TREM.variable.cache.audio.status.pga == 1)
-          if (rts_max_pga < 8) {
-            TREM.variable.cache.audio.count.pga_1++;
-            if (TREM.variable.cache.audio.count.pga_1 >= 30) {
-              TREM.variable.cache.audio.count.pga_1 = 0;
-              TREM.variable.cache.audio.status.pga = 0;
-            }
-          } else
-            TREM.variable.cache.audio.count.pga_1 = 0;
-
-
-        TREM.variable.cache.audio.pga = rts_max_pga;
-      }
-
-      if (TREM.variable.cache.audio.shindo && rts_max_shindo < TREM.variable.cache.audio.shindo) {
-        if (TREM.variable.cache.audio.status.shindo == 3)
-          if (rts_max_shindo < 4) {
-            TREM.variable.cache.audio.count.shindo_2++;
-            if (TREM.variable.cache.audio.count.shindo_2 >= 15) {
-              TREM.variable.cache.audio.count.shindo_2 = 0;
-              TREM.variable.cache.audio.status.shindo = 2;
-            }
-          } else
-            TREM.variable.cache.audio.count.shindo_2 = 0;
-
-        else if (TREM.variable.cache.audio.status.shindo == 2)
-          if (rts_max_shindo < 2) {
-            TREM.variable.cache.audio.count.shindo_1++;
-            if (TREM.variable.cache.audio.count.shindo_1 >= 15) {
-              TREM.variable.cache.audio.count.shindo_1 = 0;
-              TREM.variable.cache.audio.status.shindo = 1;
-            }
-          } else
-            TREM.variable.cache.audio.count.shindo_1 = 0;
-
-        TREM.variable.cache.audio.shindo = rts_max_shindo;
       } else if (!eew_alert)
         data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: ans.data.station[id].i } });
+    }
+
+    if (TREM.variable.cache.audio.pga && rts_max_pga < TREM.variable.cache.audio.pga) {
+      if (TREM.variable.cache.audio.status.pga == 2)
+        if (rts_max_pga < 200) {
+          TREM.variable.cache.audio.count.pga_2++;
+          if (TREM.variable.cache.audio.count.pga_2 >= 30) {
+            TREM.variable.cache.audio.count.pga_2 = 0;
+            TREM.variable.cache.audio.status.pga = 1;
+          }
+        } else
+          TREM.variable.cache.audio.count.pga_2 = 0;
+
+      else if (TREM.variable.cache.audio.status.pga == 1)
+        if (rts_max_pga < 8) {
+          TREM.variable.cache.audio.count.pga_1++;
+          if (TREM.variable.cache.audio.count.pga_1 >= 30) {
+            TREM.variable.cache.audio.count.pga_1 = 0;
+            TREM.variable.cache.audio.status.pga = 0;
+          }
+        } else
+          TREM.variable.cache.audio.count.pga_1 = 0;
+
+      TREM.variable.cache.audio.pga = rts_max_pga;
+    }
+
+    if (TREM.variable.cache.audio.shindo && rts_max_shindo < TREM.variable.cache.audio.shindo) {
+      if (TREM.variable.cache.audio.status.shindo == 3)
+        if (rts_max_shindo < 4) {
+          TREM.variable.cache.audio.count.shindo_2++;
+          if (TREM.variable.cache.audio.count.shindo_2 >= 15) {
+            TREM.variable.cache.audio.count.shindo_2 = 0;
+            TREM.variable.cache.audio.status.shindo = 2;
+          }
+        } else
+          TREM.variable.cache.audio.count.shindo_2 = 0;
+
+      else if (TREM.variable.cache.audio.status.shindo == 2)
+        if (rts_max_shindo < 2) {
+          TREM.variable.cache.audio.count.shindo_1++;
+          if (TREM.variable.cache.audio.count.shindo_1 >= 15) {
+            TREM.variable.cache.audio.count.shindo_1 = 0;
+            TREM.variable.cache.audio.status.shindo = 1;
+          }
+        } else
+          TREM.variable.cache.audio.count.shindo_1 = 0;
+
+      TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
   }
 

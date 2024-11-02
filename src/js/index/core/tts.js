@@ -8,7 +8,7 @@ const speech = new Speech.default();
 
 speech.init().then((data) => {
   speech.setLanguage("zh-TW");
-  speech.setRate(1.5);
+  speech.setRate(1.8);
   TREM.variable.speech = speech;
   logger.info("Speech ready!");
 }).catch(e => {

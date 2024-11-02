@@ -1,15 +1,94 @@
 const TREM = require("../constant");
 
-const logger = require("../utils/logger");
 const { intensity_list } = require("../utils/utils");
 
 const tts_cache = {};
 let tts_eew_alert_lock = false;
 
+const priorityRules = {
+  pga: {
+    "PGA2" : ["PGA1", "PGA0"],
+    "PGA1" : ["PGA0"],
+  },
+  shindo: {
+    "SHINDO2" : ["SHINDO1", "SHINDO0"],
+    "SHINDO1" : ["SHINDO0"],
+  },
+  eew: {
+    "ALERT": ["EEW"],
+  },
+};
+
+class AudioQueue {
+  constructor() {
+    this.queue = [];
+    this.isPlaying = false;
+  }
+
+  getAudioName(audio) {
+    for (const [key, value] of Object.entries(TREM.constant.AUDIO))
+      if (value === audio) return key;
+
+    return null;
+  }
+
+  removeConflictingAudios(newAudio, rules) {
+    const audioName = this.getAudioName(newAudio);
+    if (!audioName || !rules[audioName]) return;
+
+    const toRemove = rules[audioName];
+    this.queue = this.queue.filter(queuedAudio => {
+      const queuedAudioName = this.getAudioName(queuedAudio);
+      return !toRemove.includes(queuedAudioName);
+    });
+  }
+
+  add(audio, rules = {}) {
+    this.removeConflictingAudios(audio, rules);
+    this.queue.push(audio);
+    this.playNext();
+  }
+
+  playNext() {
+    if (this.isPlaying || this.queue.length === 0) return;
+
+    this.isPlaying = true;
+    const audio = this.queue.shift();
+
+    audio.pause();
+    audio.currentTime = 0;
+
+    audio.play().then(() => {
+      audio.onended = () => {
+        this.isPlaying = false;
+        this.playNext();
+      };
+    }).catch(error => {
+      console.error("音效播放失敗:", error);
+      this.isPlaying = false;
+      this.playNext();
+    });
+  }
+
+  clear() {
+    this.queue = [];
+    this.isPlaying = false;
+  }
+}
+
+const audioQueues = {
+  eew    : new AudioQueue(),
+  pga    : new AudioQueue(),
+  shindo : new AudioQueue(),
+};
+
 TREM.variable.events.on("EewRelease", (ans) => {
   if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") return;
-  if (ans.data.status == 1) TREM.constant.AUDIO.ALERT.play();
-  else TREM.constant.AUDIO.EEW.play();
+
+  if (ans.data.status == 1)
+    audioQueues.eew.add(TREM.constant.AUDIO.ALERT, priorityRules.eew);
+  else
+    audioQueues.eew.add(TREM.constant.AUDIO.EEW, priorityRules.eew);
 
   tts_cache[ans.data.id] = {
     last : { loc: "", i: -1 },
@@ -19,12 +98,12 @@ TREM.variable.events.on("EewRelease", (ans) => {
 
 TREM.variable.events.on("EewAlert", (ans) => {
   if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") return;
-  TREM.constant.AUDIO.ALERT.play();
+  audioQueues.eew.add(TREM.constant.AUDIO.ALERT, priorityRules.eew);
 });
 
 TREM.variable.events.on("EewUpdate", (ans) => {
   if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") return;
-  TREM.constant.AUDIO.UPDATE.play();
+  audioQueues.eew.add(TREM.constant.AUDIO.UPDATE);
 
   tts_cache[ans.data.id].now.loc = ans.data.eq.loc;
   tts_cache[ans.data.id].now.i = ans.data.eq.max;
@@ -35,23 +114,23 @@ TREM.variable.events.on("EewEnd", (ans) => {
 });
 
 TREM.variable.events.on("RtsPga2", (ans) => {
-  TREM.constant.AUDIO.PGA2.play();
+  audioQueues.pga.add(TREM.constant.AUDIO.PGA2, priorityRules.pga);
 });
 
 TREM.variable.events.on("RtsPga1", (ans) => {
-  TREM.constant.AUDIO.PGA1.play();
+  audioQueues.pga.add(TREM.constant.AUDIO.PGA1, priorityRules.pga);
 });
 
 TREM.variable.events.on("RtsShindo2", (ans) => {
-  TREM.constant.AUDIO.SHINDO2.play();
+  audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO2, priorityRules.shindo);
 });
 
 TREM.variable.events.on("RtsShindo1", (ans) => {
-  TREM.constant.AUDIO.SHINDO1.play();
+  audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO1, priorityRules.shindo);
 });
 
 TREM.variable.events.on("RtsShindo0", (ans) => {
-  TREM.constant.AUDIO.SHINDO0.play();
+  audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO0);
 });
 
 TREM.variable.events.on("EewNewAreaAlert", (ans) => {
