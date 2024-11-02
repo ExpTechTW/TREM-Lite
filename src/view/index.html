@@ -1,241 +1,39 @@
 <html lang="zh-Hant">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../css/core/maplibre-gl.css" />
+    <link rel="stylesheet" href="../css/core/intensity.css" />
+  </head>
 
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta charset="utf-8" />
-  <link rel="stylesheet" href="../css/core/maplibre-gl.css" />
-  <link rel="stylesheet" href="../css/core/intensity.css" />
-</head>
+  <body>
+    <div id="map" class="map"></div>
 
-<body>
-  <div id="map" class="map"></div>
-
-  <!--緊急速報 info box-->
-  <div id="info-wrapper" class="info-wrapper no-eew">
-    <div class="info-title">
-      <div id="info-unit" class="info-unit"></div>
-      <div id="info-number" class="info-number"></div>
-    </div>
-    <div class="info-body-wrapper" id="info-body-wrapper">
-      <div class="info-box">
-        <div class="info-title-wrapper">
-          <div id="info-intensity" class="info-title-box"></div>
-          <div class="info-intensity"></div>
-        </div>
-        <div class="info-more">
-          <div id="info-loc" class="info-loc"></div>
-          <div id="info-time" class="info-time"></div>
-          <div id="info-footer" class="info-footer nsspe">
-            <div class="info-nsspe"><span></span></div>
-            <div class="info-mag-dep">
-              <div class="info-mag">
-                <div class="info-mag-text"></div>
-                <div id="info-mag" class="info-mag-val"></div>
-              </div>
-              <div class="info-depth">
-                <div class="info-depth-text"></div>
-                <div id="info-depth" class="info-depth-val"></div>
-              </div>
-            </div>
+    <!--緊急速報 info box-->
+    <div id="info-wrapper" class="info-wrapper no-eew">
+      <div class="info-title">
+        <div id="info-unit" class="info-unit"></div>
+        <div id="info-number" class="info-number"></div>
+      </div>
+      <div class="info-body-wrapper" id="info-body-wrapper">
+        <div class="info-box">
+          <div class="info-title-wrapper">
+            <div id="info-intensity" class="info-title-box"></div>
+            <div class="info-intensity"></div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!--震度階-->
-  <div class="intensity-color-list-wrapper">
-    <ul class="intensity-color-list">
-      <li class="intensity-li intensity-num-1">
-        <span class="color"></span>1
-      </li>
-      <li class="intensity-li intensity-num-2">
-        <span class="color"></span>2
-      </li>
-      <li class="intensity-li intensity-num-3">
-        <span class="color"></span>3
-      </li>
-      <li class="intensity-li intensity-num-4">
-        <span class="color"></span>4
-      </li>
-      <li class="intensity-li intensity-num-5">
-        <span class="color"></span>5⁻
-      </li>
-      <li class="intensity-li intensity-num-6">
-        <span class="color"></span>5⁺
-      </li>
-      <li class="intensity-li intensity-num-7">
-        <span class="color"></span>6⁻
-      </li>
-      <li class="intensity-li intensity-num-8">
-        <span class="color"></span>6⁺
-      </li>
-      <li class="intensity-li intensity-num-9">
-        <span class="color"></span>7
-      </li>
-    </ul>
-  </div>
-
-  <!--最大震度、PGA-->
-  <div class="max-intensity-pga-wrapper">
-    <div class="max-intensity">
-      <div class="max-intensity-text"></div>
-      <div id="max-intensity" class="max-station-intensity intensity-0"></div>
-    </div>
-    <div class="max-pga">
-      <div class="max-pga-text"></div>
-      <div id="max-pga" class="max-station-pga intensity-0"></div>
-    </div>
-  </div>
-
-  <!--所在地震度、PGA & level、trigger-->
-  <div class="station-pga-wrapper">
-    <div class="current-station-pga">
-      <div class="current-station-info">
-        <div id="current-station-loc" class="current-station-loc"></div>
-        <div class="current-station-intensity-pga">
-          <div class="current-station-intensity-box">
-            <div class="current-station-intensity-text"></div>
-            <div id="current-station-intensity-text" class="current-station-intensity-val"></div>
-          </div>
-          <div class="current-station-intensity-box">
-            <div class="current-station-pga-text"></div>
-            <div id="current-station-pga" class="current-station-pga-val"></div>
-          </div>
-        </div>
-      </div>
-      <div id="current-station-intensity" class="current-station-intensity intensity-0"></div>
-    </div>
-    <div class="rts-info-box">
-      <div class="rts-info-item">
-        <div>level</div>
-        <div id="rts-info-level" class="rts-info-level"></div>
-      </div>
-      <div class="rts-info-item">
-        <div>trigger</div>
-        <div id="rts-info-trigger" class="rts-info-trigger"></div>
-      </div>
-    </div>
-  </div>
-
-  <!--按鈕列表-->
-  <div class="fab">
-    <div class="option intensity-report"></div>
-    <div class="option source-report"></div>
-    <div class="option earthquake-report"></div>
-    <div class="option tsunami-warning"></div>
-    <div class="option earthquake-warning"></div>
-    <div class="close">
-      <svg class="open-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
-        <path
-          d="M8 6.00067L21 6.00139M8 12.0007L21 12.0015M8 18.0007L21 18.0015M3.5 6H3.51M3.5 12H3.51M3.5 18H3.51M4 6C4 6.27614 3.77614 6.5 3.5 6.5C3.22386 6.5 3 6.27614 3 6C3 5.72386 3.22386 5.5 3.5 5.5C3.77614 5.5 4 5.72386 4 6ZM4 12C4 12.2761 3.77614 12.5 3.5 12.5C3.22386 12.5 3 12.2761 3 12C3 11.7239 3.22386 11.5 3.5 11.5C3.77614 11.5 4 11.7239 4 12ZM4 18C4 18.2761 3.77614 18.5 3.5 18.5C3.22386 18.5 3 18.2761 3 18C3 17.7239 3.22386 17.5 3.5 17.5C3.77614 17.5 4 17.7239 4 18Z"
-          stroke="#ffffff" stroke-width="2" />
-      </svg>
-
-      <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20"
-        viewBox="0 0 30 30">
-        <path
-          d="M 7 4 C 6.744125 4 6.4879687 4.0974687 6.2929688 4.2929688 L 4.2929688 6.2929688 C 3.9019687 6.6839688 3.9019687 7.3170313 4.2929688 7.7070312 L 11.585938 15 L 4.2929688 22.292969 C 3.9019687 22.683969 3.9019687 23.317031 4.2929688 23.707031 L 6.2929688 25.707031 C 6.6839688 26.098031 7.3170313 26.098031 7.7070312 25.707031 L 15 18.414062 L 22.292969 25.707031 C 22.682969 26.098031 23.317031 26.098031 23.707031 25.707031 L 25.707031 23.707031 C 26.098031 23.316031 26.098031 22.682969 25.707031 22.292969 L 18.414062 15 L 25.707031 7.7070312 C 26.098031 7.3170312 26.098031 6.6829688 25.707031 6.2929688 L 23.707031 4.2929688 C 23.316031 3.9019687 22.682969 3.9019687 22.292969 4.2929688 L 15 11.585938 L 7.7070312 4.2929688 C 7.5115312 4.0974687 7.255875 4 7 4 z"
-          fill="#ffffff"></path>
-      </svg>
-    </div>
-  </div>
-
-  <!--所在地 PS 波抵達時間-->
-  <div class="local-box">
-    <div class="local-title">所在地預估</div>
-    <div class="local-container">
-      <div class="local-intensity intensity-8">6⁺</div>
-      <div class="wave-timer-container">
-        <div class="wave-timer">
-          <div class="wave-timer-name">P波</div>
-          <div class="wave-timer-value">10</div>
-        </div>
-        <div class="wave-timer">
-          <div class="wave-timer-name">S波</div>
-          <div class="wave-timer-value">抵達</div>
-        </div>
-      </div>
-      <div class="local-number">1</div>
-    </div>
-  </div>
-
-  <!--地震報告列表-->
-  <div class="report-wrapper">
-    <div class="report-list-btn" id="close-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
-        <path d="M20 0H0v20h20zm-7.354 14.166-1.389 1.439-5.737-5.529 5.729-5.657 1.4 1.424-4.267 4.215z" fill="#464646"
-          style="color: #464646"></path>
-      </svg>
-    </div>
-
-    <div class="report-scroll">
-      <div class="report-contain">
-        <div class="report-box">
-          <div class="report-box-items">
-            <div class="report-box-item-contain survey">
-              <div class="report-intensity-box">
-                <div class="report-intensity-val intensity-2"></div>
-                <div class="report-intensity-text"></div>
-              </div>
-              <div class="report-info-box">
-                <div class="report-info-item">
-                  <div class="report-loc"></div>
-                  <div class="report-time">2024-10-30 12:08</div>
+          <div class="info-more">
+            <div id="info-loc" class="info-loc"></div>
+            <div id="info-time" class="info-time"></div>
+            <div id="info-footer" class="info-footer nsspe">
+              <div class="info-nsspe"><span></span></div>
+              <div class="info-mag-dep">
+                <div class="info-mag">
+                  <div class="info-mag-text"></div>
+                  <div id="info-mag" class="info-mag-val"></div>
                 </div>
-                <div class="report-mag-dep">
-                  <div class="report-mag">
-                    <div class="report-mag-text"></div>
-                    <div class="report-mag-val"></div>
-                  </div>
-                  <div class="report-depth">
-                    <div class="report-depth-text"></div>
-                    <div class="report-depth-val"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="report-box-item-contain">
-              <div class="report-intensity-box">
-                <div class="report-intensity-val intensity-2"></div>
-                <div class="report-intensity-text"></div>
-              </div>
-              <div class="report-info-box">
-                <div class="report-info-item">
-                  <div class="report-loc">嘉義縣中埔鄉</div>
-                  <div class="report-time">2024-10-30 12:08</div>
-                </div>
-                <div class="report-mag-dep">
-                  <div class="report-mag">
-                    <div class="report-mag-text"></div>
-                    <div class="report-mag-val">5.5</div>
-                  </div>
-                  <div class="report-depth">
-                    <div class="report-depth-text"></div>
-                    <div class="report-depth-val">20</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="report-box-item-contain">
-              <div class="report-intensity-box">
-                <div class="report-intensity-val intensity-2"></div>
-                <div class="report-intensity-text"></div>
-              </div>
-              <div class="report-info-box">
-                <div class="report-info-item">
-                  <div class="report-loc">嘉義縣中埔鄉</div>
-                  <div class="report-time">2024-10-30 12:08</div>
-                </div>
-                <div class="report-mag-dep">
-                  <div class="report-mag">
-                    <div class="report-mag-text"></div>
-                    <div class="report-mag-val">5.5</div>
-                  </div>
-                  <div class="report-depth">
-                    <div class="report-depth-text"></div>
-                    <div class="report-depth-val">20</div>
-                  </div>
+                <div class="info-depth">
+                  <div class="info-depth-text"></div>
+                  <div id="info-depth" class="info-depth-val"></div>
                 </div>
               </div>
             </div>
@@ -243,181 +41,425 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!--即時震度-->
-  <div class="rts-intensity-list-wrapper">
-    <div class="rts-intensity-list-box">
-      <div class="rts-intensity-list-container">
-        <div class="rts-intenisty-list-text"></div>
-        <div id="rts-intensity-list" class="rts-intensity-list"></div>
+    <!--震度階-->
+    <div class="intensity-color-list-wrapper">
+      <ul class="intensity-color-list">
+        <li class="intensity-li intensity-num-1">
+          <span class="color"></span>1
+        </li>
+        <li class="intensity-li intensity-num-2">
+          <span class="color"></span>2
+        </li>
+        <li class="intensity-li intensity-num-3">
+          <span class="color"></span>3
+        </li>
+        <li class="intensity-li intensity-num-4">
+          <span class="color"></span>4
+        </li>
+        <li class="intensity-li intensity-num-5">
+          <span class="color"></span>5⁻
+        </li>
+        <li class="intensity-li intensity-num-6">
+          <span class="color"></span>5⁺
+        </li>
+        <li class="intensity-li intensity-num-7">
+          <span class="color"></span>6⁻
+        </li>
+        <li class="intensity-li intensity-num-8">
+          <span class="color"></span>6⁺
+        </li>
+        <li class="intensity-li intensity-num-9">
+          <span class="color"></span>7
+        </li>
+      </ul>
+    </div>
+
+    <!--最大震度、PGA-->
+    <div class="max-intensity-pga-wrapper">
+      <div class="max-intensity">
+        <div class="max-intensity-text"></div>
+        <div id="max-intensity" class="max-station-intensity intensity-0"></div>
+      </div>
+      <div class="max-pga">
+        <div class="max-pga-text"></div>
+        <div id="max-pga" class="max-station-pga intensity-0"></div>
       </div>
     </div>
-  </div>
 
-  <!--連線狀態、時間-->
-  <div class="connect">
-    <div class="time time-error" id="time">0000-00-00 00:00:00</div>
-  </div>
-
-  <!--左下角檢查版本號-->
-  <div class="version-check">
-    <div class="version-check-body">
-      <div class="version-check-text"></div>
-      <div class="version-check-box">
-        <div class="current-version">2.0.0-pre.1</div>
+    <!--所在地震度、PGA & level、trigger-->
+    <div class="station-pga-wrapper">
+      <div class="current-station-pga">
+        <div class="current-station-info">
+          <div id="current-station-loc" class="current-station-loc"></div>
+          <div class="current-station-intensity-pga">
+            <div class="current-station-intensity-box">
+              <div class="current-station-intensity-text"></div>
+              <div
+                id="current-station-intensity-text"
+                class="current-station-intensity-val"
+              ></div>
+            </div>
+            <div class="current-station-intensity-box">
+              <div class="current-station-pga-text"></div>
+              <div
+                id="current-station-pga"
+                class="current-station-pga-val"
+              ></div>
+            </div>
+          </div>
+        </div>
+        <div
+          id="current-station-intensity"
+          class="current-station-intensity intensity-0"
+        ></div>
+      </div>
+      <div class="rts-info-box">
+        <div class="rts-info-item">
+          <div>level</div>
+          <div id="rts-info-level" class="rts-info-level"></div>
+        </div>
+        <div class="rts-info-item">
+          <div>trigger</div>
+          <div id="rts-info-trigger" class="rts-info-trigger"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!--右上角目前版本號-->
-  <div class="current-version-view">
-    <div class="current-version">2.0.0-pre.1</div>
-  </div>
-
-  <div class="nav-bar-wrapper">
-    <div class="nav-bar-buttons">
-      <div class="nav-bar-setting">
-        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 24 24">
+    <!--按鈕列表-->
+    <div class="fab">
+      <div class="option intensity-report"></div>
+      <div class="option source-report"></div>
+      <div class="option earthquake-report"></div>
+      <div class="option tsunami-warning"></div>
+      <div class="option earthquake-warning"></div>
+      <div class="close">
+        <svg
+          class="open-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+        >
           <path
-            d="M 10.490234 2 C 10.011234 2 9.6017656 2.3385938 9.5097656 2.8085938 L 9.1757812 4.5234375 C 8.3550224 4.8338012 7.5961042 5.2674041 6.9296875 5.8144531 L 5.2851562 5.2480469 C 4.8321563 5.0920469 4.33375 5.2793594 4.09375 5.6933594 L 2.5859375 8.3066406 C 2.3469375 8.7216406 2.4339219 9.2485 2.7949219 9.5625 L 4.1132812 10.708984 C 4.0447181 11.130337 4 11.559284 4 12 C 4 12.440716 4.0447181 12.869663 4.1132812 13.291016 L 2.7949219 14.4375 C 2.4339219 14.7515 2.3469375 15.278359 2.5859375 15.693359 L 4.09375 18.306641 C 4.33275 18.721641 4.8321562 18.908906 5.2851562 18.753906 L 6.9296875 18.1875 C 7.5958842 18.734206 8.3553934 19.166339 9.1757812 19.476562 L 9.5097656 21.191406 C 9.6017656 21.661406 10.011234 22 10.490234 22 L 13.509766 22 C 13.988766 22 14.398234 21.661406 14.490234 21.191406 L 14.824219 19.476562 C 15.644978 19.166199 16.403896 18.732596 17.070312 18.185547 L 18.714844 18.751953 C 19.167844 18.907953 19.66625 18.721641 19.90625 18.306641 L 21.414062 15.691406 C 21.653063 15.276406 21.566078 14.7515 21.205078 14.4375 L 19.886719 13.291016 C 19.955282 12.869663 20 12.440716 20 12 C 20 11.559284 19.955282 11.130337 19.886719 10.708984 L 21.205078 9.5625 C 21.566078 9.2485 21.653063 8.7216406 21.414062 8.3066406 L 19.90625 5.6933594 C 19.66725 5.2783594 19.167844 5.0910937 18.714844 5.2460938 L 17.070312 5.8125 C 16.404116 5.2657937 15.644607 4.8336609 14.824219 4.5234375 L 14.490234 2.8085938 C 14.398234 2.3385937 13.988766 2 13.509766 2 L 10.490234 2 z M 12 8 C 14.209 8 16 9.791 16 12 C 16 14.209 14.209 16 12 16 C 9.791 16 8 14.209 8 12 C 8 9.791 9.791 8 12 8 z"
-            fill="#ffffff"></path>
+            d="M8 6.00067L21 6.00139M8 12.0007L21 12.0015M8 18.0007L21 18.0015M3.5 6H3.51M3.5 12H3.51M3.5 18H3.51M4 6C4 6.27614 3.77614 6.5 3.5 6.5C3.22386 6.5 3 6.27614 3 6C3 5.72386 3.22386 5.5 3.5 5.5C3.77614 5.5 4 5.72386 4 6ZM4 12C4 12.2761 3.77614 12.5 3.5 12.5C3.22386 12.5 3 12.2761 3 12C3 11.7239 3.22386 11.5 3.5 11.5C3.77614 11.5 4 11.7239 4 12ZM4 18C4 18.2761 3.77614 18.5 3.5 18.5C3.22386 18.5 3 18.2761 3 18C3 17.7239 3.22386 17.5 3.5 17.5C3.77614 17.5 4 17.7239 4 18Z"
+            stroke="#ffffff"
+            stroke-width="2"
+          />
         </svg>
-      </div>
-      <div id="focus" class="nav-bar-location">
-        <svg width="20" height="20" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
-          xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--gis"
-          preserveAspectRatio="xMidYMid meet">
+
+        <svg
+          class="close-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          x="0px"
+          y="0px"
+          width="20"
+          height="20"
+          viewBox="0 0 30 30"
+        >
           <path
-            d="M43 0v13.166C27.944 16.03 16.03 27.944 13.166 43H0v14h13.166C16.03 72.056 27.944 83.97 43 86.834V100h14V86.834C72.056 83.97 83.97 72.056 86.834 57H100V43H86.834C83.97 27.944 72.056 16.03 57 13.166V0H43zm7 22.5A27.425 27.425 0 0 1 77.5 50A27.425 27.425 0 0 1 50 77.5A27.425 27.425 0 0 1 22.5 50A27.425 27.425 0 0 1 50 22.5z"
-            fill="currentColor"></path>
-          <circle r="15" cy="50" cx="50" fill="currentColor"></circle>
+            d="M 7 4 C 6.744125 4 6.4879687 4.0974687 6.2929688 4.2929688 L 4.2929688 6.2929688 C 3.9019687 6.6839688 3.9019687 7.3170313 4.2929688 7.7070312 L 11.585938 15 L 4.2929688 22.292969 C 3.9019687 22.683969 3.9019687 23.317031 4.2929688 23.707031 L 6.2929688 25.707031 C 6.6839688 26.098031 7.3170313 26.098031 7.7070312 25.707031 L 15 18.414062 L 22.292969 25.707031 C 22.682969 26.098031 23.317031 26.098031 23.707031 25.707031 L 25.707031 23.707031 C 26.098031 23.316031 26.098031 22.682969 25.707031 22.292969 L 18.414062 15 L 25.707031 7.7070312 C 26.098031 7.3170312 26.098031 6.6829688 25.707031 6.2929688 L 23.707031 4.2929688 C 23.316031 3.9019687 22.682969 3.9019687 22.292969 4.2929688 L 15 11.585938 L 7.7070312 4.2929688 C 7.5115312 4.0974687 7.255875 4 7 4 z"
+            fill="#ffffff"
+          ></path>
         </svg>
       </div>
     </div>
-  </div>
 
-  <style>
-    :root {
-      --loading-bg: #1a1a1a;
-      --loading-text: #ffffff;
-      --loading-highlight: #4a9eff;
-      --fade-duration: 0.5s;
-    }
+    <!--所在地 PS 波抵達時間-->
+    <div class="local-box">
+      <div class="local-title">所在地預估</div>
+      <div class="local-container">
+        <div class="local-intensity intensity-8">6⁺</div>
+        <div class="wave-timer-container">
+          <div class="wave-timer">
+            <div class="wave-timer-name">P波</div>
+            <div class="wave-timer-value">10</div>
+          </div>
+          <div class="wave-timer">
+            <div class="wave-timer-name">S波</div>
+            <div class="wave-timer-value">抵達</div>
+          </div>
+        </div>
+        <div class="local-number">1</div>
+      </div>
+    </div>
 
-    body>*:not(#css-loading-indicator) {
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity var(--fade-duration) ease-in-out;
-    }
+    <!--地震報告列表-->
+    <div class="report-wrapper">
+      <div class="report-list-btn" id="close-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+          <path
+            d="M20 0H0v20h20zm-7.354 14.166-1.389 1.439-5.737-5.529 5.729-5.657 1.4 1.424-4.267 4.215z"
+            fill="#464646"
+            style="color: #464646"
+          ></path>
+        </svg>
+      </div>
 
-    body.content-loaded>*:not(#css-loading-indicator) {
-      visibility: visible;
-      opacity: 1;
-    }
+      <div class="report-scroll">
+        <div class="report-contain">
+          <div class="report-box">
+            <div class="report-box-items">
+              <div class="report-box-item-contain survey">
+                <div class="report-intensity-box">
+                  <div class="report-intensity-val intensity-2"></div>
+                  <div class="report-intensity-text"></div>
+                </div>
+                <div class="report-info-box">
+                  <div class="report-info-item">
+                    <div class="report-loc"></div>
+                    <div class="report-time">2024-10-30 12:08</div>
+                  </div>
+                  <div class="report-mag-dep">
+                    <div class="report-mag">
+                      <div class="report-mag-text"></div>
+                      <div class="report-mag-val"></div>
+                    </div>
+                    <div class="report-depth">
+                      <div class="report-depth-text"></div>
+                      <div class="report-depth-val"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="report-box-item-contain">
+                <div class="report-intensity-box">
+                  <div class="report-intensity-val intensity-2"></div>
+                  <div class="report-intensity-text"></div>
+                </div>
+                <div class="report-info-box">
+                  <div class="report-info-item">
+                    <div class="report-loc">嘉義縣中埔鄉</div>
+                    <div class="report-time">2024-10-30 12:08</div>
+                  </div>
+                  <div class="report-mag-dep">
+                    <div class="report-mag">
+                      <div class="report-mag-text"></div>
+                      <div class="report-mag-val">5.5</div>
+                    </div>
+                    <div class="report-depth">
+                      <div class="report-depth-text"></div>
+                      <div class="report-depth-val">20</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="report-box-item-contain">
+                <div class="report-intensity-box">
+                  <div class="report-intensity-val intensity-2"></div>
+                  <div class="report-intensity-text"></div>
+                </div>
+                <div class="report-info-box">
+                  <div class="report-info-item">
+                    <div class="report-loc">嘉義縣中埔鄉</div>
+                    <div class="report-time">2024-10-30 12:08</div>
+                  </div>
+                  <div class="report-mag-dep">
+                    <div class="report-mag">
+                      <div class="report-mag-text"></div>
+                      <div class="report-mag-val">5.5</div>
+                    </div>
+                    <div class="report-depth">
+                      <div class="report-depth-text"></div>
+                      <div class="report-depth-val">20</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    #css-loading-indicator {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: var(--loading-bg);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      transition: opacity var(--fade-duration) ease-in-out;
-    }
+    <!--即時震度-->
+    <div class="rts-intensity-list-wrapper">
+      <div class="rts-intensity-list-box">
+        <div class="rts-intensity-list-container">
+          <div class="rts-intenisty-list-text"></div>
+          <div id="rts-intensity-list" class="rts-intensity-list"></div>
+        </div>
+      </div>
+    </div>
 
-    .loading-animation {
-      text-align: center;
-      color: var(--loading-text);
-      font-size: 1.2rem;
-    }
+    <!--連線狀態、時間-->
+    <div class="connect">
+      <div class="time time-error" id="time">0000-00-00 00:00:00</div>
+    </div>
 
-    .loading-dots {
-      display: inline-block;
-      position: relative;
-      width: 60px;
-      height: 12px;
-      margin-left: 8px;
-    }
+    <!--左下角檢查版本號-->
+    <div class="version-check">
+      <div class="version-check-body">
+        <div class="version-check-text"></div>
+        <div class="version-check-box">
+          <div class="current-version">2.0.0-pre.1</div>
+        </div>
+      </div>
+    </div>
 
-    .loading-dots div {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--loading-highlight);
-      animation-timing-function: cubic-bezier(0, 1, 1, 0);
-    }
+    <!--右上角目前版本號-->
+    <div class="current-version-view">
+      <div class="current-version">2.0.0-pre.1</div>
+    </div>
 
-    .loading-dots div:nth-child(1) {
-      left: 6px;
-      animation: loading-dots1 0.6s infinite;
-    }
+    <div class="nav-bar-wrapper">
+      <div class="nav-bar-buttons">
+        <div class="nav-bar-setting">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            x="0px"
+            y="0px"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M 10.490234 2 C 10.011234 2 9.6017656 2.3385938 9.5097656 2.8085938 L 9.1757812 4.5234375 C 8.3550224 4.8338012 7.5961042 5.2674041 6.9296875 5.8144531 L 5.2851562 5.2480469 C 4.8321563 5.0920469 4.33375 5.2793594 4.09375 5.6933594 L 2.5859375 8.3066406 C 2.3469375 8.7216406 2.4339219 9.2485 2.7949219 9.5625 L 4.1132812 10.708984 C 4.0447181 11.130337 4 11.559284 4 12 C 4 12.440716 4.0447181 12.869663 4.1132812 13.291016 L 2.7949219 14.4375 C 2.4339219 14.7515 2.3469375 15.278359 2.5859375 15.693359 L 4.09375 18.306641 C 4.33275 18.721641 4.8321562 18.908906 5.2851562 18.753906 L 6.9296875 18.1875 C 7.5958842 18.734206 8.3553934 19.166339 9.1757812 19.476562 L 9.5097656 21.191406 C 9.6017656 21.661406 10.011234 22 10.490234 22 L 13.509766 22 C 13.988766 22 14.398234 21.661406 14.490234 21.191406 L 14.824219 19.476562 C 15.644978 19.166199 16.403896 18.732596 17.070312 18.185547 L 18.714844 18.751953 C 19.167844 18.907953 19.66625 18.721641 19.90625 18.306641 L 21.414062 15.691406 C 21.653063 15.276406 21.566078 14.7515 21.205078 14.4375 L 19.886719 13.291016 C 19.955282 12.869663 20 12.440716 20 12 C 20 11.559284 19.955282 11.130337 19.886719 10.708984 L 21.205078 9.5625 C 21.566078 9.2485 21.653063 8.7216406 21.414062 8.3066406 L 19.90625 5.6933594 C 19.66725 5.2783594 19.167844 5.0910937 18.714844 5.2460938 L 17.070312 5.8125 C 16.404116 5.2657937 15.644607 4.8336609 14.824219 4.5234375 L 14.490234 2.8085938 C 14.398234 2.3385937 13.988766 2 13.509766 2 L 10.490234 2 z M 12 8 C 14.209 8 16 9.791 16 12 C 16 14.209 14.209 16 12 16 C 9.791 16 8 14.209 8 12 C 8 9.791 9.791 8 12 8 z"
+              fill="#ffffff"
+            ></path>
+          </svg>
+        </div>
+        <div id="focus" class="nav-bar-location">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 100 100"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            aria-hidden="true"
+            role="img"
+            class="iconify iconify--gis"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <path
+              d="M43 0v13.166C27.944 16.03 16.03 27.944 13.166 43H0v14h13.166C16.03 72.056 27.944 83.97 43 86.834V100h14V86.834C72.056 83.97 83.97 72.056 86.834 57H100V43H86.834C83.97 27.944 72.056 16.03 57 13.166V0H43zm7 22.5A27.425 27.425 0 0 1 77.5 50A27.425 27.425 0 0 1 50 77.5A27.425 27.425 0 0 1 22.5 50A27.425 27.425 0 0 1 50 22.5z"
+              fill="currentColor"
+            ></path>
+            <circle r="15" cy="50" cx="50" fill="currentColor"></circle>
+          </svg>
+        </div>
+      </div>
+    </div>
 
-    .loading-dots div:nth-child(2) {
-      left: 6px;
-      animation: loading-dots2 0.6s infinite;
-    }
-
-    .loading-dots div:nth-child(3) {
-      left: 26px;
-      animation: loading-dots2 0.6s infinite;
-    }
-
-    .loading-dots div:nth-child(4) {
-      left: 45px;
-      animation: loading-dots3 0.6s infinite;
-    }
-
-    @keyframes loading-dots1 {
-      0% {
-        transform: scale(0);
+    <style>
+      :root {
+        --loading-bg: #1a1a1a;
+        --loading-text: #ffffff;
+        --loading-highlight: #4a9eff;
+        --fade-duration: 0.5s;
       }
 
-      100% {
-        transform: scale(1);
-      }
-    }
-
-    @keyframes loading-dots2 {
-      0% {
-        transform: translate(0, 0);
-      }
-
-      100% {
-        transform: translate(19px, 0);
-      }
-    }
-
-    @keyframes loading-dots3 {
-      0% {
-        transform: scale(1);
-      }
-
-      100% {
-        transform: scale(0);
-      }
-    }
-
-    .fade-in {
-      animation: fadeIn var(--fade-duration) ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      from {
+      body > *:not(#css-loading-indicator) {
+        visibility: hidden;
         opacity: 0;
       }
 
-      to {
+      body.content-loaded > *:not(#css-loading-indicator) {
+        visibility: visible;
         opacity: 1;
       }
-    }
-  </style>
-  <script src="../js/index/require.js" defer></script>
-</body>
 
+      #css-loading-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--loading-bg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity var(--fade-duration) ease-in-out;
+      }
+
+      .loading-animation {
+        text-align: center;
+        color: var(--loading-text);
+        font-size: 1.2rem;
+      }
+
+      .loading-dots {
+        display: inline-block;
+        position: relative;
+        width: 60px;
+        height: 12px;
+        margin-left: 8px;
+      }
+
+      .loading-dots div {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--loading-highlight);
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+      }
+
+      .loading-dots div:nth-child(1) {
+        left: 6px;
+        animation: loading-dots1 0.6s infinite;
+      }
+
+      .loading-dots div:nth-child(2) {
+        left: 6px;
+        animation: loading-dots2 0.6s infinite;
+      }
+
+      .loading-dots div:nth-child(3) {
+        left: 26px;
+        animation: loading-dots2 0.6s infinite;
+      }
+
+      .loading-dots div:nth-child(4) {
+        left: 45px;
+        animation: loading-dots3 0.6s infinite;
+      }
+
+      @keyframes loading-dots1 {
+        0% {
+          transform: scale(0);
+        }
+
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes loading-dots2 {
+        0% {
+          transform: translate(0, 0);
+        }
+
+        100% {
+          transform: translate(19px, 0);
+        }
+      }
+
+      @keyframes loading-dots3 {
+        0% {
+          transform: scale(1);
+        }
+
+        100% {
+          transform: scale(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn var(--fade-duration) ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <script src="../js/index/require.js" defer></script>
+  </body>
 </html>

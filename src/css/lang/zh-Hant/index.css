@@ -86,12 +86,11 @@ html[lang="zh-Hant"] {
   right: 345px;
   font-size: 15px;
   position: absolute;
-  color: #fff;
-  opacity: 0.1;
+  color: #ffffff1f;
   transition: transform 0.6s ease;
 }
 
-.report-wrapper.hidden~.current-version-view {
+.report-wrapper.hidden ~ .current-version-view {
   transform: translateX(420%);
 }
 
