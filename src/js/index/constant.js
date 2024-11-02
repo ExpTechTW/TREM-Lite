@@ -47,8 +47,9 @@ const TREM = {
       },
       EEW: {
         S: {
-          WARN  : "#ffaa00",
-          ALERT : "#ff0000",
+          WARN   : "#ffaa00",
+          ALERT  : "#ff0000",
+          CANCEL : "#404040",
         },
         P: "#00CACA",
       },

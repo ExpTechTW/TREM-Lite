@@ -9,6 +9,10 @@ html[lang="zh-Hant"] {
     }
   }
 
+  .eew-cancel .info-unit::after {
+    content: " (取消)";
+  }
+
   .eew-warn .info-unit::before {
     content: "地震速報 ";
   }
@@ -64,6 +68,10 @@ html[lang="zh-Hant"] {
 
 .eew-alert {
   background-color: var(--eew-s-alert) !important;
+}
+
+.eew-cancel {
+  background-color: var(--eew-s-cancel) !important;
 }
 
 .info-wrapper {
@@ -135,6 +143,7 @@ html[lang="zh-Hant"] {
     background-color: #383838;
     padding: 8px;
     min-height: 93px;
+    position: relative;
 
     /**body內包**/
     .info-box {
@@ -274,4 +283,41 @@ html[lang="zh-Hant"] {
   .info-mag-dep {
     display: none !important;
   }
+}
+
+/**取消報**/
+.cancel-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-evenly;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background-color: rgb(0 0 0 / 40%);
+  text-shadow: 2px 2px black, -2px -2px black, -2px 2px black, 2px -2px black;
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  flex-direction: column;
+  align-items: center;
+
+  .cancel-title {
+    display: flex;
+    justify-content: space-between;
+    width: 30%;
+    line-height: 36px;
+    font-weight: 900;
+    font-size: 36px;
+  }
+
+  .cancel-body {
+    line-height: 14px;
+    font-weight: 500;
+    font-size: 14px;
+  }
+}
+
+.eew-cancel .cancel-box {
+  opacity: 1;
 }
