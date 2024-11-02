@@ -170,10 +170,10 @@ TREM.variable.events.on("DataRts", (ans) => {
 
         if (pga > TREM.variable.cache.audio.pga) {
           if (pga > 200 && TREM.variable.cache.audio.status.pga != 2) {
-            TREM.constant.AUDIO.PGA2.play();
+            TREM.variable.events.emit("RtsPga2", ans.data);
             TREM.variable.cache.audio.status.pga = 2;
           } else if (pga > 8 && !TREM.variable.cache.audio.status.pga) {
-            TREM.constant.AUDIO.PGA1.play();
+            TREM.variable.events.emit("RtsPga1", ans.data);
             TREM.variable.cache.audio.status.pga = 1;
           }
 
@@ -184,16 +184,13 @@ TREM.variable.events.on("DataRts", (ans) => {
 
         if (I > TREM.variable.cache.audio.shindo) {
           if (I > 3 && TREM.variable.cache.audio.status.shindo != 3) {
-            TREM.constant.AUDIO.SHINDO2.play();
-
+            TREM.variable.events.emit("RtsShindo2", ans.data);
             TREM.variable.cache.audio.status.shindo = 3;
           } else if (I > 1 && TREM.variable.cache.audio.status.shindo < 2) {
-            TREM.constant.AUDIO.SHINDO1.play();
-
+            TREM.variable.events.emit("RtsShindo1", ans.data);
             TREM.variable.cache.audio.status.shindo = 2;
           } else if (!TREM.variable.cache.audio.status.shindo) {
-            TREM.constant.AUDIO.SHINDO0.play();
-
+            TREM.variable.events.emit("RtsShindo0", ans.data);
             TREM.variable.cache.audio.status.shindo = 1;
           }
 

@@ -34,6 +34,26 @@ TREM.variable.events.on("EewEnd", (ans) => {
   delete tts_cache[ans.data.id];
 });
 
+TREM.variable.events.on("RtsPga2", (ans) => {
+  TREM.constant.AUDIO.PGA2.play();
+});
+
+TREM.variable.events.on("RtsPga1", (ans) => {
+  TREM.constant.AUDIO.PGA1.play();
+});
+
+TREM.variable.events.on("RtsShindo2", (ans) => {
+  TREM.constant.AUDIO.SHINDO2.play();
+});
+
+TREM.variable.events.on("RtsShindo1", (ans) => {
+  TREM.constant.AUDIO.SHINDO1.play();
+});
+
+TREM.variable.events.on("RtsShindo0", (ans) => {
+  TREM.constant.AUDIO.SHINDO0.play();
+});
+
 TREM.variable.events.on("EewNewAreaAlert", (ans) => {
   if (!TREM.variable.tts) return;
   if (TREM.variable.speech.speaking()) TREM.variable.speech.cancel();
