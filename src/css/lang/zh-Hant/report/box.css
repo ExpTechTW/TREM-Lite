@@ -22,7 +22,7 @@ html[lang="zh-Hant"] {
   transition-timing-function: cubic-bezier(0.3, 0, 0.8, 0.15);
 
   .report-box-items {
-    overflow: hidden;
+    overflow-y: scroll;
 
     .survey {
       background-color: #292929 !important;
@@ -34,11 +34,6 @@ html[lang="zh-Hant"] {
       .report-loc:before {
         content: "震源調查中";
       }
-    }
-
-    &:hover {
-      bottom: -8px;
-      overflow: scroll;
     }
   }
 
@@ -56,12 +51,17 @@ html[lang="zh-Hant"] {
   .report-box-items {
     background-color: #464646;
     padding: 3px;
-    padding-top: 3px;
+    padding-top: 2px;
     position: absolute;
     top: 0px;
     bottom: 10px;
     right: 0px;
     width: 310px;
+  }
+
+  :root {
+    --x: 50%;
+    --y: 50%;
   }
 
   /**盒容器**/
@@ -75,9 +75,72 @@ html[lang="zh-Hant"] {
     border-radius: 12px;
     transition: background-color 0.4s ease;
     border: 1px solid #ffffff38;
+    margin-right: 0px;
+    position: relative;
+    overflow: hidden;
 
+    .report-buttons {
+      display: none;
+    }
     &:hover {
       background-color: #8a8a8ac7;
+
+      .report-buttons {
+        display: flex;
+        background-color: #292929c4;
+        margin-right: 0px;
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        justify-content: space-evenly;
+        align-items: center;
+
+        .report-web,
+        .report-replay {
+          height: 30px;
+          width: 50px;
+          border-radius: 5px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #505050;
+          border: 1px solid #ffffff47;
+
+          &:hover {
+            background-color: #252424;
+            border: 1px solid #ffffff47;
+          }
+        }
+      }
+    }
+
+    .report-intensity-wrapper {
+      display: contents;
+    }
+
+    /**點擊波紋**/
+    &:not(.survey) {
+      &::after {
+        content: "";
+        position: absolute;
+        width: 200%;
+        height: 200%;
+        background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+        background-repeat: no-repeat;
+        background-position: 50%;
+        transform: translate(-50%, -50%) scale(10);
+        opacity: 0;
+        transition: transform 0.8s, opacity 0.8s;
+        left: var(--x, 50%);
+        top: var(--y, 50%);
+        pointer-events: none;
+      }
+
+      &:active::after {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.3;
+        transition: 0s;
+      }
     }
 
     /**觀測最大震度**/
@@ -85,6 +148,7 @@ html[lang="zh-Hant"] {
       display: none;
     }
 
+    /**觀測最大震度值**/
     .report-intensity-val {
       width: 55px;
       height: 50px;
@@ -139,6 +203,7 @@ html[lang="zh-Hant"] {
       }
     }
 
+    /**規模、深度**/
     .report-mag-dep {
       display: flex;
       justify-content: space-between;
@@ -196,7 +261,7 @@ html[lang="zh-Hant"] {
     }
   }
 
-  /**震度、深度**/
+  /**第一個地震報告元素**/
   .report-box-item-contain:first-child {
     padding: 10px;
 
@@ -280,5 +345,10 @@ html[lang="zh-Hant"] {
         font-weight: 400;
       }
     }
+  }
+
+  /**有編號**/
+  .is-num .report-mag {
+    color: #ffeb00;
   }
 }
