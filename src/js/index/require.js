@@ -1,12 +1,12 @@
-const logger = require("../js/index/utils/logger");
+const logger = require("../js/core/utils/logger");
 
 logger.info("App start");
 
+require("../js/index/nav");
 require("../js/index/lang");
 require("../js/index/event");
 require("../js/index/map");
 require("../js/index/data/data");
-require("../js/index/nav");
 
 require("../js/index/core/resource");
 require("../js/index/core/tts");

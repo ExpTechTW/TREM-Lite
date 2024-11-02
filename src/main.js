@@ -14,6 +14,7 @@ const fs = require("fs");
  * @type {BrowserWindow}
  */
 let win;
+let SettingWindow;
 let tray = null;
 const hide = process.argv.includes("--start") ? true : false;
 
@@ -82,6 +83,37 @@ function createWindow() {
   win.loadFile("./view/index.html");
 }
 
+function createSettingWindow() {
+  if (SettingWindow instanceof BrowserWindow)
+    return SettingWindow.focus();
+
+  SettingWindow = new BrowserWindow({
+    title          : "TREM-Lite Setting",
+    height         : 600,
+    width          : 1000,
+    show           : false,
+    icon           : "TREM.ico",
+    webPreferences : {
+      nodeIntegration      : true,
+      contextIsolation     : false,
+      enableRemoteModule   : true,
+      backgroundThrottling : false,
+      nativeWindowOpen     : true,
+    },
+  });
+  require("@electron/remote/main").enable(SettingWindow.webContents);
+  SettingWindow.loadFile("./view/setting.html");
+  SettingWindow.setMenu(null);
+  SettingWindow.webContents.on("did-finish-load", () => SettingWindow.show());
+  SettingWindow.on("close", () => {
+    SettingWindow = null;
+    if (win) {
+      win.webContents.executeJavaScript("close()");
+      win.webContents.reload();
+    }
+  });
+}
+
 const shouldQuit = app.requestSingleInstanceLock();
 
 if (!shouldQuit) app.quit();
@@ -106,6 +138,8 @@ app.on("activate", () => {
 app.on("browser-window-created", (e, window) => {
   window.removeMenu();
 });
+
+ipcMain.on("openSettingWindow", (event, arg) => createSettingWindow());
 
 ipcMain.on("israw", () => {
   win.webContents.send("israwok", test);

@@ -1,4 +1,4 @@
-const logger = require("./logger");
+const logger = require("../../core/utils/logger");
 
 async function fetchData(url, timeout = 1000) {
   const controller = new AbortController();

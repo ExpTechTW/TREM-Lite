@@ -19,4 +19,6 @@ document.querySelector(".fab").addEventListener("click", function() {
   });
 });
 
+document.getElementById("setting").addEventListener("click", () => ipcRenderer.send("openSettingWindow"));
+
 document.getElementById("current-version").textContent = app.getVersion();
