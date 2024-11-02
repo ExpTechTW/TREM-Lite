@@ -15,8 +15,8 @@
   width: 340px;
   max-width: 340px;
   z-index: 1001;
-  transition: opacity 0.2s cubic-bezier(0.3, 0, 0.8, 0.15), 
-              transform 0.2s cubic-bezier(0.3, 0, 0.8, 0.15);
+  transition: opacity 0.2s cubic-bezier(0.3, 0, 0.8, 0.15),
+    transform 0.2s cubic-bezier(0.3, 0, 0.8, 0.15);
 
   .report-box-items {
     overflow: hidden;
@@ -79,14 +79,14 @@
     }
 
     .report-intensity-val {
-      width: 80px;
-      height: 80px;
+      width: 62px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto;
       border-radius: 12px;
-      font-size: 3em;
+      font-size: 2em;
       font-weight: bold;
     }
 
