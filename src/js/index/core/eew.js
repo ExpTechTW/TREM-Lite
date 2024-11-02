@@ -160,8 +160,8 @@ function show_eew(rotation = true) {
     if (eew_cache[eew_list[eew_rotation]]) {
       info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? "eew-alert" : "eew-warn"}`;
       info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
-      if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-no info-number-last";
-      else info_number.className = "info-number info-number-no";
+      if (eew_cache[eew_list[eew_rotation]].final) info_number.className = "info-number info-number-last";
+      else info_number.className = "info-number";
       info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? "" : ` ${eew_rotation + 1}/${count}`}`;
       info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
       info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
@@ -179,7 +179,7 @@ function show_eew(rotation = true) {
   } else {
     info_wrapper.className = "info-wrapper no-eew";
     info_number.textContent = "";
-    info_number.className = "info-number info-number-no";
+    info_number.className = "info-number";
     info_unit.textContent = "";
   }
 }
