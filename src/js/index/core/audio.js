@@ -28,7 +28,6 @@ class AudioQueue {
   getAudioName(audio) {
     for (const [key, value] of Object.entries(TREM.constant.AUDIO))
       if (value === audio) return key;
-
     return null;
   }
 
@@ -111,6 +110,7 @@ TREM.variable.events.on("EewAlert", (ans) => {
 
 TREM.variable.events.on("EewUpdate", (ans) => {
   if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") return;
+  audioQueues.update.clear();
   audioQueues.update.add(TREM.constant.AUDIO.UPDATE);
 
   tts_cache[ans.data.id].now.loc = ans.data.eq.loc;
