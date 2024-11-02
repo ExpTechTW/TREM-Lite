@@ -251,34 +251,32 @@ TREM.variable.events.on("DataRts", (ans) => {
     }
   }
 
-  if (ans.data || (Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) {
-    if (TREM.variable.map) {
-      TREM.variable.map.getSource("rts").setData({ type: "FeatureCollection", features: data_list });
-      TREM.variable.map.getSource("markers-geojson").setData({ type: "FeatureCollection", features: data_alert_list });
-      TREM.variable.map.getSource("markers-geojson-0").setData({ type: "FeatureCollection", features: data_alert_0_list });
-    }
-
-    const box_list = getTopIntensities(
-      updateIntensityHistory(ans.data?.int ?? [], ans.data?.time ?? 0),
-    ).sort((a, b) => b.i - a.i)
-      .map(loc => intensity_item(loc.i, loc.name));
-
-    const alert = (!ans.data?.box) ? false : Object.keys(ans.data.box).length;
-
-    rts_intensity_list.replaceChildren(...box_list);
-
-    max_pga.textContent = `${pga.toFixed(2)} gal`;
-    max_pga.className = `max-station-pga ${(!alert) ? "intensity-0" : `intensity-${calculator.pgaToIntensity(pga)}`}`;
-    max_intensity.className = `max-station-intensity intensity-${ans.data?.int?.[0]?.i ?? 0}`;
-
-    for (const id of Object.keys(level_list))
-      level += level_list[id];
-
-    rts_info_level.textContent = Math.round(level);
-    rts_info_trigger.textContent = trigger;
-
-    TREM.variable.cache.bounds.rts = coordinates;
+  if (TREM.variable.map) {
+    TREM.variable.map.getSource("rts").setData({ type: "FeatureCollection", features: data_list });
+    TREM.variable.map.getSource("markers-geojson").setData({ type: "FeatureCollection", features: data_alert_list });
+    TREM.variable.map.getSource("markers-geojson-0").setData({ type: "FeatureCollection", features: data_alert_0_list });
   }
+
+  const box_list = getTopIntensities(
+    updateIntensityHistory(ans.data?.int ?? [], ans.data?.time ?? 0),
+  ).sort((a, b) => b.i - a.i)
+    .map(loc => intensity_item(loc.i, loc.name));
+
+  const alert = (!ans.data?.box) ? false : Object.keys(ans.data.box).length;
+
+  rts_intensity_list.replaceChildren(...box_list);
+
+  max_pga.textContent = `${pga.toFixed(2)} gal`;
+  max_pga.className = `max-station-pga ${(!alert) ? "intensity-0" : `intensity-${calculator.pgaToIntensity(pga)}`}`;
+  max_intensity.className = `max-station-intensity intensity-${ans.data?.int?.[0]?.i ?? 0}`;
+
+  for (const id of Object.keys(level_list))
+    level += level_list[id];
+
+  rts_info_level.textContent = Math.round(level);
+  rts_info_trigger.textContent = trigger;
+
+  TREM.variable.cache.bounds.rts = coordinates;
 });
 
 function updateIntensityHistory(newData, time) {

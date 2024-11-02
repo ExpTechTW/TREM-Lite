@@ -23,7 +23,7 @@ TREM.variable.events.on("MapLoad", (map) => {
 
       const data = await http((TREM.variable.play_mode == 0) ? null : now());
 
-      if (!TREM.variable.data.rts || !data.rts || TREM.variable.data.rts.time < data.rts.time) {
+      if (!TREM.variable.data.rts || (!data.rts && ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR)) || TREM.variable.data.rts.time < data.rts.time) {
         TREM.variable.data.rts = data.rts;
         TREM.variable.events.emit("DataRts", {
           info: {
