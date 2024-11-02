@@ -141,6 +141,10 @@ TREM.variable.events.on("RtsShindo0", (ans) => {
   audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO0);
 });
 
+TREM.variable.events.on("ReportRelease", (ans) => {
+  TREM.constant.AUDIO.REPORT.play();
+});
+
 TREM.variable.events.on("EewNewAreaAlert", (ans) => {
   if (!TREM.variable.tts) return;
   if (TREM.variable.speech.speaking()) TREM.variable.speech.cancel();

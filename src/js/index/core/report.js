@@ -137,19 +137,24 @@ async function get_report() {
 
 async function refresh_report() {
   const report_list = await get_report();
-  if (report_list)
-    if (!TREM.variable.data.report) {
-      TREM.variable.data.report = report_list;
-      generateReportBoxItems(report_list, null);
-    } else {
+  if (!report_list) return;
 
-    }
+  if (!TREM.variable.data.report) {
+    TREM.variable.data.report = report_list;
+    generateReportBoxItems(report_list, TREM.variable.data.intensity ? { time: TREM.variable.data.intensity.id, intensity: TREM.variable.data.intensity.max } : null);
+    return;
+  }
+
+  const existingIds = new Set(TREM.variable.data.report.map(item => item.id));
+  const newReports = report_list.filter(report => !existingIds.has(report.id));
+
+  if (newReports.length > 0) {
+    TREM.variable.events.emit("ReportRelease", newReports[0]);
+
+    TREM.variable.data.report = report_list;
+    generateReportBoxItems(report_list, TREM.variable.data.intensity ? { time: TREM.variable.data.intensity.id, intensity: TREM.variable.data.intensity.max } : null);
+  }
 }
 
 setInterval(refresh_report, 10000);
 refresh_report();
-
-// generateReportBoxItems(sampleData, {
-//   time      : 1730012315000,
-//   intensity : 9,
-// });
