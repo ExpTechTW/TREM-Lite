@@ -95,11 +95,14 @@ const TREM = {
       RESOURCE : 3500,
       RTS      : 1500,
       EEW      : 1500,
+      REPORT   : 5000,
     },
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
 
     EEW_AUTHOR: ["trem", "cwa"],
+
+    REPORT_LIMIT: 50,
   },
 
   variable: {
@@ -114,7 +117,7 @@ const TREM = {
       eew       : [],
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
-    play_mode : 2,
+    play_mode : 0,
     replay    : {
       start_time : 1730391501543,
       local_time : 0,
@@ -125,8 +128,8 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
-      eew_id : [],
-      time   : {
+      eew_last : {},
+      time     : {
         syncedTime : 0,
         lastSync   : 0,
       },
