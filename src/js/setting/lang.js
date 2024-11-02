@@ -1,36 +1,3 @@
-const TREM = require("./constant");
-
-function generateColorCSS() {
-  let css = ":root {\n";
-
-  Object.entries(TREM.constant.COLOR.RTS).forEach(([key, value]) => {
-    const cssKey = key.replace("_", "-");
-    css += `  --rts-${cssKey}: ${value};\n`;
-  });
-
-  Object.entries(TREM.constant.COLOR.INTENSITY).forEach(([key, value]) => {
-    css += `  --intensity-${key}: ${value};\n`;
-  });
-
-  Object.entries(TREM.constant.COLOR.INTENSITY_TEXT).forEach(([key, value]) => {
-    css += `  --intensity-text-${key}: ${value};\n`;
-  });
-
-  css += `  --eew-s-warn: ${TREM.constant.COLOR.EEW.S.WARN};\n`;
-  css += `  --eew-s-alert: ${TREM.constant.COLOR.EEW.S.ALERT};\n`;
-  css += `  --eew-s-cancel: ${TREM.constant.COLOR.EEW.S.CANCEL};\n`;
-  css += `  --eew-p: ${TREM.constant.COLOR.EEW.P};\n`;
-
-  css += "}\n";
-  return css;
-}
-
-function injectColorStyles() {
-  const style = document.createElement("style");
-  style.textContent = generateColorCSS();
-  document.head.appendChild(style);
-}
-
 function loadCSS(href) {
   return new Promise((resolve, reject) => {
     const link = document.createElement("link");
@@ -78,8 +45,7 @@ async function initializeStyles() {
   const loadingIndicator = showLoadingIndicator();
 
   try {
-    injectColorStyles();
-    await loadCSS("../css/lang/zh-Hant/index/index.css");
+    await loadCSS("../css/lang/zh-Hant/setting/index.css");
 
     await new Promise(resolve => setTimeout(resolve, 100));
 

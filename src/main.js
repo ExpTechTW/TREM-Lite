@@ -92,6 +92,9 @@ function createSettingWindow() {
     height         : 600,
     width          : 1000,
     show           : false,
+    frame          : false,
+    transparent    : true,
+    vibrancy       : "ultra-dark",
     icon           : "TREM.ico",
     webPreferences : {
       nodeIntegration      : true,

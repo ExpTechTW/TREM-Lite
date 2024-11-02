@@ -1,0 +1,37 @@
+@import url("./main/box.css");
+
+body {
+  user-select: none;
+  margin: 0;
+  font-family: "Lato", "Noto Sans TC", sans-serif;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+
+  --surface-hsl: 0deg 0% 25%;
+  --surface-variant-hsl: 0deg 0% 20%;
+  --background-hsl: 0deg 0% 13%;
+  --background-variant-hsl: 0deg 0% 16%;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-button {
+  background: transparent;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgb(0 0 0 / 40%);
+  border: 1px solid #393939;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: transparent;
+}

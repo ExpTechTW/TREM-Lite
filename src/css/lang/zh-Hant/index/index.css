@@ -1,0 +1,162 @@
+@import url("./eew/eew.css");
+@import url("./report/box.css");
+@import url("./max/box.css");
+@import url("./intensity_color/box.css");
+@import url("./rts_intensity_list/box.css");
+@import url("./nav_bar/box.css");
+
+body {
+  user-select: none;
+  margin: 0;
+  font-family: "Lato", "Noto Sans TC", sans-serif;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+
+  --surface-hsl: 0deg 0% 25%;
+  --surface-variant-hsl: 0deg 0% 20%;
+  --background-hsl: 0deg 0% 13%;
+  --background-variant-hsl: 0deg 0% 16%;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-button {
+  background: transparent;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgb(0 0 0 / 40%);
+  border: 1px solid #393939;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: transparent;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+  outline: none;
+}
+
+.connect {
+  position: absolute;
+  left: 68px;
+  bottom: 0.3em;
+  border-radius: 5px;
+  border: 2px solid #00000008;
+  background-color: #505050c7;
+  display: flex;
+  align-items: center;
+  z-index: 1001;
+  margin-left: 5px;
+  padding: 3px;
+  pointer-events: none;
+
+  .time-error {
+    color: red;
+  }
+
+  .time-normal {
+    color: white;
+  }
+
+  .time-replay {
+    color: yellow;
+  }
+}
+
+/**版本號**/
+html[lang="zh-Hant"] {
+  .version-check-text::before {
+    content: "新版本";
+  }
+}
+
+.current-version-view {
+  top: 0.3em;
+  right: 345px;
+  font-size: 15px;
+  position: absolute;
+  color: #ffffff1f;
+  transition: transform 0.6s ease;
+}
+
+.report-wrapper.hidden ~ .current-version-view {
+  transform: translateX(420%);
+}
+
+.version-check {
+  bottom: 3.5em;
+  left: 85px;
+  margin: 1px;
+  margin-left: 5px;
+  position: absolute;
+  background-color: #505050c7;
+  width: auto;
+  color: white;
+  border: 2px solid #00000008;
+  padding: 3px;
+  border-radius: 5px;
+  z-index: 1000;
+  text-align: center;
+  font-weight: 500;
+  font-size: 13px;
+  min-height: 20px;
+  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  display: none;
+
+  .version-check-body {
+    display: flex;
+    justify-content: space-between;
+
+    .version-check-box {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .version-check-text {
+      margin-right: 10px;
+    }
+
+    .current-version {
+      margin-right: 5;
+    }
+
+    .new-version {
+      min-width: 25px;
+      margin-left: 5;
+    }
+  }
+}
+
+.version-check.new {
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease-in-out;
+  animation: new_version 3s infinite;
+  display: flex;
+}
+
+@keyframes new_version {
+  0% {
+    border-color: transparent;
+  }
+
+  50% {
+    border-color: #fff900;
+  }
+
+  100% {
+    border-color: transparent;
+  }
+}
