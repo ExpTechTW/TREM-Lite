@@ -1,6 +1,6 @@
 const TREM = require("../constant");
 
-const fetchData = require("../utils/fetch");
+const fetchData = require("../../core/utils/fetch");
 
 (async () => {
   const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];

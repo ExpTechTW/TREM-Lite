@@ -64,7 +64,7 @@ const TREM = {
       },
     },
 
-    SHOW_TREM_EEW: false,
+    SHOW_TREM_EEW: true,
 
     URL: {
       API : ["api-1.exptech.dev", "api-2.exptech.dev"],
@@ -114,7 +114,7 @@ const TREM = {
       eew       : [],
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
-    play_mode : 0,
+    play_mode : 2,
     replay    : {
       start_time : 1730391501543,
       local_time : 0,
@@ -125,7 +125,8 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
-      time: {
+      eew_id : [],
+      time   : {
         syncedTime : 0,
         lastSync   : 0,
       },

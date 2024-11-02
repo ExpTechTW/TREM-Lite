@@ -43,7 +43,7 @@ TREM.variable.events.on("MapLoad", (map) => {
 
 function EEWData(newData = []) {
   const currentTime = now();
-  const EXPIRY_TIME = 255 * 1000;
+  const EXPIRY_TIME = 240 * 1000;
 
   TREM.variable.data.eew
     .filter(item =>
@@ -72,23 +72,30 @@ function EEWData(newData = []) {
       data,
     };
 
-    if (existingIndex === -1) {
-      if (TREM.constant.EEW_AUTHOR.includes(data.author)) {
-        TREM.variable.data.eew.push(data);
-        TREM.variable.events.emit("EewRelease", eventData);
+    if (existingIndex === -1)
+      if (!TREM.variable.cache.eew_id.includes(`${data.id}-${data.serial}-${data.status}`)) {
+        TREM.variable.cache.eew_id.push(`${data.id}-${data.serial}-${data.status}`);
+        if (TREM.constant.EEW_AUTHOR.includes(data.author)) {
+          TREM.variable.data.eew.push(data);
+          TREM.variable.events.emit("EewRelease", eventData);
+        }
+        return;
       }
-      return;
-    }
 
-    if (data.serial > TREM.variable.data.eew[existingIndex].serial) {
-      TREM.variable.events.emit("EewUpdate", eventData);
+    if (!TREM.variable.cache.eew_id.includes(`${data.id}-${data.serial}-${data.status}`)) {
+      TREM.variable.cache.eew_id.push(`${data.id}-${data.serial}-${data.status}`);
+      if (data.serial > TREM.variable.data.eew[existingIndex].serial) {
+        TREM.variable.events.emit("EewUpdate", eventData);
 
-      if (!TREM.variable.data.eew[existingIndex].status && data.status === 1)
-        TREM.variable.events.emit("EewAlert", eventData);
+        if (!TREM.variable.data.eew[existingIndex].status && data.status === 1)
+          TREM.variable.events.emit("EewAlert", eventData);
 
-      TREM.variable.data.eew[existingIndex] = data;
+        TREM.variable.data.eew[existingIndex] = data;
+      }
     }
   });
+
+  if (TREM.variable.cache.eew_id.length > 50) TREM.variable.cache.eew_id.splice(0, 1);
 
   TREM.variable.events.emit("DataEew", {
     info : { type: TREM.variable.play_mode },

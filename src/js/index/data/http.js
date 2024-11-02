@@ -1,6 +1,6 @@
 const TREM = require("../constant");
 
-const fetchData = require("../utils/fetch");
+const fetchData = require("../../core/utils/fetch");
 
 module.exports = async (time) => {
   const url = (time) ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)] : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
