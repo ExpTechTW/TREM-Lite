@@ -45,7 +45,14 @@ class AudioQueue {
 
   add(audio, rules = {}) {
     this.removeConflictingAudios(audio, rules);
-    this.queue.push(audio);
+
+    const audioName = this.getAudioName(audio);
+    if (audioName === "ALERT") {
+      this.queue.push(audio);
+      this.queue.push(audio);
+    } else
+      this.queue.push(audio);
+
     this.playNext();
   }
 
@@ -80,6 +87,7 @@ const audioQueues = {
   eew    : new AudioQueue(),
   pga    : new AudioQueue(),
   shindo : new AudioQueue(),
+  update : new AudioQueue(),
 };
 
 TREM.variable.events.on("EewRelease", (ans) => {
@@ -103,7 +111,7 @@ TREM.variable.events.on("EewAlert", (ans) => {
 
 TREM.variable.events.on("EewUpdate", (ans) => {
   if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == "trem") return;
-  audioQueues.eew.add(TREM.constant.AUDIO.UPDATE);
+  audioQueues.update.add(TREM.constant.AUDIO.UPDATE);
 
   tts_cache[ans.data.id].now.loc = ans.data.eq.loc;
   tts_cache[ans.data.id].now.i = ans.data.eq.max;
@@ -138,7 +146,7 @@ TREM.variable.events.on("EewNewAreaAlert", (ans) => {
   if (TREM.variable.speech.speaking()) TREM.variable.speech.cancel();
   tts_eew_alert_lock = true;
   TREM.variable.speech.speak({
-    text      : `緊急地震速報，${ans.data.city_alert_list.join("、")}，請做好應對強烈搖晃的準備`,
+    text      : `緊急地震速報，${ans.data.city_alert_list.join("、")}，慎防強烈搖晃`,
     queue     : false,
     listeners : {
       onend: () => {
