@@ -110,6 +110,8 @@ TREM.variable.events.on("DataRts", (ans) => {
   let pga = 0;
   let trigger = 0;
   let level = 0;
+  let rts_max_pga = -1;
+  let rts_max_shindo = -1;
 
   if (!TREM.variable.station) return;
 
@@ -117,6 +119,21 @@ TREM.variable.events.on("DataRts", (ans) => {
 
   if (ans.data) {
     const alert = Object.keys(ans.data.box).length;
+
+    if (!alert) TREM.variable.cache.audio = {
+      shindo : -1,
+      pga    : -1,
+      status : {
+        shindo : 0,
+        pga    : 0,
+      },
+      count: {
+        pga_1    : 0,
+        pga_2    : 0,
+        shindo_1 : 0,
+        shindo_2 : 0,
+      },
+    };
 
     for (const id of Object.keys(ans.data.station)) {
       const station_info = TREM.variable.station[id];
@@ -147,6 +164,92 @@ TREM.variable.events.on("DataRts", (ans) => {
           data_alert_0_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: {} });
 
         coordinates.push({ lon: station_location.lon, lat: station_location.lat });
+
+        if (rts_max_pga < ans.data.station[id].pga) rts_max_pga = ans.data.station[id].pga;
+        if (rts_max_shindo < I) rts_max_shindo = I;
+
+        if (pga > TREM.variable.cache.audio.pga) {
+          if (pga > 200 && TREM.variable.cache.audio.status.pga != 2) {
+            TREM.constant.AUDIO.PGA2.play();
+            TREM.variable.cache.audio.status.pga = 2;
+          } else if (pga > 8 && !TREM.variable.cache.audio.status.pga) {
+            TREM.constant.AUDIO.PGA1.play();
+            TREM.variable.cache.audio.status.pga = 1;
+          }
+
+          TREM.variable.cache.audio.pga = pga;
+          if (pga > 8) TREM.variable.cache.audio.count.pga_1 = 0;
+          if (pga > 200) TREM.variable.cache.audio.count.pga_2 = 0;
+        }
+
+        if (I > TREM.variable.cache.audio.shindo) {
+          if (I > 3 && TREM.variable.cache.audio.status.shindo != 3) {
+            TREM.constant.AUDIO.SHINDO2.play();
+
+            TREM.variable.cache.audio.status.shindo = 3;
+          } else if (I > 1 && TREM.variable.cache.audio.status.shindo < 2) {
+            TREM.constant.AUDIO.SHINDO1.play();
+
+            TREM.variable.cache.audio.status.shindo = 2;
+          } else if (!TREM.variable.cache.audio.status.shindo) {
+            TREM.constant.AUDIO.SHINDO0.play();
+
+            TREM.variable.cache.audio.status.shindo = 1;
+          }
+
+          if (I > 3) TREM.variable.cache.audio.count.shindo_2 = 0;
+          if (I > 1) TREM.variable.cache.audio.count.shindo_1 = 0;
+          TREM.variable.cache.audio.shindo = I;
+        }
+      }
+
+      if (TREM.variable.cache.audio.pga && rts_max_pga < TREM.variable.cache.audio.pga) {
+        if (TREM.variable.cache.audio.status.pga == 2)
+          if (rts_max_pga < 200) {
+            TREM.variable.cache.audio.count.pga_2++;
+            if (TREM.variable.cache.audio.count.pga_2 >= 30) {
+              TREM.variable.cache.audio.count.pga_2 = 0;
+              TREM.variable.cache.audio.status.pga = 1;
+            }
+          } else
+            TREM.variable.cache.audio.count.pga_2 = 0;
+
+        else if (TREM.variable.cache.audio.status.pga == 1)
+          if (rts_max_pga < 8) {
+            TREM.variable.cache.audio.count.pga_1++;
+            if (TREM.variable.cache.audio.count.pga_1 >= 30) {
+              TREM.variable.cache.audio.count.pga_1 = 0;
+              TREM.variable.cache.audio.status.pga = 0;
+            }
+          } else
+            TREM.variable.cache.audio.count.pga_1 = 0;
+
+
+        TREM.variable.cache.audio.pga = rts_max_pga;
+      }
+
+      if (TREM.variable.cache.audio.shindo && rts_max_shindo < TREM.variable.cache.audio.shindo) {
+        if (TREM.variable.cache.audio.status.shindo == 3)
+          if (rts_max_shindo < 4) {
+            TREM.variable.cache.audio.count.shindo_2++;
+            if (TREM.variable.cache.audio.count.shindo_2 >= 15) {
+              TREM.variable.cache.audio.count.shindo_2 = 0;
+              TREM.variable.cache.audio.status.shindo = 2;
+            }
+          } else
+            TREM.variable.cache.audio.count.shindo_2 = 0;
+
+        else if (TREM.variable.cache.audio.status.shindo == 2)
+          if (rts_max_shindo < 2) {
+            TREM.variable.cache.audio.count.shindo_1++;
+            if (TREM.variable.cache.audio.count.shindo_1 >= 15) {
+              TREM.variable.cache.audio.count.shindo_1 = 0;
+              TREM.variable.cache.audio.status.shindo = 1;
+            }
+          } else
+            TREM.variable.cache.audio.count.shindo_1 = 0;
+
+        TREM.variable.cache.audio.shindo = rts_max_shindo;
       } else if (!eew_alert)
         data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: ans.data.station[id].i } });
     }
