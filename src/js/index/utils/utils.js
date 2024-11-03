@@ -74,6 +74,65 @@ function extractLocation(loc) {
   return match ? match[1] : loc;
 }
 
+function createIntensityIconSquare(intensity, backgroundColor, textColor, strokeColor) {
+  const svg = `
+    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <rect 
+        x="2" 
+        y="2" 
+        width="56" 
+        height="56"
+        rx="10"
+        ry="10"
+        fill="${backgroundColor}"
+        stroke="${strokeColor}"
+        stroke-width="3"
+      />
+      <text 
+        x="30" 
+        y="35"
+        font-size="36"
+        font-weight="bold"
+        fill="${textColor}"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >${intensity}</text>
+    </svg>
+  `;
+
+  const img = new Image();
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  return img;
+}
+
+function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor) {
+  const svg = `
+    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <circle 
+        cx="30" 
+        cy="30" 
+        r="28" 
+        fill="${backgroundColor}"
+        stroke="${strokeColor}"
+        stroke-width="3"
+      />
+      <text 
+        x="30" 
+        y="35"
+        font-size="36"
+        font-weight="bold"
+        fill="${textColor}"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >${intensity}</text>
+    </svg>
+  `;
+
+  const img = new Image();
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  return img;
+}
+
 module.exports = {
   formatTime,
   distance,
@@ -84,5 +143,7 @@ module.exports = {
   int_to_string,
   formatToChineseTime,
   extractLocation,
+  createIntensityIcon,
+  createIntensityIconSquare,
   intensity_list,
 };

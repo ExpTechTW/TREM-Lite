@@ -1,6 +1,7 @@
 const maplibregl = require("maplibre-gl");
 
 const TREM = require("./constant");
+const { createIntensityIcon, createIntensityIconSquare } = require("./utils/utils");
 
 const intensityIcons = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -85,34 +86,6 @@ const map = new maplibregl.Map({
   dragRotate         : false,
 });
 
-function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor) {
-  const svg = `
-    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
-      <circle 
-        cx="30" 
-        cy="30" 
-        r="28" 
-        fill="${backgroundColor}"
-        stroke="${strokeColor}"
-        stroke-width="3"
-      />
-      <text 
-        x="30" 
-        y="35"
-        font-size="36"
-        font-weight="bold"
-        fill="${textColor}"
-        text-anchor="middle"
-        dominant-baseline="middle"
-      >${intensity}</text>
-    </svg>
-  `;
-
-  const img = new Image();
-  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
-  return img;
-}
-
 map.on("resize", () => map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS));
 
 map.on("load", async () => {
@@ -137,6 +110,12 @@ map.on("load", async () => {
 
     image.onload = () => {
       map.addImage(`intensity-${index}`, image);
+    };
+
+    const image_square = createIntensityIconSquare(icon.id, icon.bg, icon.text, icon.stroke);
+
+    image_square.onload = () => {
+      map.addImage(`intensity-square-${index}`, image_square);
     };
   });
 
