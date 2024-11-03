@@ -2,6 +2,32 @@ const TREM = require("../constant");
 const box_data = require("../../../resource/data/box.json");
 const { distance } = require("../utils/utils");
 
+TREM.variable.events.on("MapLoad", (map) => {
+  map.addSource("box-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({
+    id     : "box-geojson",
+    type   : "line",
+    source : "box-geojson",
+    paint  : {
+      "line-width" : 2,
+      "line-color" : [
+        "match",
+        ["get", "i"],
+        9, TREM.constant.COLOR.BOX[2],
+        8, TREM.constant.COLOR.BOX[2],
+        7, TREM.constant.COLOR.BOX[2],
+        6, TREM.constant.COLOR.BOX[2],
+        5, TREM.constant.COLOR.BOX[2],
+        4, TREM.constant.COLOR.BOX[2],
+        3, TREM.constant.COLOR.BOX[1],
+        2, TREM.constant.COLOR.BOX[1],
+        1, TREM.constant.COLOR.BOX[0],
+        TREM.constant.COLOR.BOX[0],
+      ],
+    },
+  });
+});
+
 function checkBoxSkip(eew, area) {
   let skip = 0;
   const coordinates = area.geometry.coordinates[0];

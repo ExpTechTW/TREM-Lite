@@ -20,6 +20,9 @@ const int_cache_list = {};
 const level_list = {};
 
 TREM.variable.events.on("MapLoad", (map) => {
+  map.addSource("markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("markers-geojson-0", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("rts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addLayer({
     id     : "rts-layer",
     type   : "circle",

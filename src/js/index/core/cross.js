@@ -1,5 +1,40 @@
 const TREM = require("../constant");
 
+TREM.variable.events.on("MapLoad", (map) => {
+  map.addSource("cross-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({
+    id     : "cross",
+    type   : "symbol",
+    source : "cross-geojson",
+    layout : {
+      "symbol-sort-key" : ["get", "no"],
+      "symbol-z-order"  : "source",
+      "icon-image"      : [
+        "case",
+        ["==", ["get", "markerType"], "dot"], "dot",
+        [
+          "match",
+          ["get", "no"],
+          1, "cross1",
+          2, "cross2",
+          3, "cross3",
+          4, "cross4",
+          "cross",
+        ],
+      ],
+      "icon-size": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        5, 0.02,
+        10, 0.1,
+      ],
+      "icon-allow-overlap"    : true,
+      "icon-ignore-placement" : true,
+    },
+  });
+});
+
 function refresh_cross(show) {
   const markerFeatures = [];
   const eew_list = [];

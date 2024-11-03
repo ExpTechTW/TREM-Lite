@@ -34,7 +34,7 @@ TREM.variable.events.on("MapLoad", (map) => {
 });
 
 focus_button.addEventListener("click", () => {
-  TREM.variable.map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 });
+  TREM.variable.map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS);
 
   lock = false;
   focus_button.style.color = "white";

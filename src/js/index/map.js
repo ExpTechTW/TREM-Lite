@@ -85,83 +85,21 @@ const map = new maplibregl.Map({
   dragRotate         : false,
 });
 
-map.on("resize", () => map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 }));
+map.on("resize", () => map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS));
 
 map.on("load", async () => {
   map.resize();
-  map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 });
+  map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS);
 
   for (const i of intensityIcons)
     map.addImage(`intensity-${i}`, (await map.loadImage(`../resource/image/intensity-${i}-dark.png`)).data);
 
   map.addImage("gps", (await map.loadImage("../resource/image/gps.png")).data);
-
   map.addImage("cross", (await map.loadImage("../resource/image/cross.png")).data);
-
   map.addImage("cross1", (await map.loadImage("../resource/image/cross1.png")).data);
   map.addImage("cross2", (await map.loadImage("../resource/image/cross2.png")).data);
   map.addImage("cross3", (await map.loadImage("../resource/image/cross3.png")).data);
   map.addImage("cross4", (await map.loadImage("../resource/image/cross4.png")).data);
-
-  map.addSource("cross-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-  map.addSource("markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-  map.addSource("markers-geojson-0", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-  map.addSource("rts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-  map.addSource("box-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-
-  map.addLayer({
-    id     : "cross",
-    type   : "symbol",
-    source : "cross-geojson",
-    layout : {
-      "symbol-sort-key" : ["get", "no"],
-      "symbol-z-order"  : "source",
-      "icon-image"      : [
-        "case",
-        ["==", ["get", "markerType"], "dot"], "dot",
-        [
-          "match",
-          ["get", "no"],
-          1, "cross1",
-          2, "cross2",
-          3, "cross3",
-          4, "cross4",
-          "cross",
-        ],
-      ],
-      "icon-size": [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        5, 0.02,
-        10, 0.1,
-      ],
-      "icon-allow-overlap"    : true,
-      "icon-ignore-placement" : true,
-    },
-  });
-  map.addLayer({
-    id     : "box-geojson",
-    type   : "line",
-    source : "box-geojson",
-    paint  : {
-      "line-width" : 2,
-      "line-color" : [
-        "match",
-        ["get", "i"],
-        9, TREM.constant.COLOR.BOX[2],
-        8, TREM.constant.COLOR.BOX[2],
-        7, TREM.constant.COLOR.BOX[2],
-        6, TREM.constant.COLOR.BOX[2],
-        5, TREM.constant.COLOR.BOX[2],
-        4, TREM.constant.COLOR.BOX[2],
-        3, TREM.constant.COLOR.BOX[1],
-        2, TREM.constant.COLOR.BOX[1],
-        1, TREM.constant.COLOR.BOX[0],
-        TREM.constant.COLOR.BOX[0],
-      ],
-    },
-  });
 
   TREM.variable.map = map;
   TREM.variable.events.emit("MapLoad", map);
