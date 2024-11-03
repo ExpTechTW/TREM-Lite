@@ -1,3 +1,11 @@
+const isDev = process.defaultApp ||
+              process.argv[0].includes("node_modules");
+
+let TREM;
+
+if (isDev)
+  TREM = require("../js/index/constant");
+
 const logger = require("../js/core/utils/logger");
 
 logger.info("App start");
