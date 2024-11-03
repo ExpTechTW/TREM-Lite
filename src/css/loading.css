@@ -5,18 +5,13 @@
   --fade-duration: 0.5s;
 }
 
-body:not(.setting),
-.setting-container {
+body:not(.setting) {
   background-color: var(--loading-bg);
   border-radius: 15px;
 }
 
 body {
   overflow: hidden;
-}
-
-.content-loaded {
-  background-color: #ffffff00;
 }
 
 body > *:not(#css-loading-indicator) {
