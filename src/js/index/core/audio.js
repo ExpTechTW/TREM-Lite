@@ -216,6 +216,14 @@ TREM.variable.events.on("ReportRelease", (ans) => {
   TREM.variable.speech.speak({ text: speechText });
 });
 
+TREM.variable.events.on("IntensityRelease", (ans) => {
+  TREM.constant.AUDIO.INTENSITY.play();
+});
+
+TREM.variable.events.on("TsunamiRelease", (ans) => {
+  TREM.constant.AUDIO.TSUNAMI.play();
+});
+
 TREM.variable.events.on("EewNewAreaAlert", (ans) => {
   if (!TREM.variable.tts) return;
   if (TREM.variable.speech.speaking()) TREM.variable.speech.cancel();

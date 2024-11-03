@@ -2,6 +2,8 @@ const fetchData = require("../../core/utils/fetch");
 const TREM = require("../constant");
 const { extractLocation } = require("../utils/utils");
 
+const crypto = require("crypto");
+
 const close_button = document.querySelector("#close-btn");
 const reportWrapper = document.querySelector(".report-wrapper");
 
@@ -156,13 +158,48 @@ async function refresh_report() {
   const existingIds = new Set(TREM.variable.data.report.map(item => item.id));
   const newReports = report_list.filter(report => !existingIds.has(report.id));
 
-  if (newReports.length > 0) {
-    TREM.variable.events.emit("ReportRelease", newReports[0]);
-
-    TREM.variable.data.report = report_list;
-    generateReportBoxItems(report_list, TREM.variable.data.intensity ? { time: TREM.variable.data.intensity.id, intensity: TREM.variable.data.intensity.max } : null);
-  }
+  if (newReports.length > 0) TREM.variable.events.emit("ReportRelease", newReports[0]);
 }
+
+function simplifyEarthquakeData(data) {
+  let maxIntensity = 0;
+  Object.values(data.list).forEach(county => {
+    if (county.int > maxIntensity)
+      maxIntensity = county.int;
+
+  });
+
+  const earthquakeData = {
+    id      : data.id,
+    lat     : data.lat,
+    lon     : data.lon,
+    depth   : data.depth,
+    loc     : data.loc,
+    mag     : data.mag,
+    time    : data.time,
+    int     : maxIntensity,
+    eq_list : data.list,
+    trem    : data.trem,
+  };
+
+  const md5Value = crypto.createHash("md5")
+    .update(JSON.stringify(earthquakeData))
+    .digest("hex")
+    .toUpperCase();
+
+  return {
+    ...earthquakeData,
+    md5: md5Value,
+  };
+}
+
+TREM.variable.events.on("ReportRelease", (ans) => {
+  const data = simplifyEarthquakeData(ans.data);
+  TREM.variable.data.report.unshift(data);
+  generateReportBoxItems(TREM.variable.data.report, TREM.variable.data.intensity ? { time: TREM.variable.data.intensity.id, intensity: TREM.variable.data.intensity.max } : null);
+});
 
 setInterval(refresh_report, 10000);
 refresh_report();
+
+module.exports = generateReportBoxItems;
