@@ -163,7 +163,9 @@ TREM.variable.events.on("ReportRelease", (ans) => {
   const countyWithMaxIntensity = Object.entries(ans.data.list).find(([_, data]) => data.int === maxIntensity)[0];
   notificationText += `，${countyWithMaxIntensity}觀測到最大震度${maxIntensityText}。`;
 
-  const notification = new Notification("⚠️ 地震資訊", {
+  const id = ans.data.id.split("-")[0];
+
+  const notification = new Notification(`🔔 地震報告 [${(id.includes("000")) ? "小區域有感地震" : id}]`, {
     body : notificationText,
     icon : "../TREM.ico",
   });
