@@ -145,6 +145,13 @@ async function get_report() {
   return await ans.json();
 }
 
+async function get_report_info(id) {
+  const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+  const ans = await fetchData(`https://${url}/api/v2/eq/report/${id}`, TREM.constant.HTTP_TIMEOUT.REPORT);
+  if (!ans.ok) return null;
+  return await ans.json();
+}
+
 async function refresh_report() {
   const report_list = await get_report();
   if (!report_list) return;
@@ -158,7 +165,10 @@ async function refresh_report() {
   const existingIds = new Set(TREM.variable.data.report.map(item => item.id));
   const newReports = report_list.filter(report => !existingIds.has(report.id));
 
-  if (newReports.length > 0) TREM.variable.events.emit("ReportRelease", newReports[0]);
+  if (newReports.length > 0) {
+    const data = await get_report_info(newReports[0].id);
+    if (data) TREM.variable.events.emit("ReportRelease", { data });
+  }
 }
 
 function simplifyEarthquakeData(data) {
