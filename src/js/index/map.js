@@ -132,11 +132,11 @@ map.on("load", async () => {
     { id: "7", bg: TREM.constant.COLOR.INTENSITY[9], text: TREM.constant.COLOR.INTENSITY_TEXT[9], stroke: TREM.constant.COLOR.INTENSITY_TEXT[9] },
   ];
 
-  icons.forEach(icon => {
+  icons.forEach((icon, index) => {
     const image = createIntensityIcon(icon.id, icon.bg, icon.text, icon.stroke);
 
     image.onload = () => {
-      map.addImage(`intensity-${icon.id}`, image);
+      map.addImage(`intensity-${index}`, image);
     };
   });
 

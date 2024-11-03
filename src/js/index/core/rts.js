@@ -80,6 +80,7 @@ TREM.variable.events.on("MapLoad", (map) => {
       "icon-image"      : [
         "match",
         ["get", "i"],
+        1, "intensity-1",
         2, "intensity-2",
         3, "intensity-3",
         4, "intensity-4",
@@ -88,7 +89,7 @@ TREM.variable.events.on("MapLoad", (map) => {
         7, "intensity-7",
         8, "intensity-8",
         9, "intensity-9",
-        "intensity-1",
+        "intensity-0",
       ],
       "icon-size": [
         "interpolate",
