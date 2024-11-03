@@ -85,14 +85,60 @@ const map = new maplibregl.Map({
   dragRotate         : false,
 });
 
+function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor) {
+  const svg = `
+    <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <circle 
+        cx="30" 
+        cy="30" 
+        r="28" 
+        fill="${backgroundColor}"
+        stroke="${strokeColor}"
+        stroke-width="3"
+      />
+      <text 
+        x="30" 
+        y="35"
+        font-size="36"
+        font-weight="bold"
+        fill="${textColor}"
+        text-anchor="middle"
+        dominant-baseline="middle"
+      >${intensity}</text>
+    </svg>
+  `;
+
+  const img = new Image();
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  return img;
+}
+
 map.on("resize", () => map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS));
 
 map.on("load", async () => {
   map.resize();
   map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS);
 
-  for (const i of intensityIcons)
-    map.addImage(`intensity-${i}`, (await map.loadImage(`../resource/image/intensity-${i}-dark.png`)).data);
+  const icons = [
+    { id: "0", bg: TREM.constant.COLOR.INTENSITY[0], text: TREM.constant.COLOR.INTENSITY_TEXT[0], stroke: TREM.constant.COLOR.INTENSITY_TEXT[0] },
+    { id: "1", bg: TREM.constant.COLOR.INTENSITY[1], text: TREM.constant.COLOR.INTENSITY_TEXT[1], stroke: TREM.constant.COLOR.INTENSITY_TEXT[1] },
+    { id: "2", bg: TREM.constant.COLOR.INTENSITY[2], text: TREM.constant.COLOR.INTENSITY_TEXT[2], stroke: TREM.constant.COLOR.INTENSITY_TEXT[2] },
+    { id: "3", bg: TREM.constant.COLOR.INTENSITY[3], text: TREM.constant.COLOR.INTENSITY_TEXT[3], stroke: TREM.constant.COLOR.INTENSITY_TEXT[3] },
+    { id: "4", bg: TREM.constant.COLOR.INTENSITY[4], text: TREM.constant.COLOR.INTENSITY_TEXT[4], stroke: TREM.constant.COLOR.INTENSITY_TEXT[4] },
+    { id: "5⁻", bg: TREM.constant.COLOR.INTENSITY[5], text: TREM.constant.COLOR.INTENSITY_TEXT[5], stroke: TREM.constant.COLOR.INTENSITY_TEXT[5] },
+    { id: "5⁺", bg: TREM.constant.COLOR.INTENSITY[6], text: TREM.constant.COLOR.INTENSITY_TEXT[6], stroke: TREM.constant.COLOR.INTENSITY_TEXT[6] },
+    { id: "6⁻", bg: TREM.constant.COLOR.INTENSITY[7], text: TREM.constant.COLOR.INTENSITY_TEXT[7], stroke: TREM.constant.COLOR.INTENSITY_TEXT[7] },
+    { id: "6⁺", bg: TREM.constant.COLOR.INTENSITY[8], text: TREM.constant.COLOR.INTENSITY_TEXT[8], stroke: TREM.constant.COLOR.INTENSITY_TEXT[8] },
+    { id: "7", bg: TREM.constant.COLOR.INTENSITY[9], text: TREM.constant.COLOR.INTENSITY_TEXT[9], stroke: TREM.constant.COLOR.INTENSITY_TEXT[9] },
+  ];
+
+  icons.forEach(icon => {
+    const image = createIntensityIcon(icon.id, icon.bg, icon.text, icon.stroke);
+
+    image.onload = () => {
+      map.addImage(`intensity-${icon.id}`, image);
+    };
+  });
 
   map.addImage("gps", (await map.loadImage("../resource/image/gps.png")).data);
   map.addImage("cross", (await map.loadImage("../resource/image/cross.png")).data);

@@ -26,7 +26,7 @@ const TREM = {
         1 : "#003264",
         2 : "#0064c8",
         3 : "#1e9632",
-        4 : "#ffc800",
+        4 : "#aaaaaa",
         5 : "#ff9600",
         6 : "#ff6400",
         7 : "#ff0000",
@@ -122,9 +122,9 @@ const TREM = {
       eew       : [],
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
-    play_mode : 0,
+    play_mode : 2,
     replay    : {
-      start_time : 1730391500543,
+      start_time : 1730024506712,
       local_time : 0,
     },
     station : null,
