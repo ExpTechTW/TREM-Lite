@@ -21,7 +21,7 @@
   background-color: var(--intensity-0);
   box-sizing: border-box;
 
-  &:not(#max-intensity)::after {
+  &:not(#max-intensity, #max-pga)::after {
     content: "0";
   }
 }
@@ -72,7 +72,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "5â»";
+    content: "5Ã¢ÂÂ»";
   }
 }
 
@@ -82,7 +82,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "5âº";
+    content: "5Ã¢ÂÂº";
   }
 }
 
@@ -92,7 +92,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "6â»";
+    content: "6Ã¢ÂÂ»";
   }
 }
 
@@ -102,7 +102,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "6âº";
+    content: "6Ã¢ÂÂº";
   }
 }
 
