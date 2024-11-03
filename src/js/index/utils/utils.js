@@ -55,6 +55,25 @@ function intensity_float_to_int(float) {
   return float < 0 ? 0 : float < 4.5 ? Math.round(float) : float < 5 ? 5 : float < 5.5 ? 6 : float < 6 ? 7 : float < 6.5 ? 8 : 9;
 }
 
+function int_to_string(max) {
+  return (max == 5) ? "5弱" : (max == 6) ? "5強" : (max == 7) ? "6弱" : (max == 8) ? "6強" : (max == 9) ? "7級" : `${max}級`;
+}
+
+function formatToChineseTime(dateTimeString) {
+  const dateTime = new Date(dateTimeString);
+  const hours = dateTime.getHours();
+  const minutes = dateTime.getMinutes();
+  const period = hours < 12 ? "早上" : "晚上";
+  const formattedHours = hours <= 12 ? hours : hours - 12;
+  const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+  return `${period} ${formattedHours}點${formattedMinutes}分 左右`;
+}
+
+function extractLocation(loc) {
+  const match = loc.match(/位於(.+)(?=\))/);
+  return match ? match[1] : loc;
+}
+
 module.exports = {
   formatTime,
   distance,
@@ -62,5 +81,8 @@ module.exports = {
   search_loc_name,
   search_loc_code,
   intensity_float_to_int,
+  int_to_string,
+  formatToChineseTime,
+  extractLocation,
   intensity_list,
 };

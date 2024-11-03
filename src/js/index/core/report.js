@@ -1,5 +1,6 @@
 const fetchData = require("../../core/utils/fetch");
 const TREM = require("../constant");
+const { extractLocation } = require("../utils/utils");
 
 const close_button = document.querySelector("#close-btn");
 const reportWrapper = document.querySelector(".report-wrapper");
@@ -45,11 +46,6 @@ function createIntensityBox(intensity = "0") {
   box.appendChild(val);
   box.appendChild(text);
   return box;
-}
-
-function extractLocation(loc) {
-  const match = loc.match(/位於(.+)(?=\))/);
-  return match ? match[1] : loc;
 }
 
 function createInfoBox(item, isSurvey = false) {

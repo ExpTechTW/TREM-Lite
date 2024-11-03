@@ -1,6 +1,6 @@
 const TREM = require("../constant");
 
-const { intensity_list } = require("../utils/utils");
+const { intensity_list, formatToChineseTime, int_to_string, extractLocation } = require("../utils/utils");
 
 const tts_cache = {};
 let tts_eew_alert_lock = false;
@@ -143,6 +143,77 @@ TREM.variable.events.on("RtsShindo0", (ans) => {
 
 TREM.variable.events.on("ReportRelease", (ans) => {
   TREM.constant.AUDIO.REPORT.play();
+
+  let maxIntensity = 0;
+  Object.values(ans.data.list).forEach(county => {
+    if (county.int > maxIntensity) maxIntensity = county.int;
+  });
+  const maxIntensityText = int_to_string(maxIntensity);
+
+  const time = formatToChineseTime(ans.data.time);
+  const location = ans.data.loc.match(/位於(.+?)(?=\))/)[1];
+
+  let notificationText = [
+    `${time.replace("點", ":").replace("分", "")}`,
+    `${location}發生地震`,
+    `震源深度${ans.data.depth}公里`,
+    `地震規模M${ans.data.mag.toFixed(1)}`,
+  ].join("，");
+
+  const countyWithMaxIntensity = Object.entries(ans.data.list).find(([_, data]) => data.int === maxIntensity)[0];
+  notificationText += `，${countyWithMaxIntensity}觀測到最大震度${maxIntensityText}。`;
+
+  const notification = new Notification("⚠️ 地震資訊", {
+    body : notificationText,
+    icon : "../TREM.ico",
+  });
+
+  let ttsText = [
+    "地震報告",
+    formatToChineseTime(ans.data.time),
+    `發生最大震度 ${maxIntensityText} 地震`,
+    `震央位於 ${location}`,
+    `震央深度為 ${ans.data.depth}公里`,
+    `地震規模為 ${ans.data.mag.toFixed(1)}`,
+  ].join("，");
+
+  const intensityStations = {
+    9 : [], 8 : [], 7 : [], 6 : [],
+    5 : [], 4 : [], 3 : [], 2 : [],
+    1 : [],
+  };
+
+  Object.entries(ans.data.list).forEach(([countyName, countyData]) => {
+    Object.entries(countyData.town).forEach(([townName, townData]) => {
+      intensityStations[townData.int].push(`${countyName}${townName}`);
+    });
+  });
+
+  let count = 0;
+  for (let intensity = 9; intensity >= 1; intensity--) {
+    if (!intensityStations[intensity].length) continue;
+
+    const stationText = intensityStations[intensity].join("，");
+
+    if (count === 0)
+      ttsText += `，這次地震，最大震度 ${int_to_string(intensity)} 地區 ${stationText}`;
+    else if (count === 1)
+      ttsText += `，此外，震度 ${int_to_string(intensity)} 地區 ${stationText}`;
+    else {
+      ttsText += `，震度 ${int_to_string(intensity)} 地區 ${stationText}`;
+      break;
+    }
+    count++;
+  }
+
+  const speechText = ttsText
+    .replace("2.", "二點")
+    .replaceAll(".2", "點二")
+    .replaceAll("三地門", "三弟門")
+    .replaceAll(".", "點")
+    .replaceAll("為", "圍");
+
+  TREM.variable.speech.speak({ text: speechText });
 });
 
 TREM.variable.events.on("EewNewAreaAlert", (ans) => {
