@@ -4,6 +4,8 @@ function refresh_cross(show) {
   const markerFeatures = [];
   const eew_list = [];
 
+  if (!TREM.variable.data.eew?.length) return;
+
   if (show) {
     for (const eew of TREM.variable.data.eew) {
       if (!TREM.constant.SHOW_TREM_EEW && eew.author == "trem") continue;

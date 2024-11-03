@@ -46,8 +46,9 @@ function focus() {
   for (const eew of TREM.variable.data.eew)
     eew_bounds.push({ lon: eew.eq.lon, lat: eew.eq.lat });
 
-  if (TREM.variable.cache.bounds.rts.length) updateMapBounds([...TREM.variable.cache.bounds.rts, ...eew_bounds]);
-  else TREM.variable.map.fitBounds([[118.0, 21.2], [124.0, 25.8]], { padding: 20, duration: 0 });
+  const bounds = [...TREM.variable.cache.bounds.rts, ...eew_bounds];
+
+  if (bounds.length) updateMapBounds();
 }
 
 function updateMapBounds(coordinates, options = {}) {

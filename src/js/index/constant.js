@@ -117,9 +117,9 @@ const TREM = {
       eew       : [],
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
-    play_mode : 0,
+    play_mode : 2,
     replay    : {
-      start_time : 1730391501543,
+      start_time : 1730391500543,
       local_time : 0,
     },
     station : null,
