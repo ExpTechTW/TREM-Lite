@@ -273,13 +273,14 @@ html[lang="zh-Hant"] {
 
         /**深度值**/
         .report-depth-val {
-          font-size: 20px;
+          font-size: 30px;
           font-weight: bold;
+          margin-top: -3px;
 
           &:after {
             margin-left: 4px;
             content: "㎞";
-            font-size: 15px;
+            font-size: 20px;
           }
         }
       }
@@ -313,6 +314,10 @@ html[lang="zh-Hant"] {
     }
 
     /**規模、深度**/
+    .report-mag-text {
+      display: unset;
+    }
+
     .report-mag-dep {
       width: 100%;
       margin-top: 0.3em;
@@ -320,7 +325,12 @@ html[lang="zh-Hant"] {
 
     /**規模值**/
     .report-mag-val {
-      margin-top: 5px;
+      margin-top: -5px;
+      font-size: 30px;
+
+      &:before {
+        font-size: 30px;
+      }
     }
 
     /**資訊盒**/
@@ -347,7 +357,7 @@ html[lang="zh-Hant"] {
       gap: 4px;
       height: 28px;
       isolation: isolate;
-      font-size: 28px;
+      font-size: 30px;
       flex: 1 1 0%;
     }
 

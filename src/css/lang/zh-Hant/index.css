@@ -93,7 +93,7 @@ html[lang="zh-Hant"] {
   transition: transform 0.6s ease;
 }
 
-.report-wrapper.hidden~.current-version-view {
+.report-wrapper.hidden ~ .current-version-view {
   transform: translateX(420%);
 }
 

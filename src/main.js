@@ -88,11 +88,12 @@ function createSettingWindow() {
 
   SettingWindow = new BrowserWindow({
     title          : "TREM-Lite Setting",
-    height         : 600,
-    width          : 1000,
+    width          : 970,
+    height         : 590,
     show           : false,
     frame          : false,
     transparent    : true,
+    resizable      : false,
     vibrancy       : "ultra-dark",
     icon           : "TREM.ico",
     webPreferences : {

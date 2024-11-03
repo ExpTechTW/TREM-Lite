@@ -779,3 +779,33 @@ li {
 .setting-item-wrapper {
   -webkit-app-region: no-drag;
 }
+
+.windows-wrapper {
+  position: absolute;
+  right: 0.8em;
+  display: flex;
+  justify-content: space-between;
+  width: 4rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  top: 0.6em;
+  font-weight: bold;
+  z-index: 9999;
+}
+
+.minimize {
+  margin-top: 2px;
+  color: red;
+}
+
+.close {
+  color: red;
+}
+
+.windows-buttons {
+  border: 1px solid #555555;
+  width: 25px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+}
