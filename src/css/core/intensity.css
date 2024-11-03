@@ -21,7 +21,7 @@
   background-color: var(--intensity-0);
   box-sizing: border-box;
 
-  &::after {
+  &:not(#max-intensity)::after {
     content: "0";
   }
 }
@@ -72,7 +72,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "5⁻";
+    content: "5â»";
   }
 }
 
@@ -82,7 +82,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "5⁺";
+    content: "5âº";
   }
 }
 
@@ -92,7 +92,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "6⁻";
+    content: "6â»";
   }
 }
 
@@ -102,7 +102,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "6⁺";
+    content: "6âº";
   }
 }
 
