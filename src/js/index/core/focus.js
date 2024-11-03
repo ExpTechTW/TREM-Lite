@@ -48,7 +48,7 @@ function focus() {
 
   const bounds = [...TREM.variable.cache.bounds.rts, ...eew_bounds];
 
-  if (bounds.length) updateMapBounds();
+  if (bounds.length) updateMapBounds(bounds);
 }
 
 function updateMapBounds(coordinates, options = {}) {

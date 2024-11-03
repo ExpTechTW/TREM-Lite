@@ -19,7 +19,7 @@ function refresh_box(show) {
     features : boxFeatures,
   };
 
-  if (!Object.keys(TREM.variable.data.rts?.box).length) return;
+  if (!TREM.variable.data.rts?.box || !Object.keys(TREM.variable.data.rts.box).length) return;
 
   const trem_alert = TREM.variable.data.eew.some(eew => eew.author === "trem");
   if (!TREM.constant.SHOW_TREM_EEW && trem_alert) {
