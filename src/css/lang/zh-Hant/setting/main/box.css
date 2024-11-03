@@ -768,6 +768,7 @@ li {
   border-top-left-radius: 15px;
   border: 1px solid #ffffff42;
   border-right: none;
+  z-index: 2;
 }
 
 .setting-options-page {

@@ -203,3 +203,48 @@ setInterval(refresh_report, 10000);
 refresh_report();
 
 module.exports = generateReportBoxItems;
+
+/** 滾動條 **/
+const reportBoxItems = document.querySelector(".report-box-items");
+const customScrollbar = document.querySelector(".custom-scrollbar");
+
+let isDragging = false, startY, initialScrollTop;
+
+const updateScrollbar = () => {
+  const { scrollHeight, clientHeight, scrollTop } = reportBoxItems;
+  const maxScrollbarTop = clientHeight - customScrollbar.clientHeight;
+  customScrollbar.style.height = `${Math.max((clientHeight / scrollHeight) * clientHeight, 30)}px`;
+  customScrollbar.style.top = `${(scrollTop / (scrollHeight - clientHeight)) * maxScrollbarTop}px`;
+};
+
+const onScroll = () => {
+  reportBoxItems.scrollTop += event.deltaY;
+  updateScrollbar();
+};
+
+const onDragStart = (e) => {
+  isDragging = true;
+  startY = e.clientY;
+  initialScrollTop = reportBoxItems.scrollTop;
+  document.body.style.userSelect = "none";
+};
+
+const onDragMove = (e) => {
+  if (!isDragging) return;
+  const deltaY = e.clientY - startY;
+  const scrollRatio = deltaY / (reportBoxItems.clientHeight - customScrollbar.clientHeight);
+  reportBoxItems.scrollTop = initialScrollTop + scrollRatio * (reportBoxItems.scrollHeight - reportBoxItems.clientHeight);
+};
+
+const onDragEnd = () => {
+  isDragging = false;
+  document.body.style.userSelect = "";
+};
+
+reportBoxItems.addEventListener("scroll", updateScrollbar);
+reportBoxItems.addEventListener("wheel", onScroll);
+customScrollbar.addEventListener("mousedown", onDragStart);
+document.addEventListener("mousemove", onDragMove);
+document.addEventListener("mouseup", onDragEnd);
+window.addEventListener("resize", updateScrollbar);
+updateScrollbar();

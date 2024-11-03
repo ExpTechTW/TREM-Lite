@@ -20,11 +20,33 @@ html[lang="zh-Hant"] {
   transition-property: opacity, translate;
   transition-duration: 0.2s;
   transition-timing-function: cubic-bezier(0.3, 0, 0.8, 0.15);
+  height: 100%;
 
   .report-box-items {
-    overflow-y: scroll;
-    scrollbar-color: transparent transparent;
-    scrollbar-width: thin;
+    height: 100%;
+    overflow-y: hidden;
+    padding: 3px;
+    padding-top: 2px;
+  }
+
+  .custom-scrollbar {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 5px;
+    height: 50px;
+    background-color: rgb(255 255 255 / 50%);
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #cfcfcf;
+    display: none;
+  }
+
+  .report-box-items:hover + .custom-scrollbar {
+    display: block;
+  }
+
+  .report-box-items {
     background-color: #464646;
     padding: 3px;
     padding-top: 2px;
