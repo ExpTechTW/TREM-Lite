@@ -68,14 +68,17 @@ html[lang="zh-Hant"] {
 
 .eew-warn {
   background-color: var(--eew-s-warn) !important;
+  border: 1px solid var(--eew-s-warn) !important;
 }
 
 .eew-alert {
   background-color: var(--eew-s-alert) !important;
+  border: 1px solid var(--eew-s-alert) !important;
 }
 
 .eew-cancel {
   background-color: var(--eew-s-cancel) !important;
+  border: 1px solid var(--eew-s-cancel) !important;
 }
 
 .info-wrapper {
@@ -89,9 +92,10 @@ html[lang="zh-Hant"] {
   background-color: #505050c7;
   color: white;
   z-index: 1001;
-  min-width: 20rem;
+  width: 20rem;
   border-radius: 5px;
-  pointer-events: none;
+  /* pointer-events: none; */
+  border: 1px solid #515151;
 
   /**發報標題**/
   .info-title {
@@ -323,4 +327,117 @@ html[lang="zh-Hant"] {
 
 .eew-cancel .cancel-box {
   opacity: 1;
+}
+
+/**RWD**/
+@media (max-width: 980px) {
+  .info-wrapper {
+    width: 16.1em;
+  }
+
+  .info-nsspe {
+    font-size: 15px !important;
+  }
+
+  .info-depth {
+    width: 90px !important;
+  }
+
+  .info-mag-val,
+  .info-depth-val {
+    font-size: 20px !important;
+    margin-top: 4px !important;
+  }
+
+  .info-mag-val {
+    &:before {
+      font-size: 20px !important;
+    }
+  }
+
+  .info-depth-val {
+    &:after {
+      font-size: 17px !important;
+    }
+  }
+
+  .info-mag-text,
+  .info-depth-text {
+    font-size: 24px !important;
+  }
+
+  .info-title-box {
+    width: 55px !important;
+    height: 55px !important;
+    font-size: 35px !important;
+    line-height: unset !important;
+  }
+
+  .max-station-intensity {
+    width: 55px !important;
+    height: 55px !important;
+  }
+
+  .max-intensity {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center;
+  }
+
+  .max-intensity-pga-wrapper {
+    width: 9.3em;
+  }
+
+  .info-body-wrapper {
+    min-height: 85px !important;
+  }
+
+  .station-pga-wrapper {
+    top: 9.4rem !important;
+    left: 0.3rem !important;
+  }
+
+  .current-station-pga {
+    width: 215px !important;
+  }
+
+  .max-intensity-pga-wrapper {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    top: 12.6rem !important;
+  }
+
+  .max-pga {
+    left: 4.5rem !important;
+    position: relative !important;
+    height: 35px !important;
+    margin-top: 5px !important;
+    width: 80px;
+  }
+
+  .max-intensity {
+    margin-top: 6px !important;
+    padding: 3px !important;
+    width: 85px;
+  }
+
+  #max-pga {
+    margin-top: 0px;
+  }
+
+  .info-footer {
+    margin-top: -5px;
+  }
+
+  .rts-info-box {
+    height: 35px;
+    justify-content: center;
+  }
+}
+
+/**RWD**/
+@media (max-height: 660px) {
+  .intensity-color-list {
+    height: 185px !important;
+  }
 }

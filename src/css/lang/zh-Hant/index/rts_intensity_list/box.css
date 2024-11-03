@@ -29,6 +29,7 @@
   flex-wrap: wrap;
   text-align: center;
   pointer-events: none;
+  transition: 0.3s cubic-bezier(0.41, -0.86, 0.76, 1.89);
 
   .rts-info-box {
     background-color: #505050c7;
@@ -78,12 +79,14 @@
   flex-wrap: nowrap;
   justify-content: center;
   text-align: center;
+  border: 1px solid #515151;
 }
 
 .max-intensity {
   padding: 8px;
   border-radius: 5px;
   background: #505050c7;
+  border: 1px solid #515151;
 }
 
 .max-station-pga {
