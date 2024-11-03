@@ -346,9 +346,21 @@ html[lang="zh-Hant"] {
   .info-mag-val,
   .info-depth-val {
     font-size: 20px !important;
-    margin-top: 4px !important;
+    margin-top: 3px !important;
   }
 
+  .report-depth-val {
+    font-size: 25px !important;
+    margin-top: -2px !important;
+  }
+
+  .report-depth-val {
+    &:after {
+      font-size: 16px !important;
+    }
+  }
+
+  .report-mag-val,
   .info-mag-val {
     &:before {
       font-size: 20px !important;
@@ -362,7 +374,9 @@ html[lang="zh-Hant"] {
   }
 
   .info-mag-text,
-  .info-depth-text {
+  .info-depth-text,
+  .report-mag-text,
+  .report-depth-text {
     font-size: 24px !important;
   }
 
@@ -432,6 +446,40 @@ html[lang="zh-Hant"] {
   .rts-info-box {
     height: 35px;
     justify-content: center;
+  }
+
+  .report-box-item-contain:first-child {
+    .report-loc {
+      font-size: 21px !important;
+    }
+
+    .report-mag-val {
+      font-size: 25px !important;
+      margin-top: -2px !important;
+
+      &:before {
+        font-size: 24px !important;
+      }
+    }
+  }
+  .report-loc {
+    font-size: 18px !important;
+  }
+
+  .report-box-items {
+    width: 285px !important;
+  }
+
+  .report-wrapper {
+    width: 315px !important;
+  }
+
+  .rts-intensity-list-wrapper {
+    transform: translateX(15%);
+  }
+
+  .current-version-view {
+    transform: translateX(30%);
   }
 }
 
