@@ -140,6 +140,7 @@ setInterval(() => {
     if (sWaveSource && pWaveSource) {
       const center = [eew.eq.lon, eew.eq.lat];
       const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
+      eew.dist = dist;
       sWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.s_dist)] });
       pWaveSource.setData({ type: "FeatureCollection", features: [createCircleFeature(center, dist.p_dist)] });
     }

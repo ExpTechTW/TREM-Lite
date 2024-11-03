@@ -47,7 +47,7 @@ function refresh_box(show) {
 
   if (!TREM.variable.data.rts?.box || !Object.keys(TREM.variable.data.rts.box).length) return;
 
-  const trem_alert = TREM.variable.data.eew.some(eew => eew.author === "trem");
+  const trem_alert = TREM.variable.data.eew.some(eew => eew.author == "trem");
   if (!TREM.constant.SHOW_TREM_EEW && trem_alert) {
     TREM.variable.map.getSource("box-geojson").setData(emptyData);
     return;
@@ -57,7 +57,7 @@ function refresh_box(show) {
     for (const area of box_data.features) {
       const id = area.properties.ID;
       const boxIntensity = TREM.variable.data.rts?.box[id];
-      if (boxIntensity === undefined) continue;
+      if (boxIntensity == undefined) continue;
       let shouldSkip = false;
       for (const eew of TREM.variable.data.eew) {
         if (!eew.dist) continue;
