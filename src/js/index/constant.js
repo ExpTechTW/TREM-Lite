@@ -108,6 +108,8 @@ const TREM = {
       BOUNDS  : [[118.0, 21.2], [124.0, 25.8]],
       OPTIONS : { padding: 20, duration: 0 },
     },
+
+    SHOW_REPORT_ON_START: true,
   },
 
   variable: {
@@ -133,6 +135,7 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      last_report      : {},
       eewIntensityArea : {},
       show_intensity   : false,
       eew_last         : {},
@@ -149,6 +152,7 @@ const TREM = {
       bounds         : {
         rts       : [],
         intensity : [],
+        report    : [],
       },
       audio: {
         shindo : -1,

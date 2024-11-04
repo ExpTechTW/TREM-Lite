@@ -6,7 +6,7 @@ const now = require("../utils/ntp");
 const { generateMapStyle, convertIntensityToAreaFormat, int_to_string, search_loc_name } = require("../utils/utils");
 const drawEewArea = require("./estimate");
 const { focus_reset, focus } = require("./focus");
-const generateReportBoxItems = require("./report");
+const { generateReportBoxItems } = require("./report");
 
 TREM.variable.events.on("MapLoad", (map) => {
   map.addSource("intensity-markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });

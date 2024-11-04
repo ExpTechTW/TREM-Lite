@@ -80,4 +80,4 @@ function updateMapBounds(coordinates, options = {}) {
   });
 }
 
-module.exports = { focus, focus_reset };
+module.exports = { focus, focus_reset, updateMapBounds };

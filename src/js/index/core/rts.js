@@ -3,6 +3,7 @@ const TREM = require("../constant");
 const EEWCalculator = require("../utils/eewCalculator");
 
 const { intensity_float_to_int, search_loc_name } = require("../utils/utils");
+const { show_report_point } = require("./report");
 
 const calculator = new EEWCalculator();
 
@@ -105,9 +106,9 @@ TREM.variable.events.on("MapLoad", (map) => {
 });
 
 TREM.variable.events.on("DataRts", (ans) => {
-  const data_list = [];
-  const data_alert_0_list = [];
-  const data_alert_list = [];
+  let data_list = [];
+  let data_alert_0_list = [];
+  let data_alert_list = [];
 
   const coordinates = [];
 
@@ -259,6 +260,19 @@ TREM.variable.events.on("DataRts", (ans) => {
 
       TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
+
+    if (alert || eew_alert) {
+      if (TREM.variable.cache.bounds.report) {
+        TREM.variable.cache.bounds.report = [];
+        TREM.variable.map.getSource("report-markers-geojson").setData({ type: "FeatureCollection", features: [] });
+      }
+    } else
+      if (TREM.variable.cache.bounds.report.length) {
+        data_list = [];
+        data_alert_0_list = [];
+        data_alert_list = [];
+      } else if (TREM.constant.SHOW_REPORT_ON_START)
+        show_report_point();
   }
 
   if (TREM.variable.map) {

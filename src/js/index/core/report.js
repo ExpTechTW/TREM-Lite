@@ -3,6 +3,7 @@ const TREM = require("../constant");
 const { extractLocation } = require("../utils/utils");
 
 const crypto = require("crypto");
+const { updateMapBounds } = require("./focus");
 
 const close_button = document.querySelector("#close-btn");
 const reportWrapper = document.querySelector(".report-wrapper");
@@ -10,6 +11,64 @@ const reportWrapper = document.querySelector(".report-wrapper");
 let close = false;
 
 close_button.addEventListener("click", toggleReport);
+
+TREM.variable.events.on("MapLoad", (map) => {
+  map.addSource("report-markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+
+  map.addLayer({
+    id     : "report-markers",
+    type   : "symbol",
+    source : "report-markers-geojson",
+    filter : ["!=", ["get", "i"], 0],
+    layout : {
+      "symbol-sort-key" : ["get", "i"],
+      "symbol-z-order"  : "source",
+      "icon-image"      : [
+        "match",
+        ["get", "i"],
+        1, "intensity-1",
+        2, "intensity-2",
+        3, "intensity-3",
+        4, "intensity-4",
+        5, "intensity-5",
+        6, "intensity-6",
+        7, "intensity-7",
+        8, "intensity-8",
+        9, "intensity-9",
+        "cross",
+      ],
+      "icon-size": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        5, 0.2,
+        10, 0.6,
+      ],
+      "icon-allow-overlap"    : true,
+      "icon-ignore-placement" : true,
+    },
+  });
+  map.addLayer({
+    id     : "report-markers-cross",
+    type   : "symbol",
+    source : "report-markers-geojson",
+    filter : ["==", ["get", "i"], 0],
+    layout : {
+      "symbol-sort-key" : ["get", "i"],
+      "symbol-z-order"  : "source",
+      "icon-image"      : "cross",
+      "icon-size"       : [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        5, 0.01,
+        10, 0.09,
+      ],
+      "icon-allow-overlap"    : true,
+      "icon-ignore-placement" : true,
+    },
+  });
+});
 
 function toggleReport() {
   close_button.classList.toggle("off");
@@ -158,6 +217,10 @@ async function refresh_report() {
 
   if (!TREM.variable.data.report.length) {
     TREM.variable.data.report = report_list;
+    if (TREM.constant.SHOW_REPORT_ON_START) {
+      const data = await get_report_info(report_list[0].id);
+      TREM.variable.cache.last_report = data;
+    }
     generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
     return;
   }
@@ -203,7 +266,26 @@ function simplifyEarthquakeData(data) {
   };
 }
 
+function show_report_point() {
+  const data_list = [];
+
+  for (const city of Object.keys(TREM.variable.cache.last_report.list))
+    for (const town of Object.keys(TREM.variable.cache.last_report.list[city].town)) {
+      const info = TREM.variable.cache.last_report.list[city].town[town];
+      TREM.variable.cache.bounds.report.push({ lon: info.lon, lat: info.lat });
+      data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [info.lon, info.lat] }, properties: { i: info.int } });
+    }
+
+  data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [TREM.variable.cache.last_report.lon, TREM.variable.cache.last_report.lat] }, properties: { i: 0 } });
+
+  updateMapBounds(TREM.variable.cache.bounds.report);
+
+  TREM.variable.map.getSource("report-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
+}
+
 TREM.variable.events.on("ReportRelease", (ans) => {
+  show_report_point(ans.data);
+
   const data = simplifyEarthquakeData(ans.data);
   TREM.variable.data.report.unshift(data);
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
@@ -214,7 +296,7 @@ TREM.variable.events.on("MapLoad", (map) => {
   refresh_report();
 });
 
-module.exports = generateReportBoxItems;
+module.exports = { generateReportBoxItems, show_report_point };
 
 /** 滾動條 **/
 const reportBoxItems = document.querySelector(".report-box-items");
