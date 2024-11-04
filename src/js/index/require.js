@@ -10,8 +10,6 @@ const logger = require("../js/core/utils/logger");
 
 logger.info("App start");
 
-require("../js/core/plugin");
-
 require("../js/index/nav");
 require("../js/index/lang");
 require("../js/index/event");
@@ -28,3 +26,5 @@ require("../js/index/core/audio");
 require("../js/index/core/focus");
 require("../js/index/core/report");
 require("../js/index/core/intensity");
+
+require("../js/core/plugin");

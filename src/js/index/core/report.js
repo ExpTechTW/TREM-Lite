@@ -3,7 +3,6 @@ const TREM = require("../constant");
 const { extractLocation } = require("../utils/utils");
 const crypto = require("crypto");
 const { updateMapBounds } = require("./focus");
-
 class ReportManager {
   static instance = null;
 
@@ -392,6 +391,8 @@ class ReportManager {
     );
   }
 }
+
+TREM.class.ReportManager = ReportManager;
 
 const reportManager = ReportManager.getInstance();
 

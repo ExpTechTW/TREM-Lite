@@ -170,6 +170,9 @@ const TREM = {
       },
     },
   },
+  class: {
+    ReportManager: null,
+  },
 };
 
 TREM.constant.AUDIO.SHINDO0.volume = 0.4;
