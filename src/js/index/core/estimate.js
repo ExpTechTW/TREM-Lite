@@ -57,7 +57,10 @@ function drawEewArea(end = false) {
   if (newHighIntensityCities.size > 0) {
     TREM.variable.events.emit("EewNewAreaAlert", {
       info : {},
-      data : { city_alert_list: Array.from(highIntensityCities), new_city_alert_list: Array.from(newHighIntensityCities) },
+      data : {
+        city_alert_list     : Array.from(highIntensityCities),
+        new_city_alert_list : Array.from(newHighIntensityCities),
+      },
     });
     newHighIntensityCities.forEach(city => alertedCities.add(city));
   }
@@ -75,15 +78,33 @@ function drawEewArea(end = false) {
 }
 
 function mergeEqArea(eewArea, eqArea) {
-  const mergedArea = { ...eewArea };
+  const mergedArea = {};
+
+  Object.entries(eewArea).forEach(([code, data]) => {
+    if (code !== "max_i")
+      mergedArea[code] = {
+        i   : data.i,
+        pga : data.pga,
+      };
+
+  });
 
   Object.entries(eqArea).forEach(([intensity, codes]) => {
+    const intensityFloat = parseFloat(intensity);
     codes.forEach(code => {
-      if (!mergedArea[code] || mergedArea[code] < intensity)
-        mergedArea[code] = intensity;
-
+      if (!mergedArea[code] || mergedArea[code].i < intensityFloat)
+        mergedArea[code] = {
+          i   : intensityFloat,
+          pga : 0,
+        };
     });
   });
+
+  let maxI = 0;
+  Object.values(mergedArea).forEach(data => {
+    if (data.i > maxI) maxI = data.i;
+  });
+  mergedArea.max_i = maxI;
 
   return mergedArea;
 }

@@ -142,14 +142,12 @@ function generateMapStyle(eewArea, end = false) {
   if (Object.keys(eewArea).length > 0)
     Object.entries(eewArea).forEach(([code, intensity]) => {
       matchExpression.push(parseInt(code));
-      console.log(intensity);
       matchExpression.push(
         intensity
           ? TREM.constant.COLOR.INTENSITY[intensity]
           : TREM.constant.COLOR.MAP.TW_COUNTY_FILL,
       );
     });
-
 
   matchExpression.push("#3F4045");
 

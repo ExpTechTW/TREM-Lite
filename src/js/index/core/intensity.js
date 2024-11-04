@@ -42,7 +42,7 @@ TREM.variable.events.on("MapLoad", (map) => {
   });
 
   setInterval(refresh_intensity, 10000);
-  // refresh_intensity();
+  refresh_intensity();
 });
 
 TREM.variable.events.on("IntensityRelease", (ans) => {
@@ -66,6 +66,12 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
 
   setTimeout(() => {
     TREM.variable.cache.show_intensity = false;
+    TREM.variable.events.emit("DataRts", {
+      info: {
+        type: TREM.variable.play_mode,
+      },
+      data: TREM.variable.data.rts,
+    });
     TREM.variable.map.setPaintProperty("rts-layer", "circle-opacity", 1);
     drawEewArea();
   }, 5000);
@@ -78,15 +84,13 @@ async function get_intensity() {
   return await ans.json();
 }
 
-const d = { id: Date.now(), "alert": 0, "final": 0, "area": { "1": [260, 265, 270, 263, 264, 269, 268, 266] }, "max": 1 };
+// const d = { id: Date.now(), "alert": 0, "final": 0, "area": { "1": [260, 265, 270, 263, 264, 269, 268, 266] }, "max": 1 };
 
 async function refresh_intensity() {
   const data = await get_intensity();
   if (!data) return;
 
-  data.push(d);
-
-  console.log(data);
+  // data.push(d);
 
   IntensityData(data);
 }
@@ -114,7 +118,6 @@ function IntensityData(newData = []) {
   );
 
   newData.forEach(data => {
-    console.log(data);
     if (!data.id || currentTime - data.id > EXPIRY_TIME || data.IntensityEnd) return;
 
     const existingIndex = TREM.variable.data.intensity.findIndex(item => item.id == data.id);
