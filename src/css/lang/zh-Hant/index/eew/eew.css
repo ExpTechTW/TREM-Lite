@@ -425,12 +425,12 @@ html[lang="zh-Hant"] {
     left: 4.5rem !important;
     position: relative !important;
     height: 35px !important;
-    margin-top: 5px !important;
+    margin-top: 2px !important;
     width: 80px;
   }
 
   .max-intensity {
-    margin-top: 6px !important;
+    margin-top: 3px !important;
     padding: 3px !important;
     width: 85px;
   }
@@ -446,6 +446,32 @@ html[lang="zh-Hant"] {
   .rts-info-box {
     height: 35px;
     justify-content: center;
+    margin-top: 3px!important;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    !importan;
+    !importa;
+    !import;
+    !impor;
+    !impo;
+    !imp;
+    !im;
+    !i;
+    !;
+    !u;
+    !;
+    !ㄩㄣ;
+    !ㄩㄛ;
+    !ㄛ;
+    !;
   }
 
   .report-box-item-contain:first-child {
@@ -481,6 +507,10 @@ html[lang="zh-Hant"] {
   .current-version-view {
     transform: translateX(30%);
   }
+
+  .fab {
+     margin-top: -10px;
+  }
 }
 
 /**RWD**/
@@ -489,3 +519,10 @@ html[lang="zh-Hant"] {
     height: 185px !important;
   }
 }
+
+@media (max-height: 635px) {
+  .intensity-color-list {
+    display:none!important;
+  }
+}
+
