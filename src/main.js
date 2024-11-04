@@ -10,14 +10,11 @@ const {
 const path = require("path");
 const fs = require("fs");
 
-/**
- * @type {BrowserWindow}
- */
 let win;
 let SettingWindow;
 let tray = null;
+let forceQuit = false;
 const hide = process.argv.includes("--start") ? true : false;
-
 const test = process.argv.includes("--raw") ? 0 : 1;
 
 function updateAutoLaunchSetting(value) {
@@ -59,11 +56,19 @@ function createWindow() {
   });
 
   win.on("close", (event) => {
-    if (!app.isQuiting) {
-      event.preventDefault();
-      win.hide();
-      event.returnValue = false;
-    } else app.quit();
+    if (process.platform === "darwin") {
+      if (!forceQuit) {
+        event.preventDefault();
+        win.hide();
+        return false;
+      }
+    } else
+      if (!app.isQuiting) {
+        event.preventDefault();
+        win.hide();
+        return false;
+      }
+
   });
 
   win.on("blur", () => {
@@ -131,11 +136,22 @@ else {
 }
 
 app.on("window-all-closed", (event) => {
-  if (process.platform !== "darwin") event.preventDefault();
+  event.preventDefault();
+  if (process.platform !== "darwin")
+    app.quit();
+
+});
+
+app.on("before-quit", () => {
+  forceQuit = true;
 });
 
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  if (win === null)
+    createWindow();
+  else
+    win.show();
+
 });
 
 app.on("browser-window-created", (e, window) => {
@@ -185,9 +201,14 @@ function trayIcon() {
   tray.setIgnoreDoubleClickEvents(true);
   tray.on("click", (e) => {
     if (win != null)
-      if (win.isVisible()) win.hide();
-      else win.show();
+      if (win.isVisible())
+        win.hide();
+      else
+        win.show();
+
+
   });
+
   const contextMenu = Menu.buildFromTemplate([
     {
       label : `TREM Lite v${app.getVersion()}`,
@@ -203,20 +224,21 @@ function trayIcon() {
       click : () => restart(),
     },
     {
-      label : "強制關閉",
+      label : "結束程式",
       type  : "normal",
       click : () => {
-        app.isQuiting = true;
-        app.exit(0);
+        forceQuit = true;
+        app.quit();
       },
     },
   ]);
+
   tray.setToolTip(`TREM Lite v${app.getVersion()}`);
   tray.setContextMenu(contextMenu);
 }
 
 function restart() {
   app.relaunch();
-  app.isQuiting = true;
+  forceQuit = true;
   app.quit();
 }
