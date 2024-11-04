@@ -25,3 +25,4 @@ require("../js/index/core/estimate");
 require("../js/index/core/audio");
 require("../js/index/core/focus");
 require("../js/index/core/report");
+require("../js/index/core/intensity");

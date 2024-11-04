@@ -117,7 +117,7 @@ const TREM = {
     time           : null,
     data           : {
       rts       : null,
-      intensity : null,
+      intensity : { id: Date.now(), "alert": 0, "final": 0, "area": { "1": [260, 265, 270, 263, 264, 269, 268, 266] }, "max": 1 },
       report    : null,
       eew       : [],
     },

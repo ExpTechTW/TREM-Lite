@@ -1,3 +1,4 @@
+const TREM = require("../constant");
 const region = require("../../../resource/data/region.json");
 
 const intensity_list = ["0", "1", "2", "3", "4", "5⁻", "5⁺", "6⁻", "6⁺", "7"];
@@ -133,6 +134,38 @@ function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor)
   return img;
 }
 
+function generateMapStyle(eewArea, end = false) {
+  if (end) return TREM.constant.COLOR.MAP.TW_COUNTY_FILL;
+
+  const matchExpression = ["match", ["get", "CODE"]];
+
+  if (Object.keys(eewArea).length > 0)
+    Object.entries(eewArea).forEach(([code, intensity]) => {
+      matchExpression.push(parseInt(code));
+      console.log(intensity);
+      matchExpression.push(
+        intensity
+          ? TREM.constant.COLOR.INTENSITY[intensity]
+          : TREM.constant.COLOR.MAP.TW_COUNTY_FILL,
+      );
+    });
+
+
+  matchExpression.push("#3F4045");
+
+  return matchExpression;
+}
+
+function convertIntensityToAreaFormat(intensityData) {
+  const result = {};
+  Object.entries(intensityData).forEach(([intensity, codes]) => {
+    codes.forEach(code => {
+      result[code] = parseInt(intensity);
+    });
+  });
+  return result;
+}
+
 module.exports = {
   formatTime,
   distance,
@@ -145,5 +178,7 @@ module.exports = {
   extractLocation,
   createIntensityIcon,
   createIntensityIconSquare,
+  generateMapStyle,
+  convertIntensityToAreaFormat,
   intensity_list,
 };

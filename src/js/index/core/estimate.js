@@ -1,7 +1,7 @@
 const TREM = require("../constant");
 
 const EEWCalculator = require("../utils/eewCalculator");
-const { intensity_float_to_int, search_loc_name } = require("../utils/utils");
+const { intensity_float_to_int, search_loc_name, generateMapStyle, convertIntensityToAreaFormat } = require("../utils/utils");
 
 const calculator = new EEWCalculator(require("../../../resource/data/time.json"));
 
@@ -99,25 +99,4 @@ function processIntensityAreas() {
   });
 
   return eewArea;
-}
-
-function generateMapStyle(eewArea, end) {
-  if (end) return TREM.constant.COLOR.MAP.TW_COUNTY_FILL;
-
-  const matchExpression = ["match", ["get", "CODE"]];
-
-  if (Object.keys(eewArea).length > 0)
-    Object.entries(eewArea).forEach(([code, intensity]) => {
-      matchExpression.push(parseInt(code));
-      matchExpression.push(
-        intensity
-          ? TREM.constant.COLOR.INTENSITY[intensity]
-          : TREM.constant.COLOR.MAP.TW_COUNTY_FILL,
-      );
-    });
-
-
-  matchExpression.push("#3F4045");
-
-  return matchExpression;
 }
