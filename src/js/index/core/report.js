@@ -158,7 +158,7 @@ async function refresh_report() {
 
   if (!TREM.variable.data.report) {
     TREM.variable.data.report = report_list;
-    generateReportBoxItems(report_list, TREM.variable.data.intensity ? { time: TREM.variable.data.intensity.id, intensity: TREM.variable.data.intensity.max } : null);
+    generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
     return;
   }
 
@@ -206,11 +206,13 @@ function simplifyEarthquakeData(data) {
 TREM.variable.events.on("ReportRelease", (ans) => {
   const data = simplifyEarthquakeData(ans.data);
   TREM.variable.data.report.unshift(data);
-  generateReportBoxItems(TREM.variable.data.report, TREM.variable.data.intensity ? { time: TREM.variable.data.intensity.id, intensity: TREM.variable.data.intensity.max } : null);
+  generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
 });
 
-setInterval(refresh_report, 10000);
-refresh_report();
+TREM.variable.events.on("MapLoad", (map) => {
+  setInterval(refresh_report, 10000);
+  refresh_report();
+});
 
 module.exports = generateReportBoxItems;
 

@@ -117,7 +117,7 @@ const TREM = {
     time           : null,
     data           : {
       rts       : null,
-      intensity : { id: Date.now(), "alert": 0, "final": 0, "area": { "1": [260, 265, 270, 263, 264, 269, 268, 266] }, "max": 1 },
+      intensity : [],
       report    : null,
       eew       : [],
     },
@@ -133,10 +133,15 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
-      eew_last : {},
-      time     : {
+      eew_last       : {},
+      intensity_last : {},
+      time           : {
         syncedTime : 0,
         lastSync   : 0,
+      },
+      intensity: {
+        time : 0,
+        max  : 0,
       },
       last_data_time : 0,
       bounds         : {

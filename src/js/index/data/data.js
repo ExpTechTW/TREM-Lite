@@ -66,7 +66,7 @@ function EEWData(newData = []) {
   newData.forEach(data => {
     if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) return;
 
-    const existingIndex = TREM.variable.data.eew.findIndex(item => item.id === data.id);
+    const existingIndex = TREM.variable.data.eew.findIndex(item => item.id == data.id);
     const eventData = {
       info: { type: TREM.variable.play_mode },
       data,
@@ -89,7 +89,7 @@ function EEWData(newData = []) {
       TREM.variable.cache.eew_last[data.id].serial = data.serial;
       TREM.variable.events.emit("EewUpdate", eventData);
 
-      if (!TREM.variable.data.eew[existingIndex].status && data.status === 1)
+      if (!TREM.variable.data.eew[existingIndex].status && data.status == 1)
         TREM.variable.events.emit("EewAlert", eventData);
 
       TREM.variable.data.eew[existingIndex] = data;
