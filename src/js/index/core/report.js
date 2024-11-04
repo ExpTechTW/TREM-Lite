@@ -1,346 +1,406 @@
 const fetchData = require("../../core/utils/fetch");
 const TREM = require("../constant");
 const { extractLocation } = require("../utils/utils");
-
 const crypto = require("crypto");
 const { updateMapBounds } = require("./focus");
 
-const close_button = document.querySelector("#close-btn");
-const reportWrapper = document.querySelector(".report-wrapper");
+class ReportManager {
+  static instance = null;
 
-let close = false;
+  constructor() {
+    if (ReportManager.instance)
+      return ReportManager.instance;
 
-close_button.addEventListener("click", toggleReport);
+    this.closeButton = document.querySelector("#close-btn");
+    this.reportWrapper = document.querySelector(".report-wrapper");
+    this.reportBoxItems = document.querySelector(".report-box-items");
+    this.customScrollbar = document.querySelector(".custom-scrollbar");
 
-TREM.variable.events.on("MapLoad", (map) => {
-  map.addSource("report-markers-geojson", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    this.isClose = false;
+    this.isDragging = false;
+    this.startY = 0;
+    this.initialScrollTop = 0;
 
-  map.addLayer({
-    id     : "report-markers",
-    type   : "symbol",
-    source : "report-markers-geojson",
-    filter : ["!=", ["get", "i"], 0],
-    layout : {
-      "symbol-sort-key" : ["get", "i"],
-      "symbol-z-order"  : "source",
-      "icon-image"      : [
-        "match",
-        ["get", "i"],
-        1, "intensity-1",
-        2, "intensity-2",
-        3, "intensity-3",
-        4, "intensity-4",
-        5, "intensity-5",
-        6, "intensity-6",
-        7, "intensity-7",
-        8, "intensity-8",
-        9, "intensity-9",
-        "cross",
-      ],
-      "icon-size": [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        5, 0.2,
-        10, 0.6,
-      ],
-      "icon-allow-overlap"    : true,
-      "icon-ignore-placement" : true,
-    },
-  });
-  map.addLayer({
-    id     : "report-markers-cross",
-    type   : "symbol",
-    source : "report-markers-geojson",
-    filter : ["==", ["get", "i"], 0],
-    layout : {
-      "symbol-sort-key" : ["get", "i"],
-      "symbol-z-order"  : "source",
-      "icon-image"      : "cross",
-      "icon-size"       : [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        5, 0.01,
-        10, 0.09,
-      ],
-      "icon-allow-overlap"    : true,
-      "icon-ignore-placement" : true,
-    },
-  });
-});
+    this.bindEvents();
 
-function toggleReport() {
-  close_button.classList.toggle("off");
-  reportWrapper.classList.toggle("hidden");
-  close = !close;
-}
+    ReportManager.instance = this;
+  }
 
-function initReportToggle() {
-  if (!close && window.innerWidth < 1080) toggleReport();
-}
+  static getInstance() {
+    if (!ReportManager.instance)
+      new ReportManager();
 
-window.addEventListener("resize", initReportToggle);
-if (window.innerWidth < 1080) toggleReport();
+    return ReportManager.instance;
+  }
 
-function formatTime(timestamp) {
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
+  bindEvents() {
+    this.closeButton.addEventListener("click", () => this.toggleReport());
+    window.addEventListener("resize", () => this.initReportToggle());
 
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-}
+    this.reportBoxItems.addEventListener("scroll", () => this.updateScrollbar());
+    this.reportBoxItems.addEventListener("wheel", (e) => this.onScroll(e));
+    this.customScrollbar.addEventListener("mousedown", (e) => this.onDragStart(e));
+    document.addEventListener("mousemove", (e) => this.onDragMove(e));
+    document.addEventListener("mouseup", () => this.onDragEnd());
+    window.addEventListener("resize", () => this.updateScrollbar());
 
-function createIntensityBox(intensity = "0") {
-  const box = document.createElement("div");
-  box.className = "report-intensity-box";
+    TREM.variable.events.on("MapLoad", (map) => this.onMapLoad(map));
+    TREM.variable.events.on("ReportRelease", (ans) => this.onReportRelease(ans));
+  }
 
-  const val = document.createElement("div");
-  val.className = `report-intensity-val intensity-${intensity}`;
+  onMapLoad(map) {
+    this.initializeMapLayers(map);
+    setInterval(() => this.refresh(), 10000);
+    this.refresh();
+  }
 
-  const text = document.createElement("div");
-  text.className = "report-intensity-text";
+  initializeMapLayers(map) {
+    map.addSource("report-markers-geojson", {
+      type : "geojson",
+      data : { type: "FeatureCollection", features: [] },
+    });
 
-  box.appendChild(val);
-  box.appendChild(text);
-  return box;
-}
+    map.addLayer({
+      id     : "report-markers",
+      type   : "symbol",
+      source : "report-markers-geojson",
+      filter : ["!=", ["get", "i"], 0],
+      layout : {
+        "symbol-sort-key" : ["get", "i"],
+        "symbol-z-order"  : "source",
+        "icon-image"      : [
+          "match",
+          ["get", "i"],
+          1, "intensity-1",
+          2, "intensity-2",
+          3, "intensity-3",
+          4, "intensity-4",
+          5, "intensity-5",
+          6, "intensity-6",
+          7, "intensity-7",
+          8, "intensity-8",
+          9, "intensity-9",
+          "cross",
+        ],
+        "icon-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5, 0.2,
+          10, 0.6,
+        ],
+        "icon-allow-overlap"    : true,
+        "icon-ignore-placement" : true,
+      },
+    });
 
-function createInfoBox(item, isSurvey = false) {
-  const box = document.createElement("div");
-  box.className = "report-info-box";
+    map.addLayer({
+      id     : "report-markers-cross",
+      type   : "symbol",
+      source : "report-markers-geojson",
+      filter : ["==", ["get", "i"], 0],
+      layout : {
+        "symbol-sort-key" : ["get", "i"],
+        "symbol-z-order"  : "source",
+        "icon-image"      : "cross",
+        "icon-size"       : [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5, 0.01,
+          10, 0.09,
+        ],
+        "icon-allow-overlap"    : true,
+        "icon-ignore-placement" : true,
+      },
+    });
+  }
 
-  const infoItem = document.createElement("div");
-  infoItem.className = "report-info-item";
+  toggleReport() {
+    this.closeButton.classList.toggle("off");
+    this.reportWrapper.classList.toggle("hidden");
+    this.isClose = !this.isClose;
+  }
 
-  const loc = document.createElement("div");
-  loc.className = "report-loc";
-  if (!isSurvey && item.loc)
-    loc.textContent = extractLocation(item.loc);
+  initReportToggle() {
+    if (!this.isClose && window.innerWidth < 1080)
+      this.toggleReport();
 
-  const time = document.createElement("div");
-  time.className = "report-time";
-  time.textContent = formatTime(item.time);
+  }
 
-  infoItem.appendChild(loc);
-  infoItem.appendChild(time);
+  updateScrollbar() {
+    const { scrollHeight, clientHeight, scrollTop } = this.reportBoxItems;
+    const maxScrollbarTop = clientHeight - this.customScrollbar.clientHeight;
+    this.customScrollbar.style.height = `${Math.max((clientHeight / scrollHeight) * clientHeight, 30)}px`;
+    this.customScrollbar.style.top = `${(scrollTop / (scrollHeight - clientHeight)) * maxScrollbarTop}px`;
+  }
 
-  const magDep = document.createElement("div");
-  magDep.className = "report-mag-dep";
+  onScroll(event) {
+    this.reportBoxItems.scrollTop += event.deltaY;
+    this.updateScrollbar();
+  }
 
-  const mag = document.createElement("div");
-  mag.className = "report-mag";
+  onDragStart(e) {
+    this.isDragging = true;
+    this.startY = e.clientY;
+    this.initialScrollTop = this.reportBoxItems.scrollTop;
+    document.body.style.userSelect = "none";
+  }
 
-  const magText = document.createElement("div");
-  magText.className = "report-mag-text";
+  onDragMove(e) {
+    if (!this.isDragging) return;
+    const deltaY = e.clientY - this.startY;
+    const scrollRatio = deltaY / (this.reportBoxItems.clientHeight - this.customScrollbar.clientHeight);
+    this.reportBoxItems.scrollTop = this.initialScrollTop + scrollRatio * (this.reportBoxItems.scrollHeight - this.reportBoxItems.clientHeight);
+  }
 
-  const magVal = document.createElement("div");
-  magVal.className = "report-mag-val";
-  magVal.textContent = item.mag ? item.mag.toFixed(1) : "";
+  onDragEnd() {
+    this.isDragging = false;
+    document.body.style.userSelect = "";
+  }
 
-  mag.appendChild(magText);
-  mag.appendChild(magVal);
+  formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  }
 
-  const depth = document.createElement("div");
-  depth.className = "report-depth";
+  createIntensityBox(intensity = "0") {
+    const box = document.createElement("div");
+    box.className = "report-intensity-box";
 
-  const depthText = document.createElement("div");
-  depthText.className = "report-depth-text";
+    const val = document.createElement("div");
+    val.className = `report-intensity-val intensity-${intensity}`;
 
-  const depthVal = document.createElement("div");
-  depthVal.className = "report-depth-val";
-  depthVal.textContent = item.depth || "";
+    const text = document.createElement("div");
+    text.className = "report-intensity-text";
 
-  depth.appendChild(depthText);
-  depth.appendChild(depthVal);
+    box.appendChild(val);
+    box.appendChild(text);
+    return box;
+  }
 
-  magDep.appendChild(mag);
-  magDep.appendChild(depth);
+  createInfoBox(item, isSurvey = false) {
+    const box = document.createElement("div");
+    box.className = "report-info-box";
 
-  box.appendChild(infoItem);
-  box.appendChild(magDep);
-  return box;
-}
+    const infoItem = document.createElement("div");
+    infoItem.className = "report-info-item";
 
-function createReportItem(item, isSurvey = false) {
-  const container = document.createElement("div");
-  container.className = `report-box-item-contain${isSurvey ? " survey" : ""}`;
+    const loc = document.createElement("div");
+    loc.className = "report-loc";
+    if (!isSurvey && item.loc)
+      loc.textContent = extractLocation(item.loc);
 
-  container.appendChild(createIntensityBox(item.int));
-  container.appendChild(createInfoBox(item, isSurvey));
 
-  return container;
-}
+    const time = document.createElement("div");
+    time.className = "report-time";
+    time.textContent = this.formatTime(item.time);
 
-function generateReportBoxItems(list, survey = null) {
-  const container = document.getElementById("report-box-items");
-  if (!container) return;
+    infoItem.appendChild(loc);
+    infoItem.appendChild(time);
 
-  container.innerHTML = "";
+    const magDep = document.createElement("div");
+    magDep.className = "report-mag-dep";
 
-  if (survey) {
-    const surveyItem = {
-      int   : survey.intensity || 0,
-      loc   : "",
-      time  : survey.time,
-      mag   : "",
-      depth : "",
+    const mag = document.createElement("div");
+    mag.className = "report-mag";
+    const magText = document.createElement("div");
+    magText.className = "report-mag-text";
+    const magVal = document.createElement("div");
+    magVal.className = "report-mag-val";
+    magVal.textContent = item.mag ? item.mag.toFixed(1) : "";
+    mag.appendChild(magText);
+    mag.appendChild(magVal);
+
+    const depth = document.createElement("div");
+    depth.className = "report-depth";
+    const depthText = document.createElement("div");
+    depthText.className = "report-depth-text";
+    const depthVal = document.createElement("div");
+    depthVal.className = "report-depth-val";
+    depthVal.textContent = item.depth || "";
+    depth.appendChild(depthText);
+    depth.appendChild(depthVal);
+
+    magDep.appendChild(mag);
+    magDep.appendChild(depth);
+    box.appendChild(infoItem);
+    box.appendChild(magDep);
+
+    return box;
+  }
+
+  createReportItem(item, isSurvey = false) {
+    const container = document.createElement("div");
+    container.className = `report-box-item-contain${isSurvey ? " survey" : ""}`;
+    container.appendChild(this.createIntensityBox(item.int));
+    container.appendChild(this.createInfoBox(item, isSurvey));
+    return container;
+  }
+
+  generateReportBoxItems(list, survey = null) {
+    const container = document.getElementById("report-box-items");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (survey) {
+      const surveyItem = {
+        int   : survey.intensity || 0,
+        loc   : "",
+        time  : survey.time,
+        mag   : "",
+        depth : "",
+      };
+      container.appendChild(this.createReportItem(surveyItem, true));
+    }
+
+    list.forEach(item => {
+      container.appendChild(this.createReportItem(item, false));
+    });
+  }
+
+  async getReport() {
+    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+    const ans = await fetchData(
+      `https://${url}/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
+      TREM.constant.HTTP_TIMEOUT.REPORT,
+    );
+    if (!ans.ok) return null;
+    return await ans.json();
+  }
+
+  async getReportInfo(id) {
+    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+    const ans = await fetchData(
+      `https://${url}/api/v2/eq/report/${id}`,
+      TREM.constant.HTTP_TIMEOUT.REPORT,
+    );
+    if (!ans.ok) return null;
+    return await ans.json();
+  }
+
+  async refresh() {
+    const reportList = await this.getReport();
+    if (!reportList) return;
+
+    if (!TREM.variable.data.report.length) {
+      TREM.variable.data.report = reportList;
+      if (TREM.constant.SHOW_REPORT) {
+        const data = await this.getReportInfo(reportList[0].id);
+        TREM.variable.cache.last_report = data;
+      }
+      this.generateReportBoxItems(
+        TREM.variable.data.report,
+        TREM.variable.cache.intensity.time
+          ? {
+            time      : TREM.variable.cache.intensity.time,
+            intensity : TREM.variable.cache.intensity.max,
+          }
+          : null,
+      );
+      return;
+    }
+
+    const existingIds = new Set(TREM.variable.data.report.map(item => item.id));
+    const newReports = reportList.filter(report => !existingIds.has(report.id));
+
+    if (newReports.length > 0) {
+      const data = await this.getReportInfo(newReports[0].id);
+      if (data)
+        TREM.variable.events.emit("ReportRelease", { data });
+    }
+  }
+
+  simplifyEarthquakeData(data) {
+    let maxIntensity = 0;
+    Object.values(data.list).forEach(county => {
+      if (county.int > maxIntensity)
+        maxIntensity = county.int;
+
+    });
+
+    const earthquakeData = {
+      id      : data.id,
+      lat     : data.lat,
+      lon     : data.lon,
+      depth   : data.depth,
+      loc     : data.loc,
+      mag     : data.mag,
+      time    : data.time,
+      int     : maxIntensity,
+      eq_list : data.list,
+      trem    : data.trem,
     };
-    container.appendChild(createReportItem(surveyItem, true));
+
+    const md5Value = crypto
+      .createHash("md5")
+      .update(JSON.stringify(earthquakeData))
+      .digest("hex")
+      .toUpperCase();
+
+    return {
+      ...earthquakeData,
+      md5: md5Value,
+    };
   }
 
-  list.forEach(item => {
-    container.appendChild(createReportItem(item, false));
-  });
-}
+  showReportPoint(data) {
+    if (!data) return;
 
-async function get_report() {
-  const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
-  const ans = await fetchData(`https://${url}/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`, TREM.constant.HTTP_TIMEOUT.REPORT);
-  if (!ans.ok) return null;
-  return await ans.json();
-}
+    const dataList = [];
 
-async function get_report_info(id) {
-  const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
-  const ans = await fetchData(`https://${url}/api/v2/eq/report/${id}`, TREM.constant.HTTP_TIMEOUT.REPORT);
-  if (!ans.ok) return null;
-  return await ans.json();
-}
+    for (const city of Object.keys(data.list))
+      for (const town of Object.keys(data.list[city].town)) {
+        const info = data.list[city].town[town];
+        TREM.variable.cache.bounds.report.push({ lon: info.lon, lat: info.lat });
+        dataList.push({
+          type       : "Feature",
+          geometry   : { type: "Point", coordinates: [info.lon, info.lat] },
+          properties : { i: info.int },
+        });
+      }
 
-async function refresh_report() {
-  const report_list = await get_report();
-  if (!report_list) return;
 
-  if (!TREM.variable.data.report.length) {
-    TREM.variable.data.report = report_list;
-    if (TREM.constant.SHOW_REPORT) {
-      const data = await get_report_info(report_list[0].id);
-      TREM.variable.cache.last_report = data;
-    }
-    generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
-    return;
+    dataList.push({
+      type       : "Feature",
+      geometry   : { type: "Point", coordinates: [data.lon, data.lat] },
+      properties : { i: 0 },
+    });
+
+    updateMapBounds(TREM.variable.cache.bounds.report);
+    TREM.variable.map.getSource("report-markers-geojson").setData({
+      type     : "FeatureCollection",
+      features : dataList,
+    });
   }
 
-  const existingIds = new Set(TREM.variable.data.report.map(item => item.id));
-  const newReports = report_list.filter(report => !existingIds.has(report.id));
+  onReportRelease(ans) {
+    if (TREM.constant.SHOW_REPORT)
+      this.showReportPoint(ans.data);
 
-  if (newReports.length > 0) {
-    const data = await get_report_info(newReports[0].id);
-    if (data) TREM.variable.events.emit("ReportRelease", { data });
+    const data = this.simplifyEarthquakeData(ans.data);
+    TREM.variable.data.report.unshift(data);
+    this.generateReportBoxItems(
+      TREM.variable.data.report,
+      TREM.variable.cache.intensity.time
+        ? {
+          time      : TREM.variable.cache.intensity.time,
+          intensity : TREM.variable.cache.intensity.max,
+        }
+        : null,
+    );
   }
 }
 
-function simplifyEarthquakeData(data) {
-  let maxIntensity = 0;
-  Object.values(data.list).forEach(county => {
-    if (county.int > maxIntensity)
-      maxIntensity = county.int;
+const reportManager = ReportManager.getInstance();
 
-  });
+if (window.innerWidth < 1080)
+  reportManager.toggleReport();
 
-  const earthquakeData = {
-    id      : data.id,
-    lat     : data.lat,
-    lon     : data.lon,
-    depth   : data.depth,
-    loc     : data.loc,
-    mag     : data.mag,
-    time    : data.time,
-    int     : maxIntensity,
-    eq_list : data.list,
-    trem    : data.trem,
-  };
+reportManager.updateScrollbar();
 
-  const md5Value = crypto.createHash("md5")
-    .update(JSON.stringify(earthquakeData))
-    .digest("hex")
-    .toUpperCase();
-
-  return {
-    ...earthquakeData,
-    md5: md5Value,
-  };
-}
-
-function show_report_point(data) {
-  if (!data) return;
-
-  const data_list = [];
-
-  for (const city of Object.keys(data.list))
-    for (const town of Object.keys(data.list[city].town)) {
-      const info = data.list[city].town[town];
-      TREM.variable.cache.bounds.report.push({ lon: info.lon, lat: info.lat });
-      data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [info.lon, info.lat] }, properties: { i: info.int } });
-    }
-
-  data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [data.lon, data.lat] }, properties: { i: 0 } });
-
-  updateMapBounds(TREM.variable.cache.bounds.report);
-
-  TREM.variable.map.getSource("report-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
-}
-
-TREM.variable.events.on("ReportRelease", (ans) => {
-  if (TREM.constant.SHOW_REPORT) show_report_point(ans.data);
-
-  const data = simplifyEarthquakeData(ans.data);
-  TREM.variable.data.report.unshift(data);
-  generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
-});
-
-TREM.variable.events.on("MapLoad", (map) => {
-  setInterval(refresh_report, 10000);
-  refresh_report();
-});
-
-module.exports = { generateReportBoxItems, show_report_point };
-
-/** 滾動條 **/
-const reportBoxItems = document.querySelector(".report-box-items");
-const customScrollbar = document.querySelector(".custom-scrollbar");
-
-let isDragging = false, startY, initialScrollTop;
-
-const updateScrollbar = () => {
-  const { scrollHeight, clientHeight, scrollTop } = reportBoxItems;
-  const maxScrollbarTop = clientHeight - customScrollbar.clientHeight;
-  customScrollbar.style.height = `${Math.max((clientHeight / scrollHeight) * clientHeight, 30)}px`;
-  customScrollbar.style.top = `${(scrollTop / (scrollHeight - clientHeight)) * maxScrollbarTop}px`;
+module.exports = {
+  generateReportBoxItems : (list, survey) => reportManager.generateReportBoxItems(list, survey),
+  show_report_point      : (data) => reportManager.showReportPoint(data),
 };
-
-const onScroll = () => {
-  reportBoxItems.scrollTop += event.deltaY;
-  updateScrollbar();
-};
-
-const onDragStart = (e) => {
-  isDragging = true;
-  startY = e.clientY;
-  initialScrollTop = reportBoxItems.scrollTop;
-  document.body.style.userSelect = "none";
-};
-
-const onDragMove = (e) => {
-  if (!isDragging) return;
-  const deltaY = e.clientY - startY;
-  const scrollRatio = deltaY / (reportBoxItems.clientHeight - customScrollbar.clientHeight);
-  reportBoxItems.scrollTop = initialScrollTop + scrollRatio * (reportBoxItems.scrollHeight - reportBoxItems.clientHeight);
-};
-
-const onDragEnd = () => {
-  isDragging = false;
-  document.body.style.userSelect = "";
-};
-
-reportBoxItems.addEventListener("scroll", updateScrollbar);
-reportBoxItems.addEventListener("wheel", onScroll);
-customScrollbar.addEventListener("mousedown", onDragStart);
-document.addEventListener("mousemove", onDragMove);
-document.addEventListener("mouseup", onDragEnd);
-window.addEventListener("resize", updateScrollbar);
-updateScrollbar();
