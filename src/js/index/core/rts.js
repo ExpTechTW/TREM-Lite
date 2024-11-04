@@ -271,8 +271,8 @@ TREM.variable.events.on("DataRts", (ans) => {
         data_list = [];
         data_alert_0_list = [];
         data_alert_list = [];
-      } else if (TREM.constant.SHOW_REPORT_ON_START)
-        show_report_point();
+      } else if (TREM.constant.SHOW_REPORT)
+        show_report_point(TREM.variable.cache.last_report);
   }
 
   if (TREM.variable.map) {

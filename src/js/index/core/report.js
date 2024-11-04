@@ -217,7 +217,7 @@ async function refresh_report() {
 
   if (!TREM.variable.data.report.length) {
     TREM.variable.data.report = report_list;
-    if (TREM.constant.SHOW_REPORT_ON_START) {
+    if (TREM.constant.SHOW_REPORT) {
       const data = await get_report_info(report_list[0].id);
       TREM.variable.cache.last_report = data;
     }
@@ -266,17 +266,19 @@ function simplifyEarthquakeData(data) {
   };
 }
 
-function show_report_point() {
+function show_report_point(data) {
+  if (!data) return;
+
   const data_list = [];
 
-  for (const city of Object.keys(TREM.variable.cache.last_report.list))
-    for (const town of Object.keys(TREM.variable.cache.last_report.list[city].town)) {
-      const info = TREM.variable.cache.last_report.list[city].town[town];
+  for (const city of Object.keys(data.list))
+    for (const town of Object.keys(data.list[city].town)) {
+      const info = data.list[city].town[town];
       TREM.variable.cache.bounds.report.push({ lon: info.lon, lat: info.lat });
       data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [info.lon, info.lat] }, properties: { i: info.int } });
     }
 
-  data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [TREM.variable.cache.last_report.lon, TREM.variable.cache.last_report.lat] }, properties: { i: 0 } });
+  data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [data.lon, data.lat] }, properties: { i: 0 } });
 
   updateMapBounds(TREM.variable.cache.bounds.report);
 
@@ -284,7 +286,7 @@ function show_report_point() {
 }
 
 TREM.variable.events.on("ReportRelease", (ans) => {
-  show_report_point(ans.data);
+  if (TREM.constant.SHOW_REPORT) show_report_point(ans.data);
 
   const data = simplifyEarthquakeData(ans.data);
   TREM.variable.data.report.unshift(data);

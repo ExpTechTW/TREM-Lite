@@ -109,7 +109,7 @@ const TREM = {
       OPTIONS : { padding: 20, duration: 0 },
     },
 
-    SHOW_REPORT_ON_START: true,
+    SHOW_REPORT: true,
   },
 
   variable: {
@@ -135,7 +135,7 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
-      last_report      : {},
+      last_report      : null,
       eewIntensityArea : {},
       show_intensity   : false,
       eew_last         : {},
