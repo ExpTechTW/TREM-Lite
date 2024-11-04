@@ -42,22 +42,24 @@ TREM.variable.events.on("MapLoad", (map) => {
     },
   });
 
-  // setInterval(refresh_intensity, 10000);
-  // refresh_intensity();
+  setInterval(refresh_intensity, 10000);
+  refresh_intensity();
 });
 
-TREM.variable.events.on("IntensityRelease", (ans) => {
+
+function show_intensity(ans) {
   const data_list = [];
   const bounds = [];
+
+  const city_intensity_list = findMaxIntensityCity(ans.data.area);
 
   TREM.variable.cache.show_intensity = true;
 
   TREM.variable.cache.intensity.time = ans.data.id;
+  if (TREM.variable.cache.intensity.max < ans.data.max) TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace("級", "")}，${city_intensity_list.cities.join("、")}`, queue: true });
   TREM.variable.cache.intensity.max = ans.data.max;
 
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
-
-  const city_intensity_list = findMaxIntensityCity(ans.data.area);
 
   const code_intensity = convertIntensityToAreaFormat(ans.data.area);
 
@@ -69,14 +71,12 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
     const loc = search_loc_name(code);
     const loc_info = region[loc.city][loc.town];
     bounds.push({ lon: loc_info.lon, lat: loc_info.lat });
-    data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [loc_info.lon, loc_info.lat] }, properties: { i: 3 } });
+    data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [loc_info.lon, loc_info.lat] }, properties: { i: code_intensity[code] } });
   }
 
   TREM.variable.cache.bounds.intensity = bounds;
 
   TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
-
-  TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace("級", "")}，${city_intensity_list.cities.join("、")}`, queue: true });
 
   focus();
 
@@ -93,7 +93,16 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
     TREM.variable.map.setPaintProperty("rts-layer", "circle-opacity", 1);
     TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: [] });
     drawEewArea();
-  }, 5000);
+  }, 7500);
+}
+
+TREM.variable.events.on("IntensityRelease", (ans) => show_intensity(ans));
+TREM.variable.events.on("IntensityUpdate", (ans) => show_intensity(ans));
+
+TREM.variable.events.on("IntensityEnd", (ans) => {
+  TREM.variable.cache.intensity.time = 0;
+  TREM.variable.cache.intensity.max = 0;
+  generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
 });
 
 function findMaxIntensityCity(eqArea) {
@@ -124,14 +133,9 @@ async function get_intensity() {
   return await ans.json();
 }
 
-const d = { id: Date.now(), "alert": 0, "final": 0, "area": { "1": [260, 265, 270, 263, 264, 269, 268, 266] }, "max": 1 };
-
 async function refresh_intensity() {
   const data = await get_intensity();
   if (!data) return;
-
-  data.push(d);
-
   IntensityData(data);
 }
 
