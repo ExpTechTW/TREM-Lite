@@ -1,4 +1,6 @@
 const winston = require("winston");
+const path = require("path");
+const { app } = require("@electron/remote");
 require("winston-daily-rotate-file");
 
 class Logger {
@@ -11,8 +13,10 @@ class Logger {
   }
 
   initLogger() {
+    const logPath = path.join(app.getPath("logs"), "%DATE%.log");
+
     const file = new winston.transports.DailyRotateFile({
-      filename      : "logs/%DATE%.log",
+      filename      : logPath,
       datePattern   : "YYYY-MM-DD",
       zippedArchive : true,
       maxSize       : "20m",

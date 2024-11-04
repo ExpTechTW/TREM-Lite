@@ -20,9 +20,17 @@
       "output": "../dev"
     },
     "mac": {
+      "identity": null,
       "target": [
-        "dmg"
-      ]
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "compression": "maximum"
     },
     "linux": {
       "target": [
