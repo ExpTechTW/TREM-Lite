@@ -14,30 +14,35 @@ TREM.variable.events.on("EewUpdate", (ans) => updateEewArea(ans));
 
 TREM.variable.events.on("EewEnd", (ans) => {
   delete eewIntensityArea[ans.data.id];
-  drawEewArea(ans, true);
+  drawEewArea(true);
 });
 
 function updateEewArea(ans) {
   if (!TREM.constant.SHOW_TREM_EEW && ans.data.author === "trem") return;
 
-  eewIntensityArea[ans.data.id] = calculator.eewAreaPga(
+  const area = calculator.eewAreaPga(
     ans.data.eq.lat,
     ans.data.eq.lon,
     ans.data.eq.depth,
     ans.data.eq.mag,
   );
 
-  drawEewArea(ans);
+  const mergedArea = mergeEqArea(area, ans.data.eq.area ?? {});
+
+  eewIntensityArea[ans.data.id] = mergedArea;
+
+  drawEewArea();
 }
 
-function drawEewArea(ans, end = false) {
+function drawEewArea(end = false) {
+  if (TREM.variable.cache.show_intensity) return;
+
   const eewArea = processIntensityAreas();
-  const mergedArea = mergeEqArea(eewArea, ans.data.eq.area ?? {});
 
   const highIntensityAreas = {};
   const highIntensityCities = new Set();
 
-  Object.entries(mergedArea).forEach(([code, intensity]) => {
+  Object.entries(eewArea).forEach(([code, intensity]) => {
     if (intensity >= 5) {
       highIntensityAreas[code] = intensity;
       const location = search_loc_name(parseInt(code));
@@ -57,7 +62,7 @@ function drawEewArea(ans, end = false) {
     newHighIntensityCities.forEach(city => alertedCities.add(city));
   }
 
-  const mapStyle = generateMapStyle(mergedArea, end);
+  const mapStyle = generateMapStyle(eewArea, end);
   TREM.variable.map.setPaintProperty("town", "fill-color", mapStyle);
 
   if (end) alertedCities.clear();
@@ -68,7 +73,6 @@ function drawEewArea(ans, end = false) {
     newHighIntensityCities : Array.from(newHighIntensityCities),
   };
 }
-
 
 function mergeEqArea(eewArea, eqArea) {
   const mergedArea = { ...eewArea };
@@ -93,10 +97,11 @@ function processIntensityAreas() {
         const intensityValue = intensity_float_to_int(value.i);
         if (!eewArea[name] || eewArea[name] < intensityValue)
           eewArea[name] = intensityValue;
-
       }
     });
   });
 
   return eewArea;
 }
+
+module.exports = drawEewArea;

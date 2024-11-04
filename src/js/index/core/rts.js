@@ -162,10 +162,14 @@ TREM.variable.events.on("DataRts", (ans) => {
 
       if (alert && ans.data.station[id].alert) {
         const I = intensity_float_to_int(ans.data.station[id].I);
-        if (I > 0)
-          data_alert_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
-        else if (TREM.variable.data.eew)
-          data_alert_0_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: {} });
+
+        if (TREM.variable.cache.show_intensity)
+          data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
+        else
+          if (I > 0)
+            data_alert_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
+          else if (TREM.variable.data.eew)
+            data_alert_0_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: {} });
 
         coordinates.push({ lon: station_location.lon, lat: station_location.lat });
 

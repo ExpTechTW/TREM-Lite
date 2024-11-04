@@ -2,6 +2,7 @@ const fetchData = require("../../core/utils/fetch");
 const TREM = require("../constant");
 const now = require("../utils/ntp");
 const { generateMapStyle, convertIntensityToAreaFormat, int_to_string } = require("../utils/utils");
+const drawEewArea = require("./estimate");
 const generateReportBoxItems = require("./report");
 
 TREM.variable.events.on("MapLoad", (map) => {
@@ -41,11 +42,13 @@ TREM.variable.events.on("MapLoad", (map) => {
   });
 
   setInterval(refresh_intensity, 10000);
-  refresh_intensity();
+  // refresh_intensity();
 });
 
 TREM.variable.events.on("IntensityRelease", (ans) => {
   const data_list = [];
+
+  TREM.variable.cache.show_intensity = true;
 
   TREM.variable.cache.intensity.time = ans.data.id;
   TREM.variable.cache.intensity.max = ans.data.max;
@@ -60,6 +63,12 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
   TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
 
   TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(TREM.variable.cache.intensity.max).replace("級", "")}，loc`, queue: true });
+
+  setTimeout(() => {
+    TREM.variable.cache.show_intensity = false;
+    TREM.variable.map.setPaintProperty("rts-layer", "circle-opacity", 1);
+    drawEewArea();
+  }, 5000);
 });
 
 async function get_intensity() {
