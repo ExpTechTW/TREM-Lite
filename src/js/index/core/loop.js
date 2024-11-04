@@ -10,10 +10,14 @@ const time = document.getElementById("time");
 let flash = false;
 
 setInterval(() => {
-  if (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3) time.className = "time-replay";
-  else if ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) time.className = "time-error";
-  else time.className = "time-normal";
-  time.textContent = formatTime(now());
+  if (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3) {
+    time.className = "time-replay";
+    time.textContent = formatTime(now());
+  } else if ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) time.className = "time-error";
+  else {
+    time.className = "time-normal";
+    time.textContent = formatTime(now());
+  }
 }, 1000);
 
 TREM.variable.events.on("MapLoad", (map) => {
