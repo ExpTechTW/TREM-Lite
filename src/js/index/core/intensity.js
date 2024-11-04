@@ -38,8 +38,6 @@ TREM.variable.events.on("MapLoad", (map) => {
         5, 0.3,
         10, 0.7,
       ],
-      "icon-allow-overlap"    : true,
-      "icon-ignore-placement" : true,
     },
   });
 
