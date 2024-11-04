@@ -1,7 +1,7 @@
 const fetchData = require("../../core/utils/fetch");
 const TREM = require("../constant");
 const now = require("../utils/ntp");
-const { generateMapStyle, convertIntensityToAreaFormat } = require("../utils/utils");
+const { generateMapStyle, convertIntensityToAreaFormat, int_to_string } = require("../utils/utils");
 const generateReportBoxItems = require("./report");
 
 TREM.variable.events.on("MapLoad", (map) => {
@@ -58,6 +58,8 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
 
   data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [122, 23] }, properties: { i: 3 } });
   TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
+
+  TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(TREM.variable.cache.intensity.max).replace("級", "")}，loc`, queue: true });
 });
 
 async function get_intensity() {
