@@ -64,7 +64,7 @@ const TREM = {
       },
     },
 
-    SHOW_TREM_EEW: true,
+    SHOW_TREM_EEW: false,
 
     URL: {
       API : ["api-1.exptech.dev", "api-2.exptech.dev"],
