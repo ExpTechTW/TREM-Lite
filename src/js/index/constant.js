@@ -146,7 +146,8 @@ const TREM = {
       },
       last_data_time : 0,
       bounds         : {
-        rts: [],
+        rts       : [],
+        intensity : [],
       },
       audio: {
         shindo : -1,

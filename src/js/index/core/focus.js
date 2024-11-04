@@ -42,6 +42,12 @@ focus_button.addEventListener("click", () => {
 
 function focus() {
   if (lock) return;
+
+  if (TREM.variable.cache.bounds.intensity.length) {
+    updateMapBounds(TREM.variable.cache.bounds.intensity);
+    return;
+  }
+
   const eew_bounds = [];
   for (const eew of TREM.variable.data.eew)
     eew_bounds.push({ lon: eew.eq.lon, lat: eew.eq.lat });

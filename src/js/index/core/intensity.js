@@ -47,6 +47,7 @@ TREM.variable.events.on("MapLoad", (map) => {
 
 TREM.variable.events.on("IntensityRelease", (ans) => {
   const data_list = [];
+  const bounds = [];
 
   TREM.variable.cache.show_intensity = true;
 
@@ -64,12 +65,17 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
   for (const code of Object.keys(code_intensity)) {
     const loc = search_loc_name(code);
     const loc_info = region[loc.city][loc.town];
+    bounds.push({ lon: loc_info.lon, lat: loc_info.lat });
     data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [loc_info.lon, loc_info.lat] }, properties: { i: 3 } });
   }
+
+  TREM.variable.cache.bounds.intensity = bounds;
 
   TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
 
   TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(TREM.variable.cache.intensity.max).replace("級", "")}，loc`, queue: true });
+
+  focus();
 
   setTimeout(() => {
     TREM.variable.cache.show_intensity = false;
