@@ -2,17 +2,13 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../css/loading.css" />
+    <link rel="stylesheet" href="../css/core/loading.css" />
   </head>
 
   <body class="setting">
     <div class="setting-wrapper">
       <div class="setting-container">
         <div class="setting-header">
-          <div class="setting-title">
-            <span>設定</span>
-            <button class="setting-reset-btn">重設</button>
-          </div>
           <div class="usr-account-info-wrapper">
             <div class="usr-account-info-container">
               <div class="usr-account-info-content show-account-info">
@@ -51,6 +47,7 @@
           </div>
         </div>
         <div class="setting-content">
+          <div class="top-frame"></div>
           <div class="windows-wrapper">
             <div class="windows-buttons minimize">━</div>
             <div class="windows-buttons close">✖</div>
@@ -192,48 +189,6 @@
                       選擇地區
                     </div>
                     <div class="select-items int"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="setting-item-content">
-                <span class="setting-item-title">地震預警來源</span>
-                <span class="description"> 程式接收地震預警的來源。 </span>
-                <div class="setting-option">
-                  <div>
-                    <span>中央氣象署 (CWA)</span>
-                    <label class="switch">
-                      <input id="early-warning-CWA" type="checkbox" />
-                      <div class="slider round"></div>
-                    </label>
-                  </div>
-                  <div>
-                    <span>気象庁 (JMA)</span>
-                    <label class="switch">
-                      <input id="early-warning-JMA" type="checkbox" />
-                      <div class="slider round"></div>
-                    </label>
-                  </div>
-                  <div>
-                    <span>防災科学技術研究所 (NIED)</span>
-                    <label class="switch">
-                      <input id="early-warning-NIED" type="checkbox" />
-                      <div class="slider round"></div>
-                    </label>
-                  </div>
-                  <div>
-                    <span>기상청 (KMA)</span>
-                    <label class="switch">
-                      <input id="early-warning-KMA" type="checkbox" />
-                      <div class="slider round"></div>
-                    </label>
-                  </div>
-                  <div>
-                    <span>四川省地震局 (SCDZJ)</span>
-                    <label class="switch">
-                      <input id="early-warning-SCDZJ" type="checkbox" />
-                      <div class="slider round"></div>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -524,10 +479,6 @@
                 >
                 <div class="setting-option">
                   <div class="setting-item">
-                    <span>TREM版本</span>
-                    <span id="version">---</span>
-                  </div>
-                  <div class="setting-item">
                     <span>系統版本</span>
                     <span id="system_os">---</span>
                   </div>
@@ -546,10 +497,6 @@
                       <span>地震預警</span>
                       <ul>
                         <li><span>交通部中央氣象署 (CWA)</span></li>
-                        <li><span>日本気象庁 (JMA)</span></li>
-                        <li><span>防災科研 (NIED)</span></li>
-                        <li><span>中国四川省地震局 (SCDZJ)</span></li>
-                        <li><span>기상청 (KMA)</span></li>
                       </ul>
                     </div>
                     <div>

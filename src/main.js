@@ -120,6 +120,10 @@ function createSettingWindow() {
       win.webContents.reload();
     }
   });
+  ipcMain.on("minimize-window", () => {
+    if (SettingWindow) SettingWindow.minimize();
+
+  });
 }
 
 const shouldQuit = app.requestSingleInstanceLock();

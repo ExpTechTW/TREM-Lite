@@ -115,48 +115,15 @@ body {
   color: #fff;
 }
 
-.setting-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding-top: 3vh;
-}
-
-.back_to_home_wrapper {
-  display: flex;
-  align-items: center;
-}
-
-.back_to_home .report-detail-field-icon.material-symbols-rounded {
-  position: relative;
-  top: 0.5rem;
-  left: 0.65rem;
-  font-size: 15px;
-}
-
-@media screen and (max-width: 1110px) {
-  .back_to_home_wrapper p {
-    display: none;
-  }
-}
-
-.setting-reset-btn {
-  border-radius: 25px;
-  border: 1px solid rgb(45 52 70 / 0%);
-  background: rgb(45 52 70 / 61%);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 400;
-  cursor: pointer;
-  width: 70px;
-  height: 39px;
-  font-family: "Lato", "Noto Sans TC";
-  text-rendering: optimizeLegibility;
-}
-
 .setting-title span {
   font-size: 24px;
   font-weight: 500;
+}
+
+.top-frame {
+  width: 73%;
+  height: 60px;
+  position: fixed;
 }
 
 .setting-options-page {
@@ -538,7 +505,7 @@ li {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 1vw;
+  margin-top: 4vw;
 }
 
 .usr-account-info-content {
@@ -771,13 +738,9 @@ li {
   z-index: 2;
 }
 
-.setting-options-page {
+.top-frame {
   -webkit-app-region: drag;
   user-select: none;
-}
-
-.setting-item-wrapper {
-  -webkit-app-region: no-drag;
 }
 
 .windows-wrapper {
@@ -790,22 +753,23 @@ li {
   flex-wrap: wrap;
   top: 0.6em;
   font-weight: bold;
-  z-index: 9999;
+  -webkit-app-region: no-drag;
 }
 
-.minimize {
-  margin-top: 2px;
-  color: red;
-}
-
+.minimize,
 .close {
-  color: red;
+  margin-top: 2px;
+  color: #ffffff;
+  align-items: center;
+  justify-content: center;
 }
 
 .windows-buttons {
-  border: 1px solid #555555;
+  border: 1px solid #616161;
   width: 25px;
   text-align: center;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 15px;
+  display: flex;
 }
