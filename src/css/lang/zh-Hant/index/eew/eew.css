@@ -94,7 +94,7 @@ html[lang="zh-Hant"] {
   z-index: 1001;
   width: 20rem;
   border-radius: 5px;
-  /* pointer-events: none; */
+  pointer-events: none;
   border: 1px solid #515151;
 
   /**發報標題**/
