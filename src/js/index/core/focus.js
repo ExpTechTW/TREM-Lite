@@ -34,7 +34,7 @@ TREM.variable.events.on("MapLoad", (map) => {
 });
 
 focus_button.addEventListener("click", () => {
-  TREM.variable.map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS);
+  focus_reset();
 
   lock = false;
   focus_button.style.color = "white";
@@ -57,6 +57,10 @@ function focus() {
   if (bounds.length) updateMapBounds(bounds);
 }
 
+function focus_reset() {
+  TREM.variable.map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS);
+}
+
 function updateMapBounds(coordinates, options = {}) {
   const bounds = new maplibregl.LngLatBounds();
 
@@ -75,3 +79,5 @@ function updateMapBounds(coordinates, options = {}) {
     duration : options.duration || 500,
   });
 }
+
+module.exports = { focus, focus_reset };

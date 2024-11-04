@@ -5,6 +5,7 @@ const TREM = require("../constant");
 const now = require("../utils/ntp");
 const { generateMapStyle, convertIntensityToAreaFormat, int_to_string, search_loc_name } = require("../utils/utils");
 const drawEewArea = require("./estimate");
+const { focus_reset, focus } = require("./focus");
 const generateReportBoxItems = require("./report");
 
 TREM.variable.events.on("MapLoad", (map) => {
@@ -56,6 +57,8 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
 
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
 
+  const city_intensity_list = findMaxIntensityCity(ans.data.area);
+
   const code_intensity = convertIntensityToAreaFormat(ans.data.area);
 
   const mapStyle = generateMapStyle(code_intensity);
@@ -73,7 +76,7 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
 
   TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
 
-  TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(TREM.variable.cache.intensity.max).replace("級", "")}，loc`, queue: true });
+  TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace("級", "")}，${city_intensity_list.cities.join("、")}`, queue: true });
 
   focus();
 
@@ -85,11 +88,34 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
       },
       data: TREM.variable.data.rts,
     });
+    TREM.variable.cache.bounds.intensity = [];
+    focus_reset();
     TREM.variable.map.setPaintProperty("rts-layer", "circle-opacity", 1);
     TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: [] });
     drawEewArea();
   }, 5000);
 });
+
+function findMaxIntensityCity(eqArea) {
+  if (!eqArea || Object.keys(eqArea).length === 0)
+    return null;
+
+  const maxIntensity = Math.max(...Object.keys(eqArea).map(Number));
+
+  const maxIntensityCodes = eqArea[maxIntensity] || [];
+
+  const citiesWithMaxIntensity = maxIntensityCodes
+    .map(code => search_loc_name(parseInt(code)))
+    .filter(location => location !== null)
+    .map(location => location.city);
+
+  const uniqueCities = [...new Set(citiesWithMaxIntensity)];
+
+  return {
+    intensity : maxIntensity,
+    cities    : uniqueCities,
+  };
+}
 
 async function get_intensity() {
   const url = TREM.constant.URL.API[1];

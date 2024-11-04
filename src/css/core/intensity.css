@@ -73,7 +73,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "5⁻";
+    content: "5\207B";
   }
 }
 
@@ -83,7 +83,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "5⁺";
+    content: "5\207A";
   }
 }
 
@@ -93,7 +93,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "6⁻";
+    content: "6\207B";
   }
 }
 
@@ -103,7 +103,7 @@
   box-sizing: border-box;
 
   &::after {
-    content: "6⁺";
+    content: "6\207A";
   }
 }
 

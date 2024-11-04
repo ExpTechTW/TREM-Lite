@@ -5,7 +5,6 @@ const { intensity_float_to_int, search_loc_name, generateMapStyle, convertIntens
 
 const calculator = new EEWCalculator(require("../../../resource/data/time.json"));
 
-const eewIntensityArea = {};
 const alertedCities = new Set();
 
 TREM.variable.events.on("EewRelease", (ans) => updateEewArea(ans));
@@ -13,7 +12,7 @@ TREM.variable.events.on("EewRelease", (ans) => updateEewArea(ans));
 TREM.variable.events.on("EewUpdate", (ans) => updateEewArea(ans));
 
 TREM.variable.events.on("EewEnd", (ans) => {
-  delete eewIntensityArea[ans.data.id];
+  delete TREM.variable.cache.eewIntensityArea[ans.data.id];
   drawEewArea(true);
 });
 
@@ -29,7 +28,7 @@ function updateEewArea(ans) {
 
   const mergedArea = mergeEqArea(area, ans.data.eq.area ?? {});
 
-  eewIntensityArea[ans.data.id] = mergedArea;
+  TREM.variable.cache.eewIntensityArea[ans.data.id] = mergedArea;
 
   drawEewArea();
 }
@@ -37,7 +36,7 @@ function updateEewArea(ans) {
 function drawEewArea(end = false) {
   if (TREM.variable.cache.show_intensity) return;
 
-  if (!Object.keys(eewIntensityArea).length) {
+  if (!Object.keys(TREM.variable.cache.eewIntensityArea).length) {
     TREM.variable.map.setPaintProperty("town", "fill-color", TREM.constant.COLOR.MAP.TW_TOWN_FILL);
     return;
   }
@@ -117,7 +116,7 @@ function mergeEqArea(eewArea, eqArea) {
 function processIntensityAreas() {
   const eewArea = {};
 
-  Object.entries(eewIntensityArea).forEach(([_, intensity]) => {
+  Object.entries(TREM.variable.cache.eewIntensityArea).forEach(([_, intensity]) => {
     Object.entries(intensity).forEach(([name, value]) => {
       if (name !== "max_i") {
         const intensityValue = intensity_float_to_int(value.i);

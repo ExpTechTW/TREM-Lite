@@ -168,8 +168,10 @@ TREM.variable.events.on("DataRts", (ans) => {
         else
           if (I > 0)
             data_alert_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
-          else if (TREM.variable.data.eew)
+          else if (eew_alert && TREM.variable.data.eew)
             data_alert_0_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: {} });
+          else
+            data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
 
         coordinates.push({ lon: station_location.lon, lat: station_location.lat });
 
