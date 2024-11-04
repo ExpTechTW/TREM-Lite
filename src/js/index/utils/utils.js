@@ -149,7 +149,7 @@ function generateMapStyle(eewArea, end = false) {
       );
     });
 
-  matchExpression.push("#3F4045");
+  matchExpression.push(TREM.constant.COLOR.MAP.TW_TOWN_FILL);
 
   return matchExpression;
 }

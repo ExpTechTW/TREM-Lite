@@ -1,7 +1,9 @@
+const region = require("../../../resource/data/region.json");
+
 const fetchData = require("../../core/utils/fetch");
 const TREM = require("../constant");
 const now = require("../utils/ntp");
-const { generateMapStyle, convertIntensityToAreaFormat, int_to_string } = require("../utils/utils");
+const { generateMapStyle, convertIntensityToAreaFormat, int_to_string, search_loc_name } = require("../utils/utils");
 const drawEewArea = require("./estimate");
 const generateReportBoxItems = require("./report");
 
@@ -55,11 +57,18 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
 
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
 
-  const mapStyle = generateMapStyle(convertIntensityToAreaFormat(ans.data.area));
+  const code_intensity = convertIntensityToAreaFormat(ans.data.area);
+
+  const mapStyle = generateMapStyle(code_intensity);
   TREM.variable.map.setPaintProperty("town", "fill-color", mapStyle);
   TREM.variable.map.setPaintProperty("rts-layer", "circle-opacity", 0.2);
 
-  data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [122, 23] }, properties: { i: 3 } });
+  for (const code of Object.keys(code_intensity)) {
+    const loc = search_loc_name(code);
+    const loc_info = region[loc.city][loc.town];
+    data_list.push({ type: "Feature", geometry: { type: "Point", coordinates: [loc_info.lon, loc_info.lat] }, properties: { i: 3 } });
+  }
+
   TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: data_list });
 
   TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(TREM.variable.cache.intensity.max).replace("級", "")}，loc`, queue: true });
@@ -73,6 +82,7 @@ TREM.variable.events.on("IntensityRelease", (ans) => {
       data: TREM.variable.data.rts,
     });
     TREM.variable.map.setPaintProperty("rts-layer", "circle-opacity", 1);
+    TREM.variable.map.getSource("intensity-markers-geojson").setData({ type: "FeatureCollection", features: [] });
     drawEewArea();
   }, 5000);
 });
@@ -84,13 +94,13 @@ async function get_intensity() {
   return await ans.json();
 }
 
-// const d = { id: Date.now(), "alert": 0, "final": 0, "area": { "1": [260, 265, 270, 263, 264, 269, 268, 266] }, "max": 1 };
+const d = { id: Date.now(), "alert": 0, "final": 0, "area": { "1": [260, 265, 270, 263, 264, 269, 268, 266] }, "max": 1 };
 
 async function refresh_intensity() {
   const data = await get_intensity();
   if (!data) return;
 
-  // data.push(d);
+  data.push(d);
 
   IntensityData(data);
 }

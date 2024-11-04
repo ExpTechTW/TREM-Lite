@@ -37,6 +37,11 @@ function updateEewArea(ans) {
 function drawEewArea(end = false) {
   if (TREM.variable.cache.show_intensity) return;
 
+  if (!Object.keys(eewIntensityArea).length) {
+    TREM.variable.map.setPaintProperty("town", "fill-color", TREM.constant.COLOR.MAP.TW_TOWN_FILL);
+    return;
+  }
+
   const eewArea = processIntensityAreas();
 
   const highIntensityAreas = {};

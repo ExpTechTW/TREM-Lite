@@ -156,7 +156,7 @@ async function refresh_report() {
   const report_list = await get_report();
   if (!report_list) return;
 
-  if (!TREM.variable.data.report) {
+  if (!TREM.variable.data.report.length) {
     TREM.variable.data.report = report_list;
     generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
     return;
