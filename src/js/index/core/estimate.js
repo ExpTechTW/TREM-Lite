@@ -87,26 +87,23 @@ function mergeEqArea(eewArea, eqArea) {
   Object.entries(eewArea).forEach(([code, data]) => {
     if (code !== "max_i")
       mergedArea[code] = {
-        i   : data.i,
-        pga : data.pga,
+        I    : intensity_float_to_int(data.i),
+        i    : data.i,
+        dist : data.dist,
       };
-
   });
 
   Object.entries(eqArea).forEach(([intensity, codes]) => {
     const intensityFloat = parseFloat(intensity);
     codes.forEach(code => {
-      if (!mergedArea[code] || mergedArea[code].i < intensityFloat)
-        mergedArea[code] = {
-          i   : intensityFloat,
-          pga : 0,
-        };
+      if (mergedArea[code].I < intensityFloat)
+        mergedArea[code].I = intensityFloat;
     });
   });
 
   let maxI = 0;
   Object.values(mergedArea).forEach(data => {
-    if (data.i > maxI) maxI = data.i;
+    if (data.I > maxI) maxI = data.I;
   });
   mergedArea.max_i = maxI;
 
@@ -118,11 +115,9 @@ function processIntensityAreas() {
 
   Object.entries(TREM.variable.cache.eewIntensityArea).forEach(([_, intensity]) => {
     Object.entries(intensity).forEach(([name, value]) => {
-      if (name !== "max_i") {
-        const intensityValue = intensity_float_to_int(value.i);
-        if (!eewArea[name] || eewArea[name] < intensityValue)
-          eewArea[name] = intensityValue;
-      }
+      if (name !== "max_i")
+        if (!eewArea[name] || eewArea[name] < value.I)
+          eewArea[name] = value.I;
     });
   });
 

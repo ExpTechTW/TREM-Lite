@@ -42,8 +42,8 @@ TREM.variable.events.on("MapLoad", (map) => {
     },
   });
 
-  setInterval(refresh_intensity, 10000);
-  refresh_intensity();
+  // setInterval(refresh_intensity, 10000);
+  // refresh_intensity();
 });
 
 TREM.variable.events.on("IntensityRelease", (ans) => {
