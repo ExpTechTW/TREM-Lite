@@ -3,8 +3,6 @@ const maplibregl = require("maplibre-gl");
 const TREM = require("./constant");
 const { createIntensityIcon, createIntensityIconSquare } = require("./utils/utils");
 
-const intensityIcons = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
 const map = new maplibregl.Map({
   container : "map",
   style     : {

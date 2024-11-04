@@ -19,10 +19,8 @@ document.querySelectorAll(".button").forEach((button) =>
 
 document.querySelector(".windows-wrapper").addEventListener("click", (event) => {
   const targetClass = event.target.classList;
-
   if (targetClass.contains("close"))
     window.close();
   else if (targetClass.contains("minimize"))
     ipcRenderer.send("minimize-window");
-
 });
