@@ -4,6 +4,7 @@
 @import url("./intensity_color/box.css");
 @import url("./rts_intensity_list/box.css");
 @import url("./nav_bar/box.css");
+@import url("../../../core/rwd.css");
 
 body {
   user-select: none;
