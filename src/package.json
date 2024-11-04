@@ -11,7 +11,7 @@
   "build": {
     "productName": "TREM-Lite",
     "appId": "tw.exptech.trem_lite",
-    "asar": false,
+    "asar": true,
     "win": {
       "icon": "TREM.ico"
     },

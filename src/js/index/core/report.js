@@ -9,26 +9,21 @@ class ReportManager {
   constructor() {
     if (ReportManager.instance)
       return ReportManager.instance;
-
     this.closeButton = document.querySelector("#close-btn");
     this.reportWrapper = document.querySelector(".report-wrapper");
     this.reportBoxItems = document.querySelector(".report-box-items");
     this.customScrollbar = document.querySelector(".custom-scrollbar");
-
     this.isClose = false;
     this.isDragging = false;
     this.startY = 0;
     this.initialScrollTop = 0;
-
     this.bindEvents();
-
     ReportManager.instance = this;
   }
 
   static getInstance() {
     if (!ReportManager.instance)
       new ReportManager();
-
     return ReportManager.instance;
   }
 

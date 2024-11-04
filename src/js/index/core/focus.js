@@ -7,22 +7,17 @@ class FocusManager {
   constructor() {
     if (FocusManager.instance)
       return FocusManager.instance;
-
     this.lock = false;
     this.isMouseDown = false;
-
     this.focusButton = document.getElementById("focus");
-
     this.initialize();
     this.bindEvents();
-
     FocusManager.instance = this;
   }
 
   static getInstance() {
     if (!FocusManager.instance)
       new FocusManager();
-
     return FocusManager.instance;
   }
 

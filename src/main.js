@@ -16,6 +16,7 @@ let tray = null;
 let forceQuit = false;
 const hide = process.argv.includes("--start") ? true : false;
 const test = process.argv.includes("--raw") ? 0 : 1;
+const pluginDir = path.join(app.getPath("userData"), "plugins");
 
 function updateAutoLaunchSetting(value) {
   app.setLoginItemSettings({
@@ -192,6 +193,16 @@ ipcMain.on("hide", () => {
 
 ipcMain.on("toggleFullscreen", () => {
   if (win) win.setFullScreen(!win.isFullScreen());
+});
+
+ipcMain.on("openPluginFolder", () => {
+  if (!fs.existsSync(pluginDir))
+    fs.mkdirSync(pluginDir, { recursive: true });
+
+  shell.openPath(pluginDir)
+    .catch((error) => {
+      console.error(error);
+    });
 });
 
 function trayIcon() {

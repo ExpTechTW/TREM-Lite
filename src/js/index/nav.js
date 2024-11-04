@@ -7,6 +7,7 @@ document.onkeydown = (e) => {
   else if (e.key == "Escape") ipcRenderer.send("hide");
   else if (e.ctrlKey && e.key.toLocaleLowerCase() == "r") ipcRenderer.send("reload");
   else if (e.key == "Tab") e.preventDefault();
+  else if (e.key == "F1") ipcRenderer.send("openPluginFolder");
 };
 
 document.querySelector(".fab").addEventListener("click", function() {
