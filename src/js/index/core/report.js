@@ -260,7 +260,7 @@ class ReportManager {
       `https://${url}/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
-    if (!ans.ok) return null;
+    if (!ans || !ans.ok) return null;
     return await ans.json();
   }
 
@@ -270,7 +270,7 @@ class ReportManager {
       `https://${url}/api/v2/eq/report/${id}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
-    if (!ans.ok) return null;
+    if (!ans || !ans.ok) return null;
     return await ans.json();
   }
 
