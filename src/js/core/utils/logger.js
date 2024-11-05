@@ -2,6 +2,7 @@ const winston = require("winston");
 const path = require("path");
 const { app } = require("@electron/remote");
 require("winston-daily-rotate-file");
+const colors = require("colors/safe");
 
 class Logger {
   constructor() {
@@ -23,15 +24,37 @@ class Logger {
       maxFiles      : "14d",
     });
 
+    const levelColors = {
+      error : colors.red,
+      warn  : colors.yellow,
+      info  : colors.green,
+      debug : colors.blue,
+    };
+
+    const consoleFormat = winston.format.printf(info => {
+      const date = new Date();
+      const timestamp = `${this.formatTwoDigits(date.getHours())}:${this.formatTwoDigits(date.getMinutes())}:${this.formatTwoDigits(date.getSeconds())}`;
+      const level = info.level.toUpperCase();
+      const coloredLevel = levelColors[info.level](level);
+      return `[${colors.grey(timestamp)}][${coloredLevel}]: ${info.message}`;
+    });
+
+    const fileFormat = winston.format.printf(info => {
+      const date = new Date();
+      const timestamp = `${this.formatTwoDigits(date.getHours())}:${this.formatTwoDigits(date.getMinutes())}:${this.formatTwoDigits(date.getSeconds())}`;
+      return `[${timestamp}][${info.level.toUpperCase()}]: ${info.message}`;
+    });
+
     return winston.createLogger({
-      level  : "info",
-      format : winston.format.printf(info => {
-        const date = new Date();
-        return `[${this.formatTwoDigits(date.getHours())}:${this.formatTwoDigits(date.getMinutes())}:${this.formatTwoDigits(date.getSeconds())}][${info.level.toUpperCase()}]: ${info.message}`;
-      }),
-      transports: [
-        new winston.transports.Console(),
-        file,
+      level      : "info",
+      transports : [
+        new winston.transports.Console({
+          format: consoleFormat,
+        }),
+        new winston.transports.DailyRotateFile({
+          ...file,
+          format: fileFormat,
+        }),
       ],
     });
   }

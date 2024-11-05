@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@electron/remote": "^2.1.2",
+    "colors": "^1.4.0",
     "fs-extra": "^11.2.0",
     "maplibre-gl": "^4.7.1",
     "speak-tts": "^2.0.8",

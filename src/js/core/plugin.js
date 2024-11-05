@@ -1,37 +1,249 @@
 const TREM = require("../index/constant");
-const MixinManager = require("../core/mixin");
+
+const logger = require("./utils/logger");
 
 const { app } = require("@electron/remote");
-
+const semver = require("semver");
 const path = require("path");
 const fs = require("fs");
+const MixinManager = require("./mixin");
 
 class PluginLoader {
   constructor() {
     this.pluginDir = path.join(app.getPath("userData"), "plugins");
-    this.plugins = [];
+    this.plugins = new Map();
+    this.loadOrder = [];
+    this.tremVersion = app.getVersion();
   }
 
-  loadPlugins() {
-    const files = fs.readdirSync(this.pluginDir);
+  getVersionPriority(version) {
+    if (!version) return 0;
+    const parsed = semver.parse(version);
+    if (!parsed) return 0;
 
-    files.forEach((file) => {
-      const pluginPath = path.join(this.pluginDir, file);
-      if (fs.lstatSync(pluginPath).isFile() && file.endsWith(".js"))
-        try {
-          const plugin = require(pluginPath);
-          if (typeof plugin === "function") {
-            plugin(TREM, MixinManager);
-            this.plugins.push(pluginPath);
-            console.log(`Plugin loaded: ${file}`);
+    const prerelease = parsed.prerelease[0];
+    if (!prerelease) return 3;
+    if (prerelease === "rc") return 2;
+    if (prerelease === "pre") return 1;
+    return 0;
+  }
+
+  isExactVersionMatch(v1, v2) {
+    const parsed1 = semver.parse(v1);
+    const parsed2 = semver.parse(v2);
+
+    if (!parsed1 || !parsed2) return false;
+
+    if (parsed1.major !== parsed2.major ||
+        parsed1.minor !== parsed2.minor ||
+        parsed1.patch !== parsed2.patch)
+      return false;
+
+
+    const pre1 = parsed1.prerelease;
+    const pre2 = parsed2.prerelease;
+
+    if (pre1.length !== pre2.length) return false;
+
+    if (pre1.length === 0) return true;
+
+    return pre1[0] === pre2[0] && pre1[1] === pre2[1];
+  }
+
+  compareVersions(v1, v2) {
+    const parsed1 = semver.parse(v1);
+    const parsed2 = semver.parse(v2);
+
+    if (!parsed1 || !parsed2) return false;
+
+    if (parsed1.major !== parsed2.major)
+      return parsed1.major >= parsed2.major;
+
+
+    if (parsed1.minor !== parsed2.minor)
+      return parsed1.minor >= parsed2.minor;
+
+
+    if (parsed1.patch !== parsed2.patch)
+      return parsed1.patch >= parsed2.patch;
+
+
+    const priority1 = this.getVersionPriority(v1);
+    const priority2 = this.getVersionPriority(v2);
+
+    if (priority1 !== priority2)
+      return priority1 >= priority2;
+
+
+    if (parsed1.prerelease.length > 1 && parsed2.prerelease.length > 1)
+      return parsed1.prerelease[1] >= parsed2.prerelease[1];
+
+
+    return true;
+  }
+
+  validateVersionRequirement(current, required) {
+    if (required.includes(" ")) {
+      const ranges = required.split(" ");
+      return ranges.every(range => this.validateVersionRequirement(current, range));
+    }
+
+    const operator = required.match(/^[>=<]+/)?.[0] || ">=";
+    const reqVersion = required.replace(/^[>=<]+/, "");
+
+    switch (operator) {
+      case "=":
+        return this.isExactVersionMatch(current, reqVersion);
+      case ">=":
+        return this.compareVersions(current, reqVersion);
+      case ">":
+        return this.compareVersions(current, reqVersion) && !this.isExactVersionMatch(current, reqVersion);
+      case "<":
+        return !this.compareVersions(current, reqVersion);
+      case "<=":
+        return !this.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
+      default:
+        return this.compareVersions(current, reqVersion);
+    }
+  }
+
+  readPluginInfo(pluginPath) {
+    const infoPath = path.join(pluginPath, "info.json");
+    try {
+      return JSON.parse(fs.readFileSync(infoPath, "utf8"));
+    } catch (error) {
+      logger.error(`(${infoPath}) -> Failed to read plugin info:`, error);
+      return null;
+    }
+  }
+
+  validateDependencies(pluginInfo) {
+    if (!pluginInfo.dependencies) return true;
+
+    if (pluginInfo.dependencies.trem)
+      if (!this.validateVersionRequirement(this.tremVersion, pluginInfo.dependencies.trem)) {
+        logger.error(`Plugin ${pluginInfo.name || "undefined"} requires TREM version ${pluginInfo.dependencies.trem}, but ${this.tremVersion} is installed`);
+        return false;
+      }
+
+
+    for (const [dep, version] of Object.entries(pluginInfo.dependencies)) {
+      if (dep === "trem") continue;
+
+      const dependencyPlugin = this.plugins.get(dep);
+      if (!dependencyPlugin) {
+        logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name || "undefined"}`);
+        return false;
+      }
+
+      if (!this.validateVersionRequirement(dependencyPlugin.info.version, version)) {
+        logger.error(`Plugin ${pluginInfo.name || "undefined"} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  buildDependencyGraph() {
+    const visited = new Set();
+    const tempMark = new Set();
+    this.loadOrder = [];
+
+    const visit = (pluginName) => {
+      if (tempMark.has(pluginName))
+        throw new Error(`Circular dependency detected: ${pluginName}`);
+
+      if (visited.has(pluginName)) return;
+
+      tempMark.add(pluginName);
+      const plugin = this.plugins.get(pluginName);
+
+      if (plugin.dependencies)
+        for (const dep of Object.keys(plugin.dependencies))
+          if (dep !== "trem" && this.plugins.has(dep))
+            visit(dep);
+
+
+      tempMark.delete(pluginName);
+      visited.add(pluginName);
+      this.loadOrder.unshift(pluginName);
+    };
+
+    for (const pluginName of this.plugins.keys())
+      if (!visited.has(pluginName))
+        visit(pluginName);
+
+
+  }
+
+  async loadPlugins() {
+    logger.info(`Loading plugins (TREM version: ${this.tremVersion})`);
+
+    if (!fs.existsSync(this.pluginDir)) {
+      fs.mkdirSync(this.pluginDir, { recursive: true });
+      return;
+    }
+
+    const directories = fs.readdirSync(this.pluginDir)
+      .filter(file => fs.statSync(path.join(this.pluginDir, file)).isDirectory());
+
+    for (const dir of directories) {
+      const pluginPath = path.join(this.pluginDir, dir);
+      const info = this.readPluginInfo(pluginPath);
+
+      if (info)
+        this.plugins.set(dir, {
+          path         : pluginPath,
+          info,
+          dependencies : info.dependencies || {},
+        });
+
+    }
+
+    for (const [pluginName, plugin] of this.plugins.entries())
+      if (!this.validateDependencies(plugin.info)) {
+        this.plugins.delete(pluginName);
+        logger.warn(`Skipping plugin ${pluginName} due to dependency issues`);
+      }
+
+
+    try {
+      this.buildDependencyGraph();
+    } catch (error) {
+      logger.error("Failed to resolve plugin dependencies:", error);
+      return;
+    }
+
+    for (const pluginName of this.loadOrder) {
+      const plugin = this.plugins.get(pluginName);
+      const indexPath = path.join(plugin.path, "index.js");
+
+      try {
+        if (fs.existsSync(indexPath)) {
+          const pluginModule = require(indexPath);
+          if (typeof pluginModule === "function") {
+            await Promise.resolve(pluginModule(TREM, MixinManager));
+            logger.info(`Successfully loaded plugin: ${pluginName} (version ${plugin.info.version})`);
           }
-        } catch (error) {
-          console.error(`Failed to load plugin ${file}:`, error);
         }
+      } catch (error) {
+        logger.error(`Failed to load plugin ${pluginName}:`, error);
+        this.plugins.delete(pluginName);
+      }
+    }
+  }
 
-    });
+  getLoadedPlugins() {
+    return Array.from(this.plugins.entries()).map(([name, plugin]) => ({
+      name,
+      version     : plugin.info.version,
+      description : plugin.info.description,
+      author      : plugin.info.author,
+    }));
   }
 }
+
 const pluginLoader = new PluginLoader();
 pluginLoader.loadPlugins();
 
