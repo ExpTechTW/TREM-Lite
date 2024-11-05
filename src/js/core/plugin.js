@@ -1,12 +1,19 @@
 const TREM = require("../index/constant");
-
 const logger = require("./utils/logger");
-
 const { app } = require("@electron/remote");
 const semver = require("semver");
 const path = require("path");
 const fs = require("fs");
 const MixinManager = require("./mixin");
+
+class PluginBase {
+  constructor(_TREM) {
+    this.TREM = _TREM;
+  }
+
+  onLoad() {void 0;}
+  onUnload() {void 0;}
+}
 
 class PluginLoader {
   constructor() {
@@ -14,6 +21,16 @@ class PluginLoader {
     this.plugins = new Map();
     this.loadOrder = [];
     this.tremVersion = app.getVersion();
+
+    this.ctx = {
+      TREM,
+      logger,
+      utils: {
+        path,
+        fs,
+        semver,
+      },
+    };
   }
 
   getVersionPriority(version) {
@@ -39,14 +56,11 @@ class PluginLoader {
         parsed1.patch !== parsed2.patch)
       return false;
 
-
     const pre1 = parsed1.prerelease;
     const pre2 = parsed2.prerelease;
 
     if (pre1.length !== pre2.length) return false;
-
     if (pre1.length === 0) return true;
-
     return pre1[0] === pre2[0] && pre1[1] === pre2[1];
   }
 
@@ -59,14 +73,11 @@ class PluginLoader {
     if (parsed1.major !== parsed2.major)
       return parsed1.major >= parsed2.major;
 
-
     if (parsed1.minor !== parsed2.minor)
       return parsed1.minor >= parsed2.minor;
 
-
     if (parsed1.patch !== parsed2.patch)
       return parsed1.patch >= parsed2.patch;
-
 
     const priority1 = this.getVersionPriority(v1);
     const priority2 = this.getVersionPriority(v2);
@@ -74,10 +85,8 @@ class PluginLoader {
     if (priority1 !== priority2)
       return priority1 >= priority2;
 
-
     if (parsed1.prerelease.length > 1 && parsed2.prerelease.length > 1)
       return parsed1.prerelease[1] >= parsed2.prerelease[1];
-
 
     return true;
   }
@@ -110,7 +119,14 @@ class PluginLoader {
   readPluginInfo(pluginPath) {
     const infoPath = path.join(pluginPath, "info.json");
     try {
-      return JSON.parse(fs.readFileSync(infoPath, "utf8"));
+      const info = JSON.parse(fs.readFileSync(infoPath, "utf8"));
+
+      if (!info.name) {
+        logger.error(`(${infoPath}) -> Plugin info.json must contain a name field`);
+        return null;
+      }
+
+      return info;
     } catch (error) {
       logger.error(`(${infoPath}) -> Failed to read plugin info:`, error);
       return null;
@@ -122,22 +138,21 @@ class PluginLoader {
 
     if (pluginInfo.dependencies.trem)
       if (!this.validateVersionRequirement(this.tremVersion, pluginInfo.dependencies.trem)) {
-        logger.error(`Plugin ${pluginInfo.name || "undefined"} requires TREM version ${pluginInfo.dependencies.trem}, but ${this.tremVersion} is installed`);
+        logger.error(`Plugin ${pluginInfo.name} requires TREM version ${pluginInfo.dependencies.trem}, but ${this.tremVersion} is installed`);
         return false;
       }
-
 
     for (const [dep, version] of Object.entries(pluginInfo.dependencies)) {
       if (dep === "trem") continue;
 
       const dependencyPlugin = this.plugins.get(dep);
       if (!dependencyPlugin) {
-        logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name || "undefined"}`);
+        logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name}`);
         return false;
       }
 
       if (!this.validateVersionRequirement(dependencyPlugin.info.version, version)) {
-        logger.error(`Plugin ${pluginInfo.name || "undefined"} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
+        logger.error(`Plugin ${pluginInfo.name} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
         return false;
       }
     }
@@ -164,7 +179,6 @@ class PluginLoader {
           if (dep !== "trem" && this.plugins.has(dep))
             visit(dep);
 
-
       tempMark.delete(pluginName);
       visited.add(pluginName);
       this.loadOrder.unshift(pluginName);
@@ -173,8 +187,19 @@ class PluginLoader {
     for (const pluginName of this.plugins.keys())
       if (!visited.has(pluginName))
         visit(pluginName);
+  }
 
-
+  async initializePlugin(pluginName, plugin, PluginClass) {
+    try {
+      const instance = new PluginClass(this.ctx);
+      plugin.instance = instance;
+      await instance.onLoad();
+      logger.info(`Successfully loaded plugin: ${pluginName} (version ${plugin.info.version})`);
+      return true;
+    } catch (error) {
+      logger.error(`Failed to initialize plugin ${pluginName}:`, error);
+      return false;
+    }
   }
 
   async loadPlugins() {
@@ -193,7 +218,7 @@ class PluginLoader {
       const info = this.readPluginInfo(pluginPath);
 
       if (info)
-        this.plugins.set(dir, {
+        this.plugins.set(info.name, {
           path         : pluginPath,
           info,
           dependencies : info.dependencies || {},
@@ -206,7 +231,6 @@ class PluginLoader {
         this.plugins.delete(pluginName);
         logger.warn(`Skipping plugin ${pluginName} due to dependency issues`);
       }
-
 
     try {
       this.buildDependencyGraph();
@@ -221,16 +245,28 @@ class PluginLoader {
 
       try {
         if (fs.existsSync(indexPath)) {
-          const pluginModule = require(indexPath);
-          if (typeof pluginModule === "function") {
-            await Promise.resolve(pluginModule(TREM, MixinManager));
-            logger.info(`Successfully loaded plugin: ${pluginName} (version ${plugin.info.version})`);
+          const PluginClass = require(indexPath);
+          if (this.isValidPluginClass(PluginClass)) {
+            const success = await this.initializePlugin(pluginName, plugin, PluginClass);
+            if (!success)
+              this.plugins.delete(pluginName);
+          } else {
+            logger.error(`Plugin ${pluginName} does not export a valid plugin class (must implement onLoad and onUnload methods)`);
+            this.plugins.delete(pluginName);
           }
         }
       } catch (error) {
-        logger.error(`Failed to load plugin ${pluginName}:`, error);
+        logger.error(`Failed to load plugin ${pluginName}: ${error}`);
         this.plugins.delete(pluginName);
       }
+    }
+  }
+
+  async unloadPlugin(pluginName) {
+    const plugin = this.plugins.get(pluginName);
+    if (plugin?.instance) {
+      await plugin.instance.onUnload();
+      this.plugins.delete(pluginName);
     }
   }
 
