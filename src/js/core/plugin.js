@@ -281,8 +281,6 @@ class PluginLoader {
   }
 }
 
-module.exports = PluginLoader;
-
 const pluginLoader = new PluginLoader();
 pluginLoader.loadPlugins();
 
