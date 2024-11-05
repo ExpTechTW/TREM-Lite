@@ -182,18 +182,17 @@ class PluginLoader {
   }
 
   isValidPluginClass(PluginClass) {
-    return (
-      typeof PluginClass === "function" &&
-      typeof PluginClass.prototype.onLoad === "function" &&
-      typeof PluginClass.prototype.onUnload === "function"
-    );
+    return typeof PluginClass === "function";
   }
 
   async initializePlugin(pluginName, plugin, PluginClass) {
     try {
       const instance = new PluginClass(this.ctx);
       plugin.instance = instance;
-      await instance.onLoad();
+
+      if (typeof instance.onLoad === "function")
+        await instance.onLoad();
+
       logger.info(`Successfully loaded plugin: ${pluginName} (version ${plugin.info.version})`);
       return true;
     } catch (error) {
@@ -266,7 +265,8 @@ class PluginLoader {
   async unloadPlugin(pluginName) {
     const plugin = this.plugins.get(pluginName);
     if (plugin?.instance) {
-      await plugin.instance.onUnload();
+      if (typeof plugin.instance.onUnload === "function")
+        await plugin.instance.onUnload();
       this.plugins.delete(pluginName);
     }
   }
