@@ -6,15 +6,6 @@ const path = require("path");
 const fs = require("fs");
 const MixinManager = require("./mixin");
 
-class PluginBase {
-  constructor(_TREM) {
-    this.TREM = _TREM;
-  }
-
-  onLoad() {void 0;}
-  onUnload() {void 0;}
-}
-
 class PluginLoader {
   constructor() {
     this.pluginDir = path.join(app.getPath("userData"), "plugins");
@@ -25,6 +16,7 @@ class PluginLoader {
     this.ctx = {
       TREM,
       logger,
+      MixinManager,
       utils: {
         path,
         fs,
@@ -189,6 +181,14 @@ class PluginLoader {
         visit(pluginName);
   }
 
+  isValidPluginClass(PluginClass) {
+    return (
+      typeof PluginClass === "function" &&
+      typeof PluginClass.prototype.onLoad === "function" &&
+      typeof PluginClass.prototype.onUnload === "function"
+    );
+  }
+
   async initializePlugin(pluginName, plugin, PluginClass) {
     try {
       const instance = new PluginClass(this.ctx);
@@ -250,13 +250,14 @@ class PluginLoader {
             const success = await this.initializePlugin(pluginName, plugin, PluginClass);
             if (!success)
               this.plugins.delete(pluginName);
+
           } else {
             logger.error(`Plugin ${pluginName} does not export a valid plugin class (must implement onLoad and onUnload methods)`);
             this.plugins.delete(pluginName);
           }
         }
       } catch (error) {
-        logger.error(`Failed to load plugin ${pluginName}: ${error}`);
+        logger.error(`Failed to load plugin ${pluginName}:`, error);
         this.plugins.delete(pluginName);
       }
     }
@@ -279,6 +280,8 @@ class PluginLoader {
     }));
   }
 }
+
+module.exports = PluginLoader;
 
 const pluginLoader = new PluginLoader();
 pluginLoader.loadPlugins();

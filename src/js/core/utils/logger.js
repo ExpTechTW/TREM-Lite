@@ -3,6 +3,7 @@ const path = require("path");
 const { app } = require("@electron/remote");
 require("winston-daily-rotate-file");
 const colors = require("colors/safe");
+const util = require("util");
 
 class Logger {
   constructor() {
@@ -29,6 +30,20 @@ class Logger {
       warn  : colors.yellow,
       info  : colors.green,
       debug : colors.blue,
+    };
+
+    const formatMessage = (message, ...args) => {
+      if (args.length === 0)
+        return typeof message === "string" ? message : util.inspect(message, { depth: null });
+
+      if (typeof message === "string")
+        return util.format(message, ...args.map(arg =>
+          typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
+        ));
+
+      return [message, ...args].map(arg =>
+        typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
+      ).join(" ");
     };
 
     const consoleFormat = winston.format.printf(info => {
@@ -63,20 +78,34 @@ class Logger {
     return n < 10 ? "0" + n : n;
   }
 
-  info(message) {
-    this.logger.info(message);
+  info(message, ...args) {
+    this.logger.info(this.formatMessage(message, ...args));
   }
 
-  error(message) {
-    this.logger.error(message);
+  error(message, ...args) {
+    this.logger.error(this.formatMessage(message, ...args));
   }
 
-  warn(message) {
-    this.logger.warn(message);
+  warn(message, ...args) {
+    this.logger.warn(this.formatMessage(message, ...args));
   }
 
-  debug(message) {
-    this.logger.debug(message);
+  debug(message, ...args) {
+    this.logger.debug(this.formatMessage(message, ...args));
+  }
+
+  formatMessage(message, ...args) {
+    if (args.length === 0)
+      return typeof message === "string" ? message : util.inspect(message, { depth: null });
+
+    if (typeof message === "string")
+      return util.format(message, ...args.map(arg =>
+        typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
+      ));
+
+    return [message, ...args].map(arg =>
+      typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
+    ).join(" ");
   }
 }
 
