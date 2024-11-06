@@ -4,6 +4,7 @@
 @import url("./intensity_color/box.css");
 @import url("./rts_intensity_list/box.css");
 @import url("./nav_bar/box.css");
+@import url("../../../core/rwd.css");
 
 body {
   user-select: none;
@@ -83,11 +84,11 @@ html[lang="zh-Hant"] {
 
 .current-version-view {
   top: 0.3em;
-  right: 345px;
+  right: 380px;
   font-size: 15px;
   position: absolute;
   color: #ffffff1f;
-  transition: 0.3s cubic-bezier(0.41, -0.86, 0.76, 1.89);
+  transition: transform 0.6s ease;
 }
 
 .report-wrapper.hidden ~ .current-version-view {
