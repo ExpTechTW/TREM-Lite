@@ -57,20 +57,20 @@ function createWindow() {
   });
 
   win.on("close", (event) => {
-    if (process.platform === "darwin") {
-      if (!forceQuit) {
-        event.preventDefault();
-        win.hide();
-        return false;
-      }
-    } else
-      if (!app.isQuiting) {
-        event.preventDefault();
-        win.hide();
-        return false;
-      }
+    if (forceQuit) {
+      win = null;
+      return;
+    }
 
+    if (process.platform === "darwin") {
+      event.preventDefault();
+      win.hide();
+    } else {
+      event.preventDefault();
+      win.hide();
+    }
   });
+
 
   win.on("blur", () => {
     win.webContents.send("blur");
@@ -116,14 +116,9 @@ function createSettingWindow() {
   SettingWindow.webContents.on("did-finish-load", () => SettingWindow.show());
   SettingWindow.on("close", () => {
     SettingWindow = null;
-    if (win) {
-      win.webContents.executeJavaScript("close()");
-      win.webContents.reload();
-    }
   });
   ipcMain.on("minimize-window", () => {
     if (SettingWindow) SettingWindow.minimize();
-
   });
 }
 
@@ -144,7 +139,6 @@ app.on("window-all-closed", (event) => {
   event.preventDefault();
   if (process.platform !== "darwin")
     app.quit();
-
 });
 
 app.on("before-quit", () => {
@@ -156,7 +150,6 @@ app.on("activate", () => {
     createWindow();
   else
     win.show();
-
 });
 
 app.on("browser-window-created", (e, window) => {
