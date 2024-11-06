@@ -126,7 +126,7 @@ const TREM = {
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode : 0,
     replay    : {
-      start_time : 1730024506712,
+      start_time : 1730913580688,
       local_time : 0,
     },
     station : null,
