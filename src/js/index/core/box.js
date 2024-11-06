@@ -2,6 +2,8 @@ const TREM = require("../constant");
 const box_data = require("../../../resource/data/box.json");
 const { distance } = require("../utils/utils");
 
+let box_alert = false;
+
 class BoxManager {
   static instance = null;
 
@@ -70,6 +72,11 @@ class BoxManager {
       features : boxFeatures,
     };
 
+    if (box_alert) {
+      box_alert = false;
+      TREM.variable.map.getSource("box-geojson").setData(emptyData);
+    }
+
     if (!TREM.variable.data.rts?.box || !Object.keys(TREM.variable.data.rts.box).length) return;
 
     const trem_alert = TREM.variable.data.eew.some(eew => eew.author == "trem");
@@ -106,7 +113,7 @@ class BoxManager {
         });
       }
 
-
+    box_alert = true;
     TREM.variable.map.getSource("box-geojson").setData({
       type     : "FeatureCollection",
       features : boxFeatures,

@@ -103,6 +103,7 @@ TREM.variable.events.on("IntensityEnd", (ans) => {
   TREM.variable.cache.intensity.time = 0;
   TREM.variable.cache.intensity.max = 0;
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
+  drawEewArea();
 });
 
 function findMaxIntensityCity(eqArea) {
