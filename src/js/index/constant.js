@@ -176,6 +176,7 @@ const TREM = {
     EewAreaManager : null,
     BoxManager     : null,
     AudioManager   : null,
+    DataManager    : null,
   },
 };
 
