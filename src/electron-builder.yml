@@ -1,0 +1,27 @@
+productName: TREM-Lite
+appId: tw.exptech.trem_lite
+asar: true
+
+win:
+  icon: TREM.ico
+
+directories:
+  buildResources: resources
+  output: ../dev
+
+mac:
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  compression: maximum
+
+linux:
+  target:
+    - deb
+  category: Development
+
+publish:
+  provider: github
