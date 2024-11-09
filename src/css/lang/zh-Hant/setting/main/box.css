@@ -627,7 +627,7 @@ li {
   font-size: 15px;
   color: #fff;
   transition: border-color 0.3s, box-shadow 0.3s;
-  font-family: "Noto Sans TC", sans-serif;
+  font-family: Manrope, "Noto Sans TC", sans-serif;
   width: 100%;
 
   &:focus {
@@ -721,7 +721,6 @@ li {
 .int div {
   justify-content: center !important;
   font-weight: 100;
-  font-family: auto;
 }
 
 .responsive-image {

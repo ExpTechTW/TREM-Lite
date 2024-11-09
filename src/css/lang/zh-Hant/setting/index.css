@@ -3,7 +3,7 @@
 body {
   user-select: none;
   margin: 0;
-  font-family: "Lato", "Noto Sans TC", sans-serif;
+  font-family: Manrope, "Noto Sans TC", sans-serif;
   text-rendering: optimizeLegibility;
   overflow: hidden;
 
