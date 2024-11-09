@@ -118,34 +118,42 @@ TREM.variable.events.on('DataRts', (ans) => {
   let rts_max_pga = -1;
   let rts_max_shindo = -1;
 
-  if (!TREM.variable.station) return;
+  if (!TREM.variable.station) {
+    return;
+  }
 
   const eew_alert = (TREM.variable.data.eew.length && TREM.constant.SHOW_TREM_EEW) ? true : TREM.variable.data.eew.some((item) => item.author != 'trem');
 
   if (ans.data) {
     const alert = Object.keys(ans.data.box).length;
 
-    if (!alert) TREM.variable.cache.audio = {
-      shindo: -1,
-      pga: -1,
-      status: {
-        shindo: 0,
-        pga: 0,
-      },
-      count: {
-        pga_1: 0,
-        pga_2: 0,
-        shindo_1: 0,
-        shindo_2: 0,
-      },
-    };
+    if (!alert) {
+      TREM.variable.cache.audio = {
+        shindo: -1,
+        pga: -1,
+        status: {
+          shindo: 0,
+          pga: 0,
+        },
+        count: {
+          pga_1: 0,
+          pga_2: 0,
+          shindo_1: 0,
+          shindo_2: 0,
+        },
+      };
+    }
 
     for (const id of Object.keys(ans.data.station)) {
       const station_info = TREM.variable.station[id];
-      if (!station_info) continue;
+      if (!station_info) {
+        continue;
+      }
       const station_location = station_info.info.at(-1);
 
-      if (ans.data.station[id].pga > pga) pga = ans.data.station[id].pga;
+      if (ans.data.station[id].pga > pga) {
+        pga = ans.data.station[id].pga;
+      }
 
       if (id == TREM.variable.rts_station_id) {
         const I = (alert && ans.data.station[id].alert) ? ans.data.station[id].I : ans.data.station[id].i;
@@ -158,27 +166,39 @@ TREM.variable.events.on('DataRts', (ans) => {
 
       if (ans.data.station[id].alert) {
         trigger++;
-        if (!level_list[id] || level_list[id] < ans.data.station[id].pga) level_list[id] = ans.data.station[id].pga;
+        if (!level_list[id] || level_list[id] < ans.data.station[id].pga) {
+          level_list[id] = ans.data.station[id].pga;
+        }
       }
-      else delete level_list[id];
+      else {
+        delete level_list[id];
+      }
 
       if (alert && ans.data.station[id].alert) {
         const I = intensity_float_to_int(ans.data.station[id].I);
 
-        if (TREM.variable.cache.show_intensity)
+        if (TREM.variable.cache.show_intensity) {
           data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
+        }
         else
-          if (I > 0)
+          if (I > 0) {
             data_alert_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
-          else if (eew_alert && TREM.variable.data.eew)
+          }
+          else if (eew_alert && TREM.variable.data.eew) {
             data_alert_0_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: {} });
-          else
+          }
+          else {
             data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
+          }
 
         coordinates.push({ lon: station_location.lon, lat: station_location.lat });
 
-        if (rts_max_pga < ans.data.station[id].pga) rts_max_pga = ans.data.station[id].pga;
-        if (rts_max_shindo < I) rts_max_shindo = I;
+        if (rts_max_pga < ans.data.station[id].pga) {
+          rts_max_pga = ans.data.station[id].pga;
+        }
+        if (rts_max_shindo < I) {
+          rts_max_shindo = I;
+        }
 
         if (pga > TREM.variable.cache.audio.pga) {
           if (pga > 200 && TREM.variable.cache.audio.status.pga != 2) {
@@ -191,8 +211,12 @@ TREM.variable.events.on('DataRts', (ans) => {
           }
 
           TREM.variable.cache.audio.pga = pga;
-          if (pga > 8) TREM.variable.cache.audio.count.pga_1 = 0;
-          if (pga > 200) TREM.variable.cache.audio.count.pga_2 = 0;
+          if (pga > 8) {
+            TREM.variable.cache.audio.count.pga_1 = 0;
+          }
+          if (pga > 200) {
+            TREM.variable.cache.audio.count.pga_2 = 0;
+          }
         }
 
         if (I > TREM.variable.cache.audio.shindo) {
@@ -209,17 +233,22 @@ TREM.variable.events.on('DataRts', (ans) => {
             TREM.variable.cache.audio.status.shindo = 1;
           }
 
-          if (I > 3) TREM.variable.cache.audio.count.shindo_2 = 0;
-          if (I > 1) TREM.variable.cache.audio.count.shindo_1 = 0;
+          if (I > 3) {
+            TREM.variable.cache.audio.count.shindo_2 = 0;
+          }
+          if (I > 1) {
+            TREM.variable.cache.audio.count.shindo_1 = 0;
+          }
           TREM.variable.cache.audio.shindo = I;
         }
       }
-      else if (!eew_alert)
+      else if (!eew_alert) {
         data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: ans.data.station[id].i } });
+      }
     }
 
     if (TREM.variable.cache.audio.pga && rts_max_pga < TREM.variable.cache.audio.pga) {
-      if (TREM.variable.cache.audio.status.pga == 2)
+      if (TREM.variable.cache.audio.status.pga == 2) {
         if (rts_max_pga < 200) {
           TREM.variable.cache.audio.count.pga_2++;
           if (TREM.variable.cache.audio.count.pga_2 >= 30) {
@@ -227,10 +256,12 @@ TREM.variable.events.on('DataRts', (ans) => {
             TREM.variable.cache.audio.status.pga = 1;
           }
         }
-        else
+        else {
           TREM.variable.cache.audio.count.pga_2 = 0;
+        }
+      }
 
-      else if (TREM.variable.cache.audio.status.pga == 1)
+      else if (TREM.variable.cache.audio.status.pga == 1) {
         if (rts_max_pga < 8) {
           TREM.variable.cache.audio.count.pga_1++;
           if (TREM.variable.cache.audio.count.pga_1 >= 30) {
@@ -238,14 +269,16 @@ TREM.variable.events.on('DataRts', (ans) => {
             TREM.variable.cache.audio.status.pga = 0;
           }
         }
-        else
+        else {
           TREM.variable.cache.audio.count.pga_1 = 0;
+        }
+      }
 
       TREM.variable.cache.audio.pga = rts_max_pga;
     }
 
     if (TREM.variable.cache.audio.shindo && rts_max_shindo < TREM.variable.cache.audio.shindo) {
-      if (TREM.variable.cache.audio.status.shindo == 3)
+      if (TREM.variable.cache.audio.status.shindo == 3) {
         if (rts_max_shindo < 4) {
           TREM.variable.cache.audio.count.shindo_2++;
           if (TREM.variable.cache.audio.count.shindo_2 >= 15) {
@@ -253,10 +286,12 @@ TREM.variable.events.on('DataRts', (ans) => {
             TREM.variable.cache.audio.status.shindo = 2;
           }
         }
-        else
+        else {
           TREM.variable.cache.audio.count.shindo_2 = 0;
+        }
+      }
 
-      else if (TREM.variable.cache.audio.status.shindo == 2)
+      else if (TREM.variable.cache.audio.status.shindo == 2) {
         if (rts_max_shindo < 2) {
           TREM.variable.cache.audio.count.shindo_1++;
           if (TREM.variable.cache.audio.count.shindo_1 >= 15) {
@@ -264,8 +299,10 @@ TREM.variable.events.on('DataRts', (ans) => {
             TREM.variable.cache.audio.status.shindo = 1;
           }
         }
-        else
+        else {
           TREM.variable.cache.audio.count.shindo_1 = 0;
+        }
+      }
 
       TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
@@ -282,8 +319,9 @@ TREM.variable.events.on('DataRts', (ans) => {
         data_alert_0_list = [];
         data_alert_list = [];
       }
-      else if (TREM.constant.SHOW_REPORT)
+      else if (TREM.constant.SHOW_REPORT) {
         show_report_point(TREM.variable.cache.last_report);
+      }
   }
 
   if (TREM.variable.map) {
@@ -305,8 +343,9 @@ TREM.variable.events.on('DataRts', (ans) => {
   max_pga.className = `max-station-pga ${(!alert) ? 'intensity-0' : `intensity-${calculator.pgaToIntensity(pga)}`}`;
   max_intensity.className = `max-station-intensity intensity-${ans.data?.int?.[0]?.i ?? 0}`;
 
-  for (const id of Object.keys(level_list))
+  for (const id of Object.keys(level_list)) {
     level += level_list[id];
+  }
 
   rts_info_level.textContent = Math.round(level);
   rts_info_trigger.textContent = trigger;
@@ -320,23 +359,26 @@ function updateIntensityHistory(newData, time) {
   for (const int of newData) {
     updatedCodes.add(int.code);
 
-    if (!int_cache_list[int.code])
+    if (!int_cache_list[int.code]) {
       int_cache_list[int.code] = {
         values: [],
         lastUpdate: time,
       };
+    }
 
     int_cache_list[int.code].values.push(int.i);
     int_cache_list[int.code].lastUpdate = time;
 
-    if (int_cache_list[int.code].values.length > 45)
+    if (int_cache_list[int.code].values.length > 45) {
       int_cache_list[int.code].values.shift();
+    }
   }
 
   const cutoff = time - 30000;
   Object.keys(int_cache_list).forEach((code) => {
-    if (int_cache_list[code].lastUpdate < cutoff)
+    if (int_cache_list[code].lastUpdate < cutoff) {
       delete int_cache_list[code];
+    }
   });
 
   const maxIntensities = Object.entries(int_cache_list).map(([code, data]) => ({
@@ -348,7 +390,7 @@ function updateIntensityHistory(newData, time) {
 }
 
 function getTopIntensities(intensities, maxCount = 6) {
-  if (intensities.length <= maxCount)
+  if (intensities.length <= maxCount) {
     return intensities.map((loc) => {
       const name = search_loc_name(loc.code);
       return {
@@ -356,18 +398,22 @@ function getTopIntensities(intensities, maxCount = 6) {
         name: name ? `${name.city}${name.town}` : '',
       };
     });
+  }
 
   const cityGroups = new Map();
   intensities.forEach((loc) => {
     const name = search_loc_name(loc.code);
-    if (!name) return;
+    if (!name) {
+      return;
+    }
 
     const current = cityGroups.get(name.city);
-    if (!current || loc.i > current.i)
+    if (!current || loc.i > current.i) {
       cityGroups.set(name.city, {
         i: loc.i,
         name: name.city,
       });
+    }
   });
 
   return Array.from(cityGroups.values())

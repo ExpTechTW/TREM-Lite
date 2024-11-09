@@ -5,8 +5,9 @@ class FocusManager {
   static instance = null;
 
   constructor() {
-    if (FocusManager.instance)
+    if (FocusManager.instance) {
       return FocusManager.instance;
+    }
     this.lock = false;
     this.isMouseDown = false;
     this.focusButton = document.getElementById('focus');
@@ -16,8 +17,9 @@ class FocusManager {
   }
 
   static getInstance() {
-    if (!FocusManager.instance)
+    if (!FocusManager.instance) {
       new FocusManager();
+    }
     return FocusManager.instance;
   }
 
@@ -56,7 +58,9 @@ class FocusManager {
   }
 
   focus() {
-    if (this.lock) return;
+    if (this.lock) {
+      return;
+    }
 
     if (TREM.variable.cache.bounds.intensity.length) {
       this.updateMapBounds(TREM.variable.cache.bounds.intensity);
@@ -64,13 +68,15 @@ class FocusManager {
     }
 
     const eewBounds = [];
-    for (const eew of TREM.variable.data.eew)
+    for (const eew of TREM.variable.data.eew) {
       eewBounds.push({ lon: eew.eq.lon, lat: eew.eq.lat });
+    }
 
     const bounds = [...TREM.variable.cache.bounds.rts, ...eewBounds];
 
-    if (bounds.length)
+    if (bounds.length) {
       this.updateMapBounds(bounds);
+    }
   }
 
   focusReset() {

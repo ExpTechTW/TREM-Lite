@@ -3,8 +3,9 @@ class MixinManager {
   static cache = new Map();
 
   static inject(targetClass, methodName, handler, priority = 0) {
-    if (typeof handler !== 'function')
+    if (typeof handler !== 'function') {
       throw new Error('Handler must be a function');
+    }
 
     this._initializeMethod(targetClass, methodName);
 
@@ -17,18 +18,23 @@ class MixinManager {
 
   static batchInject(targetClass, injections) {
     const ids = {};
-    for (const [methodName, handler, priority] of injections)
+    for (const [methodName, handler, priority] of injections) {
       ids[methodName] = this.inject(targetClass, methodName, handler, priority);
+    }
 
     return ids;
   }
 
   static remove(methodName, mixinId) {
     const mixins = this.mixins.get(methodName);
-    if (!mixins) return false;
+    if (!mixins) {
+      return false;
+    }
 
     const index = mixins.findIndex((m) => m.id === mixinId);
-    if (index === -1) return false;
+    if (index === -1) {
+      return false;
+    }
 
     mixins.splice(index, 1);
     this.cache.delete(methodName);
@@ -36,8 +42,9 @@ class MixinManager {
   }
 
   static getSortedHandlers(methodName) {
-    if (this.cache.has(methodName))
+    if (this.cache.has(methodName)) {
       return this.cache.get(methodName);
+    }
 
     const sorted = [...this.mixins.get(methodName)]
       .sort((a, b) => b.priority - a.priority);
@@ -48,7 +55,9 @@ class MixinManager {
 
   static getMixins(methodName) {
     const mixins = this.mixins.get(methodName);
-    if (!mixins) return [];
+    if (!mixins) {
+      return [];
+    }
 
     return mixins.map(({ priority, id }) => ({
       id,
@@ -67,8 +76,9 @@ class MixinManager {
       this.mixins.set(methodName, []);
       const original = targetClass.prototype[methodName];
 
-      if (typeof original !== 'function')
+      if (typeof original !== 'function') {
         throw new Error(`Method ${methodName} does not exist on target class`);
+      }
 
       targetClass.prototype[methodName] = function (...args) {
         let method = original.bind(this);

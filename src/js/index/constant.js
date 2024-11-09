@@ -182,7 +182,8 @@ const TREM = {
 TREM.constant.AUDIO.SHINDO0.volume = 0.4;
 TREM.constant.AUDIO.UPDATE.volume = 0.2;
 
-if (TREM.constant.SHOW_TREM_EEW)
+if (TREM.constant.SHOW_TREM_EEW) {
   TREM.constant.EEW_AUTHOR = TREM.constant.EEW_AUTHOR.filter((author) => author != 'cwa');
+}
 
 module.exports = TREM;

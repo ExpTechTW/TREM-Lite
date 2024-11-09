@@ -8,15 +8,17 @@ class BoxManager {
   static instance = null;
 
   constructor() {
-    if (BoxManager.instance)
+    if (BoxManager.instance) {
       return BoxManager.instance;
+    }
     this.bindEvents();
     BoxManager.instance = this;
   }
 
   static getInstance() {
-    if (!BoxManager.instance)
+    if (!BoxManager.instance) {
       new BoxManager();
+    }
     return BoxManager.instance;
   }
 
@@ -60,7 +62,9 @@ class BoxManager {
     const coordinates = area.geometry.coordinates[0];
     for (let i = 0; i < 4; i++) {
       const dist = distance(eew.eq.lat, eew.eq.lon)(coordinates[i][1], coordinates[i][0]);
-      if (eew.dist.s_dist > dist) skip++;
+      if (eew.dist.s_dist > dist) {
+        skip++;
+      }
     }
     return skip >= 4;
   }
@@ -77,7 +81,9 @@ class BoxManager {
       TREM.variable.map.getSource('box-geojson').setData(emptyData);
     }
 
-    if (!TREM.variable.data.rts?.box || !Object.keys(TREM.variable.data.rts.box).length) return;
+    if (!TREM.variable.data.rts?.box || !Object.keys(TREM.variable.data.rts.box).length) {
+      return;
+    }
 
     const trem_alert = TREM.variable.data.eew.some((eew) => eew.author == 'trem');
     if (!TREM.constant.SHOW_TREM_EEW && trem_alert) {
@@ -85,21 +91,27 @@ class BoxManager {
       return;
     }
 
-    if (show && TREM.variable.data.rts)
+    if (show && TREM.variable.data.rts) {
       for (const area of box_data.features) {
         const id = area.properties.ID;
         const boxIntensity = TREM.variable.data.rts?.box[id];
-        if (boxIntensity == undefined) continue;
+        if (boxIntensity == undefined) {
+          continue;
+        }
 
         let shouldSkip = false;
         for (const eew of TREM.variable.data.eew) {
-          if (!eew.dist) continue;
+          if (!eew.dist) {
+            continue;
+          }
           if (this.checkBoxSkip(eew, area)) {
             shouldSkip = true;
             break;
           }
         }
-        if (shouldSkip) continue;
+        if (shouldSkip) {
+          continue;
+        }
 
         boxFeatures.push({
           type: 'Feature',
@@ -112,6 +124,7 @@ class BoxManager {
           },
         });
       }
+    }
 
     box_alert = true;
     TREM.variable.map.getSource('box-geojson').setData({

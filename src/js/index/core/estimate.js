@@ -1,13 +1,14 @@
 const TREM = require('../constant');
 const EEWCalculator = require('../utils/eewCalculator');
-const { intensity_float_to_int, search_loc_name, generateMapStyle, convertIntensityToAreaFormat } = require('../utils/utils');
+const { intensity_float_to_int, search_loc_name, generateMapStyle } = require('../utils/utils');
 
 class EewAreaManager {
   static instance = null;
 
   constructor() {
-    if (EewAreaManager.instance)
+    if (EewAreaManager.instance) {
       return EewAreaManager.instance;
+    }
     this.calculator = new EEWCalculator(require('../../../resource/data/time.json'));
     this.alertedCities = new Set();
     this.bindEvents();
@@ -15,8 +16,9 @@ class EewAreaManager {
   }
 
   static getInstance() {
-    if (!EewAreaManager.instance)
+    if (!EewAreaManager.instance) {
       new EewAreaManager();
+    }
     return EewAreaManager.instance;
   }
 
@@ -30,7 +32,9 @@ class EewAreaManager {
   }
 
   updateEewArea(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author === 'trem') return;
+    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author === 'trem') {
+      return;
+    }
 
     const area = this.calculator.eewAreaPga(
       ans.data.eq.lat,
@@ -45,7 +49,9 @@ class EewAreaManager {
   }
 
   drawEewArea(end = false) {
-    if (TREM.variable.cache.show_intensity) return;
+    if (TREM.variable.cache.show_intensity) {
+      return;
+    }
 
     if (!Object.keys(TREM.variable.cache.eewIntensityArea).length) {
       TREM.variable.map.setPaintProperty('town', 'fill-color', TREM.constant.COLOR.MAP.TW_TOWN_FILL);
@@ -60,7 +66,9 @@ class EewAreaManager {
       if (intensity >= 5) {
         highIntensityAreas[code] = intensity;
         const location = search_loc_name(parseInt(code));
-        if (location) highIntensityCities.add(location.city);
+        if (location) {
+          highIntensityCities.add(location.city);
+        }
       }
     });
 
@@ -82,7 +90,9 @@ class EewAreaManager {
     const mapStyle = generateMapStyle(eewArea, end);
     TREM.variable.map.setPaintProperty('town', 'fill-color', mapStyle);
 
-    if (end) this.alertedCities.clear();
+    if (end) {
+      this.alertedCities.clear();
+    }
 
     return {
       highIntensityAreas,
@@ -95,25 +105,29 @@ class EewAreaManager {
     const mergedArea = {};
 
     Object.entries(eewArea).forEach(([code, data]) => {
-      if (code !== 'max_i')
+      if (code !== 'max_i') {
         mergedArea[code] = {
           I: intensity_float_to_int(data.i),
           i: data.i,
           dist: data.dist,
         };
+      }
     });
 
     Object.entries(eqArea).forEach(([intensity, codes]) => {
       const intensityFloat = parseFloat(intensity);
       codes.forEach((code) => {
-        if (mergedArea[code].I < intensityFloat)
+        if (mergedArea[code].I < intensityFloat) {
           mergedArea[code].I = intensityFloat;
+        }
       });
     });
 
     let maxI = 0;
     Object.values(mergedArea).forEach((data) => {
-      if (data.I > maxI) maxI = data.I;
+      if (data.I > maxI) {
+        maxI = data.I;
+      }
     });
     mergedArea.max_i = maxI;
 
@@ -123,11 +137,13 @@ class EewAreaManager {
   processIntensityAreas() {
     const eewArea = {};
 
-    Object.entries(TREM.variable.cache.eewIntensityArea).forEach(([_, intensity]) => {
+    Object.entries(TREM.variable.cache.eewIntensityArea).forEach(([, intensity]) => {
       Object.entries(intensity).forEach(([name, value]) => {
-        if (name !== 'max_i')
-          if (!eewArea[name] || eewArea[name] < value.I)
+        if (name !== 'max_i') {
+          if (!eewArea[name] || eewArea[name] < value.I) {
             eewArea[name] = value.I;
+          }
+        }
       });
     });
 

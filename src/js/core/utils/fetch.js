@@ -9,8 +9,12 @@ async function fetchData(url, timeout = 1000) {
     return response;
   }
   catch (error) {
-    if (error.name === 'AbortError') logger.error(`[utils/fetch.js] -> time out | ${url}`);
-    else logger.error(`[utils/fetch.js] -> fetch error: ${url} | ${error.message}`);
+    if (error.name === 'AbortError') {
+      logger.error(`[utils/fetch.js] -> time out | ${url}`);
+    }
+    else {
+      logger.error(`[utils/fetch.js] -> fetch error: ${url} | ${error.message}`);
+    }
     return null;
   }
 }

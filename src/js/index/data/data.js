@@ -20,7 +20,9 @@ TREM.variable.events.on('MapLoad', (map) => {
     }
     else {
       // http (realtime/replay)
-      if (local_now - last_fetch_time < 1000) return;
+      if (local_now - last_fetch_time < 1000) {
+        return;
+      }
       last_fetch_time = local_now;
 
       const data = await http((TREM.variable.play_mode == 0) ? null : now());
@@ -35,10 +37,16 @@ TREM.variable.events.on('MapLoad', (map) => {
         });
       }
 
-      if (data.eew) EEWData(data.eew);
-      else EEWData();
+      if (data.eew) {
+        EEWData(data.eew);
+      }
+      else {
+        EEWData();
+      }
 
-      if (data.rts) TREM.variable.cache.last_data_time = local_now;
+      if (data.rts) {
+        TREM.variable.cache.last_data_time = local_now;
+      }
     }
   }, 0);
 });
@@ -66,7 +74,9 @@ function EEWData(newData = []) {
   );
 
   newData.forEach((data) => {
-    if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) return;
+    if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) {
+      return;
+    }
 
     const existingIndex = TREM.variable.data.eew.findIndex((item) => item.id == data.id);
     const eventData = {
@@ -74,7 +84,7 @@ function EEWData(newData = []) {
       data,
     };
 
-    if (existingIndex == -1)
+    if (existingIndex == -1) {
       if (!TREM.variable.cache.eew_last[data.id]) {
         if (TREM.constant.EEW_AUTHOR.includes(data.author)) {
           TREM.variable.cache.eew_last[data.id] = {
@@ -86,13 +96,15 @@ function EEWData(newData = []) {
         }
         return;
       }
+    }
 
     if (TREM.variable.cache.eew_last[data.id] && TREM.variable.cache.eew_last[data.id].serial < data.serial) {
       TREM.variable.cache.eew_last[data.id].serial = data.serial;
       TREM.variable.events.emit('EewUpdate', eventData);
 
-      if (!TREM.variable.data.eew[existingIndex].status && data.status == 1)
+      if (!TREM.variable.data.eew[existingIndex].status && data.status == 1) {
         TREM.variable.events.emit('EewAlert', eventData);
+      }
 
       TREM.variable.data.eew[existingIndex] = data;
     }
@@ -100,7 +112,9 @@ function EEWData(newData = []) {
 
   Object.keys(TREM.variable.cache.eew_last).forEach((id) => {
     const item = TREM.variable.cache.eew_last[id];
-    if (currentTime - item.last_time > 600000) delete TREM.variable.cache.eew_last[id];
+    if (currentTime - item.last_time > 600000) {
+      delete TREM.variable.cache.eew_last[id];
+    }
   });
 
   TREM.variable.events.emit('DataEew', {

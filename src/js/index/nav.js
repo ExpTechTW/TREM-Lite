@@ -2,12 +2,32 @@ const { ipcRenderer } = require('electron');
 const { app } = require('@electron/remote');
 
 document.onkeydown = (e) => {
-  if (e.key == 'F11') ipcRenderer.send('toggleFullscreen');
-  else if (e.key == 'F12') ipcRenderer.send('openDevtool');
-  else if (e.key == 'Escape') ipcRenderer.send('hide');
-  else if (e.ctrlKey && e.key.toLocaleLowerCase() == 'r') ipcRenderer.send('reload');
-  else if (e.key == 'Tab') e.preventDefault();
-  else if (e.key == 'F1') ipcRenderer.send('openPluginFolder');
+  if (e.ctrlKey) {
+    switch (e.code) {
+      case 'KeyR':
+        return ipcRenderer.send('reload');
+
+      default:
+        return;
+    }
+  }
+
+  switch (e.code) {
+    case 'F1':
+      return ipcRenderer.send('openPluginFolder');
+
+    case 'F11':
+      return ipcRenderer.send('toggleFullscreen');
+
+    case 'F12':
+      return ipcRenderer.send('openDevtool');
+
+    case 'Escape':
+      return ipcRenderer.send('hide');
+
+    case 'Tab':
+      return e.preventDefault();
+  }
 };
 
 document.querySelector('.fab').addEventListener('click', function () {

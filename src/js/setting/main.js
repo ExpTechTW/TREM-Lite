@@ -1,11 +1,29 @@
 const { ipcRenderer } = require('electron');
 
 document.onkeydown = (e) => {
-  if (e.key == 'F11') ipcRenderer.send('toggleFullscreen');
-  else if (e.key == 'F12') ipcRenderer.send('openDevtool');
-  else if (e.key == 'Escape') ipcRenderer.send('hide');
-  else if (e.ctrlKey && e.key.toLocaleLowerCase() == 'r') ipcRenderer.send('reload');
-  else if (e.key == 'Tab') e.preventDefault();
+  if (e.ctrlKey) {
+    switch (e.code) {
+      case 'KeyR':
+        return ipcRenderer.send('reload');
+
+      default:
+        return;
+    }
+  }
+
+  switch (e.code) {
+    case 'F11':
+      return ipcRenderer.send('toggleFullscreen');
+
+    case 'F12':
+      return ipcRenderer.send('openDevtool');
+
+    case 'Escape':
+      return ipcRenderer.send('hide');
+
+    case 'Tab':
+      return e.preventDefault();
+  }
 };
 
 document.querySelectorAll('.button').forEach((button) =>
@@ -19,8 +37,10 @@ document.querySelectorAll('.button').forEach((button) =>
 
 document.querySelector('.windows-wrapper').addEventListener('click', (event) => {
   const targetClass = event.target.classList;
-  if (targetClass.contains('close'))
+  if (targetClass.contains('close')) {
     window.close();
-  else if (targetClass.contains('minimize'))
+  }
+  else if (targetClass.contains('minimize')) {
     ipcRenderer.send('minimize-window');
+  }
 });

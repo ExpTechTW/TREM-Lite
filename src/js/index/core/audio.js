@@ -8,14 +8,19 @@ class AudioQueue {
   }
 
   getAudioName(audio) {
-    for (const [key, value] of Object.entries(TREM.constant.AUDIO))
-      if (value === audio) return key;
+    for (const [key, value] of Object.entries(TREM.constant.AUDIO)) {
+      if (value === audio) {
+        return key;
+      }
+    }
     return null;
   }
 
   removeConflictingAudios(newAudio, rules) {
     const audioName = this.getAudioName(newAudio);
-    if (!audioName || !rules[audioName]) return;
+    if (!audioName || !rules[audioName]) {
+      return;
+    }
 
     const toRemove = rules[audioName];
     this.queue = this.queue.filter((queuedAudio) => {
@@ -32,14 +37,17 @@ class AudioQueue {
       this.queue.push(audio);
       this.queue.push(audio);
     }
-    else
+    else {
       this.queue.push(audio);
+    }
 
     this.playNext();
   }
 
   playNext() {
-    if (this.isPlaying || this.queue.length === 0) return;
+    if (this.isPlaying || this.queue.length === 0) {
+      return;
+    }
 
     this.isPlaying = true;
     const audio = this.queue.shift();
@@ -69,8 +77,9 @@ class AudioManager {
   static instance = null;
 
   constructor() {
-    if (AudioManager.instance)
+    if (AudioManager.instance) {
       return AudioManager.instance;
+    }
 
     this.ttsCache = {};
     this.ttsEewAlertLock = false;
@@ -102,8 +111,9 @@ class AudioManager {
   }
 
   static getInstance() {
-    if (!AudioManager.instance)
+    if (!AudioManager.instance) {
       new AudioManager();
+    }
     return AudioManager.instance;
   }
 
@@ -124,12 +134,16 @@ class AudioManager {
   }
 
   handleEewRelease(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') return;
+    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') {
+      return;
+    }
 
-    if (ans.data.status == 1)
+    if (ans.data.status == 1) {
       this.audioQueues.eew.add(TREM.constant.AUDIO.ALERT, this.priorityRules.eew);
-    else
+    }
+    else {
       this.audioQueues.eew.add(TREM.constant.AUDIO.EEW, this.priorityRules.eew);
+    }
 
     this.ttsCache[ans.data.id] = {
       last: { loc: '', i: -1 },
@@ -138,12 +152,16 @@ class AudioManager {
   }
 
   handleEewAlert(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') return;
+    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') {
+      return;
+    }
     this.audioQueues.eew.add(TREM.constant.AUDIO.ALERT, this.priorityRules.eew);
   }
 
   handleEewUpdate(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') return;
+    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') {
+      return;
+    }
     this.audioQueues.update.clear();
     this.audioQueues.update.add(TREM.constant.AUDIO.UPDATE);
 
@@ -179,7 +197,9 @@ class AudioManager {
     TREM.constant.AUDIO.REPORT.play();
     let maxIntensity = 0;
     Object.values(ans.data.list).forEach((county) => {
-      if (county.int > maxIntensity) maxIntensity = county.int;
+      if (county.int > maxIntensity) {
+        maxIntensity = county.int;
+      }
     });
 
     const maxIntensityText = int_to_string(maxIntensity);
@@ -223,14 +243,18 @@ class AudioManager {
 
     let count = 0;
     for (let intensity = 9; intensity >= 1; intensity--) {
-      if (!intensityStations[intensity].length) continue;
+      if (!intensityStations[intensity].length) {
+        continue;
+      }
 
       const stationText = intensityStations[intensity].join('，');
 
-      if (count === 0)
+      if (count === 0) {
         ttsText += `，這次地震，最大震度 ${int_to_string(intensity)} 地區 ${stationText}`;
-      else if (count === 1)
+      }
+      else if (count === 1) {
         ttsText += `，此外，震度 ${int_to_string(intensity)} 地區 ${stationText}`;
+      }
       else {
         ttsText += `，震度 ${int_to_string(intensity)} 地區 ${stationText}`;
         break;
@@ -257,8 +281,12 @@ class AudioManager {
   }
 
   handleEewNewAreaAlert(ans) {
-    if (!TREM.variable.tts) return;
-    if (TREM.variable.speech.speaking()) TREM.variable.speech.cancel();
+    if (!TREM.variable.tts) {
+      return;
+    }
+    if (TREM.variable.speech.speaking()) {
+      TREM.variable.speech.cancel();
+    }
     this.ttsEewAlertLock = true;
     TREM.variable.speech.speak({
       text: `緊急地震速報，${ans.data.city_alert_list.join('、')}，慎防強烈搖晃`,
@@ -272,10 +300,12 @@ class AudioManager {
   }
 
   initTtsInterval() {
-    if (TREM.variable.tts)
+    if (TREM.variable.tts) {
       setInterval(() => {
-        if (this.ttsEewAlertLock) return;
-        for (const id of Object.keys(this.ttsCache))
+        if (this.ttsEewAlertLock) {
+          return;
+        }
+        for (const id of Object.keys(this.ttsCache)) {
           if (this.ttsCache[id].now.i > this.ttsCache[id].last.i) {
             this.ttsCache[id].last.loc = this.ttsCache[id].now.loc;
             TREM.variable.speech.speak({ text: `${this.ttsCache[id].last.loc}發生地震`, queue: true });
@@ -286,7 +316,9 @@ class AudioManager {
               queue: true,
             });
           }
+        }
       }, 3000);
+    }
   }
 }
 

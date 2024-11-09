@@ -26,14 +26,24 @@ class PluginLoader {
   }
 
   getVersionPriority(version) {
-    if (!version) return 0;
+    if (!version) {
+      return 0;
+    }
     const parsed = semver.parse(version);
-    if (!parsed) return 0;
+    if (!parsed) {
+      return 0;
+    }
 
     const prerelease = parsed.prerelease[0];
-    if (!prerelease) return 3;
-    if (prerelease === 'rc') return 2;
-    if (prerelease === 'pre') return 1;
+    if (!prerelease) {
+      return 3;
+    }
+    if (prerelease === 'rc') {
+      return 2;
+    }
+    if (prerelease === 'pre') {
+      return 1;
+    }
     return 0;
   }
 
@@ -41,18 +51,24 @@ class PluginLoader {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
-    if (!parsed1 || !parsed2) return false;
+    if (!parsed1 || !parsed2) {
+      return false;
+    }
 
     if (parsed1.major !== parsed2.major
       || parsed1.minor !== parsed2.minor
-      || parsed1.patch !== parsed2.patch)
-      return false;
+      || parsed1.patch !== parsed2.patch) { return false; }
 
     const pre1 = parsed1.prerelease;
     const pre2 = parsed2.prerelease;
 
-    if (pre1.length !== pre2.length) return false;
-    if (pre1.length === 0) return true;
+    if (pre1.length !== pre2.length) {
+      return false;
+    }
+    if (pre1.length === 0) {
+      return true;
+    }
+
     return pre1[0] === pre2[0] && pre1[1] === pre2[1];
   }
 
@@ -60,25 +76,32 @@ class PluginLoader {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
-    if (!parsed1 || !parsed2) return false;
+    if (!parsed1 || !parsed2) {
+      return false;
+    }
 
-    if (parsed1.major !== parsed2.major)
+    if (parsed1.major !== parsed2.major) {
       return parsed1.major >= parsed2.major;
+    }
 
-    if (parsed1.minor !== parsed2.minor)
+    if (parsed1.minor !== parsed2.minor) {
       return parsed1.minor >= parsed2.minor;
+    }
 
-    if (parsed1.patch !== parsed2.patch)
+    if (parsed1.patch !== parsed2.patch) {
       return parsed1.patch >= parsed2.patch;
+    }
 
     const priority1 = this.getVersionPriority(v1);
     const priority2 = this.getVersionPriority(v2);
 
-    if (priority1 !== priority2)
+    if (priority1 !== priority2) {
       return priority1 >= priority2;
+    }
 
-    if (parsed1.prerelease.length > 1 && parsed2.prerelease.length > 1)
+    if (parsed1.prerelease.length > 1 && parsed2.prerelease.length > 1) {
       return parsed1.prerelease[1] >= parsed2.prerelease[1];
+    }
 
     return true;
   }
@@ -127,16 +150,21 @@ class PluginLoader {
   }
 
   validateDependencies(pluginInfo) {
-    if (!pluginInfo.dependencies) return true;
+    if (!pluginInfo.dependencies) {
+      return true;
+    }
 
-    if (pluginInfo.dependencies.trem)
+    if (pluginInfo.dependencies.trem) {
       if (!this.validateVersionRequirement(this.tremVersion, pluginInfo.dependencies.trem)) {
         logger.error(`Plugin ${pluginInfo.name} requires TREM version ${pluginInfo.dependencies.trem}, but ${this.tremVersion} is installed`);
         return false;
       }
+    }
 
     for (const [dep, version] of Object.entries(pluginInfo.dependencies)) {
-      if (dep === 'trem') continue;
+      if (dep === 'trem') {
+        continue;
+      }
 
       const dependencyPlugin = this.plugins.get(dep);
       if (!dependencyPlugin) {
@@ -159,27 +187,35 @@ class PluginLoader {
     this.loadOrder = [];
 
     const visit = (pluginName) => {
-      if (tempMark.has(pluginName))
+      if (tempMark.has(pluginName)) {
         throw new Error(`Circular dependency detected: ${pluginName}`);
+      }
 
-      if (visited.has(pluginName)) return;
+      if (visited.has(pluginName)) {
+        return;
+      }
 
       tempMark.add(pluginName);
       const plugin = this.plugins.get(pluginName);
 
-      if (plugin.dependencies)
-        for (const dep of Object.keys(plugin.dependencies))
-          if (dep !== 'trem' && this.plugins.has(dep))
+      if (plugin.dependencies) {
+        for (const dep of Object.keys(plugin.dependencies)) {
+          if (dep !== 'trem' && this.plugins.has(dep)) {
             visit(dep);
+          }
+        }
+      }
 
       tempMark.delete(pluginName);
       visited.add(pluginName);
       this.loadOrder.unshift(pluginName);
     };
 
-    for (const pluginName of this.plugins.keys())
-      if (!visited.has(pluginName))
+    for (const pluginName of this.plugins.keys()) {
+      if (!visited.has(pluginName)) {
         visit(pluginName);
+      }
+    }
   }
 
   isValidPluginClass(PluginClass) {
@@ -191,8 +227,9 @@ class PluginLoader {
       const instance = new PluginClass(this.ctx);
       plugin.instance = instance;
 
-      if (typeof instance.onLoad === 'function')
+      if (typeof instance.onLoad === 'function') {
         await instance.onLoad();
+      }
 
       logger.info(`Successfully loaded plugin: ${pluginName} (version ${plugin.info.version})`);
       return true;
@@ -218,19 +255,21 @@ class PluginLoader {
       const pluginPath = path.join(this.pluginDir, dir);
       const info = this.readPluginInfo(pluginPath);
 
-      if (info)
+      if (info) {
         this.plugins.set(info.name, {
           path: pluginPath,
           info,
           dependencies: info.dependencies || {},
         });
+      }
     }
 
-    for (const [pluginName, plugin] of this.plugins.entries())
+    for (const [pluginName, plugin] of this.plugins.entries()) {
       if (!this.validateDependencies(plugin.info)) {
         this.plugins.delete(pluginName);
         logger.warn(`Skipping plugin ${pluginName} due to dependency issues`);
       }
+    }
 
     try {
       this.buildDependencyGraph();
@@ -249,8 +288,9 @@ class PluginLoader {
           const PluginClass = require(indexPath);
           if (this.isValidPluginClass(PluginClass)) {
             const success = await this.initializePlugin(pluginName, plugin, PluginClass);
-            if (!success)
+            if (!success) {
               this.plugins.delete(pluginName);
+            }
           }
           else {
             logger.error(`Plugin ${pluginName} does not export a valid plugin class (must implement onLoad and onUnload methods)`);
@@ -268,8 +308,9 @@ class PluginLoader {
   async unloadPlugin(pluginName) {
     const plugin = this.plugins.get(pluginName);
     if (plugin?.instance) {
-      if (typeof plugin.instance.onUnload === 'function')
+      if (typeof plugin.instance.onUnload === 'function') {
         await plugin.instance.onUnload();
+      }
       this.plugins.delete(pluginName);
     }
   }

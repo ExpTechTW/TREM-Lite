@@ -1,17 +1,18 @@
 // @ts-check
 
+const ts = require('typescript-eslint');
 const js = require('@eslint/js');
 const globals = require('globals');
 const stylistic = require('@stylistic/eslint-plugin');
 
-/**
- * @type {import('eslint').Linter.Config[]}
- */
-module.exports = [
+module.exports = ts.config(
   js.configs.recommended,
+  ...ts.configs.strict,
+  ...ts.configs.stylistic,
   stylistic.configs.customize({
     arrowParens: true,
     semi: true,
+    flat: true,
   }),
   {
     languageOptions: {
@@ -36,4 +37,10 @@ module.exports = [
       'eslint.config.js',
     ],
   },
-];
+  {
+    rules: {
+      'curly': ['error'],
+      '@typescript-eslint/no-require-imports': ['off'],
+    }
+  }
+);

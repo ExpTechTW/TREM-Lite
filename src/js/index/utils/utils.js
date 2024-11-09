@@ -30,18 +30,24 @@ function formatTime(timestamp) {
 }
 
 function search_loc_name(int) {
-  for (const city of Object.keys(region))
-    for (const town of Object.keys(region[city]))
-      if (region[city][town].code == int)
+  for (const city of Object.keys(region)) {
+    for (const town of Object.keys(region[city])) {
+      if (region[city][town].code == int) {
         return { city, town };
+      }
+    }
+  }
   return null;
 }
 
 function search_loc_code(str) {
-  for (const city of Object.keys(region))
-    for (const town of Object.keys(region[city]))
-      if (`${city}${town}` == str)
+  for (const city of Object.keys(region)) {
+    for (const town of Object.keys(region[city])) {
+      if (`${city}${town}` == str) {
         return region[city][town].code;
+      }
+    }
+  }
   return null;
 }
 
@@ -135,11 +141,13 @@ function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor)
 }
 
 function generateMapStyle(eewArea, end = false) {
-  if (end) return TREM.constant.COLOR.MAP.TW_COUNTY_FILL;
+  if (end) {
+    return TREM.constant.COLOR.MAP.TW_COUNTY_FILL;
+  }
 
   const matchExpression = ['match', ['get', 'CODE']];
 
-  if (Object.keys(eewArea).length > 0)
+  if (Object.keys(eewArea).length > 0) {
     Object.entries(eewArea).forEach(([code, intensity]) => {
       matchExpression.push(parseInt(code));
       matchExpression.push(
@@ -148,6 +156,7 @@ function generateMapStyle(eewArea, end = false) {
           : TREM.constant.COLOR.MAP.TW_COUNTY_FILL,
       );
     });
+  }
 
   matchExpression.push(TREM.constant.COLOR.MAP.TW_TOWN_FILL);
 

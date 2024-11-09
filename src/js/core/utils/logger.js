@@ -7,8 +7,9 @@ const util = require('util');
 
 class Logger {
   constructor() {
-    if (Logger.instance)
+    if (Logger.instance) {
       return Logger.instance;
+    }
 
     this.logger = this.initLogger();
     Logger.instance = this;
@@ -33,13 +34,15 @@ class Logger {
     };
 
     const formatMessage = (message, ...args) => {
-      if (args.length === 0)
+      if (args.length === 0) {
         return typeof message === 'string' ? message : util.inspect(message, { depth: null });
+      }
 
-      if (typeof message === 'string')
+      if (typeof message === 'string') {
         return util.format(message, ...args.map((arg) =>
           typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
         ));
+      }
 
       return [message, ...args].map((arg) =>
         typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
@@ -95,13 +98,15 @@ class Logger {
   }
 
   formatMessage(message, ...args) {
-    if (args.length === 0)
+    if (args.length === 0) {
       return typeof message === 'string' ? message : util.inspect(message, { depth: null });
+    }
 
-    if (typeof message === 'string')
+    if (typeof message === 'string') {
       return util.format(message, ...args.map((arg) =>
         typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
       ));
+    }
 
     return [message, ...args].map((arg) =>
       typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,

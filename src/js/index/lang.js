@@ -54,8 +54,9 @@ function showLoadingIndicator() {
 
   const dotsContainer = document.createElement('div');
   dotsContainer.className = 'loading-dots';
-  for (let i = 0; i < 4; i++)
+  for (let i = 0; i < 4; i++) {
     dotsContainer.appendChild(document.createElement('div'));
+  }
 
   animationContainer.appendChild(dotsContainer);
   loadingDiv.appendChild(animationContainer);

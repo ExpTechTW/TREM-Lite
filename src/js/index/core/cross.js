@@ -39,14 +39,20 @@ function refresh_cross(show) {
   const markerFeatures = [];
   const eew_list = [];
 
-  if (!TREM.variable.data.eew?.length) return;
+  if (!TREM.variable.data.eew?.length) {
+    return;
+  }
 
   if (show) {
     for (const eew of TREM.variable.data.eew) {
-      if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') continue;
+      if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') {
+        continue;
+      }
       const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
       const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
-      if (sWaveSource && pWaveSource) eew_list.push(eew);
+      if (sWaveSource && pWaveSource) {
+        eew_list.push(eew);
+      }
     }
 
     for (const eew of eew_list) {
@@ -56,9 +62,11 @@ function refresh_cross(show) {
       if (sWaveSource && pWaveSource) {
         const existingIndex = eew_list.findIndex((item) => item.id === eew.id);
         let no = existingIndex;
-        if (eew_list.length > 1) no++;
+        if (eew_list.length > 1) {
+          no++;
+        }
 
-        if (no < 5)
+        if (no < 5) {
           markerFeatures.push({
             type: 'Feature',
             geometry: {
@@ -73,6 +81,7 @@ function refresh_cross(show) {
               strokeColor: TREM.constant.COLOR.INTENSITY_TEXT[eew.eq.max],
             },
           });
+        }
       }
     }
   }
@@ -82,7 +91,7 @@ function refresh_cross(show) {
     features: markerFeatures,
   });
 
-  if (!TREM.variable.map.getLayer('dots'))
+  if (!TREM.variable.map.getLayer('dots')) {
     TREM.variable.map.addLayer({
       id: 'dots',
       type: 'circle',
@@ -95,6 +104,7 @@ function refresh_cross(show) {
         'circle-stroke-color': ['get', 'strokeColor'],
       },
     });
+  }
 
   TREM.variable.map.moveLayer('cross');
   TREM.variable.map.moveLayer('dots');

@@ -21,7 +21,7 @@ class EEWCalculator {
     let prevTable = null;
 
     for (const table of timeTable) {
-      if (pDist === 0 && table.P > t)
+      if (pDist === 0 && table.P > t) {
         if (prevTable) {
           const tDiff = table.P - prevTable.P;
           const rDiff = table.R - prevTable.R;
@@ -29,10 +29,12 @@ class EEWCalculator {
           const rOffset = (tOffset / tDiff) * rDiff;
           pDist = prevTable.R + rOffset;
         }
-        else
+        else {
           pDist = table.R;
+        }
+      }
 
-      if (sDist === 0 && table.S > t)
+      if (sDist === 0 && table.S > t) {
         if (prevTable) {
           const tDiff = table.S - prevTable.S;
           const rDiff = table.R - prevTable.R;
@@ -44,8 +46,11 @@ class EEWCalculator {
           sDist = table.R;
           sT = table.S;
         }
+      }
 
-      if (pDist !== 0 && sDist !== 0) break;
+      if (pDist !== 0 && sDist !== 0) {
+        break;
+      }
       prevTable = table;
     }
 
@@ -56,7 +61,7 @@ class EEWCalculator {
     const result = {};
     let eewMaxI = 0.0;
 
-    for (const city of Object.keys(region))
+    for (const city of Object.keys(region)) {
       for (const town of Object.keys(region[city])) {
         const info = region[city][town];
         const distSurface = this.distance(lat, lon, info.lat, info.lon);
@@ -64,12 +69,17 @@ class EEWCalculator {
         const pga = 1.657 * Math.exp(1.533 * mag) * Math.pow(dist, -1.607);
         let i = this.pgaToFloat(pga);
 
-        if (i >= 4.5) i = this.eewAreaPgv([lat, lon], [info.lat, info.lon], depth, mag);
+        if (i >= 4.5) {
+          i = this.eewAreaPgv([lat, lon], [info.lat, info.lon], depth, mag);
+        }
 
-        if (i > eewMaxI) eewMaxI = i;
+        if (i > eewMaxI) {
+          eewMaxI = i;
+        }
 
         result[info.code] = { dist, i };
       }
+    }
 
     result.max_i = eewMaxI;
     return result;
@@ -132,7 +142,7 @@ class EEWCalculator {
     let prevTable = null;
 
     for (const table of timeTable) {
-      if (sTime === 0 && table.R >= sDist)
+      if (sTime === 0 && table.R >= sDist) {
         if (prevTable) {
           const rDiff = table.R - prevTable.R;
           const tDiff = table.S - prevTable.S;
@@ -140,10 +150,14 @@ class EEWCalculator {
           const tOffset = (rOffset / rDiff) * tDiff;
           sTime = prevTable.S + tOffset;
         }
-        else
+        else {
           sTime = table.S;
+        }
+      }
 
-      if (sTime !== 0) break;
+      if (sTime !== 0) {
+        break;
+      }
       prevTable = table;
     }
 
@@ -161,7 +175,7 @@ class EEWCalculator {
     let prevTable = null;
 
     for (const table of timeTable) {
-      if (pTime === 0 && table.R >= pDist)
+      if (pTime === 0 && table.R >= pDist) {
         if (prevTable) {
           const rDiff = table.R - prevTable.R;
           const tDiff = table.P - prevTable.P;
@@ -169,10 +183,14 @@ class EEWCalculator {
           const tOffset = (rOffset / rDiff) * tDiff;
           pTime = prevTable.P + tOffset;
         }
-        else
+        else {
           pTime = table.P;
+        }
+      }
 
-      if (pTime !== 0) break;
+      if (pTime !== 0) {
+        break;
+      }
       prevTable = table;
     }
 
@@ -197,8 +215,9 @@ class EEWCalculator {
     const xc = (Math.pow(xb, 2) - 2 * (g0 / G) * za - Math.pow(za, 2)) / (2 * xb);
     let thetaA = Math.atan((za - zc) / xc);
 
-    if (thetaA < 0)
+    if (thetaA < 0) {
       thetaA = thetaA + Math.PI;
+    }
 
     thetaA = Math.PI - thetaA;
     const thetaB = Math.atan(-1 * zc / (xb - xc));
@@ -210,18 +229,21 @@ class EEWCalculator {
     const xc_ = (Math.pow(xb, 2) - 2 * (g0_ / g_) * za - Math.pow(za, 2)) / (2 * xb);
     let thetaA_ = Math.atan((za - zc_) / xc_);
 
-    if (thetaA_ < 0)
+    if (thetaA_ < 0) {
       thetaA_ = thetaA_ + Math.PI;
+    }
 
     thetaA_ = Math.PI - thetaA_;
     const thetaB_ = Math.atan(-1 * zc_ / (xb - xc_));
     let stime = (1 / g_) * Math.log(Math.tan(thetaA_ / 2) / Math.tan(thetaB_ / 2));
 
-    if (distance / ptime > 7)
+    if (distance / ptime > 7) {
       ptime = distance / 7;
+    }
 
-    if (distance / stime > 4)
+    if (distance / stime > 4) {
       stime = distance / 4;
+    }
 
     return { p: ptime, s: stime };
   }
@@ -242,12 +264,24 @@ class EEWCalculator {
   }
 
   intensityFloatToInt(floatValue) {
-    if (floatValue < 0) return 0;
-    if (floatValue < 4.5) return Math.round(floatValue);
-    if (floatValue < 5) return 5;
-    if (floatValue < 5.5) return 6;
-    if (floatValue < 6) return 7;
-    if (floatValue < 6.5) return 8;
+    if (floatValue < 0) {
+      return 0;
+    }
+    if (floatValue < 4.5) {
+      return Math.round(floatValue);
+    }
+    if (floatValue < 5) {
+      return 5;
+    }
+    if (floatValue < 5.5) {
+      return 6;
+    }
+    if (floatValue < 6) {
+      return 7;
+    }
+    if (floatValue < 6.5) {
+      return 8;
+    }
     return 9;
   }
 

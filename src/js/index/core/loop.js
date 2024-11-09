@@ -14,7 +14,9 @@ setInterval(() => {
     time.className = 'time-replay';
     time.textContent = formatTime(now());
   }
-  else if ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) time.className = 'time-error';
+  else if ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) {
+    time.className = 'time-error';
+  }
   else {
     time.className = 'time-normal';
     time.textContent = formatTime(now());

@@ -68,8 +68,12 @@ TREM.variable.events.on('EewRelease', (ans) => {
 });
 
 TREM.variable.events.on('EewAlert', (ans) => {
-  if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-outline`)) TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-outline`);
-  if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-background`)) TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
+  if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-outline`)) {
+    TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-outline`);
+  }
+  if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-background`)) {
+    TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
+  }
 
   const color = (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')
     ? TREM.constant.COLOR.TREM.S
@@ -137,9 +141,13 @@ setInterval(() => {
       continue;
     }
 
-    if (eew.eq.mag == 1) continue;
+    if (eew.eq.mag == 1) {
+      continue;
+    }
+
     const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
     const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
+
     if (sWaveSource && pWaveSource) {
       const center = [eew.eq.lon, eew.eq.lat];
       const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
@@ -157,34 +165,49 @@ function show_eew(rotation = true) {
   const eew_list = Object.keys(eew_cache);
 
   for (const eew of TREM.variable.data.eew) {
-    if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') continue;
+    if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') {
+      continue;
+    }
     count++;
   }
 
   if (count) {
-    if (eew_cache[eew_list[eew_rotation]])
+    if (eew_cache[eew_list[eew_rotation]]) {
       if (!TREM.constant.SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == 'trem') {
         eew_rotation++;
-        if (eew_rotation >= eew_list.length) eew_rotation = 0;
+        if (eew_rotation >= eew_list.length) {
+          eew_rotation = 0;
+        }
       }
       else {
         info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? 'eew-alert' : 'eew-warn'}`;
         info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
-        if (eew_cache[eew_list[eew_rotation]].final) info_number.className = 'info-number info-number-last';
-        else info_number.className = 'info-number';
+        if (eew_cache[eew_list[eew_rotation]].final) {
+          info_number.className = 'info-number info-number-last';
+        }
+        else {
+          info_number.className = 'info-number';
+        }
         info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? '' : ` ${eew_rotation + 1}/${count}`}`;
         info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
         info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
         info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
         info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
-        if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) info_footer.className = 'info-footer nsspe';
-        else info_footer.className = 'info-footer';
+        if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) {
+          info_footer.className = 'info-footer nsspe';
+        }
+        else {
+          info_footer.className = 'info-footer';
+        }
         info_time.textContent = formatTime(eew_cache[eew_list[eew_rotation]].eq.time);
       }
+    }
 
     if (rotation) {
       eew_rotation++;
-      if (eew_rotation >= eew_list.length) eew_rotation = 0;
+      if (eew_rotation >= eew_list.length) {
+        eew_rotation = 0;
+      }
     }
   }
   else {
@@ -250,12 +273,14 @@ function removeEewLayersAndSources(eewId) {
   ];
 
   layerIds.forEach((layerId) => {
-    if (TREM.variable.map.getLayer(layerId))
+    if (TREM.variable.map.getLayer(layerId)) {
       TREM.variable.map.removeLayer(layerId);
+    }
   });
 
   sourceIds.forEach((sourceId) => {
-    if (TREM.variable.map.getSource(sourceId))
+    if (TREM.variable.map.getSource(sourceId)) {
       TREM.variable.map.removeSource(sourceId);
+    }
   });
 }

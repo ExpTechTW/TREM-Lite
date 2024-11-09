@@ -53,7 +53,9 @@ function createWindow() {
   win.setMenu(null);
 
   win.webContents.on('did-finish-load', () => {
-    if (!hide) win.show();
+    if (!hide) {
+      win.show();
+    }
   });
 
   win.on('close', (event) => {
@@ -89,8 +91,9 @@ function createWindow() {
 }
 
 function createSettingWindow() {
-  if (SettingWindow instanceof BrowserWindow)
+  if (SettingWindow instanceof BrowserWindow) {
     return SettingWindow.focus();
+  }
 
   SettingWindow = new BrowserWindow({
     title: 'TREM-Lite Setting',
@@ -118,16 +121,22 @@ function createSettingWindow() {
     SettingWindow = null;
   });
   ipcMain.on('minimize-window', () => {
-    if (SettingWindow) SettingWindow.minimize();
+    if (SettingWindow) {
+      SettingWindow.minimize();
+    }
   });
 }
 
 const shouldQuit = app.requestSingleInstanceLock();
 
-if (!shouldQuit) app.quit();
+if (!shouldQuit) {
+  app.quit();
+}
 else {
   app.on('second-instance', () => {
-    if (win != null) win.show();
+    if (win != null) {
+      win.show();
+    }
   });
   app.whenReady().then(() => {
     trayIcon();
@@ -137,8 +146,9 @@ else {
 
 app.on('window-all-closed', (event) => {
   event.preventDefault();
-  if (process.platform !== 'darwin')
+  if (process.platform !== 'darwin') {
     app.quit();
+  }
 });
 
 app.on('before-quit', () => {
@@ -146,10 +156,12 @@ app.on('before-quit', () => {
 });
 
 app.on('activate', () => {
-  if (win === null)
+  if (win === null) {
     createWindow();
-  else
+  }
+  else {
     win.show();
+  }
 });
 
 app.on('browser-window-created', (e, window) => {
@@ -168,29 +180,40 @@ ipcMain.on('openUrl', (_, url) => {
 
 ipcMain.on('openDevtool', () => {
   const currentWindow = BrowserWindow.getFocusedWindow();
-  if (currentWindow) currentWindow.webContents.openDevTools({ mode: 'detach' });
+  if (currentWindow) {
+    currentWindow.webContents.openDevTools({ mode: 'detach' });
+  }
 });
 
 ipcMain.on('reload', () => {
   const currentWindow = BrowserWindow.getFocusedWindow();
-  if (currentWindow) currentWindow.webContents.reload();
+  if (currentWindow) {
+    currentWindow.webContents.reload();
+  }
 });
 
 ipcMain.on('minimize', () => {
-  if (win) win.minimize();
+  if (win) {
+    win.minimize();
+  }
 });
 
 ipcMain.on('hide', () => {
-  if (win) win.hide();
+  if (win) {
+    win.hide();
+  }
 });
 
 ipcMain.on('toggleFullscreen', () => {
-  if (win) win.setFullScreen(!win.isFullScreen());
+  if (win) {
+    win.setFullScreen(!win.isFullScreen());
+  }
 });
 
 ipcMain.on('openPluginFolder', () => {
-  if (!fs.existsSync(pluginDir))
+  if (!fs.existsSync(pluginDir)) {
     fs.mkdirSync(pluginDir, { recursive: true });
+  }
 
   shell.openPath(pluginDir)
     .catch((error) => {
@@ -207,11 +230,14 @@ function trayIcon() {
   tray = new Tray(nativeImage.createFromPath('TREM.ico'));
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', () => {
-    if (win != null)
-      if (win.isVisible())
+    if (win != null) {
+      if (win.isVisible()) {
         win.hide();
-      else
+      }
+      else {
         win.show();
+      }
+    }
   });
 
   const contextMenu = Menu.buildFromTemplate([

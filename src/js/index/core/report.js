@@ -8,8 +8,9 @@ class ReportManager {
   static instance = null;
 
   constructor() {
-    if (ReportManager.instance)
+    if (ReportManager.instance) {
       return ReportManager.instance;
+    }
     this.closeButton = document.querySelector('#close-btn');
     this.reportWrapper = document.querySelector('.report-wrapper');
     this.reportBoxItems = document.querySelector('.report-box-items');
@@ -23,8 +24,9 @@ class ReportManager {
   }
 
   static getInstance() {
-    if (!ReportManager.instance)
+    if (!ReportManager.instance) {
       new ReportManager();
+    }
     return ReportManager.instance;
   }
 
@@ -118,8 +120,9 @@ class ReportManager {
   }
 
   initReportToggle() {
-    if (!this.isClose && window.innerWidth < 1080)
+    if (!this.isClose && window.innerWidth < 1080) {
       this.toggleReport();
+    }
   }
 
   updateScrollbar() {
@@ -142,7 +145,9 @@ class ReportManager {
   }
 
   onDragMove(e) {
-    if (!this.isDragging) return;
+    if (!this.isDragging) {
+      return;
+    }
     const deltaY = e.clientY - this.startY;
     const scrollRatio = deltaY / (this.reportBoxItems.clientHeight - this.customScrollbar.clientHeight);
     this.reportBoxItems.scrollTop = this.initialScrollTop + scrollRatio * (this.reportBoxItems.scrollHeight - this.reportBoxItems.clientHeight);
@@ -182,8 +187,9 @@ class ReportManager {
 
     const loc = document.createElement('div');
     loc.className = 'report-loc';
-    if (!isSurvey && item.loc)
+    if (!isSurvey && item.loc) {
       loc.textContent = extractLocation(item.loc);
+    }
 
     const time = document.createElement('div');
     time.className = 'report-time';
@@ -233,7 +239,9 @@ class ReportManager {
 
   generateReportBoxItems(list, survey = null) {
     const container = document.getElementById('report-box-items');
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     container.innerHTML = '';
 
@@ -259,7 +267,9 @@ class ReportManager {
       `https://${url}/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
-    if (!ans || !ans.ok) return null;
+    if (!ans || !ans.ok) {
+      return null;
+    }
     return await ans.json();
   }
 
@@ -269,13 +279,17 @@ class ReportManager {
       `https://${url}/api/v2/eq/report/${id}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
-    if (!ans || !ans.ok) return null;
+    if (!ans || !ans.ok) {
+      return null;
+    }
     return await ans.json();
   }
 
   async refresh() {
     const reportList = await this.getReport();
-    if (!reportList) return;
+    if (!reportList) {
+      return;
+    }
 
     if (!TREM.variable.data.report.length) {
       TREM.variable.data.report = reportList;
@@ -300,16 +314,18 @@ class ReportManager {
 
     if (newReports.length > 0) {
       const data = await this.getReportInfo(newReports[0].id);
-      if (data)
+      if (data) {
         TREM.variable.events.emit('ReportRelease', { data });
+      }
     }
   }
 
   simplifyEarthquakeData(data) {
     let maxIntensity = 0;
     Object.values(data.list).forEach((county) => {
-      if (county.int > maxIntensity)
+      if (county.int > maxIntensity) {
         maxIntensity = county.int;
+      }
     });
 
     const earthquakeData = {
@@ -338,11 +354,13 @@ class ReportManager {
   }
 
   showReportPoint(data) {
-    if (!data) return;
+    if (!data) {
+      return;
+    }
 
     const dataList = [];
 
-    for (const city of Object.keys(data.list))
+    for (const city of Object.keys(data.list)) {
       for (const town of Object.keys(data.list[city].town)) {
         const info = data.list[city].town[town];
         TREM.variable.cache.bounds.report.push({ lon: info.lon, lat: info.lat });
@@ -352,6 +370,7 @@ class ReportManager {
           properties: { i: info.int },
         });
       }
+    }
 
     dataList.push({
       type: 'Feature',
@@ -367,8 +386,9 @@ class ReportManager {
   }
 
   onReportRelease(ans) {
-    if (TREM.constant.SHOW_REPORT)
+    if (TREM.constant.SHOW_REPORT) {
       this.showReportPoint(ans.data);
+    }
 
     const data = this.simplifyEarthquakeData(ans.data);
     TREM.variable.data.report.unshift(data);
@@ -388,8 +408,9 @@ TREM.class.ReportManager = ReportManager;
 
 const reportManager = ReportManager.getInstance();
 
-if (window.innerWidth < 1080)
+if (window.innerWidth < 1080) {
   reportManager.toggleReport();
+}
 
 reportManager.updateScrollbar();
 

@@ -55,7 +55,9 @@ function show_intensity(ans) {
   TREM.variable.cache.show_intensity = true;
 
   TREM.variable.cache.intensity.time = ans.data.id;
-  if (TREM.variable.cache.intensity.max < ans.data.max) TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
+  if (TREM.variable.cache.intensity.max < ans.data.max) {
+    TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
+  }
   TREM.variable.cache.intensity.max = ans.data.max;
 
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
@@ -106,8 +108,9 @@ TREM.variable.events.on('IntensityEnd', () => {
 });
 
 function findMaxIntensityCity(eqArea) {
-  if (!eqArea || Object.keys(eqArea).length === 0)
+  if (!eqArea || Object.keys(eqArea).length === 0) {
     return null;
+  }
 
   const maxIntensity = Math.max(...Object.keys(eqArea).map(Number));
 
@@ -129,13 +132,17 @@ function findMaxIntensityCity(eqArea) {
 async function get_intensity() {
   const url = TREM.constant.URL.API[1];
   const ans = await fetchData(`https://${url}/api/v1/trem/intensity`, TREM.constant.HTTP_TIMEOUT.REPORT);
-  if (!ans.ok) return null;
+  if (!ans.ok) {
+    return null;
+  }
   return await ans.json();
 }
 
 async function refresh_intensity() {
   const data = await get_intensity();
-  if (!data) return;
+  if (!data) {
+    return;
+  }
   IntensityData(data);
 }
 
@@ -162,7 +169,9 @@ function IntensityData(newData = []) {
   );
 
   newData.forEach((data) => {
-    if (!data.id || currentTime - data.id > EXPIRY_TIME || data.IntensityEnd) return;
+    if (!data.id || currentTime - data.id > EXPIRY_TIME || data.IntensityEnd) {
+      return;
+    }
 
     const existingIndex = TREM.variable.data.intensity.findIndex((item) => item.id == data.id);
     const eventData = {
@@ -170,7 +179,7 @@ function IntensityData(newData = []) {
       data,
     };
 
-    if (existingIndex == -1)
+    if (existingIndex == -1) {
       if (!TREM.variable.cache.intensity_last[data.id]) {
         TREM.variable.cache.intensity_last[data.id] = {
           last_time: currentTime,
@@ -180,6 +189,7 @@ function IntensityData(newData = []) {
         TREM.variable.events.emit('IntensityRelease', eventData);
         return;
       }
+    }
 
     if (TREM.variable.cache.intensity_last[data.id] && TREM.variable.cache.intensity_last[data.id].serial < data.serial) {
       TREM.variable.cache.intensity_last[data.id].serial = data.serial;
@@ -191,7 +201,9 @@ function IntensityData(newData = []) {
 
   Object.keys(TREM.variable.cache.intensity_last).forEach((id) => {
     const item = TREM.variable.cache.intensity_last[id];
-    if (currentTime - item.last_time > 600000) delete TREM.variable.cache.intensity_last[id];
+    if (currentTime - item.last_time > 600000) {
+      delete TREM.variable.cache.intensity_last[id];
+    }
   });
 
   TREM.variable.events.emit('DataIntensity', {
