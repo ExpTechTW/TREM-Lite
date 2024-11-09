@@ -41,6 +41,6 @@ module.exports = ts.config(
     rules: {
       'curly': ['error'],
       '@typescript-eslint/no-require-imports': ['off'],
-    }
-  }
+    },
+  },
 );
