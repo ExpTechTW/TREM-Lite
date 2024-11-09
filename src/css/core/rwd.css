@@ -76,7 +76,7 @@
   }
 
   .station-pga-wrapper {
-    top: 9.4rem !important;
+    top: 9.5rem !important;
     left: 0.3rem !important;
   }
 
@@ -87,19 +87,19 @@
   .max-intensity-pga-wrapper {
     display: flex !important;
     flex-direction: column-reverse !important;
-    top: 12.6rem !important;
+    top: 12.8rem !important;
   }
 
   .max-pga {
     left: 4.5rem !important;
     position: relative !important;
     height: 35px !important;
-    margin-top: 2px !important;
+    margin-top: 4px !important;
     width: 80px;
   }
 
   .max-intensity {
-    margin-top: 3px !important;
+    margin-top: 5px !important;
     padding: 3px !important;
     width: 85px;
   }

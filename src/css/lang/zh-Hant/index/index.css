@@ -61,6 +61,8 @@ body {
   margin-left: 5px;
   padding: 3px;
   pointer-events: none;
+  min-width: 155px;
+  justify-content: space-around;
 
   .time-error {
     color: red;
