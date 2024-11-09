@@ -1,9 +1,9 @@
-const TREM = require("../constant");
+const TREM = require('../constant');
 
-const now = require("../utils/ntp");
+const now = require('../utils/ntp');
 
-const http = require("./http");
-const file = require("./file");
+const http = require('./http');
+const file = require('./file');
 
 let last_fetch_time = 0;
 
