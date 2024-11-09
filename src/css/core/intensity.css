@@ -22,13 +22,19 @@
   background-color: var(--intensity-0);
   box-sizing: border-box;
 
-  &:not(#max-intensity, #max-pga, #current-station-intensity)::after {
+  &:not(
+      #max-intensity,
+      #max-pga,
+      #current-station-intensity,
+      .rts-intensity
+    )::after {
     content: "不明";
     font-size: 25px;
   }
 }
 
-#current-station-intensity.intensity-0::after {
+#current-station-intensity.intensity-0,
+.rts-intensity::after {
   content: "0";
 }
 
