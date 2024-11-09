@@ -5,7 +5,7 @@
   "main": "./src/main.js",
   "author": "ExpTechTW <ExpTech.tw@gmail.com>",
   "scripts": {
-    "dev": "electron .",
+    "start": "electron .",
     "build": "electron-builder",
     "lint": "eslint \"src/**/*.{js,ts}\" --fix"
   },
