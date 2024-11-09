@@ -1,8 +1,8 @@
 function loadCSS(href) {
   return new Promise((resolve, reject) => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.type = "text/css";
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
     link.href = href;
 
     link.onload = resolve;
@@ -13,16 +13,16 @@ function loadCSS(href) {
 }
 
 function showLoadingIndicator() {
-  const loadingDiv = document.createElement("div");
-  loadingDiv.id = "css-loading-indicator";
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'css-loading-indicator';
 
-  const animationContainer = document.createElement("div");
-  animationContainer.className = "loading-animation";
+  const animationContainer = document.createElement('div');
+  animationContainer.className = 'loading-animation';
 
-  const dotsContainer = document.createElement("div");
-  dotsContainer.className = "loading-dots";
+  const dotsContainer = document.createElement('div');
+  dotsContainer.className = 'loading-dots';
   for (let i = 0; i < 4; i++)
-    dotsContainer.appendChild(document.createElement("div"));
+    dotsContainer.appendChild(document.createElement('div'));
 
   animationContainer.appendChild(dotsContainer);
   loadingDiv.appendChild(animationContainer);
@@ -32,12 +32,12 @@ function showLoadingIndicator() {
 }
 
 function hideLoadingIndicator(loadingDiv) {
-  loadingDiv.style.opacity = "0";
+  loadingDiv.style.opacity = '0';
 
   setTimeout(() => {
     document.body.removeChild(loadingDiv);
-    document.body.classList.add("content-loaded");
-    document.body.classList.add("fade-in");
+    document.body.classList.add('content-loaded');
+    document.body.classList.add('fade-in');
   }, 500);
 }
 
@@ -45,13 +45,14 @@ async function initializeStyles() {
   const loadingIndicator = showLoadingIndicator();
 
   try {
-    await loadCSS("../css/lang/zh-Hant/setting/index.css");
+    await loadCSS('../css/lang/zh-Hant/setting/index.css');
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     hideLoadingIndicator(loadingIndicator);
-  } catch (error) {
-    console.error("CSS 載入失敗:", error);
+  }
+  catch (error) {
+    console.error('CSS 載入失敗:', error);
     hideLoadingIndicator(loadingIndicator);
   }
 }

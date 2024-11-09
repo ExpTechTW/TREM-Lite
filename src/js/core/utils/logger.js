@@ -1,9 +1,9 @@
-const winston = require("winston");
-const path = require("path");
-const { app } = require("@electron/remote");
-require("winston-daily-rotate-file");
-const colors = require("colors/safe");
-const util = require("util");
+const winston = require('winston');
+const path = require('path');
+const { app } = require('@electron/remote');
+require('winston-daily-rotate-file');
+const colors = require('colors/safe');
+const util = require('util');
 
 class Logger {
   constructor() {
@@ -15,38 +15,38 @@ class Logger {
   }
 
   initLogger() {
-    const logPath = path.join(app.getPath("logs"), "%DATE%.log");
+    const logPath = path.join(app.getPath('logs'), '%DATE%.log');
 
     const file = new winston.transports.DailyRotateFile({
-      filename      : logPath,
-      datePattern   : "YYYY-MM-DD",
-      zippedArchive : true,
-      maxSize       : "20m",
-      maxFiles      : "14d",
+      filename: logPath,
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
     });
 
     const levelColors = {
-      error : colors.red,
-      warn  : colors.yellow,
-      info  : colors.green,
-      debug : colors.blue,
+      error: colors.red,
+      warn: colors.yellow,
+      info: colors.green,
+      debug: colors.blue,
     };
 
     const formatMessage = (message, ...args) => {
       if (args.length === 0)
-        return typeof message === "string" ? message : util.inspect(message, { depth: null });
+        return typeof message === 'string' ? message : util.inspect(message, { depth: null });
 
-      if (typeof message === "string")
-        return util.format(message, ...args.map(arg =>
-          typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
+      if (typeof message === 'string')
+        return util.format(message, ...args.map((arg) =>
+          typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
         ));
 
-      return [message, ...args].map(arg =>
-        typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
-      ).join(" ");
+      return [message, ...args].map((arg) =>
+        typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
+      ).join(' ');
     };
 
-    const consoleFormat = winston.format.printf(info => {
+    const consoleFormat = winston.format.printf((info) => {
       const date = new Date();
       const timestamp = `${this.formatTwoDigits(date.getHours())}:${this.formatTwoDigits(date.getMinutes())}:${this.formatTwoDigits(date.getSeconds())}`;
       const level = info.level.toUpperCase();
@@ -54,15 +54,15 @@ class Logger {
       return `[${colors.grey(timestamp)}][${coloredLevel}]: ${info.message}`;
     });
 
-    const fileFormat = winston.format.printf(info => {
+    const fileFormat = winston.format.printf((info) => {
       const date = new Date();
       const timestamp = `${this.formatTwoDigits(date.getHours())}:${this.formatTwoDigits(date.getMinutes())}:${this.formatTwoDigits(date.getSeconds())}`;
       return `[${timestamp}][${info.level.toUpperCase()}]: ${info.message}`;
     });
 
     return winston.createLogger({
-      level      : "info",
-      transports : [
+      level: 'info',
+      transports: [
         new winston.transports.Console({
           format: consoleFormat,
         }),
@@ -75,7 +75,7 @@ class Logger {
   }
 
   formatTwoDigits(n) {
-    return n < 10 ? "0" + n : n;
+    return n < 10 ? '0' + n : n;
   }
 
   info(message, ...args) {
@@ -96,16 +96,16 @@ class Logger {
 
   formatMessage(message, ...args) {
     if (args.length === 0)
-      return typeof message === "string" ? message : util.inspect(message, { depth: null });
+      return typeof message === 'string' ? message : util.inspect(message, { depth: null });
 
-    if (typeof message === "string")
-      return util.format(message, ...args.map(arg =>
-        typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
+    if (typeof message === 'string')
+      return util.format(message, ...args.map((arg) =>
+        typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
       ));
 
-    return [message, ...args].map(arg =>
-      typeof arg === "object" ? util.inspect(arg, { depth: null }) : arg,
-    ).join(" ");
+    return [message, ...args].map((arg) =>
+      typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
+    ).join(' ');
   }
 }
 

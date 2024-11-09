@@ -3,13 +3,12 @@ class MixinManager {
   static cache = new Map();
 
   static inject(targetClass, methodName, handler, priority = 0) {
-    if (typeof handler !== "function")
-      throw new Error("Handler must be a function");
-
+    if (typeof handler !== 'function')
+      throw new Error('Handler must be a function');
 
     this._initializeMethod(targetClass, methodName);
 
-    const id = Symbol("mixin");
+    const id = Symbol('mixin');
     this.mixins.get(methodName).push({ id, priority, handler });
     this.cache.delete(methodName);
 
@@ -28,7 +27,7 @@ class MixinManager {
     const mixins = this.mixins.get(methodName);
     if (!mixins) return false;
 
-    const index = mixins.findIndex(m => m.id === mixinId);
+    const index = mixins.findIndex((m) => m.id === mixinId);
     if (index === -1) return false;
 
     mixins.splice(index, 1);
@@ -68,11 +67,10 @@ class MixinManager {
       this.mixins.set(methodName, []);
       const original = targetClass.prototype[methodName];
 
-      if (typeof original !== "function")
+      if (typeof original !== 'function')
         throw new Error(`Method ${methodName} does not exist on target class`);
 
-
-      targetClass.prototype[methodName] = function(...args) {
+      targetClass.prototype[methodName] = function (...args) {
         let method = original.bind(this);
 
         const sortedMixins = MixinManager.getSortedHandlers(methodName);

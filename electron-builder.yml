@@ -5,9 +5,13 @@ asar: true
 win:
   icon: TREM.ico
 
+files:
+  - src/**/*
+  - package.json
+
 directories:
   buildResources: resources
-  output: ../dev
+  output: dist
 
 mac:
   identity: null

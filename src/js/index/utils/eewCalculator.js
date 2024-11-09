@@ -1,4 +1,4 @@
-const region = require("../../../resource/data/region.json");
+const region = require('../../../resource/data/region.json');
 class EEWCalculator {
   constructor(timeTable) {
     this.timeTable = timeTable;
@@ -28,9 +28,9 @@ class EEWCalculator {
           const tOffset = t - prevTable.P;
           const rOffset = (tOffset / tDiff) * rDiff;
           pDist = prevTable.R + rOffset;
-        } else
+        }
+        else
           pDist = table.R;
-
 
       if (sDist === 0 && table.S > t)
         if (prevTable) {
@@ -39,11 +39,11 @@ class EEWCalculator {
           const tOffset = t - prevTable.S;
           const rOffset = (tOffset / tDiff) * rDiff;
           sDist = prevTable.R + rOffset;
-        } else {
+        }
+        else {
           sDist = table.R;
           sT = table.S;
         }
-
 
       if (pDist !== 0 && sDist !== 0) break;
       prevTable = table;
@@ -92,11 +92,11 @@ class EEWCalculator {
 
     const gpv600 = Math.pow(
       10,
-      0.58 * magW +
-                0.0038 * depth -
-                1.29 -
-                Math.log(x + 0.0028 * Math.pow(10, 0.5 * magW)) / this.ln10 -
-                0.002 * x,
+      0.58 * magW
+      + 0.0038 * depth
+      - 1.29
+      - Math.log(x + 0.0028 * Math.pow(10, 0.5 * magW)) / this.ln10
+      - 0.002 * x,
     );
 
     const pgv400 = gpv600 * 1.31;
@@ -139,9 +139,9 @@ class EEWCalculator {
           const rOffset = sDist - prevTable.R;
           const tOffset = (rOffset / rDiff) * tDiff;
           sTime = prevTable.S + tOffset;
-        } else
+        }
+        else
           sTime = table.S;
-
 
       if (sTime !== 0) break;
       prevTable = table;
@@ -168,9 +168,9 @@ class EEWCalculator {
           const rOffset = pDist - prevTable.R;
           const tOffset = (rOffset / rDiff) * tDiff;
           pTime = prevTable.P + tOffset;
-        } else
+        }
+        else
           pTime = table.P;
-
 
       if (pTime !== 0) break;
       prevTable = table;
@@ -187,7 +187,8 @@ class EEWCalculator {
     if (depth <= 40) {
       g0 = 5.10298;
       G = 0.06659;
-    } else {
+    }
+    else {
       g0 = 7.804799;
       G = 0.004573;
     }
@@ -198,7 +199,6 @@ class EEWCalculator {
 
     if (thetaA < 0)
       thetaA = thetaA + Math.PI;
-
 
     thetaA = Math.PI - thetaA;
     const thetaB = Math.atan(-1 * zc / (xb - xc));
@@ -213,7 +213,6 @@ class EEWCalculator {
     if (thetaA_ < 0)
       thetaA_ = thetaA_ + Math.PI;
 
-
     thetaA_ = Math.PI - thetaA_;
     const thetaB_ = Math.atan(-1 * zc_ / (xb - xc_));
     let stime = (1 / g_) * Math.log(Math.tan(thetaA_ / 2) / Math.tan(thetaB_ / 2));
@@ -223,7 +222,6 @@ class EEWCalculator {
 
     if (distance / stime > 4)
       stime = distance / 4;
-
 
     return { p: ptime, s: stime };
   }
@@ -255,11 +253,11 @@ class EEWCalculator {
 
   intensityToNumberString(level) {
     switch (level) {
-      case 5: return "5⁻";
-      case 6: return "5⁺";
-      case 7: return "6⁻";
-      case 8: return "6⁺";
-      case 9: return "7";
+      case 5: return '5⁻';
+      case 6: return '5⁺';
+      case 7: return '6⁻';
+      case 8: return '6⁺';
+      case 9: return '7';
       default: return level.toString();
     }
   }

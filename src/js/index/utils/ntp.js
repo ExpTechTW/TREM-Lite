@@ -1,4 +1,4 @@
-const TREM = require("../constant");
+const TREM = require('../constant');
 
 function now() {
   if (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3) {

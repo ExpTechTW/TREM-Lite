@@ -1,6 +1,6 @@
-const TREM = require("../constant");
-const box_data = require("../../../resource/data/box.json");
-const { distance } = require("../utils/utils");
+const TREM = require('../constant');
+const box_data = require('../../../resource/data/box.json');
+const { distance } = require('../utils/utils');
 
 let box_alert = false;
 
@@ -21,24 +21,24 @@ class BoxManager {
   }
 
   bindEvents() {
-    TREM.variable.events.on("MapLoad", (map) => {
-      map.addSource("box-geojson", {
-        type : "geojson",
-        data : {
-          type     : "FeatureCollection",
-          features : [],
+    TREM.variable.events.on('MapLoad', (map) => {
+      map.addSource('box-geojson', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
         },
       });
 
       map.addLayer({
-        id     : "box-geojson",
-        type   : "line",
-        source : "box-geojson",
-        paint  : {
-          "line-width" : 2,
-          "line-color" : [
-            "match",
-            ["get", "i"],
+        id: 'box-geojson',
+        type: 'line',
+        source: 'box-geojson',
+        paint: {
+          'line-width': 2,
+          'line-color': [
+            'match',
+            ['get', 'i'],
             9, TREM.constant.COLOR.BOX[2],
             8, TREM.constant.COLOR.BOX[2],
             7, TREM.constant.COLOR.BOX[2],
@@ -68,20 +68,20 @@ class BoxManager {
   refreshBox(show) {
     const boxFeatures = [];
     const emptyData = {
-      type     : "FeatureCollection",
-      features : boxFeatures,
+      type: 'FeatureCollection',
+      features: boxFeatures,
     };
 
     if (box_alert) {
       box_alert = false;
-      TREM.variable.map.getSource("box-geojson").setData(emptyData);
+      TREM.variable.map.getSource('box-geojson').setData(emptyData);
     }
 
     if (!TREM.variable.data.rts?.box || !Object.keys(TREM.variable.data.rts.box).length) return;
 
-    const trem_alert = TREM.variable.data.eew.some(eew => eew.author == "trem");
+    const trem_alert = TREM.variable.data.eew.some((eew) => eew.author == 'trem');
     if (!TREM.constant.SHOW_TREM_EEW && trem_alert) {
-      TREM.variable.map.getSource("box-geojson").setData(emptyData);
+      TREM.variable.map.getSource('box-geojson').setData(emptyData);
       return;
     }
 
@@ -102,10 +102,10 @@ class BoxManager {
         if (shouldSkip) continue;
 
         boxFeatures.push({
-          type     : "Feature",
-          geometry : {
-            type        : "Polygon",
-            coordinates : [area.geometry.coordinates[0]],
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [area.geometry.coordinates[0]],
           },
           properties: {
             i: boxIntensity,
@@ -114,9 +114,9 @@ class BoxManager {
       }
 
     box_alert = true;
-    TREM.variable.map.getSource("box-geojson").setData({
-      type     : "FeatureCollection",
-      features : boxFeatures,
+    TREM.variable.map.getSource('box-geojson').setData({
+      type: 'FeatureCollection',
+      features: boxFeatures,
     });
   }
 }
