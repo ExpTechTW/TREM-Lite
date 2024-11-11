@@ -25,9 +25,12 @@
   font-size: 25px;
 }
 
+.rts-intensity.intensity-0::after {
+  content: "0";
+}
+
 #current-station-intensity.intensity-0::after {
   content: "0";
-  font-size: 25px;
 }
 
 .intensity-1 {
