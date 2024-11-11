@@ -155,6 +155,18 @@
   .fab {
     margin-top: -10px;
   }
+
+  .intensity-0 {
+    &:not(
+        #max-intensity,
+        #max-pga,
+        #current-station-intensity,
+        .rts-intensity
+      )::after {
+      content: "不明";
+      font-size: 20px !important;
+    }
+  }
 }
 
 /**RWD**/
