@@ -110,6 +110,11 @@ const TREM = {
     },
 
     SHOW_REPORT: true,
+
+    FallBack: {
+      13379360: '重慶市北碚區',
+      7735548: '南陽州市和道邑',
+    },
   },
 
   variable: {
@@ -130,6 +135,8 @@ const TREM = {
       local_time: 0,
     },
     station: null,
+    region: [],
+    city: [],
     speech: null,
     tts: true,
 

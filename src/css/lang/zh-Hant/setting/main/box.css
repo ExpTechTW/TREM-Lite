@@ -266,6 +266,10 @@ body {
   display: flex;
 }
 
+.selected-btn.on {
+  transform: rotate(180deg);
+}
+
 .current-local,
 .current-city,
 .current-town,
