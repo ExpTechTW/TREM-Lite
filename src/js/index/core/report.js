@@ -22,6 +22,7 @@ class ReportManager {
     this.isDragging = false;
     this.startY = 0;
     this.initialScrollTop = 0;
+    this.replayInterval = false;
     this.bindEvents();
     ReportManager.instance = this;
   }
@@ -277,45 +278,53 @@ class ReportManager {
 
         if (wrapper) {
           const time = wrapper.getAttribute('data-time');
-          this.ReplayEew(time);
           TREM.variable.replay.start_time = Number(time);
+          TREM.variable.cache.last_data_time = 0;
+          TREM.variable.data.rts = {};
+          TREM.variable.replay.local_time = 0;
           TREM.variable.play_mode = 2;
+          clearInterval(this.replayInterval);
+          this.ReplayEew(time);
         }
       });
     });
   }
 
   ReplayEew(time) {
-    setInterval(async () => {
-      let last_fetch_time = 0;
-      const local_now = Date.now();
-      if (local_now - last_fetch_time < 1000) {
-        return;
-      }
-      last_fetch_time = local_now;
+    let last_fetch_time = 0;
+    this.replayInterval = setInterval(async () => {
+      try {
+        const local_now = Date.now();
+        if (local_now - last_fetch_time < 1000) {
+          return;
+        }
+        last_fetch_time = local_now;
 
-      const data = await http(this.now(time));
-      console.log(this.now(time));
-      TREM.variable.data.rts = data.rts;
+        const data = await http(this.now(time));
+        TREM.variable.data.rts = data.rts;
 
-      TREM.variable.events.emit('DataRts', {
-        info: {
-          type: 2,
-        },
-        data: data.rts,
-      });
+        TREM.variable.events.emit('DataRts', {
+          info: {
+            type: 2,
+          },
+          data: data.rts,
+        });
 
-      if (data.eew) {
-        EEWData(data.eew);
-      }
-      else {
-        EEWData();
-      }
+        if (data.eew) {
+          EEWData(data.eew);
+        }
+        else {
+          EEWData();
+        }
 
-      if (data.rts) {
-        TREM.variable.cache.last_data_time = local_now;
+        if (data.rts) {
+          TREM.variable.cache.last_data_time = local_now;
+        }
       }
-    }, 1000);
+      catch (e) {
+        console.log(e);
+      }
+    }, 0);
   }
 
   now(time) {
