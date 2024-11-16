@@ -3,6 +3,9 @@ const TREM = require('../constant');
 const { extractLocation } = require('../utils/utils');
 const crypto = require('crypto');
 const { updateMapBounds } = require('./focus');
+const { ipcRenderer } = require('electron');
+const { EEWData } = require('../data/data');
+const http = require('../data/http');
 
 class ReportManager {
   static instance = null;
@@ -232,7 +235,8 @@ class ReportManager {
   createReportItem(item, isSurvey = false) {
     const wrapper = document.createElement('div');
     wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
-    wrapper.id = item.id;
+    wrapper.setAttribute('data-id', item.id);
+    wrapper.setAttribute('data-time', item.time);
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';
     const buttons = document.createElement('div');
@@ -268,10 +272,57 @@ class ReportManager {
 
     this.reportReplyButtons = document.querySelectorAll('.report-replay');
     this.reportReplyButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        console.log(true);
+      button.addEventListener('click', async (event) => {
+        const wrapper = event.target.closest('.report-box-item-wrapper');
+
+        if (wrapper) {
+          const time = wrapper.getAttribute('data-time');
+          this.ReplayEew(time);
+          TREM.variable.replay.start_time = Number(time);
+          TREM.variable.play_mode = 2;
+        }
       });
     });
+  }
+
+  ReplayEew(time) {
+    setInterval(async () => {
+      let last_fetch_time = 0;
+      const local_now = Date.now();
+      if (local_now - last_fetch_time < 1000) {
+        return;
+      }
+      last_fetch_time = local_now;
+
+      const data = await http(this.now(time));
+      console.log(this.now(time));
+      TREM.variable.data.rts = data.rts;
+
+      TREM.variable.events.emit('DataRts', {
+        info: {
+          type: 2,
+        },
+        data: data.rts,
+      });
+
+      if (data.eew) {
+        EEWData(data.eew);
+      }
+      else {
+        EEWData();
+      }
+
+      if (data.rts) {
+        TREM.variable.cache.last_data_time = local_now;
+      }
+    }, 1000);
+  }
+
+  now(time) {
+    if (!TREM.variable.replay.local_time) {
+      TREM.variable.replay.local_time = Date.now();
+    }
+    return Number(time) + (Date.now() - TREM.variable.replay.local_time);
   }
 
   generateReportBoxItems(list, survey = null) {
