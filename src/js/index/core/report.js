@@ -232,13 +232,14 @@ class ReportManager {
   createReportItem(item, isSurvey = false) {
     const wrapper = document.createElement('div');
     wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
+    wrapper.id = item.id;
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';
     const buttons = document.createElement('div');
     buttons.className = 'report-buttons';
     const webButton = document.createElement('div');
     webButton.className = 'report-web';
-    webButton.textContent = '頁面';
+    webButton.textContent = '報告';
     const replayButton = document.createElement('div');
     replayButton.className = 'report-replay';
     replayButton.textContent = '重播';
@@ -250,6 +251,27 @@ class ReportManager {
     buttons.appendChild(replayButton);
     wrapper.appendChild(buttons);
     return wrapper;
+  }
+
+  clickEvent() {
+    this.reportWebButtons = document.querySelectorAll('.report-web');
+    this.reportWebButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const wrapper = event.target.closest('.report-box-item-wrapper');
+        if (wrapper) {
+          const reportId = wrapper.id.replace(`-${wrapper.id.split('-')[1]}`, '');
+          const url = `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
+          ipcRenderer.send('openUrl', url);
+        }
+      });
+    });
+
+    this.reportReplyButtons = document.querySelectorAll('.report-replay');
+    this.reportReplyButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        console.log(true);
+      });
+    });
   }
 
   generateReportBoxItems(list, survey = null) {
@@ -274,6 +296,8 @@ class ReportManager {
     list.forEach((item) => {
       container.appendChild(this.createReportItem(item, false));
     });
+
+    this.clickEvent();
   }
 
   async getReport() {
