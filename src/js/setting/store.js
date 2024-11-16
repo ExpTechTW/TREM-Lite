@@ -46,10 +46,6 @@ class Store {
     return null;
   }
 
-  getFallbackLocation(station) {
-    return TREM.constant.FallBack[station] || { city: '未知', town: '區域' };
-  }
-
   CreatEle(text, className, bgText, html, attr) {
     const element = document.createElement('div');
     element.textContent = text;

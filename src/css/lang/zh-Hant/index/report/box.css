@@ -90,7 +90,7 @@ html[lang="zh-Hant"] {
   }
 
   /**盒容器**/
-  .report-box-item-contain {
+  .report-box-item-wrapper {
     margin-bottom: 4px;
     display: flex;
     gap: 8px;
@@ -104,9 +104,14 @@ html[lang="zh-Hant"] {
     position: relative;
     overflow: hidden;
 
+    .report-box-item-contain {
+      display: contents;
+    }
+
     .report-buttons {
       display: none;
     }
+
     &:hover {
       background-color: #8a8a8ac7;
 
@@ -288,8 +293,16 @@ html[lang="zh-Hant"] {
   }
 
   /**第一個地震報告元素**/
-  .report-box-item-contain:first-child {
-    padding: 10px;
+  .report-box-item-wrapper:first-child {
+    .report-info-box {
+      margin-left: 0.5rem;
+    }
+
+    .report-box-item-contain {
+      padding: 10px;
+      display: flex !important;
+      width: 100%;
+    }
 
     /**觀測最大震度文字**/
     .report-intensity-text {

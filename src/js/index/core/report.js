@@ -230,11 +230,26 @@ class ReportManager {
   }
 
   createReportItem(item, isSurvey = false) {
-    const container = document.createElement('div');
-    container.className = `report-box-item-contain${isSurvey ? ' survey' : ''}`;
-    container.appendChild(this.createIntensityBox(item.int));
-    container.appendChild(this.createInfoBox(item, isSurvey));
-    return container;
+    const wrapper = document.createElement('div');
+    wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
+    const contain = document.createElement('div');
+    contain.className = 'report-box-item-contain';
+    const buttons = document.createElement('div');
+    buttons.className = 'report-buttons';
+    const webButton = document.createElement('div');
+    webButton.className = 'report-web';
+    webButton.textContent = '頁面';
+    const replayButton = document.createElement('div');
+    replayButton.className = 'report-replay';
+    replayButton.textContent = '重播';
+
+    contain.appendChild(this.createIntensityBox(item.int));
+    contain.appendChild(this.createInfoBox(item, isSurvey));
+    wrapper.appendChild(contain);
+    buttons.appendChild(webButton);
+    buttons.appendChild(replayButton);
+    wrapper.appendChild(buttons);
+    return wrapper;
   }
 
   generateReportBoxItems(list, survey = null) {
