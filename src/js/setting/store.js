@@ -12,8 +12,11 @@ class Store {
       }
 
       const latestInfo = info.at(-1);
-      const loc = this.region_code_to_string(regionJson, latestInfo.code)
-        || this.getFallbackLocation(station);
+      if (latestInfo.code == 0) {
+        return;
+      }
+      const loc = this.region_code_to_string(regionJson, latestInfo.code);
+      console.log(loc);
 
       if (loc.city && !TREM.variable.city.includes(loc.city)) {
         TREM.variable.city.push(loc.city);
