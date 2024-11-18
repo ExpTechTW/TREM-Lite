@@ -1,5 +1,7 @@
 const TREM = require('../constant');
 
+let clean = false;
+
 TREM.variable.events.on('MapLoad', (map) => {
   map.addSource('cross-geojson', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   map.addLayer({
@@ -40,8 +42,14 @@ function refresh_cross(show) {
   const eew_list = [];
 
   if (!TREM.variable.data.eew?.length) {
+    if (clean) {
+      TREM.variable.map.getSource('cross-geojson').setData({ type: 'FeatureCollection', features: [] });
+      clean = false;
+    }
     return;
   }
+
+  clean = true;
 
   if (show) {
     for (const eew of TREM.variable.data.eew) {

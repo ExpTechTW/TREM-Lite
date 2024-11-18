@@ -40,6 +40,12 @@ class ReplayControler {
     TREM.variable.data.eew.forEach((data) => data.EewEnd = 1);
     this.clear();
     TREM.variable.play_mode = 0;
+    TREM.variable.events.emit('DataRts', {
+      info: {
+        type: TREM.variable.play_mode,
+      },
+      data: null,
+    });
     setTimeout(() => {
       focus_reset();
       focus();
