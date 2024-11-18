@@ -39,6 +39,7 @@ class ReplayControler {
   stopReplay() {
     TREM.variable.data.eew.forEach((data) => data.EewEnd = 1);
     this.clear();
+    TREM.variable.cache.int_cache_list = {};
     TREM.variable.play_mode = 0;
     TREM.variable.events.emit('DataRts', {
       info: {

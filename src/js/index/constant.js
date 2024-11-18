@@ -135,6 +135,7 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      int_cache_list: {},
       last_report: null,
       eewIntensityArea: {},
       show_intensity: false,
