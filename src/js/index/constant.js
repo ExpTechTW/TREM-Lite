@@ -177,6 +177,7 @@ const TREM = {
     BoxManager: null,
     AudioManager: null,
     ReplayControler: null,
+    WindowControler: null,
   },
 };
 
