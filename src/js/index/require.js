@@ -27,5 +27,6 @@ require('../js/index/core/audio');
 require('../js/index/core/focus');
 require('../js/index/core/report');
 require('../js/index/core/intensity');
+require('../js/index/core/window');
 
 require('../js/core/plugin');

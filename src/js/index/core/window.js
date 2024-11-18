@@ -36,6 +36,7 @@ class WindowControler {
   }
 
   windowFocus() {
+    console.log(123);
     win.flashFrame(true);
     win.setAlwaysOnTop(true);
     win.show();
