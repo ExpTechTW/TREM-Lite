@@ -278,13 +278,13 @@ class ReportManager {
 
         if (wrapper) {
           stopReplay();
-          const time = wrapper.getAttribute('data-time');
+          const time = Number(wrapper.getAttribute('data-time')) - 5000;
           if (last_replay_time == time) {
             last_replay_time = 0;
             return;
           }
           last_replay_time = time;
-          setTimeout(() => startReplay(time), 1500);
+          startReplay(time);
         }
       });
     });

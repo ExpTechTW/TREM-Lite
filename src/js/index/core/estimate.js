@@ -26,7 +26,6 @@ class EewAreaManager {
     TREM.variable.events.on('EewRelease', (ans) => this.updateEewArea(ans));
     TREM.variable.events.on('EewUpdate', (ans) => this.updateEewArea(ans));
     TREM.variable.events.on('EewEnd', (ans) => {
-      console.log(ans);
       delete TREM.variable.cache.eewIntensityArea[ans.data.id];
       this.drawEewArea(true);
     });
