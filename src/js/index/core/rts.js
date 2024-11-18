@@ -307,21 +307,20 @@ TREM.variable.events.on('DataRts', (ans) => {
       TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
 
-    if (alert || eew_alert) {
+    if (alert || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
       if (TREM.variable.cache.bounds.report) {
         TREM.variable.cache.bounds.report = [];
         TREM.variable.map.getSource('report-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
       }
     }
-    else
-      if (TREM.variable.cache.bounds.report.length) {
-        data_list = [];
-        data_alert_0_list = [];
-        data_alert_list = [];
-      }
-      else if (TREM.constant.SHOW_REPORT) {
+    else {
+      data_list = [];
+      data_alert_0_list = [];
+      data_alert_list = [];
+      if (TREM.constant.SHOW_REPORT) {
         show_report_point(TREM.variable.cache.last_report);
       }
+    }
   }
 
   if (TREM.variable.map) {

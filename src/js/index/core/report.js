@@ -4,8 +4,9 @@ const { extractLocation } = require('../utils/utils');
 const crypto = require('crypto');
 const { updateMapBounds } = require('./focus');
 const { ipcRenderer } = require('electron');
-const { EEWData } = require('../data/data');
-const http = require('../data/http');
+const { stopReplay, startReplay } = require('./replay');
+
+let last_replay_time = 0;
 
 class ReportManager {
   static instance = null;
@@ -22,7 +23,6 @@ class ReportManager {
     this.isDragging = false;
     this.startY = 0;
     this.initialScrollTop = 0;
-    this.replayInterval = false;
     this.bindEvents();
     ReportManager.instance = this;
   }
@@ -277,54 +277,17 @@ class ReportManager {
         const wrapper = event.target.closest('.report-box-item-wrapper');
 
         if (wrapper) {
+          stopReplay();
           const time = wrapper.getAttribute('data-time');
-          TREM.variable.replay.start_time = Number(time);
-          TREM.variable.cache.last_data_time = 0;
-          TREM.variable.data.rts = {};
-          TREM.variable.replay.local_time = 0;
-          TREM.variable.play_mode = 2;
-          clearInterval(this.replayInterval);
-          this.ReplayEew(time);
+          if (last_replay_time == time) {
+            last_replay_time = 0;
+            return;
+          }
+          last_replay_time = time;
+          setTimeout(() => startReplay(time), 1500);
         }
       });
     });
-  }
-
-  ReplayEew(time) {
-    let last_fetch_time = 0;
-    this.replayInterval = setInterval(async () => {
-      try {
-        const local_now = Date.now();
-        if (local_now - last_fetch_time < 1000) {
-          return;
-        }
-        last_fetch_time = local_now;
-
-        const data = await http(this.now(time));
-        TREM.variable.data.rts = data.rts;
-
-        TREM.variable.events.emit('DataRts', {
-          info: {
-            type: 2,
-          },
-          data: data.rts,
-        });
-
-        if (data.eew) {
-          EEWData(data.eew);
-        }
-        else {
-          EEWData();
-        }
-
-        if (data.rts) {
-          TREM.variable.cache.last_data_time = local_now;
-        }
-      }
-      catch (e) {
-        console.log(e);
-      }
-    }, 0);
   }
 
   now(time) {

@@ -122,5 +122,3 @@ function EEWData(newData = []) {
     data: TREM.variable.data.eew,
   });
 }
-
-module.exports = { EEWData };

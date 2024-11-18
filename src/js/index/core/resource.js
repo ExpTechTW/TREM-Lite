@@ -8,7 +8,6 @@ const fetchData = require('../../core/utils/fetch');
 
   if (ans) {
     TREM.variable.station = await ans.json();
-    localStorage.setItem('constant', JSON.stringify(TREM));
   }
 
   // 錯誤彈窗
