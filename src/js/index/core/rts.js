@@ -142,6 +142,9 @@ TREM.variable.events.on('DataRts', (ans) => {
         },
       };
     }
+    else {
+      TREM.variable.cache.last_rts_alert = ans.data?.time ?? 0;
+    }
 
     for (const id of Object.keys(ans.data.station)) {
       const station_info = TREM.variable.station[id];
@@ -306,7 +309,7 @@ TREM.variable.events.on('DataRts', (ans) => {
       TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
 
-    if (alert || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
+    if (((ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 15000) || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
       if (TREM.variable.cache.bounds.report) {
         TREM.variable.cache.bounds.report = [];
         TREM.variable.map.getSource('report-markers-geojson').setData({ type: 'FeatureCollection', features: [] });

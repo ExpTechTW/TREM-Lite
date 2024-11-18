@@ -452,6 +452,7 @@ class ReportManager {
 
   onReportRelease(ans) {
     if (TREM.constant.SHOW_REPORT) {
+      TREM.variable.cache.last_report = ans.data;
       this.showReportPoint(ans.data);
     }
 

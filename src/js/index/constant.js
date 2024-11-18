@@ -150,6 +150,7 @@ const TREM = {
         max: 0,
       },
       last_data_time: 0,
+      last_rts_alert: 0,
       bounds: {
         rts: [],
         intensity: [],

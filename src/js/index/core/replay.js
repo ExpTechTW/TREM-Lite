@@ -47,6 +47,7 @@ class ReplayControler {
       },
       data: null,
     });
+    TREM.variable.cache.last_rts_alert = 0;
     setTimeout(() => {
       focus_reset();
       focus();
