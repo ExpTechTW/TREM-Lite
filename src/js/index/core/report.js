@@ -264,7 +264,8 @@ class ReportManager {
       button.addEventListener('click', (event) => {
         const wrapper = event.target.closest('.report-box-item-wrapper');
         if (wrapper) {
-          const reportId = wrapper.id.replace(`-${wrapper.id.split('-')[1]}`, '');
+          const id = wrapper.getAttribute('data-id');
+          const reportId = id.replace(`-${id.split('-')[1]}`, '');
           const url = `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
           ipcRenderer.send('openUrl', url);
         }
@@ -321,6 +322,8 @@ class ReportManager {
     });
 
     this.clickEvent();
+
+    this.updateScrollbar();
   }
 
   async getReport() {
