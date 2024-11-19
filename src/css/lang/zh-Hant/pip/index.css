@@ -88,20 +88,22 @@ body {
 }
 
 .window-button-wrapper {
+  -webkit-app-region: no-drag;
   height: 100%;
   width: 100%;
   position: absolute;
-  display: none;
   flex-direction: row;
   z-index: 1002;
   border-radius: 4px;
   align-items: center;
   justify-content: center;
   user-select: unset;
+  opacity: 0;
+  display: flex;
+}
 
-  &:hover {
-    display: flex;
-  }
+.window-button-wrapper:hover {
+  opacity: 1;
 }
 
 .window-button-wrapper:hover .window-button-contain {
