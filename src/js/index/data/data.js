@@ -54,11 +54,15 @@ TREM.variable.events.on('MapLoad', (map) => {
 function EEWData(newData = []) {
   const currentTime = now();
   const EXPIRY_TIME = 240 * 1000;
+  const STATUS_3_TIMEOUT = 30 * 1000;
 
   TREM.variable.data.eew
     .filter((item) =>
-      item.eq?.time
-      && (currentTime - item.eq.time > EXPIRY_TIME || item.EewEnd),
+      item.eq?.time && (
+        currentTime - item.eq.time > EXPIRY_TIME
+        || item.EewEnd
+        || (item.status === 3 && currentTime - item.status3Time > STATUS_3_TIMEOUT)
+      ),
     )
     .forEach((data) => {
       TREM.variable.events.emit('EewEnd', {
@@ -70,7 +74,8 @@ function EEWData(newData = []) {
   TREM.variable.data.eew = TREM.variable.data.eew.filter((item) =>
     item.eq?.time
     && currentTime - item.eq.time <= EXPIRY_TIME
-    && !item.EewEnd,
+    && !item.EewEnd
+    && !(item.status === 3 && currentTime - item.status3Time > STATUS_3_TIMEOUT),
   );
 
   newData.forEach((data) => {
@@ -100,6 +105,11 @@ function EEWData(newData = []) {
 
     if (TREM.variable.cache.eew_last[data.id] && TREM.variable.cache.eew_last[data.id].serial < data.serial) {
       TREM.variable.cache.eew_last[data.id].serial = data.serial;
+
+      if (data.status === 3) {
+        data.status3Time = currentTime;
+      }
+
       TREM.variable.events.emit('EewUpdate', eventData);
 
       if (!TREM.variable.data.eew[existingIndex].status && data.status == 1) {

@@ -180,7 +180,7 @@ function show_eew(rotation = true) {
         }
       }
       else {
-        info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 1) ? 'eew-alert' : 'eew-warn'}`;
+        info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 3) ? 'eew-cancel' : (eew_cache[eew_list[eew_rotation]].status == 1) ? 'eew-alert' : 'eew-warn'}`;
         info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
         if (eew_cache[eew_list[eew_rotation]].final) {
           info_number.className = 'info-number info-number-last';
