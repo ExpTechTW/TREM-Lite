@@ -3,6 +3,8 @@ const TREM = require('../constant');
 const { BrowserWindow } = require('@electron/remote');
 const win = BrowserWindow.fromId(process.env.window * 1);
 
+const { ipcRenderer } = require('electron');
+
 class WindowControler {
   static instance = null;
 
@@ -36,6 +38,10 @@ class WindowControler {
   }
 
   windowFocus() {
+    if (TREM.constant.GAME_MODE) {
+      ipcRenderer.send('toggle-pip');
+      return;
+    }
     win.flashFrame(true);
     win.setAlwaysOnTop(true);
     win.show();

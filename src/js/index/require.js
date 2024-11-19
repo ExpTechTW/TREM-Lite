@@ -30,7 +30,3 @@ require('../js/index/core/intensity');
 require('../js/index/core/window');
 
 require('../js/core/plugin');
-
-const { ipcRenderer } = require('electron');
-
-ipcRenderer.send('toggle-pip');
