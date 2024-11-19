@@ -49,6 +49,18 @@ class WindowControler {
   }
 }
 
+win.on('minimize', () => {
+  if (TREM.constant.GAME_MODE) {
+    ipcRenderer.send('toggle-pip');
+  }
+});
+
+win.on('close', () => {
+  if (TREM.constant.GAME_MODE) {
+    ipcRenderer.send('toggle-pip');
+  }
+});
+
 ipcRenderer.send('toggle-pip');
 
 TREM.class.WindowControler = WindowControler;
