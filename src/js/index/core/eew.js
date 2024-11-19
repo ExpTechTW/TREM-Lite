@@ -173,6 +173,8 @@ function show_eew(rotation = true) {
     count++;
   }
 
+  triggerBox.innerHTML = '';
+
   if (count && eew_list.length) {
     TREM.variable.cache.show_eew_box = true;
     if (eew_cache[eew_list[eew_rotation]]) {
@@ -228,8 +230,6 @@ function show_eew(rotation = true) {
       const max = TREM.variable.cache.rts_trigger.max;
       info_wrapper.className = `info-wrapper no-eew ${max > 3 ? 'rts-trigger-high' : (max > 1) ? 'rts-trigger-middle' : 'rts-trigger-low'}`;
 
-      triggerBox.innerHTML = '';
-
       for (let i = 0; i < 2; i++) {
         const triggerAreas = document.createElement('div');
         triggerAreas.className = 'trigger-areas';
@@ -254,7 +254,6 @@ function show_eew(rotation = true) {
       });
     }
     else {
-      triggerBox.innerHTML = '';
       info_wrapper.className = 'info-wrapper no-eew';
       info_number.textContent = '';
       info_number.className = 'info-number';

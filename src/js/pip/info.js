@@ -12,11 +12,10 @@ const pip_info_time = document.getElementById('pip-info-time');
 const triggerBox = document.getElementById('trigger-box');
 
 ipcRenderer.on('update-pip-content', (event, data) => {
+  triggerBox.innerHTML = '';
   if (data.trigger) {
     const max = data.max;
     pip_info_wrapper.className = `info-wrapper no-eew ${max > 3 ? 'rts-trigger-high' : (max > 1) ? 'rts-trigger-middle' : 'rts-trigger-low'}`;
-
-    triggerBox.innerHTML = '';
 
     for (let i = 0; i < 2; i++) {
       const triggerAreas = document.createElement('div');
@@ -40,7 +39,6 @@ ipcRenderer.on('update-pip-content', (event, data) => {
   }
 
   if (data.noEew) {
-    triggerBox.innerHTML = '';
     pip_info_wrapper.className = 'info-wrapper no-eew';
     pip_info_number.textContent = '';
     pip_info_number.className = 'info-number';
