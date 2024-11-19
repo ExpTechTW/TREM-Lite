@@ -64,7 +64,7 @@ const TREM = {
       },
     },
 
-    SHOW_TREM_EEW: false,
+    SHOW_TREM_EEW: true,
 
     URL: {
       API: ['api-1.exptech.dev', 'api-2.exptech.dev'],
@@ -110,6 +110,8 @@ const TREM = {
     },
 
     SHOW_REPORT: true,
+
+    GAME_MODE: true,
   },
 
   variable: {
@@ -126,7 +128,7 @@ const TREM = {
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode: 0,
     replay: {
-      start_time: 1731740504615,
+      start_time: 0,
       local_time: 0,
     },
     station: null,

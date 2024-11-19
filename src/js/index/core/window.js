@@ -38,7 +38,7 @@ class WindowControler {
   }
 
   windowFocus() {
-    if (TREM.constant.GAME_MODE) {
+    if ((win.isMinimized() || !win.isVisible()) && TREM.constant.GAME_MODE) {
       ipcRenderer.send('toggle-pip');
       return;
     }

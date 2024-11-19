@@ -93,6 +93,18 @@ function createWindow() {
     win.webContents.send('window-resized', { width, height });
   });
 
+  win.on('show', () => {
+    if (pipWindow) {
+      pipWindow.close();
+    }
+  });
+
+  win.on('restore', () => {
+    if (pipWindow) {
+      pipWindow.close();
+    }
+  });
+
   win.loadFile('./src/view/index.html');
 }
 
