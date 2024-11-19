@@ -120,7 +120,7 @@ function createPiPWindow() {
     maxWidth: 400,
     icon: 'TREM.ico',
     frame: false,
-    alwaysOnTop: true,
+    focusable: false,
     skipTaskbar: true,
     resizable: true,
     transparent: true,
@@ -131,6 +131,9 @@ function createPiPWindow() {
       additionalArguments: ['--pip-window'],
     },
   });
+
+  pipWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  pipWindow.setAlwaysOnTop(true, 'screen-saver');
 
   pipWindow.setAspectRatio(1.87);
 
