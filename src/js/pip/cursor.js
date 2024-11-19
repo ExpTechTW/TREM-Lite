@@ -26,10 +26,10 @@ function checkCursorPosition() {
   };
 }
 
-closeButton.addEventListener('click', () => win.close());
+closeButton.addEventListener('click', () => win.hide());
 minimizeButton.addEventListener('click', () => {
   main_win.show();
-  win.close();
+  win.hide();
 });
 
 (() => {

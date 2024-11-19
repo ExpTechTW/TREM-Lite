@@ -98,17 +98,17 @@ function createWindow() {
     win.webContents.send('window-resized', { width, height });
   });
 
-  // win.on('show', () => {
-  //   if (pipWindow) {
-  //     pipWindow.close();
-  //   }
-  // });
+  win.on('show', () => {
+    if (pipWindow) {
+      pipWindow.hide();
+    }
+  });
 
-  // win.on('restore', () => {
-  //   if (pipWindow) {
-  //     pipWindow.close();
-  //   }
-  // });
+  win.on('restore', () => {
+    if (pipWindow) {
+      pipWindow.hide();
+    }
+  });
 
   win.loadFile('./src/view/index.html');
 }
@@ -125,6 +125,7 @@ function createPiPWindow() {
     maxWidth: 400,
     icon: 'TREM.ico',
     frame: false,
+    show: false,
     focusable: true,
     skipTaskbar: true,
     resizable: true,
@@ -203,6 +204,7 @@ else {
   app.whenReady().then(() => {
     trayIcon();
     createWindow();
+    createPiPWindow();
   });
 }
 
@@ -231,12 +233,12 @@ app.on('browser-window-created', (e, window) => {
 });
 
 ipcMain.on('update-pip', (event, data) => {
-  // if (data.noEew) {
-  //   if (pipWindow) {
-  //     pipWindow.close();
-  //   }
-  //   return;
-  // }
+  if (data.noEew) {
+    if (pipWindow) {
+      pipWindow.hide();
+    }
+    return;
+  }
   if (pipWindow) {
     pipWindow.webContents.send('update-pip-content', data);
   }
@@ -285,7 +287,9 @@ ipcMain.on('toggleFullscreen', () => {
 });
 
 ipcMain.on('toggle-pip', () => {
-  createPiPWindow();
+  if (pipWindow) {
+    pipWindow.show();
+  }
 });
 
 ipcMain.on('openPluginFolder', () => {
