@@ -17,6 +17,18 @@ html[lang="zh-Hant"] {
     content: "此地震速報已取消";
   }
 
+  .rts-trigger-low .info-unit::before {
+    content: "弱反應 ";
+  }
+
+  .rts-trigger-middle .info-unit::before {
+    content: "震動檢測 ";
+  }
+
+  .rts-trigger-high .info-unit::before {
+    content: "強震檢測 ";
+  }
+
   .eew-warn .info-unit::before {
     content: "地震速報 ";
   }
@@ -64,6 +76,21 @@ html[lang="zh-Hant"] {
   .info-footer {
     display: none !important;
   }
+}
+
+.rts-trigger-low {
+  background-color: var(--rts-trigger-low) !important;
+  border: 1px solid var(--rts-trigger-low) !important;
+}
+
+.rts-trigger-middle {
+  background-color: var(--rts-trigger-middle) !important;
+  border: 1px solid var(--rts-trigger-middle) !important;
+}
+
+.rts-trigger-high {
+  background-color: var(--rts-trigger-high) !important;
+  border: 1px solid var(--rts-trigger-high) !important;
 }
 
 .eew-warn {
@@ -328,4 +355,19 @@ html[lang="zh-Hant"] {
 
 .eew-cancel .cancel-box {
   opacity: 1;
+}
+
+/**震動檢測**/
+.trigger-box {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.trigger-areas {
+  width: 100%;
+}
+
+.area-name {
+  font-size: 15.5px;
 }

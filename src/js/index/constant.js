@@ -51,6 +51,11 @@ const TREM = {
           ALERT: '#ff0000',
           CANCEL: '#404040',
         },
+        TRIGGER: {
+          LOW: '#1e9632',
+          MIDDLE: '#ffc800',
+          HIGH: '#c00000',
+        },
         P: '#00CACA',
       },
       TREM: {

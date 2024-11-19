@@ -16,6 +16,10 @@ function generateColorCSS() {
         .map(([key, value]) => `--intensity-text-${key}: ${value};`)
         .join('\n')}
       
+      --rts-trigger-low: ${TREM.constant.COLOR.EEW.TRIGGER.LOW};
+      --rts-trigger-middle: ${TREM.constant.COLOR.EEW.TRIGGER.MIDDLE};
+      --rts-trigger-high: ${TREM.constant.COLOR.EEW.TRIGGER.HIGH};
+
       --eew-s-warn: ${TREM.constant.COLOR.EEW.S.WARN};
       --eew-s-alert: ${TREM.constant.COLOR.EEW.S.ALERT};
       --eew-s-cancel: ${TREM.constant.COLOR.EEW.S.CANCEL};
