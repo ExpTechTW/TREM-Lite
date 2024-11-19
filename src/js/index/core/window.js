@@ -24,23 +24,31 @@ class WindowControler {
   }
 
   bindEvents() {
-    TREM.variable.events.on('EewRelease', () => this.windowFocus());
-    TREM.variable.events.on('EewAlert', () => this.windowFocus());
-    TREM.variable.events.on('RtsPga2', () => this.windowFocus());
-    TREM.variable.events.on('RtsPga1', () => this.windowFocus());
-    TREM.variable.events.on('RtsShindo2', () => this.windowFocus());
-    TREM.variable.events.on('RtsShindo1', () => this.windowFocus());
-    TREM.variable.events.on('RtsShindo0', () => this.windowFocus());
-    TREM.variable.events.on('ReportRelease', () => this.windowFocus());
-    TREM.variable.events.on('IntensityRelease', () => this.windowFocus());
-    TREM.variable.events.on('TsunamiRelease', () => this.windowFocus());
-    TREM.variable.events.on('EewNewAreaAlert', () => this.windowFocus());
+    const events = [
+      'EewRelease',
+      'EewAlert',
+      'RtsPga2',
+      'RtsPga1',
+      'RtsShindo2',
+      'RtsShindo1',
+      'RtsShindo0',
+      'ReportRelease',
+      'IntensityRelease',
+      'TsunamiRelease',
+      'EewNewAreaAlert',
+    ];
+
+    events.forEach((event) => {
+      TREM.variable.events.on(event, (ans) => this.windowFocus(event, ans));
+    });
   }
 
-  windowFocus() {
-    if ((win.isMinimized() || !win.isVisible()) && TREM.constant.GAME_MODE) {
-      ipcRenderer.send('toggle-pip');
-      return;
+  windowFocus(event, ans) {
+    if (TREM.constant.SHOW_TREM_EEW || (event.startsWith('Eew') && ans.data.author != 'trem')) {
+      if ((win.isMinimized() || !win.isVisible()) && TREM.constant.GAME_MODE) {
+        ipcRenderer.send('toggle-pip');
+        return;
+      }
     }
     win.flashFrame(true);
     win.setAlwaysOnTop(true);
