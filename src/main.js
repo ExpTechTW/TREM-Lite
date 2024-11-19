@@ -118,6 +118,7 @@ function createPiPWindow() {
     height: 147,
     minWidth: 276,
     maxWidth: 400,
+    icon: 'TREM.ico',
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
