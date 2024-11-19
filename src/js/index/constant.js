@@ -117,6 +117,16 @@ const TREM = {
     SHOW_REPORT: true,
 
     GAME_MODE: true,
+
+    SHOW_PIP_EVENTS: [
+      'EewRelease',
+      'EewAlert',
+      'RtsShindo2',
+      'RtsShindo1',
+      'RtsShindo0',
+      'TsunamiRelease',
+      'EewNewAreaAlert',
+    ],
   },
 
   variable: {

@@ -44,10 +44,12 @@ class WindowControler {
   }
 
   windowFocus(event, ans) {
-    if (TREM.constant.SHOW_TREM_EEW || (event.startsWith('Eew') && ans.data.author != 'trem')) {
-      if ((win.isMinimized() || !win.isVisible()) && TREM.constant.GAME_MODE) {
-        ipcRenderer.send('toggle-pip');
-        return;
+    if ((win.isMinimized() || !win.isVisible()) && TREM.constant.GAME_MODE) {
+      if (TREM.constant.SHOW_PIP_EVENTS.includes(event)) {
+        if (TREM.constant.SHOW_TREM_EEW || (event.startsWith('Eew') && ans.data.author != 'trem')) {
+          ipcRenderer.send('toggle-pip');
+          return;
+        }
       }
     }
     win.flashFrame(true);
