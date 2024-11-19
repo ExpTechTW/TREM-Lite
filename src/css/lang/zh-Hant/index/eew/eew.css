@@ -85,7 +85,6 @@ html[lang="zh-Hant"] {
   position: absolute;
   top: 0;
   display: flex;
-  flex-direction: column;
   gap: 8px;
   margin: 4px;
   padding: 8px;
@@ -96,6 +95,7 @@ html[lang="zh-Hant"] {
   border-radius: 5px;
   pointer-events: none;
   border: 1px solid #515151;
+  flex-direction: column;
 
   /**發報標題**/
   .info-title {
@@ -122,6 +122,7 @@ html[lang="zh-Hant"] {
     display: flex;
     font-size: 13px;
     font-weight: bold;
+    align-items: center;
   }
 
   /**標題外包**/

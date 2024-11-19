@@ -76,6 +76,10 @@
     min-height: 85px !important;
   }
 
+  .info-loc {
+    font-size: 20px !important;
+  }
+
   .station-pga-wrapper {
     top: 9.5rem !important;
     left: 0.3rem !important;
@@ -165,8 +169,9 @@
     }
   }
 
-  .info-unit {
-    font-size: 13px !important;
+  .info-unit,
+  .info-number {
+    font-size: 14px !important;
   }
 
   .current-station-loc {
@@ -202,7 +207,7 @@
   }
 
   .report-box-item-wrapper:first-child {
-    height: 100px;
+    height: 115px;
 
     .report-box-item-contain {
       padding: 6px !important;
@@ -221,13 +226,13 @@
     }
 
     .report-intensity-val {
-      height: 66px !important;
-      width: 66px !important;
+      height: 78px !important;
+      width: 78px !important;
       font-size: 40px !important;
     }
 
     .report-intensity-text {
-      font-size: 11px !important;
+      font-size: 13px !important;
     }
 
     .report-depth-val {
@@ -241,7 +246,7 @@
   }
 
   .report-depth {
-    width: 105px !important;
+    width: 95px !important;
   }
 
   .report-intensity-val {
