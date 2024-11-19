@@ -80,7 +80,7 @@ async function initializeStyles() {
 
   try {
     injectColorStyles();
-    await loadCSS('../css/lang/zh-Hant/index/index.css');
+    await loadCSS('../css/lang/zh-Hant/pip/index.css');
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 

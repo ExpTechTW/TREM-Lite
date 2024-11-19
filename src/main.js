@@ -223,6 +223,12 @@ app.on('browser-window-created', (e, window) => {
 });
 
 ipcMain.on('update-pip', (event, data) => {
+  if (data.noEew) {
+    if (pipWindow) {
+      pipWindow.close();
+    }
+    return;
+  }
   if (pipWindow) {
     pipWindow.webContents.send('update-pip-content', data);
   }
