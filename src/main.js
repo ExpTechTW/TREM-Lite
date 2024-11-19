@@ -12,6 +12,7 @@ const fs = require('fs');
 
 let win;
 let SettingWindow;
+let pipWindow = null;
 let tray = null;
 let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
@@ -58,6 +59,11 @@ function createWindow() {
     }
   });
 
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
   win.on('close', (event) => {
     if (forceQuit) {
       win = null;
@@ -88,6 +94,36 @@ function createWindow() {
   });
 
   win.loadFile('./src/view/index.html');
+}
+
+function createPiPWindow() {
+  if (pipWindow) {
+    return;
+  }
+
+  pipWindow = new BrowserWindow({
+    width: 338,
+    height: 157,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      backgroundThrottling: false,
+      additionalArguments: ['--pip-window'],
+    },
+  });
+
+  pipWindow.setMaximizable(false);
+  pipWindow.setPosition(0, 0);
+  pipWindow.setIgnoreMouseEvents(false);
+
+  pipWindow.on('closed', () => pipWindow = null);
+
+  pipWindow.loadFile('./src/view/pip.html');
+  require('@electron/remote/main').enable(pipWindow.webContents);
 }
 
 function createSettingWindow() {
@@ -168,6 +204,12 @@ app.on('browser-window-created', (e, window) => {
   window.removeMenu();
 });
 
+ipcMain.on('update-pip', (event, data) => {
+  if (pipWindow) {
+    pipWindow.webContents.send('update-pip-content', data);
+  }
+});
+
 ipcMain.on('openSettingWindow', () => createSettingWindow());
 
 ipcMain.on('israw', () => {
@@ -208,6 +250,10 @@ ipcMain.on('toggleFullscreen', () => {
   if (win) {
     win.setFullScreen(!win.isFullScreen());
   }
+});
+
+ipcMain.on('toggle-pip', () => {
+  createPiPWindow();
 });
 
 ipcMain.on('openPluginFolder', () => {
@@ -269,6 +315,9 @@ function trayIcon() {
 }
 
 function restart() {
+  if (pipWindow) {
+    pipWindow.close();
+  }
   app.relaunch();
   forceQuit = true;
   app.quit();

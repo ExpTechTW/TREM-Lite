@@ -1,0 +1,56 @@
+<html lang="zh-Hant">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Noto+Sans+TC:wght@100..900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../css/core/intensity.css" />
+    <link rel="stylesheet" href="../css/core/loading.css" />
+</head>
+
+<body>
+    <div id="pip-info-wrapper" class="info-wrapper no-eew"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 0;">
+        <div class="info-title">
+            <div id="pip-info-unit" class="info-unit"></div>
+            <div id="pip-info-number" class="info-number"></div>
+        </div>
+        <div class="info-body-wrapper" id="pip-info-body-wrapper"
+            style="height: calc(100% - 40px); margin: 5px; background-color: rgba(56, 56, 56, 0.9);">
+            <div class="info-box">
+                <div class="info-title-wrapper">
+                    <div id="pip-info-intensity" class="info-title-box"></div>
+                    <div class="info-intensity"></div>
+                </div>
+                <div class="info-more">
+                    <div id="pip-info-loc" class="info-loc"></div>
+                    <div id="pip-info-time" class="info-time"></div>
+                    <div id="pip-info-footer" class="info-footer nsspe">
+                        <div class="info-nsspe"><span></span></div>
+                        <div class="info-mag-dep">
+                            <div class="info-mag">
+                                <div class="info-mag-text"></div>
+                                <div id="pip-info-mag" class="info-mag-val"></div>
+                            </div>
+                            <div class="info-depth">
+                                <div class="info-depth-text"></div>
+                                <div id="pip-info-depth" class="info-depth-val"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="cancel-box">
+                <div class="cancel-title"><span></span></div>
+                <div class="cancel-body"><span></span></div>
+            </div>
+        </div>
+    </div>
+    <script src="../js/pip/require.js" defer></script>
+</body>
+
+</html>

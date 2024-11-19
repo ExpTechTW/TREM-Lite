@@ -3,6 +3,7 @@ const EEWCalculator = require('../utils/eewCalculator');
 const now = require('../utils/ntp');
 const { formatTime } = require('../utils/utils');
 const refresh_cross = require('./cross');
+const { ipcRenderer } = require('electron');
 
 const calculator = new EEWCalculator(require('../../../resource/data/time.json'));
 
@@ -180,26 +181,34 @@ function show_eew(rotation = true) {
         }
       }
       else {
-        info_wrapper.className = `info-wrapper ${(eew_cache[eew_list[eew_rotation]].status == 3) ? 'eew-cancel' : (eew_cache[eew_list[eew_rotation]].status == 1) ? 'eew-alert' : 'eew-warn'}`;
-        info_number.textContent = eew_cache[eew_list[eew_rotation]].serial;
-        if (eew_cache[eew_list[eew_rotation]].final) {
-          info_number.className = 'info-number info-number-last';
-        }
-        else {
-          info_number.className = 'info-number';
-        }
-        info_unit.textContent = `${eew_cache[eew_list[eew_rotation]].author.toUpperCase()}${(count == 1) ? '' : ` ${eew_rotation + 1}/${count}`}`;
-        info_loc.textContent = eew_cache[eew_list[eew_rotation]].eq.loc;
-        info_depth.textContent = eew_cache[eew_list[eew_rotation]].eq.depth;
-        info_mag.textContent = eew_cache[eew_list[eew_rotation]].eq.mag.toFixed(1);
-        info_intensity.className = `info-title-box intensity-${eew_cache[eew_list[eew_rotation]].eq.max}`;
-        if (eew_cache[eew_list[eew_rotation]].eq.mag == 1) {
-          info_footer.className = 'info-footer nsspe';
-        }
-        else {
-          info_footer.className = 'info-footer';
-        }
-        info_time.textContent = formatTime(eew_cache[eew_list[eew_rotation]].eq.time);
+        const eew = eew_cache[eew_list[eew_rotation]];
+        const statusClass = eew.status == 3 ? 'eew-cancel' : eew.status == 1 ? 'eew-alert' : 'eew-warn';
+
+        info_wrapper.className = `info-wrapper ${statusClass}`;
+        info_number.textContent = eew.serial;
+        info_number.className = `info-number${eew.final ? ' info-number-last' : ''}`;
+
+        const unitText = `${eew.author.toUpperCase()}${count == 1 ? '' : ` ${eew_rotation + 1}/${count}`}`;
+        info_unit.textContent = unitText;
+        info_loc.textContent = eew.eq.loc;
+        info_depth.textContent = eew.eq.depth;
+        info_mag.textContent = eew.eq.mag.toFixed(1);
+        info_intensity.className = `info-title-box intensity-${eew.eq.max}`;
+        info_footer.className = `info-footer${eew.eq.mag == 1 ? ' nsspe' : ''}`;
+        info_time.textContent = formatTime(eew.eq.time);
+
+        ipcRenderer.send('update-pip', {
+          statusClass,
+          serial: eew.serial,
+          final: eew.final,
+          unitText,
+          loc: eew.eq.loc,
+          depth: eew.eq.depth,
+          mag: eew.eq.mag.toFixed(1),
+          max: eew.eq.max,
+          footer: eew.eq.mag == 1,
+          time: formatTime(eew.eq.time),
+        });
       }
     }
 
@@ -215,6 +224,10 @@ function show_eew(rotation = true) {
     info_number.textContent = '';
     info_number.className = 'info-number';
     info_unit.textContent = '';
+
+    ipcRenderer.send('update-pip', {
+      noEew: true,
+    });
   }
 }
 
