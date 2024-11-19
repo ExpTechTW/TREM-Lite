@@ -174,6 +174,7 @@ function show_eew(rotation = true) {
   }
 
   if (count && eew_list.length) {
+    TREM.variable.cache.show_eew_box = true;
     if (eew_cache[eew_list[eew_rotation]]) {
       if (!TREM.constant.SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == 'trem') {
         eew_rotation++;
@@ -221,6 +222,7 @@ function show_eew(rotation = true) {
     }
   }
   else {
+    TREM.variable.cache.show_eew_box = false;
     const locationArray = TREM.variable.cache.rts_trigger.loc;
     if (locationArray.length) {
       const max = TREM.variable.cache.rts_trigger.max;

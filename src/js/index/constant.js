@@ -142,6 +142,7 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      show_eew_box: false,
       rts_trigger: {
         max: 0,
         loc: [],

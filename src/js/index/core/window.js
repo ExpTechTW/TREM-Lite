@@ -50,18 +50,20 @@ class WindowControler {
 }
 
 win.on('minimize', () => {
-  if (TREM.constant.GAME_MODE) {
+  if (TREM.constant.GAME_MODE && status_alert()) {
     ipcRenderer.send('toggle-pip');
   }
 });
 
 win.on('close', () => {
-  if (TREM.constant.GAME_MODE) {
+  if (TREM.constant.GAME_MODE && status_alert()) {
     ipcRenderer.send('toggle-pip');
   }
 });
 
-function 
+function status_alert() {
+  return TREM.variable.cache.rts_trigger.loc.length || TREM.variable.cache.show_eew_box;
+}
 
 ipcRenderer.send('toggle-pip');
 
