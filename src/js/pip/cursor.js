@@ -1,10 +1,12 @@
-const { screen } = require('@electron/remote');
-
+const { screen, BrowserWindow } = require('@electron/remote');
 const win = require('@electron/remote').getCurrentWindow();
+const main_win = BrowserWindow.fromId(process.env.window * 1);
 
 const wrapper = document.getElementById('pip-info-wrapper');
 const buttonWrapper = document.querySelector('.window-button-wrapper');
 const buttonContain = document.querySelector('.window-button-contain');
+const closeButton = document.querySelector('.close');
+const minimizeButton = document.querySelector('.minimize');
 
 function checkCursorPosition() {
   const position = screen.getCursorScreenPoint();
@@ -23,6 +25,12 @@ function checkCursorPosition() {
     ),
   };
 }
+
+closeButton.addEventListener('click', () => win.close());
+minimizeButton.addEventListener('click', () => {
+  main_win.show();
+  win.close();
+});
 
 (() => {
   const checkInterval = setInterval(() => {
