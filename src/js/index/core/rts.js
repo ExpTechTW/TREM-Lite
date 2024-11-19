@@ -339,9 +339,11 @@ TREM.variable.events.on('DataRts', (ans) => {
   ).sort((a, b) => b.i - a.i)
     .map((loc) => intensity_item(loc.i, loc.name));
 
+  console.log(int_list);
+
   if (int_list.length) {
     const hasNoLoc = !TREM.variable.cache.rts_trigger.loc.length;
-    TREM.variable.cache.rts_trigger.loc = getTopIntensities(filterIntArray(int_list, 8));
+    TREM.variable.cache.rts_trigger.loc = getTopIntensities(filterIntArray(int_list), 8);
     TREM.variable.cache.rts_trigger.max = int_list[0].i;
     if (hasNoLoc) {
       show_eew(false);
@@ -373,10 +375,10 @@ function filterIntArray(data = []) {
   const maxValue = data[0].i;
 
   if (maxValue > 3) {
-    return data.filter((value) => value > 3);
+    return data.filter((value) => value.i > 3);
   }
   else if (maxValue > 1) {
-    return data.filter((value) => value > 1);
+    return data.filter((value) => value.i > 1);
   }
 
   return data;
