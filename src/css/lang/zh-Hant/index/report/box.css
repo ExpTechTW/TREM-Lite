@@ -112,7 +112,7 @@ html[lang="zh-Hant"] {
       display: none;
     }
 
-    &:hover {
+    &:hover:not(.survey) {
       background-color: #8a8a8ac7;
 
       .report-buttons {
