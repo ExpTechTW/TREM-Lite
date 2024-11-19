@@ -48,9 +48,9 @@ class WindowControler {
       if (TREM.constant.SHOW_PIP_EVENTS.includes(event)) {
         if (TREM.constant.SHOW_TREM_EEW || (event.startsWith('Eew') && ans.data.author != 'trem')) {
           ipcRenderer.send('toggle-pip');
-          return;
         }
       }
+      return;
     }
     win.flashFrame(true);
     win.setAlwaysOnTop(true);
