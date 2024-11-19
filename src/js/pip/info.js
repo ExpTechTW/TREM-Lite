@@ -13,6 +13,10 @@ const triggerBox = document.getElementById('trigger-box');
 
 ipcRenderer.on('update-pip-content', (event, data) => {
   triggerBox.innerHTML = '';
+  pip_info_unit.textContent = '';
+  pip_info_number.textContent = '';
+  pip_info_number.className = 'info-number';
+
   if (data.trigger) {
     const max = data.max;
     pip_info_wrapper.className = `info-wrapper no-eew ${max > 3 ? 'rts-trigger-high' : (max > 1) ? 'rts-trigger-middle' : 'rts-trigger-low'}`;
@@ -40,9 +44,6 @@ ipcRenderer.on('update-pip-content', (event, data) => {
 
   if (data.noEew) {
     pip_info_wrapper.className = 'info-wrapper no-eew';
-    pip_info_number.textContent = '';
-    pip_info_number.className = 'info-number';
-    pip_info_unit.textContent = '';
     return;
   }
 

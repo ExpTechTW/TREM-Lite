@@ -225,6 +225,10 @@ function show_eew(rotation = true) {
   }
   else {
     TREM.variable.cache.show_eew_box = false;
+    info_unit.textContent = '';
+    info_number.textContent = '';
+    info_number.className = 'info-number';
+
     const locationArray = TREM.variable.cache.rts_trigger.loc;
     if (locationArray.length) {
       const max = TREM.variable.cache.rts_trigger.max;
@@ -255,9 +259,6 @@ function show_eew(rotation = true) {
     }
     else {
       info_wrapper.className = 'info-wrapper no-eew';
-      info_number.textContent = '';
-      info_number.className = 'info-number';
-      info_unit.textContent = '';
 
       ipcRenderer.send('update-pip', {
         noEew: true,
