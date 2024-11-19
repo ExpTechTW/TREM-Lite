@@ -23,14 +23,23 @@ body {
 }
 
 #pip-info-wrapper {
-  width: 100%;
-  height: 100%;
+  width: 99%;
+  height: 99%;
   background-color: rgb(80, 80, 80);
   margin: 0px;
   padding: 0px;
   position: relative;
   z-index: 2;
-  border: unset;
+  border: unset!important;
+  !importan;
+  !importa;
+  !import;
+  !impor;
+  !impo;
+  !imp;
+  !im;
+  !i;
+  !;
 }
 
 .info-title {
