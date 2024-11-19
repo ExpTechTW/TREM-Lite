@@ -132,12 +132,7 @@ function createPiPWindow() {
     },
   });
 
-  pipWindow.on('resize', () => {
-    const currentSize = pipWindow.getSize();
-    const aspectRatio = 276 / 147;
-    const newHeight = Math.round(currentSize[0] / aspectRatio);
-    pipWindow.setSize(currentSize[0], newHeight);
-  });
+  pipWindow.setAspectRatio(1.87);
 
   pipWindow.setMaximizable(false);
   pipWindow.setPosition(0, 0);
