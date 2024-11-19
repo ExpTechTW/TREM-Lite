@@ -3,6 +3,10 @@ const TREM = require('../constant');
 const { extractLocation } = require('../utils/utils');
 const crypto = require('crypto');
 const { updateMapBounds } = require('./focus');
+const { ipcRenderer } = require('electron');
+const { stopReplay, startReplay } = require('./replay');
+
+let last_replay_time = 0;
 
 class ReportManager {
   static instance = null;
@@ -230,11 +234,68 @@ class ReportManager {
   }
 
   createReportItem(item, isSurvey = false) {
-    const container = document.createElement('div');
-    container.className = `report-box-item-contain${isSurvey ? ' survey' : ''}`;
-    container.appendChild(this.createIntensityBox(item.int));
-    container.appendChild(this.createInfoBox(item, isSurvey));
-    return container;
+    const wrapper = document.createElement('div');
+    wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
+    wrapper.setAttribute('data-id', item.id);
+    wrapper.setAttribute('data-time', item.time);
+    const contain = document.createElement('div');
+    contain.className = 'report-box-item-contain';
+    const buttons = document.createElement('div');
+    buttons.className = 'report-buttons';
+    const webButton = document.createElement('div');
+    webButton.className = 'report-web';
+    webButton.textContent = '報告';
+    const replayButton = document.createElement('div');
+    replayButton.className = 'report-replay';
+    replayButton.textContent = '重播';
+
+    contain.appendChild(this.createIntensityBox(item.int));
+    contain.appendChild(this.createInfoBox(item, isSurvey));
+    wrapper.appendChild(contain);
+    buttons.appendChild(webButton);
+    buttons.appendChild(replayButton);
+    wrapper.appendChild(buttons);
+    return wrapper;
+  }
+
+  clickEvent() {
+    this.reportWebButtons = document.querySelectorAll('.report-web');
+    this.reportWebButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const wrapper = event.target.closest('.report-box-item-wrapper');
+        if (wrapper) {
+          const id = wrapper.getAttribute('data-id');
+          const reportId = id.replace(`-${id.split('-')[1]}`, '');
+          const url = `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
+          ipcRenderer.send('openUrl', url);
+        }
+      });
+    });
+
+    this.reportReplyButtons = document.querySelectorAll('.report-replay');
+    this.reportReplyButtons.forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        const wrapper = event.target.closest('.report-box-item-wrapper');
+
+        if (wrapper) {
+          stopReplay();
+          const time = Number(wrapper.getAttribute('data-time')) - 5000;
+          if (last_replay_time == time) {
+            last_replay_time = 0;
+            return;
+          }
+          last_replay_time = time;
+          startReplay(time);
+        }
+      });
+    });
+  }
+
+  now(time) {
+    if (!TREM.variable.replay.local_time) {
+      TREM.variable.replay.local_time = Date.now();
+    }
+    return Number(time) + (Date.now() - TREM.variable.replay.local_time);
   }
 
   generateReportBoxItems(list, survey = null) {
@@ -259,6 +320,10 @@ class ReportManager {
     list.forEach((item) => {
       container.appendChild(this.createReportItem(item, false));
     });
+
+    this.clickEvent();
+
+    this.updateScrollbar();
   }
 
   async getReport() {
@@ -387,6 +452,7 @@ class ReportManager {
 
   onReportRelease(ans) {
     if (TREM.constant.SHOW_REPORT) {
+      TREM.variable.cache.last_report = ans.data;
       this.showReportPoint(ans.data);
     }
 

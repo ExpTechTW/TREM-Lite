@@ -148,7 +148,7 @@ html[lang="zh-Hant"] {
   cursor: pointer;
   transition: 0.3s cubic-bezier(0.41, -0.86, 0.76, 1.89);
   position: absolute;
-  top: 22rem;
+  top: 22.5rem;
   left: 8px;
   color: #ffffff00;
   font-size: 11px;

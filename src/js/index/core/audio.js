@@ -129,6 +129,7 @@ class AudioManager {
     TREM.variable.events.on('RtsShindo0', this.handleRtsShindo0.bind(this));
     TREM.variable.events.on('ReportRelease', this.handleReportRelease.bind(this));
     TREM.variable.events.on('IntensityRelease', this.handleIntensityRelease.bind(this));
+    TREM.variable.events.on('IntensityUpdate', this.handleIntensityRelease.bind(this));
     TREM.variable.events.on('TsunamiRelease', this.handleTsunamiRelease.bind(this));
     TREM.variable.events.on('EewNewAreaAlert', this.handleEewNewAreaAlert.bind(this));
   }

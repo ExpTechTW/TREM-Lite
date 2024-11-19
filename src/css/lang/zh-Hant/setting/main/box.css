@@ -165,7 +165,7 @@ body {
   align-items: center;
   flex-direction: column;
   gap: 4px;
-  overflow-y: hidden;
+  overflow-y: scroll;
   height: calc(100% - 85px);
   padding-bottom: 1.5rem;
 
@@ -264,6 +264,10 @@ body {
   align-items: center;
   justify-content: center;
   display: flex;
+}
+
+.selected-btn.on {
+  transform: rotate(180deg);
 }
 
 .current-local,
@@ -627,7 +631,7 @@ li {
   font-size: 15px;
   color: #fff;
   transition: border-color 0.3s, box-shadow 0.3s;
-  font-family: Manrope, "Noto Sans TC", sans-serif;
+  font-family: "Noto Sans TC", sans-serif;
   width: 100%;
 
   &:focus {
@@ -721,6 +725,7 @@ li {
 .int div {
   justify-content: center !important;
   font-weight: 100;
+  font-family: auto;
 }
 
 .responsive-image {

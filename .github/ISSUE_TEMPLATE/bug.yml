@@ -1,0 +1,56 @@
+name: 🐞 問題回報
+description: 請詳細描述你遇到的問題，以協助我們排除問題
+title: '[Bug]'
+labels:
+  - bug
+body:
+  - type: checkboxes
+    attributes:
+      label: 是否已有現有的問題回報？
+      description: 請先搜尋並檢查你遇到的問題是否已經被回報過了，以避免重複問題回報。
+      options:
+        - label: 我已經檢查並確認沒有人回報過這個問題
+          required: true
+  - type: textarea
+    attributes:
+      label: 預期行為
+      description: 簡要描述你預期會發生的事情。
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 目前行為
+      description: 簡要描述你目前遇到的情況。
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 重現步驟
+      description: 重現此問題的步驟。
+      placeholder: |
+        1. 在這個環境中...
+        (或) 1. 使用這個設定...
+        (或) 1. 執行 '...'
+        (或) 1. 看到錯誤...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 環境資訊
+      description: |
+        範例：
+          - Windows 11 Pro 23H2 
+            Build 22631.4317
+            Windows Feature Experience Pack 1000.22700.1041.0
+          - macOS Sequoia 15.1
+          - Ubuntu 20.04
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 其他補充？
+      description: |
+        連結？參考資料？任何能讓我們更了解你遇到的問題的資訊！
+        你也可以將檔案拖曳到這裡來附加圖片或日誌檔案。
+    validations:
+      required: false

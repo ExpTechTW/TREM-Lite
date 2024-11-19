@@ -126,7 +126,7 @@ const TREM = {
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode: 0,
     replay: {
-      start_time: 1730913580688,
+      start_time: 1731740504615,
       local_time: 0,
     },
     station: null,
@@ -135,6 +135,7 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      int_cache_list: {},
       last_report: null,
       eewIntensityArea: {},
       show_intensity: false,
@@ -149,6 +150,7 @@ const TREM = {
         max: 0,
       },
       last_data_time: 0,
+      last_rts_alert: 0,
       bounds: {
         rts: [],
         intensity: [],
@@ -171,12 +173,14 @@ const TREM = {
     },
   },
   class: {
-    ReportManager  : null,
-    FocusManager   : null,
-    EewAreaManager : null,
-    BoxManager     : null,
-    AudioManager   : null,
     DataManager    : null,
+    ReportManager: null,
+    FocusManager: null,
+    EewAreaManager: null,
+    BoxManager: null,
+    AudioManager: null,
+    ReplayControler: null,
+    WindowControler: null,
   },
 };
 

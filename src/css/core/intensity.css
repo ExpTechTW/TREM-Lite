@@ -1,12 +1,4 @@
-﻿.pga-intensity-0 {
-  background-color: lightgray;
-
-  &:empty::after {
-    content: "1";
-  }
-}
-
-.intensity-unknow {
+﻿.intensity-unknow {
   color: var(--intensity-text-0);
   background-color: var(--intensity-0);
   box-sizing: border-box;
@@ -21,11 +13,20 @@
   color: var(--intensity-text-0);
   background-color: var(--intensity-0);
   box-sizing: border-box;
+}
 
-  &:not(#max-intensity, #max-pga, #current-station-intensity)::after {
-    content: "不明";
-    font-size: 25px;
-  }
+.intensity-0:not(
+    #max-intensity,
+    #max-pga,
+    #current-station-intensity,
+    .rts-intensity
+  )::after {
+  content: "不明";
+  font-size: 25px;
+}
+
+.rts-intensity.intensity-0::after {
+  content: "0";
 }
 
 #current-station-intensity.intensity-0::after {

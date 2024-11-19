@@ -17,7 +17,6 @@ const current_station_intensity_text = document.getElementById('current-station-
 const rts_info_trigger = document.getElementById('rts-info-trigger');
 const rts_info_level = document.getElementById('rts-info-level');
 
-const int_cache_list = {};
 const level_list = {};
 
 TREM.variable.events.on('MapLoad', (map) => {
@@ -142,6 +141,9 @@ TREM.variable.events.on('DataRts', (ans) => {
           shindo_2: 0,
         },
       };
+    }
+    else {
+      TREM.variable.cache.last_rts_alert = ans.data?.time ?? 0;
     }
 
     for (const id of Object.keys(ans.data.station)) {
@@ -307,21 +309,20 @@ TREM.variable.events.on('DataRts', (ans) => {
       TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
 
-    if (alert || eew_alert) {
+    if (((ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 15000) || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
       if (TREM.variable.cache.bounds.report) {
         TREM.variable.cache.bounds.report = [];
         TREM.variable.map.getSource('report-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
       }
     }
-    else
-      if (TREM.variable.cache.bounds.report.length) {
-        data_list = [];
-        data_alert_0_list = [];
-        data_alert_list = [];
-      }
-      else if (TREM.constant.SHOW_REPORT) {
+    else {
+      data_list = [];
+      data_alert_0_list = [];
+      data_alert_list = [];
+      if (TREM.constant.SHOW_REPORT) {
         show_report_point(TREM.variable.cache.last_report);
       }
+    }
   }
 
   if (TREM.variable.map) {
@@ -359,29 +360,29 @@ function updateIntensityHistory(newData, time) {
   for (const int of newData) {
     updatedCodes.add(int.code);
 
-    if (!int_cache_list[int.code]) {
-      int_cache_list[int.code] = {
+    if (!TREM.variable.cache.int_cache_list[int.code]) {
+      TREM.variable.cache.int_cache_list[int.code] = {
         values: [],
         lastUpdate: time,
       };
     }
 
-    int_cache_list[int.code].values.push(int.i);
-    int_cache_list[int.code].lastUpdate = time;
+    TREM.variable.cache.int_cache_list[int.code].values.push(int.i);
+    TREM.variable.cache.int_cache_list[int.code].lastUpdate = time;
 
-    if (int_cache_list[int.code].values.length > 45) {
-      int_cache_list[int.code].values.shift();
+    if (TREM.variable.cache.int_cache_list[int.code].values.length > 45) {
+      TREM.variable.cache.int_cache_list[int.code].values.shift();
     }
   }
 
   const cutoff = time - 30000;
-  Object.keys(int_cache_list).forEach((code) => {
-    if (int_cache_list[code].lastUpdate < cutoff) {
-      delete int_cache_list[code];
+  Object.keys(TREM.variable.cache.int_cache_list).forEach((code) => {
+    if (TREM.variable.cache.int_cache_list[code].lastUpdate < cutoff) {
+      delete TREM.variable.cache.int_cache_list[code];
     }
   });
 
-  const maxIntensities = Object.entries(int_cache_list).map(([code, data]) => ({
+  const maxIntensities = Object.entries(TREM.variable.cache.int_cache_list).map(([code, data]) => ({
     code: code,
     i: Math.max(...data.values),
   }));

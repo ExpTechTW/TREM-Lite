@@ -25,6 +25,17 @@ class PluginLoader {
     };
   }
 
+  /**
+   * Assigns a priority to a semantic version string based on its prerelease
+   * identifier.
+   *
+   * @param {string} version - The version string to evaluate.
+   * @returns {number} Priority level:
+   *   - `3` for stable versions (no prerelease).
+   *   - `2` if prerelease is 'rc'.
+   *   - `1` if prerelease is 'pre'.
+   *   - `0` for all other cases or invalid versions.
+   */
   getVersionPriority(version) {
     if (!version) {
       return 0;
@@ -47,6 +58,14 @@ class PluginLoader {
     return 0;
   }
 
+  /**
+   * Checks if two semantic version strings are an exact match, including major,
+   * minor, patch, and up to the first two prerelease identifiers.
+   *
+   * @param {string} v1 - The first version string.
+   * @param {string} v2 - The second version string.
+   * @returns {boolean} True if the versions match exactly, otherwise false.
+   */
   isExactVersionMatch(v1, v2) {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
@@ -57,7 +76,9 @@ class PluginLoader {
 
     if (parsed1.major !== parsed2.major
       || parsed1.minor !== parsed2.minor
-      || parsed1.patch !== parsed2.patch) { return false; }
+      || parsed1.patch !== parsed2.patch) {
+      return false;
+    }
 
     const pre1 = parsed1.prerelease;
     const pre2 = parsed2.prerelease;
@@ -72,6 +93,15 @@ class PluginLoader {
     return pre1[0] === pre2[0] && pre1[1] === pre2[1];
   }
 
+  /**
+   * Determines if the first semantic version string is greater than or equal to
+   * the second.
+   *
+   * @param {string} v1 - The first version string to compare.
+   * @param {string} v2 - The second version string to compare.
+   * @returns {boolean} True if `v1` is greater than or equal to `v2`, otherwise
+   * false.
+   */
   compareVersions(v1, v2) {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
@@ -106,6 +136,14 @@ class PluginLoader {
     return true;
   }
 
+  /**
+   * Validates whether a current version satisfies a required version
+   * constraint.
+   *
+   * @param {string} current - The current version string.
+   * @param {string} required - The required version constraint, which may include comparison operators (e.g., `>=1.2.3`), separated by whitespaces.
+   * @returns {boolean} True if the current version meets the required constraint(s), otherwise false.
+   */
   validateVersionRequirement(current, required) {
     if (required.includes(' ')) {
       const ranges = required.split(' ');
