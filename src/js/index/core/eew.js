@@ -333,3 +333,5 @@ function removeEewLayersAndSources(eewId) {
     }
   });
 }
+
+module.exports = show_eew;
