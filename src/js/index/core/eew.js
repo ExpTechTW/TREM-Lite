@@ -16,6 +16,7 @@ const info_depth = document.getElementById('info-depth');
 const info_intensity = document.getElementById('info-intensity');
 const info_footer = document.getElementById('info-footer');
 const info_time = document.getElementById('info-time');
+const triggerBox = document.getElementById('trigger-box');
 
 let flash = false;
 let eew_rotation = 0;
@@ -220,14 +221,47 @@ function show_eew(rotation = true) {
     }
   }
   else {
-    info_wrapper.className = 'info-wrapper no-eew';
-    info_number.textContent = '';
-    info_number.className = 'info-number';
-    info_unit.textContent = '';
+    const locationArray = TREM.variable.cache.rts_trigger.loc;
+    if (locationArray.length) {
+      const max = TREM.variable.cache.rts_trigger.max;
+      info_wrapper.className = `info-wrapper no-eew ${max > 3 ? 'rts-trigger-high' : (max > 1) ? 'rts-trigger-middle' : 'rts-trigger-low'}`;
 
-    ipcRenderer.send('update-pip', {
-      noEew: true,
-    });
+      triggerBox.innerHTML = '';
+
+      for (let i = 0; i < 2; i++) {
+        const triggerAreas = document.createElement('div');
+        triggerAreas.className = 'trigger-areas';
+
+        const startIndex = i * 4;
+        const groupLocations = locationArray.slice(startIndex, startIndex + 4);
+
+        groupLocations.forEach((location) => {
+          const areaName = document.createElement('div');
+          areaName.className = 'area-name';
+          areaName.textContent = location.name;
+          triggerAreas.appendChild(areaName);
+        });
+
+        triggerBox.appendChild(triggerAreas);
+      }
+
+      ipcRenderer.send('update-pip', {
+        trigger: true,
+        loc: locationArray,
+        max,
+      });
+    }
+    else {
+      triggerBox.innerHTML = '';
+      info_wrapper.className = 'info-wrapper no-eew';
+      info_number.textContent = '';
+      info_number.className = 'info-number';
+      info_unit.textContent = '';
+
+      ipcRenderer.send('update-pip', {
+        noEew: true,
+      });
+    }
   }
 }
 

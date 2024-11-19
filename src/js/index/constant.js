@@ -69,7 +69,7 @@ const TREM = {
       },
     },
 
-    SHOW_TREM_EEW: true,
+    SHOW_TREM_EEW: false,
 
     URL: {
       API: ['api-1.exptech.dev', 'api-2.exptech.dev'],
@@ -142,6 +142,10 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      rts_trigger: {
+        max: 0,
+        loc: [],
+      },
       int_cache_list: {},
       last_report: null,
       eewIntensityArea: {},

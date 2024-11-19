@@ -61,6 +61,8 @@ win.on('close', () => {
   }
 });
 
+function 
+
 ipcRenderer.send('toggle-pip');
 
 TREM.class.WindowControler = WindowControler;

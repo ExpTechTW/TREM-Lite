@@ -331,10 +331,20 @@ TREM.variable.events.on('DataRts', (ans) => {
     TREM.variable.map.getSource('markers-geojson-0').setData({ type: 'FeatureCollection', features: data_alert_0_list });
   }
 
+  const int_list = ans.data?.int ?? [];
+
   const box_list = getTopIntensities(
-    updateIntensityHistory(ans.data?.int ?? [], ans.data?.time ?? 0),
+    updateIntensityHistory(int_list, ans.data?.time ?? 0),
   ).sort((a, b) => b.i - a.i)
     .map((loc) => intensity_item(loc.i, loc.name));
+
+  if (int_list.length) {
+    TREM.variable.cache.rts_trigger.loc = getTopIntensities(filterIntArray(int_list, 8));
+    TREM.variable.cache.rts_trigger.max = int_list[0].i;
+  }
+  else {
+    TREM.variable.cache.rts_trigger.loc = [];
+  }
 
   const alert = (!ans.data?.box) ? false : Object.keys(ans.data.box).length;
 
@@ -342,7 +352,7 @@ TREM.variable.events.on('DataRts', (ans) => {
 
   max_pga.textContent = `${pga.toFixed(2)} gal`;
   max_pga.className = `max-station-pga ${(!alert) ? 'intensity-0' : `intensity-${calculator.pgaToIntensity(pga)}`}`;
-  max_intensity.className = `max-station-intensity intensity-${ans.data?.int?.[0]?.i ?? 0}`;
+  max_intensity.className = `max-station-intensity intensity-${int_list[0]?.i ?? 0}`;
 
   for (const id of Object.keys(level_list)) {
     level += level_list[id];
@@ -353,6 +363,19 @@ TREM.variable.events.on('DataRts', (ans) => {
 
   TREM.variable.cache.bounds.rts = coordinates;
 });
+
+function filterIntArray(data = []) {
+  const maxValue = data[0].i;
+
+  if (maxValue > 3) {
+    return data.filter((value) => value > 3);
+  }
+  else if (maxValue > 1) {
+    return data.filter((value) => value > 1);
+  }
+
+  return data;
+}
 
 function updateIntensityHistory(newData, time) {
   const updatedCodes = new Set();
