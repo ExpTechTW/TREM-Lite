@@ -132,7 +132,7 @@ function findMaxIntensityCity(eqArea) {
 async function get_intensity() {
   const url = TREM.constant.URL.API[1];
   const ans = await fetchData(`https://${url}/api/v1/trem/intensity`, TREM.constant.HTTP_TIMEOUT.REPORT);
-  if (!ans.ok) {
+  if (!ans || !ans.ok) {
     return null;
   }
   return await ans.json();
