@@ -19,6 +19,11 @@ const hide = process.argv.includes('--start') ? true : false;
 const test = process.argv.includes('--raw') ? 0 : 1;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
 
+const is_mac = process.platform === 'darwin';
+if (is_mac) {
+  app.dock.hide();
+}
+
 function updateAutoLaunchSetting(value) {
   app.setLoginItemSettings({
     openAtLogin: value ? true : false,
@@ -70,7 +75,7 @@ function createWindow() {
       return;
     }
 
-    if (process.platform === 'darwin') {
+    if (is_mac) {
       event.preventDefault();
       win.hide();
     }
