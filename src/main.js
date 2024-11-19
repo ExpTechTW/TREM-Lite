@@ -104,16 +104,26 @@ function createPiPWindow() {
   pipWindow = new BrowserWindow({
     width: 276,
     height: 147,
+    minWidth: 276,
+    maxWidth: 400,
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
-    resizable: false,
+    resizable: true,
+    transparent: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
       backgroundThrottling: false,
       additionalArguments: ['--pip-window'],
     },
+  });
+
+  pipWindow.on('resize', () => {
+    const currentSize = pipWindow.getSize();
+    const aspectRatio = 276 / 147;
+    const newHeight = Math.round(currentSize[0] / aspectRatio);
+    pipWindow.setSize(currentSize[0], newHeight);
   });
 
   pipWindow.setMaximizable(false);
