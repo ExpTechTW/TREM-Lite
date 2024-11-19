@@ -102,8 +102,8 @@ function createPiPWindow() {
   }
 
   pipWindow = new BrowserWindow({
-    width: 338,
-    height: 157,
+    width: 276,
+    height: 147,
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
