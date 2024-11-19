@@ -171,7 +171,7 @@ function show_eew(rotation = true) {
     count++;
   }
 
-  if (count) {
+  if (count && eew_list.length) {
     if (eew_cache[eew_list[eew_rotation]]) {
       if (!TREM.constant.SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == 'trem') {
         eew_rotation++;
