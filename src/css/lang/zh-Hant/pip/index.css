@@ -1,7 +1,6 @@
 @import url("../index/eew/eew.css");
 
 body {
-  -webkit-app-region: drag;
   background-color: unset !important;
   border-radius: unset !important;
   width: 100%;
@@ -91,7 +90,6 @@ body {
 
 .window-button-wrapper {
   -webkit-app-region: drag;
-  pointer-events: auto;
   height: 100%;
   width: 100%;
   position: absolute;
@@ -105,7 +103,6 @@ body {
 }
 
 .window-button-contain {
-  -webkit-app-region: drag;
   background: #000000bd;
   display: none;
   height: 100%;
@@ -124,8 +121,6 @@ body {
 }
 
 .minimize {
-  -webkit-app-region: no-drag;
-  pointer-events: auto;
   height: 25px;
   user-select: none;
   position: absolute;
@@ -135,8 +130,6 @@ body {
 }
 
 .close {
-  -webkit-app-region: no-drag;
-  pointer-events: auto;
   padding: 5px;
   height: 25px;
   border-radius: 5px;
