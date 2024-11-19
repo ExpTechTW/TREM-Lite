@@ -20,9 +20,6 @@ const test = process.argv.includes('--raw') ? 0 : 1;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
 
 const is_mac = process.platform === 'darwin';
-if (is_mac) {
-  app.dock.hide();
-}
 
 function updateAutoLaunchSetting(value) {
   app.setLoginItemSettings({
