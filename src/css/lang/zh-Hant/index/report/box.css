@@ -10,16 +10,16 @@ html[lang="zh-Hant"] {
 }
 
 .flashing {
-  animation: flash 1s infinite;
+  animation: flash 1.5s infinite;
 }
 
 @keyframes flash {
   0%,
   100% {
-    box-shadow: 0 0 0 2px transparent;
+    box-shadow: 0 0 0 3px transparent;
   }
   50% {
-    box-shadow: 0 0 0 2px #ffeb3b;
+    box-shadow: 0 0 0 3px #ffeb3b;
   }
 }
 
@@ -316,6 +316,12 @@ html[lang="zh-Hant"] {
       padding: 10px;
       display: flex !important;
       width: 100%;
+    }
+
+    .report-intensity-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     /**觀測最大震度文字**/

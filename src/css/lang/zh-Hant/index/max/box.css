@@ -21,8 +21,8 @@
 
 .station-pga-wrapper {
   position: absolute;
-  left: 7rem;
-  top: 10.2rem;
+  left: 6.9rem;
+  top: 10rem;
   color: white;
   font-size: 11px;
   font-weight: 500;
@@ -108,7 +108,7 @@
     display: flex;
     flex-direction: column;
     width: 65px;
-    margin-top: 5;
+    margin-top: 3px;
     border: 1px solid #515151;
   }
 

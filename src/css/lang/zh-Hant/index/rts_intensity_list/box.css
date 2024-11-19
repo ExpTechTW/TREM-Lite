@@ -18,12 +18,12 @@
 
 .max-intensity-pga-wrapper {
   position: absolute;
-  top: 10.2rem;
+  top: 10rem;
   color: white;
   font-size: 11px;
   font-weight: 500;
   display: flex;
-  padding: 5px;
+  margin: 4px;
   border-radius: 5px;
   flex-direction: column;
   flex-wrap: wrap;
@@ -73,7 +73,7 @@
 .max-pga {
   border-radius: 5px;
   background: #505050c7;
-  margin-top: 5px;
+  margin-top: 3px;
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;

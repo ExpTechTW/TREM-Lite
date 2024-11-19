@@ -57,8 +57,9 @@
   }
 
   .max-station-intensity {
-    width: 55px !important;
-    height: 55px !important;
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 27px !important;
   }
 
   .max-intensity {
@@ -81,27 +82,28 @@
   }
 
   .current-station-pga {
-    width: 215px !important;
+    width: 175px !important;
+    margin-top: 1px !important;
   }
 
   .max-intensity-pga-wrapper {
     display: flex !important;
     flex-direction: column-reverse !important;
-    top: 12.8rem !important;
+    top: 12.5rem !important;
   }
 
   .max-pga {
     left: 4.5rem !important;
     position: relative !important;
     height: 35px !important;
-    margin-top: 4px !important;
-    width: 80px;
+    margin-top: -2px !important;
+    width: 70px;
   }
 
   .max-intensity {
-    margin-top: 5px !important;
+    margin-top: 4px !important;
     padding: 3px !important;
-    width: 85px;
+    width: 72px;
   }
 
   #max-pga {
@@ -118,30 +120,25 @@
     margin-top: 3px !important;
   }
 
-  .report-box-item-contain:first-child {
-    .report-loc {
-      font-size: 21px !important;
-    }
-
-    .report-mag-val {
-      font-size: 25px !important;
-      margin-top: -2px !important;
-
-      &:before {
-        font-size: 24px !important;
-      }
-    }
-  }
   .report-loc {
-    font-size: 18px !important;
+    font-size: 17px !important;
+  }
+
+  .report-time {
+    font-size: 12px !important;
   }
 
   .report-box-items {
-    width: 285px !important;
+    width: 275px !important;
+    right: -13px !important;
   }
 
   .report-wrapper {
-    width: 315px !important;
+    width: 292px !important;
+  }
+
+  .report-wrapper.hidden {
+    translate: 92%;
   }
 
   .rts-intensity-list-wrapper {
@@ -166,6 +163,99 @@
       content: "不明";
       font-size: 20px !important;
     }
+  }
+
+  .info-unit {
+    font-size: 13px !important;
+  }
+
+  .current-station-loc {
+    font-size: 14px !important;
+  }
+
+  .current-station-intensity-box {
+    font-size: 12px !important;
+  }
+
+  .max-pga-text,
+  .max-intensity-text {
+    font-size: 12px !important;
+  }
+
+  .max-station-pga {
+    font-size: 11px !important;
+  }
+
+  .current-station-info {
+    width: 130px !important;
+    margin-right: 0 !important;
+  }
+
+  .current-station-intensity {
+    height: 40px !important;
+    width: 40px !important;
+  }
+
+  .report-box-item-wrapper {
+    width: 95% !important;
+    height: 40px;
+  }
+
+  .report-box-item-wrapper:first-child {
+    height: 100px;
+
+    .report-box-item-contain {
+      padding: 6px !important;
+    }
+
+    .report-mag-val {
+      font-size: 20px !important;
+      margin-top: 4px !important;
+
+      &:before {
+        font-size: 20px !important;
+      }
+    }
+    .report-loc {
+      font-size: 21px !important;
+    }
+
+    .report-intensity-val {
+      height: 66px !important;
+      width: 66px !important;
+      font-size: 40px !important;
+    }
+
+    .report-intensity-text {
+      font-size: 11px !important;
+    }
+
+    .report-depth-val {
+      font-size: 20px !important;
+      margin-top: 0px !important;
+
+      &:after {
+        font-size: 15px !important;
+      }
+    }
+  }
+
+  .report-depth {
+    width: 105px !important;
+  }
+
+  .report-intensity-val {
+    width: 43px !important;
+    height: 40px !important;
+    font-size: 22px !important;
+  }
+
+  #time {
+    font-size: 15px !important;
+  }
+
+  .connect {
+    min-width: 140px !important;
   }
 }
 
