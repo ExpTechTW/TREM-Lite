@@ -1,3 +1,4 @@
+@import url("../font.css");
 @import url("../index/eew/eew.css");
 
 body {
@@ -139,6 +140,8 @@ body {
 
 .minimize {
   -webkit-app-region: no-drag;
+  pointer-events: all;
+  cursor: pointer;
   height: 25px;
   user-select: none;
   position: absolute;
@@ -149,6 +152,8 @@ body {
 
 .close {
   -webkit-app-region: no-drag;
+  pointer-events: all;
+  cursor: pointer;
   padding: 5px;
   height: 25px;
   border-radius: 5px;
