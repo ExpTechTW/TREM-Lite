@@ -1,3 +1,5 @@
+const { screen } = require('@electron/remote');
+
 const logger = require('../js/core/utils/logger');
 
 logger.info('Pip start');
@@ -37,3 +39,40 @@ ipcRenderer.on('update-pip-content', (event, data) => {
   pip_info_footer.className = `info-footer${data.footer ? ' nsspe' : ''}`;
   pip_info_time.textContent = data.time;
 });
+
+function checkCursorPosition() {
+  const position = screen.getCursorScreenPoint();
+  const wrapper = document.getElementById('pip-info-wrapper');
+  const rect = wrapper.getBoundingClientRect();
+  const win = require('@electron/remote').getCurrentWindow();
+  const winPos = win.getPosition();
+
+  const relativeX = position.x - winPos[0];
+  const relativeY = position.y - winPos[1];
+
+  return {
+    isInside: (
+      relativeX >= rect.left
+      && relativeX <= rect.right
+      && relativeY >= rect.top
+      && relativeY <= rect.bottom
+    ),
+  };
+}
+
+function startCursorCheck() {
+  const buttonWrapper = document.querySelector('.window-button-wrapper');
+  const buttonContain = document.querySelector('.window-button-contain');
+
+  const checkInterval = setInterval(() => {
+    const result = checkCursorPosition();
+    buttonWrapper.style.display = result.isInside ? 'flex' : 'none';
+    buttonContain.style.display = result.isInside ? 'block' : 'none';
+  }, 100);
+
+  window.addEventListener('unload', () => {
+    clearInterval(checkInterval);
+  });
+}
+
+startCursorCheck();

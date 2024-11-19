@@ -49,6 +49,8 @@ class WindowControler {
   }
 }
 
+ipcRenderer.send('toggle-pip');
+
 TREM.class.WindowControler = WindowControler;
 
 WindowControler.getInstance();

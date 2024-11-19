@@ -25,7 +25,8 @@ body {
   background-color: rgb(80, 80, 80);
   margin: 0px;
   padding: 0px;
-  pointer-events: all;
+  position: relative;
+  z-index: 2;
 }
 
 .info-title {
@@ -51,6 +52,7 @@ body {
   height: 100% !important;
   justify-content: space-evenly;
 }
+
 .info-title-wrapper {
   margin-top: 0px !important;
 }
@@ -88,7 +90,8 @@ body {
 }
 
 .window-button-wrapper {
-  -webkit-app-region: no-drag;
+  -webkit-app-region: drag;
+  pointer-events: auto;
   height: 100%;
   width: 100%;
   position: absolute;
@@ -98,30 +101,22 @@ body {
   align-items: center;
   justify-content: center;
   user-select: unset;
-  opacity: 0;
-  display: flex;
-}
-
-.window-button-wrapper:hover {
-  opacity: 1;
-}
-
-.window-button-wrapper:hover .window-button-contain {
-  background: #000000bd;
-  display: block;
-  height: 100%;
-  width: 100%;
-  position: absolute;
-  flex-direction: row;
-  z-index: 1002;
-  border-radius: 4px;
-  align-items: center;
-  justify-content: center;
-  user-select: unset;
+  display: none;
 }
 
 .window-button-contain {
+  -webkit-app-region: drag;
+  background: #000000bd;
   display: none;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  flex-direction: row;
+  z-index: 1002;
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  user-select: unset;
 }
 
 .eew-warn {
@@ -129,8 +124,9 @@ body {
 }
 
 .minimize {
-  height: 25px;
   -webkit-app-region: no-drag;
+  pointer-events: auto;
+  height: 25px;
   user-select: none;
   position: absolute;
   left: 0;
@@ -139,6 +135,8 @@ body {
 }
 
 .close {
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
   padding: 5px;
   height: 25px;
   border-radius: 5px;
@@ -151,7 +149,6 @@ body {
   position: absolute;
   top: 0;
   z-index: 1001;
-  -webkit-app-region: no-drag;
   user-select: none;
 }
 

@@ -98,17 +98,17 @@ function createWindow() {
     win.webContents.send('window-resized', { width, height });
   });
 
-  win.on('show', () => {
-    if (pipWindow) {
-      pipWindow.close();
-    }
-  });
+  // win.on('show', () => {
+  //   if (pipWindow) {
+  //     pipWindow.close();
+  //   }
+  // });
 
-  win.on('restore', () => {
-    if (pipWindow) {
-      pipWindow.close();
-    }
-  });
+  // win.on('restore', () => {
+  //   if (pipWindow) {
+  //     pipWindow.close();
+  //   }
+  // });
 
   win.loadFile('./src/view/index.html');
 }
@@ -125,7 +125,7 @@ function createPiPWindow() {
     maxWidth: 400,
     icon: 'TREM.ico',
     frame: false,
-    focusable: false,
+    focusable: true,
     skipTaskbar: true,
     resizable: true,
     transparent: true,
@@ -231,12 +231,12 @@ app.on('browser-window-created', (e, window) => {
 });
 
 ipcMain.on('update-pip', (event, data) => {
-  if (data.noEew) {
-    if (pipWindow) {
-      pipWindow.close();
-    }
-    return;
-  }
+  // if (data.noEew) {
+  //   if (pipWindow) {
+  //     pipWindow.close();
+  //   }
+  //   return;
+  // }
   if (pipWindow) {
     pipWindow.webContents.send('update-pip-content', data);
   }
