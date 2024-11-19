@@ -122,7 +122,6 @@ body {
 
 .minimize {
   -webkit-app-region: no-drag;
-  pointer-events: auto;
   cursor: pointer;
   height: 25px;
   user-select: none;
@@ -134,7 +133,6 @@ body {
 
 .close {
   -webkit-app-region: no-drag;
-  pointer-events: auto;
   cursor: pointer;
   padding: 5px;
   height: 25px;
