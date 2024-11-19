@@ -46,7 +46,10 @@ class WindowControler {
   windowFocus(event, ans) {
     if ((win.isMinimized() || !win.isVisible()) && TREM.constant.GAME_MODE) {
       if (TREM.constant.SHOW_PIP_EVENTS.includes(event)) {
-        if (TREM.constant.SHOW_TREM_EEW || (event.startsWith('Eew') && ans.data.author != 'trem')) {
+        const isEew = event.startsWith('Eew');
+        const shouldShow = !isEew || ans.data.author !== 'trem' || TREM.constant.SHOW_TREM_EEW;
+
+        if (shouldShow) {
           ipcRenderer.send('toggle-pip');
         }
       }
