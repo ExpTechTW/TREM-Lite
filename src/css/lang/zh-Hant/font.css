@@ -1,0 +1,11 @@
+@font-face {
+  font-family: "Manrope";
+  src: url("./fonts/Manrope-VariableFont_wght.ttf") format("truetype");
+  font-weight: 200 800;
+}
+
+@font-face {
+  font-family: "Noto Sans TC";
+  src: url("./fonts/NotoSansTC-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+}
