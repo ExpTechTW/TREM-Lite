@@ -74,6 +74,7 @@
 
   .info-body-wrapper {
     min-height: 85px !important;
+    max-height: 85px;
   }
 
   .info-loc {

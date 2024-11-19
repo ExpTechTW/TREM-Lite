@@ -17,15 +17,15 @@ html[lang="zh-Hant"] {
     content: "此地震速報已取消";
   }
 
-  .rts-trigger-low .info-unit::after {
+  .no-eew.rts-trigger-low .info-unit::after {
     content: "弱反應 " !important;
   }
 
-  .rts-trigger-middle .info-unit::after {
+  .no-eew.rts-trigger-middle .info-unit::after {
     content: "震動檢測 " !important;
   }
 
-  .rts-trigger-high .info-unit::after {
+  .no-eew.rts-trigger-high .info-unit::after {
     content: "強震檢測 " !important;
   }
 
