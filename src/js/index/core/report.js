@@ -259,6 +259,12 @@ class ReportManager {
   }
 
   clickEvent() {
+    function stopFlashing() {
+      document.querySelectorAll('.flashing').forEach((el) => {
+        el.classList.remove('flashing');
+      });
+    }
+
     this.reportWebButtons = document.querySelectorAll('.report-web');
     this.reportWebButtons.forEach((button) => {
       button.addEventListener('click', (event) => {
@@ -268,6 +274,9 @@ class ReportManager {
           const reportId = id.replace(`-${id.split('-')[1]}`, '');
           const url = `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
           ipcRenderer.send('openUrl', url);
+
+          stopFlashing();
+          wrapper.classList.add('flashing');
         }
       });
     });
@@ -276,17 +285,21 @@ class ReportManager {
     this.reportReplyButtons.forEach((button) => {
       button.addEventListener('click', async (event) => {
         const wrapper = event.target.closest('.report-box-item-wrapper');
+        const time = Number(wrapper.getAttribute('data-time')) - 5000;
 
-        if (wrapper) {
-          stopReplay();
-          const time = Number(wrapper.getAttribute('data-time')) - 5000;
-          if (last_replay_time == time) {
-            last_replay_time = 0;
-            return;
-          }
-          last_replay_time = time;
-          startReplay(time);
+        stopReplay();
+
+        if (last_replay_time == time) {
+          last_replay_time = 0;
+          stopFlashing();
+          return;
         }
+
+        last_replay_time = time;
+        startReplay(time);
+
+        stopFlashing();
+        wrapper.classList.add('flashing');
       });
     });
   }

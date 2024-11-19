@@ -9,6 +9,20 @@ html[lang="zh-Hant"] {
   translate: 93%;
 }
 
+.flashing {
+  animation: flash 1s infinite;
+}
+
+@keyframes flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 2px #ffeb3b;
+  }
+}
+
 .report-wrapper {
   position: absolute;
   top: 0px;
