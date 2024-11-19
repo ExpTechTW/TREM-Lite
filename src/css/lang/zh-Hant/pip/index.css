@@ -256,4 +256,8 @@ body {
   .intensity-0::after {
     font-size: 28px !important;
   }
+
+  .area-name {
+    font-size: 19.5px !important;
+  }
 }
