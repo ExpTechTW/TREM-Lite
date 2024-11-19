@@ -12,6 +12,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+.info-unit,
+.info-number {
+  font-size: 13px !important;
+}
+
 .info-depth {
   width: 90px;
 }
@@ -30,16 +35,7 @@ body {
   padding: 0px;
   position: relative;
   z-index: 2;
-  border: unset!important;
-  !importan;
-  !importa;
-  !import;
-  !impor;
-  !impo;
-  !imp;
-  !im;
-  !i;
-  !;
+  border: unset !important;
 }
 
 .info-title {
@@ -186,6 +182,10 @@ body {
   cursor: pointer;
 }
 
+.intensity-0::after {
+  font-size: 20px !important;
+}
+
 @media (min-width: 343px) {
   .info-unit,
   .info-number {
@@ -195,7 +195,7 @@ body {
   .info-title-box {
     width: 85px !important;
     height: 85px !important;
-    font-size: 45px !important;
+    font-size: 55px !important;
     line-height: unset !important;
   }
 
@@ -251,5 +251,9 @@ body {
 
   .info-more {
     justify-content: space-around !important;
+  }
+
+  .intensity-0::after {
+    font-size: 28px !important;
   }
 }
