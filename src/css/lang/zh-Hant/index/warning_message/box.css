@@ -1,6 +1,6 @@
 ﻿.warning-message-wrapper {
-  top: 3em;
-  right: 325px;
+  top: 2em;
+  right: 320px;
   font-size: 15px;
   position: absolute;
   color: #ffffff1f;
@@ -17,7 +17,7 @@
 }
 
 .report-wrapper.hidden ~ .warning-message-wrapper {
-  transform: translateX(160%);
+  transform: translateX(163%);
 }
 
 .warning-message-contain {
