@@ -205,8 +205,10 @@ else {
     createWindow();
     createPiPWindow();
 
-    const iconPath = path.join(__dirname, 'TREM.icns');
-    app.dock.setIcon(iconPath);
+    if (is_mac) {
+      const iconPath = path.join(__dirname, 'TREM.png');
+      app.dock.setIcon(nativeImage.createFromPath(iconPath));
+    }
   });
 }
 
