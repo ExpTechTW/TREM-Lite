@@ -339,8 +339,6 @@ TREM.variable.events.on('DataRts', (ans) => {
   ).sort((a, b) => b.i - a.i)
     .map((loc) => intensity_item(loc.i, loc.name));
 
-  console.log(int_list);
-
   if (int_list.length) {
     const hasNoLoc = !TREM.variable.cache.rts_trigger.loc.length;
     TREM.variable.cache.rts_trigger.loc = getTopIntensities(filterIntArray(int_list), 8);
