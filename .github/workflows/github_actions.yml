@@ -59,6 +59,8 @@ jobs:
       
     - name: Build
       run: npm run build
+      env:
+        ELECTRON_ARCH: ${{ matrix.arch }}
       
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
