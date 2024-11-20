@@ -31,6 +31,7 @@ class FocusManager {
     this.focusButton.addEventListener('click', () => {
       this.focusReset();
       this.lock = false;
+      this.isMouseDown = false;
       this.focusButton.style.color = 'white';
     });
 
