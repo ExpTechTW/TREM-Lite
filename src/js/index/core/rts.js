@@ -3,7 +3,7 @@ const TREM = require('../constant');
 const EEWCalculator = require('../utils/eewCalculator');
 
 const { intensity_float_to_int, search_loc_name } = require('../utils/utils');
-const show_eew = require('./eew');
+const eew = require('./eew');
 const { show_report_point } = require('./report');
 
 const calculator = new EEWCalculator();
@@ -344,7 +344,7 @@ TREM.variable.events.on('DataRts', (ans) => {
     TREM.variable.cache.rts_trigger.loc = getTopIntensities(filterIntArray(int_list), 8);
     TREM.variable.cache.rts_trigger.max = int_list[0].i;
     if (hasNoLoc) {
-      show_eew(false);
+      eew.show_eew(false);
     }
   }
   else {

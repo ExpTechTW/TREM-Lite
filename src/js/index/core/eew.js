@@ -357,4 +357,4 @@ class EewManager {
 TREM.class.EewManager = EewManager;
 
 const eewManager = EewManager.getInstance();
-module.exports = (...args) => eewManager.show_eew(...args);
+module.exports = eewManager;
