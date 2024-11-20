@@ -37,7 +37,7 @@ function createWindow() {
     width: 1280,
     height: 815,
     maximizable: true,
-    icon: is_mac ? 'TREM.icns' : 'TREM.ico',
+    icon: 'TREM.ico',
     frame: true,
     webPreferences: {
       nodeIntegration: true,
@@ -120,7 +120,7 @@ function createPiPWindow() {
     height: 147,
     minWidth: 276,
     maxWidth: 400,
-    icon: is_mac ? 'TREM.icns' : 'TREM.ico',
+    icon: 'TREM.ico',
     frame: false,
     show: false,
     focusable: true,
@@ -141,7 +141,7 @@ function createPiPWindow() {
   pipWindow.setAspectRatio(1.87);
 
   pipWindow.setMaximizable(false);
-  pipWindow.setPosition(0, 0);
+  pipWindow.setPosition(0, 0); d;
   pipWindow.setIgnoreMouseEvents(false);
 
   pipWindow.on('closed', () => pipWindow = null);
@@ -166,7 +166,7 @@ function createSettingWindow() {
     ...(is_mac && {
       vibrancy: 'ultra-dark',
     }),
-    icon: is_mac ? 'TREM.icns' : 'TREM.ico',
+    icon: 'TREM.ico',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -204,6 +204,9 @@ else {
     trayIcon();
     createWindow();
     createPiPWindow();
+
+    const iconPath = path.join(__dirname, 'TREM.icns');
+    app.dock.setIcon(iconPath);
   });
 }
 
@@ -308,7 +311,7 @@ function trayIcon() {
     tray = null;
   }
 
-  const iconPath = path.join(__dirname, is_mac ? 'TREM.icns' : 'TREM.ico');
+  const iconPath = path.join(__dirname, 'TREM.ico');
   tray = new Tray(nativeImage.createFromPath(iconPath));
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', () => {
