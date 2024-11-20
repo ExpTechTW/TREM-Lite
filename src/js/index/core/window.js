@@ -78,8 +78,6 @@ function status_alert() {
   return TREM.variable.cache.rts_trigger.loc.length || TREM.variable.cache.show_eew_box;
 }
 
-ipcRenderer.send('toggle-pip');
-
 TREM.class.WindowControler = WindowControler;
 
 WindowControler.getInstance();
