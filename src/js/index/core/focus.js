@@ -57,6 +57,10 @@ class FocusManager {
     });
   }
 
+  getLock() {
+    return this.lock;
+  }
+
   focus() {
     if (this.lock) {
       return;
