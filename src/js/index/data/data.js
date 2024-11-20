@@ -3,20 +3,20 @@ const TREM = require('../constant');
 const now = require('../utils/ntp');
 
 const http = require('./http');
-const file = require('./file');
+// const file = require('./file');
 
 let last_fetch_time = 0;
 
-TREM.variable.events.on('MapLoad', (map) => {
+TREM.variable.events.on('MapLoad', () => {
   setInterval(async () => {
     const local_now = Date.now();
     if (TREM.variable.play_mode == 3) {
       // replay (file)
-      const data = null;
+      // const data = null;
     }
     else if (TREM.variable.play_mode == 1) {
       // realtime (websocket)
-      const data = null;
+      // const data = null;
     }
     else {
       // http (realtime/replay)
@@ -123,7 +123,7 @@ function EEWData(newData = []) {
   Object.keys(TREM.variable.cache.eew_last).forEach((id) => {
     const item = TREM.variable.cache.eew_last[id];
     if (currentTime - item.last_time > 600000) {
-      delete TREM.variable.cache.eew_last[id];
+      Reflect.deleteProperty(TREM.variable.cache.eew_last, id);
     }
   });
 

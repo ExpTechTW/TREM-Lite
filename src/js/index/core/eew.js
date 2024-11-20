@@ -112,7 +112,7 @@ TREM.variable.events.on('EewUpdate', (ans) => {
 });
 TREM.variable.events.on('EewEnd', (ans) => {
   removeEewLayersAndSources(ans.data.id);
-  delete eew_cache[ans.data.id];
+  Reflect.deleteProperty(eew_cache, ans.data.id);
   show_eew(true);
 });
 

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let TREM = JSON.parse(localStorage.getItem('constant'));
 
 const logger = require('../js/core/utils/logger');

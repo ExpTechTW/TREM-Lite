@@ -33,22 +33,6 @@ class Logger {
       debug: colors.blue,
     };
 
-    const formatMessage = (message, ...args) => {
-      if (args.length === 0) {
-        return typeof message === 'string' ? message : util.inspect(message, { depth: null });
-      }
-
-      if (typeof message === 'string') {
-        return util.format(message, ...args.map((arg) =>
-          typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
-        ));
-      }
-
-      return [message, ...args].map((arg) =>
-        typeof arg === 'object' ? util.inspect(arg, { depth: null }) : arg,
-      ).join(' ');
-    };
-
     const consoleFormat = winston.format.printf((info) => {
       const date = new Date();
       const timestamp = `${this.formatTwoDigits(date.getHours())}:${this.formatTwoDigits(date.getMinutes())}:${this.formatTwoDigits(date.getSeconds())}`;

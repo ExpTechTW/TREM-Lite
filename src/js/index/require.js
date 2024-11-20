@@ -4,6 +4,7 @@ const isDev = process.defaultApp
 let TREM;
 
 if (isDev) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   TREM = require('../js/index/constant');
 }
 

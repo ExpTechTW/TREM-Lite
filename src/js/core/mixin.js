@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class MixinManager {
   static mixins = new Map();
   static cache = new Map();

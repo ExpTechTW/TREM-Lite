@@ -171,26 +171,26 @@ class AudioManager {
   }
 
   handleEewEnd(ans) {
-    delete this.ttsCache[ans.data.id];
+    Reflect.deleteProperty(this.ttsCache, ans.data.id);
   }
 
-  handleRtsPga2(ans) {
+  handleRtsPga2() {
     this.audioQueues.pga.add(TREM.constant.AUDIO.PGA2, this.priorityRules.pga);
   }
 
-  handleRtsPga1(ans) {
+  handleRtsPga1() {
     this.audioQueues.pga.add(TREM.constant.AUDIO.PGA1, this.priorityRules.pga);
   }
 
-  handleRtsShindo2(ans) {
+  handleRtsShindo2() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO2, this.priorityRules.shindo);
   }
 
-  handleRtsShindo1(ans) {
+  handleRtsShindo1() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO1, this.priorityRules.shindo);
   }
 
-  handleRtsShindo0(ans) {
+  handleRtsShindo0() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO0);
   }
 

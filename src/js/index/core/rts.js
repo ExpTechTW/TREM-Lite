@@ -174,7 +174,7 @@ TREM.variable.events.on('DataRts', (ans) => {
         }
       }
       else {
-        delete level_list[id];
+        Reflect.deleteProperty(level_list, id);
       }
 
       if (alert && ans.data.station[id].alert) {
@@ -406,7 +406,7 @@ function updateIntensityHistory(newData, time) {
   const cutoff = time - 30000;
   Object.keys(TREM.variable.cache.int_cache_list).forEach((code) => {
     if (TREM.variable.cache.int_cache_list[code].lastUpdate < cutoff) {
-      delete TREM.variable.cache.int_cache_list[code];
+      Reflect.deleteProperty(TREM.variable.cache.int_cache_list, code);
     }
   });
 

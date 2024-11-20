@@ -202,7 +202,7 @@ function IntensityData(newData = []) {
   Object.keys(TREM.variable.cache.intensity_last).forEach((id) => {
     const item = TREM.variable.cache.intensity_last[id];
     if (currentTime - item.last_time > 600000) {
-      delete TREM.variable.cache.intensity_last[id];
+      Reflect.deleteProperty(TREM.variable.cache.intensity_last, id);
     }
   });
 
