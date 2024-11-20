@@ -98,49 +98,6 @@ class DataManager {
     TREM.variable.data.eew = TREM.variable.data.eew.filter((item) =>
       item.eq?.time
       && currentTime - item.eq.time <= EXPIRY_TIME
-      && !item.EewEnd,
-    );
-
-    newData.forEach((data) => {
-      if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) {
-        return;
-      }
-
-      const existingIndex = TREM.variable.data.eew.findIndex((item) => item.id == data.id);
-      const eventData = {
-        info: { type: TREM.variable.play_mode },
-        data,
-      };
-
-      if (existingIndex == -1) {
-        if (!TREM.variable.cache.eew_last[data.id]) {
-          if (TREM.constant.EEW_AUTHOR.includes(data.author)) {
-            TREM.variable.cache.eew_last[data.id] = {
-              last_time: currentTime,
-              serial: 1,
-            };
-            TREM.variable.data.eew.push(data);
-            TREM.variable.events.emit('EewRelease', eventData);
-          }
-          return;
-        }
-      }
-
-      if (TREM.variable.cache.eew_last[data.id] && TREM.variable.cache.eew_last[data.id].serial < data.serial) {
-        TREM.variable.cache.eew_last[data.id].serial = data.serial;
-        TREM.variable.events.emit('EewUpdate', eventData);
-
-        if (!TREM.variable.data.eew[existingIndex].status && data.status == 1) {
-          TREM.variable.events.emit('EewAlert', eventData);
-        }
-
-        TREM.variable.data.eew[existingIndex] = data;
-      }
-    });
-
-    TREM.variable.data.eew = TREM.variable.data.eew.filter((item) =>
-      item.eq?.time
-      && currentTime - item.eq.time <= EXPIRY_TIME
       && !item.EewEnd
       && !(item.status === 3 && currentTime - item.status3Time > STATUS_3_TIMEOUT),
     );
