@@ -20,14 +20,14 @@ const triggerBox = document.getElementById('trigger-box');
 
 class EewManager {
   static instance = null;
-  flash = false;
-  eew_rotation = 0;
-  static eew_cache = {};
 
   constructor() {
     if (EewManager.instance) {
       return EewManager.instance;
     }
+    this.flash = false;
+    this.eew_rotation = 0;
+    this.eew_cache = {};
     this.bindEvents();
     EewManager.instance = this;
   }
