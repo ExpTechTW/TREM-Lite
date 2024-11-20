@@ -274,9 +274,6 @@ class ReportManager {
           const reportId = id.replace(`-${id.split('-')[1]}`, '');
           const url = `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
           ipcRenderer.send('openUrl', url);
-
-          stopFlashing();
-          wrapper.classList.add('flashing');
         }
       });
     });
