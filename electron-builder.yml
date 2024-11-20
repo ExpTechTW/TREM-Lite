@@ -14,7 +14,7 @@ directories:
   output: dist
 
 mac:
-icon: ./src/TREM.icns
+  icon: ./src/TREM.png
   identity: null
   target:
     - target: dmg
