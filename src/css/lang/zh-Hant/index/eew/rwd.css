@@ -18,6 +18,10 @@
     margin-top: 3px !important;
   }
 
+  .info-mag-val {
+    width: 85px !important;
+  }
+
   .report-depth-val {
     font-size: 25px !important;
     margin-top: -2px !important;
