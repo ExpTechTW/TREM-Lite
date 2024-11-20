@@ -145,4 +145,4 @@ class CrossManager {
 TREM.class.CrossManager = CrossManager;
 
 const crossManager = CrossManager.getInstance();
-module.exports = (...args) => crossManager.refresh_cross(...args);
+module.exports = crossManager;

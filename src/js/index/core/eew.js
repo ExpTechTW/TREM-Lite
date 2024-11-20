@@ -2,7 +2,7 @@ const TREM = require('../constant');
 const EEWCalculator = require('../utils/eewCalculator');
 const now = require('../utils/ntp');
 const { formatTime } = require('../utils/utils');
-const refresh_cross = require('./cross');
+const cross = require('./cross');
 const { ipcRenderer } = require('electron');
 
 const calculator = new EEWCalculator(require('../../../resource/data/time.json'));
@@ -108,7 +108,7 @@ TREM.variable.events.on('EewAlert', (ans) => {
 TREM.variable.events.on('EewUpdate', (ans) => {
   eew_cache[ans.data.id] = ans.data;
   show_eew(false);
-  refresh_cross(false);
+  cross.refresh_cross(false);
 });
 TREM.variable.events.on('EewEnd', (ans) => {
   removeEewLayersAndSources(ans.data.id);
