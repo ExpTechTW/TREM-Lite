@@ -50,6 +50,14 @@ body {
   outline: none;
 }
 
+.maplibregl-canvas:focus {
+  outline: none !important;
+}
+
+.maplibregl-canvas-container:focus {
+  outline: none !important;
+}
+
 .connect {
   position: absolute;
   left: 68px;
