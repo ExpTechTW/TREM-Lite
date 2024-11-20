@@ -1,0 +1,73 @@
+<html lang="zh-Hant">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../css/core/intensity.css" />
+  <link rel="stylesheet" href="../css/core/loading.css" />
+  <script src="../js/pip/require.js" defer></script>
+</head>
+
+<body>
+  <div class="drag-area"></div>
+  <div id="pip-info-wrapper" class="info-wrapper no-eew">
+    <div class="window-button-wrapper">
+      <div class="window-button-contain">
+        <div class="minimize">
+          <svg height="100%" version="1.1" viewBox="0 0 24 24" width="100%">
+            <g fill="none" fill-rule="evenodd" stroke="none" stroke-width="1">
+              <g transform="translate(12.000000, 12.000000) scale(-1, 1) translate(-12.000000, -12.000000) ">
+                <path
+                  d="M19,19 L5,19 L5,5 L12,5 L12,3 L5,3 C3.89,3 3,3.9 3,5 L3,19 C3,20.1 3.89,21 5,21 L19,21 C20.1,21 21,20.1 21,19 L21,12 L19,12 L19,19 Z M14,3 L14,5 L17.59,5 L7.76,14.83 L9.17,16.24 L19,6.41 L19,10 L21,10 L21,3 L14,3 Z"
+                  fill="#fff" fill-rule="nonzero"></path>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="close">
+          <svg height="100%" viewBox="0 0 24 24" width="100%">
+            <path
+              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+              fill="#fff"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="info-title">
+      <div id="pip-info-unit" class="info-unit"></div>
+      <div id="pip-info-number" class="info-number"></div>
+    </div>
+    <div class="info-body-wrapper" id="pip-info-body-wrapper">
+      <div id="trigger-box" class="trigger-box"></div>
+      <div class="info-box">
+        <div class="info-title-wrapper">
+          <div id="pip-info-intensity" class="info-title-box"></div>
+          <div class="info-intensity"></div>
+        </div>
+        <div class="info-more">
+          <div id="pip-info-loc" class="info-loc"></div>
+          <div id="pip-info-time" class="info-time"></div>
+          <div id="pip-info-footer" class="info-footer nsspe">
+            <div class="info-nsspe"><span></span></div>
+            <div class="info-mag-dep">
+              <div class="info-mag">
+                <div class="info-mag-text"></div>
+                <div id="pip-info-mag" class="info-mag-val"></div>
+              </div>
+              <div class="info-depth">
+                <div class="info-depth-text"></div>
+                <div id="pip-info-depth" class="info-depth-val"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cancel-box">
+        <div class="cancel-title"><span></span></div>
+        <div class="cancel-body"><span></span></div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

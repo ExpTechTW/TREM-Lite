@@ -12,11 +12,14 @@ const fs = require('fs');
 
 let win;
 let SettingWindow;
+let pipWindow = null;
 let tray = null;
 let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
 const test = process.argv.includes('--raw') ? 0 : 1;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
+
+const is_mac = process.platform === 'darwin';
 
 function updateAutoLaunchSetting(value) {
   app.setLoginItemSettings({
@@ -58,13 +61,18 @@ function createWindow() {
     }
   });
 
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
   win.on('close', (event) => {
     if (forceQuit) {
       win = null;
       return;
     }
 
-    if (process.platform === 'darwin') {
+    if (is_mac) {
       event.preventDefault();
       win.hide();
     }
@@ -87,7 +95,59 @@ function createWindow() {
     win.webContents.send('window-resized', { width, height });
   });
 
+  win.on('show', () => {
+    if (pipWindow) {
+      pipWindow.hide();
+    }
+  });
+
+  win.on('restore', () => {
+    if (pipWindow) {
+      pipWindow.hide();
+    }
+  });
+
   win.loadFile('./src/view/index.html');
+}
+
+function createPiPWindow() {
+  if (pipWindow) {
+    return;
+  }
+
+  pipWindow = new BrowserWindow({
+    width: 276,
+    height: 147,
+    minWidth: 276,
+    maxWidth: 400,
+    icon: 'TREM.ico',
+    frame: false,
+    show: false,
+    focusable: true,
+    skipTaskbar: true,
+    resizable: true,
+    transparent: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      backgroundThrottling: false,
+      additionalArguments: ['--pip-window'],
+    },
+  });
+
+  pipWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  pipWindow.setAlwaysOnTop(true, 'screen-saver');
+
+  pipWindow.setAspectRatio(1.87);
+
+  pipWindow.setMaximizable(false);
+  pipWindow.setPosition(0, 0);
+  pipWindow.setIgnoreMouseEvents(false);
+
+  pipWindow.on('closed', () => pipWindow = null);
+
+  pipWindow.loadFile('./src/view/pip.html');
+  require('@electron/remote/main').enable(pipWindow.webContents);
 }
 
 function createSettingWindow() {
@@ -103,7 +163,9 @@ function createSettingWindow() {
     frame: false,
     transparent: true,
     resizable: false,
-    vibrancy: 'ultra-dark',
+    ...(is_mac && {
+      vibrancy: 'ultra-dark',
+    }),
     icon: 'TREM.ico',
     webPreferences: {
       nodeIntegration: true,
@@ -141,6 +203,12 @@ else {
   app.whenReady().then(() => {
     trayIcon();
     createWindow();
+    createPiPWindow();
+
+    if (is_mac) {
+      const iconPath = path.join(__dirname, 'TREM.png');
+      app.dock.setIcon(nativeImage.createFromPath(iconPath));
+    }
   });
 }
 
@@ -166,6 +234,18 @@ app.on('activate', () => {
 
 app.on('browser-window-created', (e, window) => {
   window.removeMenu();
+});
+
+ipcMain.on('update-pip', (event, data) => {
+  if (data.noEew) {
+    if (pipWindow) {
+      pipWindow.hide();
+    }
+    return;
+  }
+  if (pipWindow) {
+    pipWindow.webContents.send('update-pip-content', data);
+  }
 });
 
 ipcMain.on('openSettingWindow', () => createSettingWindow());
@@ -210,6 +290,12 @@ ipcMain.on('toggleFullscreen', () => {
   }
 });
 
+ipcMain.on('toggle-pip', () => {
+  if (pipWindow) {
+    pipWindow.show();
+  }
+});
+
 ipcMain.on('openPluginFolder', () => {
   if (!fs.existsSync(pluginDir)) {
     fs.mkdirSync(pluginDir, { recursive: true });
@@ -227,7 +313,8 @@ function trayIcon() {
     tray = null;
   }
 
-  tray = new Tray(nativeImage.createFromPath('TREM.ico'));
+  const iconPath = path.join(__dirname, 'TREM.ico');
+  tray = new Tray(nativeImage.createFromPath(iconPath));
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', () => {
     if (win != null) {
@@ -269,6 +356,9 @@ function trayIcon() {
 }
 
 function restart() {
+  if (pipWindow) {
+    pipWindow.close();
+  }
   app.relaunch();
   forceQuit = true;
   app.quit();

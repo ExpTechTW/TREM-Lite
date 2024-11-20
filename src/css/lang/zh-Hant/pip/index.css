@@ -1,0 +1,263 @@
+@import url("../font.css");
+@import url("../index/eew/eew.css");
+
+body {
+  -webkit-app-region: drag;
+  background-color: unset !important;
+  border-radius: unset !important;
+  width: 100%;
+  user-select: unset;
+  margin: 0px;
+  font-family: Manrope, "Noto Sans TC", sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+.info-unit,
+.info-number {
+  font-size: 13px !important;
+}
+
+.info-depth {
+  width: 90px;
+}
+
+.info-mag-val,
+.info-depth-val {
+  font-size: 20px;
+  margin-top: 3px;
+}
+
+#pip-info-wrapper {
+  width: 99%;
+  height: 99%;
+  background-color: rgb(80, 80, 80);
+  margin: 0px;
+  padding: 0px;
+  position: relative;
+  z-index: 2;
+  border: unset !important;
+}
+
+.info-title {
+  margin-top: 5px;
+  margin-left: 5px;
+}
+
+.info-body-wrapper {
+  height: 100%;
+  margin: 10px;
+  background-color: rgba(56, 56, 56, 0.9) !important;
+  margin-top: 0;
+  min-height: unset !important;
+  padding: 5px !important;
+  display: unset !important;
+}
+
+.info-box {
+  height: 100% !important;
+}
+
+.info-more {
+  height: 100% !important;
+  justify-content: center;
+}
+
+.info-title-wrapper {
+  margin-top: 0px !important;
+}
+
+.info-nsspe {
+  font-size: 15px !important;
+}
+
+.info-mag-val,
+.info-depth-val {
+  font-size: 20px !important;
+  margin-top: 3px !important;
+}
+
+.info-depth-val {
+  &:after {
+    font-size: 17px !important;
+    margin-left: 2px !important;
+  }
+}
+
+.info-mag-text,
+.info-depth-text {
+  font-size: 24px !important;
+}
+
+.info-mag-text {
+  width: 100px !important;
+}
+
+.info-mag-val {
+  &:before {
+    font-size: 20px !important;
+  }
+}
+
+.info-title-box {
+  width: 55px !important;
+  height: 55px !important;
+  font-size: 35px !important;
+  line-height: unset !important;
+}
+
+.info-loc {
+  font-size: 20px !important;
+}
+
+.window-button-wrapper {
+  -webkit-app-region: drag;
+  pointer-events: auto;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  flex-direction: row;
+  z-index: 1002;
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  user-select: unset;
+  display: none;
+}
+
+.window-button-contain {
+  -webkit-app-region: drag;
+  background: #000000bd;
+  display: none;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  flex-direction: row;
+  z-index: 1002;
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  user-select: unset;
+}
+
+.eew-warn {
+  border: 0px solid var(--eew-s-warn) !important;
+}
+
+.minimize {
+  -webkit-app-region: no-drag;
+  pointer-events: all;
+  cursor: pointer;
+  height: 25px;
+  user-select: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 5px;
+}
+
+.close {
+  -webkit-app-region: no-drag;
+  pointer-events: all;
+  cursor: pointer;
+  padding: 5px;
+  height: 25px;
+  border-radius: 5px;
+  color: #000000;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  right: 0;
+  position: absolute;
+  top: 0;
+  z-index: 1001;
+  user-select: none;
+}
+
+.minimize svg {
+  cursor: pointer;
+}
+
+.close svg {
+  cursor: pointer;
+}
+
+.intensity-0::after {
+  font-size: 20px !important;
+}
+
+@media (min-width: 343px) {
+  .info-unit,
+  .info-number {
+    font-size: 17px !important;
+  }
+
+  .info-title-box {
+    width: 85px !important;
+    height: 85px !important;
+    font-size: 55px !important;
+    line-height: unset !important;
+  }
+
+  .info-intensity {
+    font-size: 14px !important;
+  }
+
+  .info-loc {
+    font-size: 31px !important;
+  }
+
+  .info-body-wrapper {
+    padding: 10px !important;
+    margin-top: -3px;
+  }
+
+  .info-time {
+    font-size: 17px !important;
+  }
+
+  .info-nsspe {
+    font-size: 20px !important;
+  }
+
+  .info-mag-val,
+  .info-depth-val {
+    font-size: 30px !important;
+    margin-top: 0px !important;
+  }
+
+  .info-depth-val {
+    &:after {
+      font-size: 25px !important;
+      margin-left: 3px !important;
+    }
+  }
+
+  .info-mag-text,
+  .info-depth-text {
+    font-size: 35px !important;
+  }
+
+  .info-mag-text {
+    width: 100px !important;
+  }
+
+  .info-mag-val {
+    &:before {
+      font-size: 28px !important;
+      margin-right: 2px !important;
+    }
+  }
+
+  .info-more {
+    justify-content: space-around !important;
+  }
+
+  .intensity-0::after {
+    font-size: 28px !important;
+  }
+
+  .area-name {
+    font-size: 19.5px !important;
+  }
+}

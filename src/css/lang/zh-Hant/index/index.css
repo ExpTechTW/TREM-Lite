@@ -1,10 +1,11 @@
+@import url("../font.css");
 @import url("./eew/eew.css");
 @import url("./report/box.css");
 @import url("./max/box.css");
 @import url("./intensity_color/box.css");
 @import url("./rts_intensity_list/box.css");
 @import url("./nav_bar/box.css");
-@import url("../../../core/rwd.css");
+@import url("./eew/rwd.css");
 
 body {
   user-select: none;

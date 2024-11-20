@@ -51,30 +51,31 @@ function refresh_cross(show) {
 
   clean = true;
 
-  if (show) {
-    for (const eew of TREM.variable.data.eew) {
-      if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') {
-        continue;
-      }
-      const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
-      const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
-      if (sWaveSource && pWaveSource) {
-        eew_list.push(eew);
-      }
+  for (const eew of TREM.variable.data.eew) {
+    if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') {
+      continue;
     }
+    const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
+    const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
+    if (sWaveSource && pWaveSource) {
+      eew_list.push(eew);
+    }
+  }
 
-    for (const eew of eew_list) {
-      const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
-      const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
+  for (const eew of eew_list) {
+    const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
+    const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
 
-      if (sWaveSource && pWaveSource) {
-        const existingIndex = eew_list.findIndex((item) => item.id === eew.id);
-        let no = existingIndex;
-        if (eew_list.length > 1) {
-          no++;
-        }
+    if (sWaveSource && pWaveSource) {
+      const existingIndex = eew_list.findIndex((item) => item.id === eew.id);
+      let no = existingIndex;
+      if (eew_list.length > 1) {
+        no++;
+      }
 
-        if (no < 5) {
+      if (no < 5) {
+        if (show || eew.status == 3) {
+          const opacity = eew.status == 3 ? 0.5 : 1;
           markerFeatures.push({
             type: 'Feature',
             geometry: {
@@ -87,6 +88,7 @@ function refresh_cross(show) {
               maxIntensity: eew.eq.max,
               fillColor: TREM.constant.COLOR.INTENSITY[eew.eq.max],
               strokeColor: TREM.constant.COLOR.INTENSITY_TEXT[eew.eq.max],
+              opacity: opacity,
             },
           });
         }
@@ -110,6 +112,8 @@ function refresh_cross(show) {
         'circle-color': ['get', 'fillColor'],
         'circle-stroke-width': 4,
         'circle-stroke-color': ['get', 'strokeColor'],
+        'circle-opacity': ['get', 'opacity'],
+        'circle-stroke-opacity': ['get', 'opacity'],
       },
     });
   }

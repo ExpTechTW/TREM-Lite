@@ -17,6 +17,18 @@ html[lang="zh-Hant"] {
     content: "此地震速報已取消";
   }
 
+  .no-eew.rts-trigger-low .info-unit::after {
+    content: "弱反應 " !important;
+  }
+
+  .no-eew.rts-trigger-middle .info-unit::after {
+    content: "震動檢測 " !important;
+  }
+
+  .no-eew.rts-trigger-high .info-unit::after {
+    content: "強震檢測 " !important;
+  }
+
   .eew-warn .info-unit::before {
     content: "地震速報 ";
   }
@@ -66,6 +78,21 @@ html[lang="zh-Hant"] {
   }
 }
 
+.rts-trigger-low {
+  background-color: var(--rts-trigger-low) !important;
+  border: 1px solid var(--rts-trigger-low) !important;
+}
+
+.rts-trigger-middle {
+  background-color: var(--rts-trigger-middle) !important;
+  border: 1px solid var(--rts-trigger-middle) !important;
+}
+
+.rts-trigger-high {
+  background-color: var(--rts-trigger-high) !important;
+  border: 1px solid var(--rts-trigger-high) !important;
+}
+
 .eew-warn {
   background-color: var(--eew-s-warn) !important;
   border: 1px solid var(--eew-s-warn) !important;
@@ -85,9 +112,8 @@ html[lang="zh-Hant"] {
   position: absolute;
   top: 0;
   display: flex;
-  flex-direction: column;
   gap: 8px;
-  margin: 5px;
+  margin: 4px;
   padding: 8px;
   background-color: #505050c7;
   color: white;
@@ -96,6 +122,7 @@ html[lang="zh-Hant"] {
   border-radius: 5px;
   pointer-events: none;
   border: 1px solid #515151;
+  flex-direction: column;
 
   /**發報標題**/
   .info-title {
@@ -122,6 +149,7 @@ html[lang="zh-Hant"] {
     display: flex;
     font-size: 13px;
     font-weight: bold;
+    align-items: center;
   }
 
   /**標題外包**/
@@ -327,4 +355,19 @@ html[lang="zh-Hant"] {
 
 .eew-cancel .cancel-box {
   opacity: 1;
+}
+
+/**震動檢測**/
+.trigger-box {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.trigger-areas {
+  width: 100%;
+}
+
+.area-name {
+  font-size: 15.5px;
 }

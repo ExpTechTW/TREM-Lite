@@ -1,0 +1,72 @@
+name: TREM-Lite
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # Windows builds
+          - os: windows-latest
+            platform: Windows
+            arch: x64
+            artifact-ext: exe
+          - os: windows-latest
+            platform: Windows
+            arch: ia32
+            artifact-ext: exe
+            
+          # Linux builds  
+          - os: ubuntu-latest
+            platform: Linux
+            arch: x64
+            artifact-ext: deb
+          - os: ubuntu-latest
+            platform: Linux
+            arch: ia32
+            artifact-ext: deb
+            
+          # macOS builds
+          - os: macos-latest
+            platform: macOS
+            arch: x64
+            artifact-ext: dmg
+          - os: macos-latest 
+            platform: macOS
+            arch: arm64
+            artifact-ext: dmg
+
+    runs-on: ${{ matrix.os }}
+    
+    defaults:
+      run:
+        working-directory: src
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build
+      run: npm run build
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: TREM-Lite.${{ matrix.platform }}_${{ matrix.arch }}.${{ matrix.artifact-ext }}
+        path: |
+          ${{ github.workspace }}/dev/*.${{ matrix.artifact-ext }}
+        if-no-files-found: error
+
+    - name: List artifacts
+      run: ls -R ${{ github.workspace }}/dev/

@@ -51,6 +51,11 @@ const TREM = {
           ALERT: '#ff0000',
           CANCEL: '#404040',
         },
+        TRIGGER: {
+          LOW: '#1e9632',
+          MIDDLE: '#ffc800',
+          HIGH: '#c00000',
+        },
         P: '#00CACA',
       },
       TREM: {
@@ -110,6 +115,18 @@ const TREM = {
     },
 
     SHOW_REPORT: true,
+
+    GAME_MODE: true,
+
+    SHOW_PIP_EVENTS: [
+      'EewRelease',
+      'EewAlert',
+      'RtsShindo2',
+      'RtsShindo1',
+      'RtsShindo0',
+      'TsunamiRelease',
+      'EewNewAreaAlert',
+    ],
   },
 
   variable: {
@@ -126,7 +143,7 @@ const TREM = {
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode: 0,
     replay: {
-      start_time: 1731740504615,
+      start_time: 0,
       local_time: 0,
     },
     station: null,
@@ -135,6 +152,11 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      show_eew_box: false,
+      rts_trigger: {
+        max: 0,
+        loc: [],
+      },
       int_cache_list: {},
       last_report: null,
       eewIntensityArea: {},
