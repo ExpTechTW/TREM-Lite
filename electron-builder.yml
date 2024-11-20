@@ -16,12 +16,18 @@ directories:
 mac:
   icon: ./src/TREM.png
   identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
   target:
     - target: dmg
       arch:
         - x64
         - arm64
   compression: maximum
+  electronLanguages: ["zh_TW"]
+  entitlements: null
+  entitlementsInherit: null
+  signIgnore: ["node_modules"]
 
 linux:
   target:
