@@ -163,7 +163,9 @@ function createSettingWindow() {
     frame: false,
     transparent: true,
     resizable: false,
-    vibrancy: 'ultra-dark',
+    ...(is_mac && {
+      vibrancy: 'ultra-dark',
+    }),
     icon: is_mac ? 'TREM.icns' : 'TREM.ico',
     webPreferences: {
       nodeIntegration: true,
