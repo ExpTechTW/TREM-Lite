@@ -1,3 +1,5 @@
+const logger = require('../core/utils/logger');
+
 const maplibregl = require('maplibre-gl');
 
 const TREM = require('./constant');
@@ -92,9 +94,9 @@ function initMap(delay = 3000) {
       map.on('load', () => resolve(map));
 
       map.on('error', (e) => {
-        console.error('Map loading error:', e);
+        logger.error('Map loading error:', e);
 
-        console.log(`Retrying... attempts remaining`);
+        logger.warn(`Retrying... attempts remaining`);
         setTimeout(() => {
           attempt();
         }, delay);
@@ -107,7 +109,7 @@ function initMap(delay = 3000) {
 
 initMap()
   .then(async (map) => {
-    console.log('Map loaded successfully');
+    logger.info('Map loaded successfully');
 
     map.on('resize', () => map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS));
 
@@ -152,5 +154,5 @@ initMap()
     TREM.variable.events.emit('MapLoad', map);
   })
   .catch((error) => {
-    console.error('Final error:', error);
+    logger.error('Final error:', error);
   });
