@@ -3,7 +3,7 @@
 <div align="center">
 <a href="https://github.com/ExpTechTW/TREM-Lite/tree/main"><img alt="status" src="https://img.shields.io/badge/status-stable-blue.svg"></a>
 <a href="https://github.com/ExpTechTW/TREM-Lite/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/exptechtw/trem-lite"></a>
-<a href="https://github.com/ExpTechTW/TREM-Lite/actions/workflows/github_actions.yml"><img alt="GitHub Workflow Status" src="https://github.com/ExpTechTW/TREM-Lite/actions/workflows/build.yml/badge.svg"></a>
+<a href="https://github.com/ExpTechTW/TREM-Lite/actions/workflows/github_actions.yml"><img alt="GitHub Workflow Status" src="https://github.com/ExpTechTW/TREM-Lite/actions/workflows/github_actions.yml/badge.svg"></a>
 <a href="https://good-labs.github.io/greater-good-affirmation"><img alt="Greater Good" src="https://good-labs.github.io/greater-good-affirmation/assets/images/badge.svg"></a>
 <img alt="GitHub License" src="https://img.shields.io/github/license/exptechtw/TREM-Lite">
 <a href="https://exptech.dev/trem"><img alt="website" src="https://img.shields.io/badge/website-exptech.dev-purple.svg"></a>

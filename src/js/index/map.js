@@ -82,6 +82,8 @@ const map = new maplibregl.Map({
   attributionControl: false,
   pitchWithRotate: false,
   dragRotate: false,
+  maxZoom: 12,
+  minZoom: 4,
 });
 
 map.on('resize', () => map.fitBounds(TREM.constant.MAP.BOUNDS, TREM.constant.MAP.OPTIONS));

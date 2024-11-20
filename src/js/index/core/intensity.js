@@ -90,7 +90,9 @@ function show_intensity(ans) {
       data: TREM.variable.data.rts,
     });
     TREM.variable.cache.bounds.intensity = [];
-    focus_reset();
+    if (!TREM.class.FocusManager?.getInstance().getLock()) {
+      focus_reset();
+    }
     TREM.variable.map.setPaintProperty('rts-layer', 'circle-opacity', 1);
     TREM.variable.map.getSource('intensity-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
     drawEewArea();
