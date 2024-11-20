@@ -283,7 +283,6 @@
 
   .warning-message-wrapper {
     width: 135px !important;
-    height: 65px !important;
     transform: translateX(32%) !important;
 
     .warning-message-icon {
