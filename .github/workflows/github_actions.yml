@@ -59,10 +59,7 @@ jobs:
       
     - name: Build
       run: npm run build
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        ELECTRON_ARCH: ${{ matrix.arch }}
-        
+      
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:

@@ -27,6 +27,3 @@ linux:
   target:
     - deb
   category: Development
-
-publish:
-  provider: github
