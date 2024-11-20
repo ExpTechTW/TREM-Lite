@@ -141,7 +141,7 @@ function createPiPWindow() {
   pipWindow.setAspectRatio(1.87);
 
   pipWindow.setMaximizable(false);
-  pipWindow.setPosition(0, 0); d;
+  pipWindow.setPosition(0, 0);
   pipWindow.setIgnoreMouseEvents(false);
 
   pipWindow.on('closed', () => pipWindow = null);
