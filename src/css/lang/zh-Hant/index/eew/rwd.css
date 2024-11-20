@@ -151,14 +151,16 @@
   }
 
   .rts-intensity-list-wrapper {
-    bottom: 2px;
+    bottom: 3px;
     max-height: 100px !important;
     width: 125px !important;
     right: 16.5rem;
+    min-height: fit-content;
   }
 
   .rts-intensity-list {
-    height: 88px !important;
+    height: auto !important;
+    max-height: 87px;
   }
 
   .rts-loc {
@@ -167,10 +169,6 @@
 
   .current-version-view {
     transform: translateX(65%);
-  }
-
-  .warning-message-wrapper {
-    transform: translateX(25%);
   }
 
   .fab {
@@ -281,6 +279,28 @@
 
   .connect {
     min-width: 140px !important;
+  }
+
+  .warning-message-wrapper {
+    width: 135px !important;
+    height: 65px !important;
+    transform: translateX(32%) !important;
+
+    .warning-message-icon {
+      width: 40px !important;
+    }
+
+    .title {
+      font-size: 14px !important;
+    }
+
+    .text {
+      font-size: 12px !important;
+    }
+  }
+
+  .report-wrapper.hidden ~ .warning-message-wrapper {
+    transform: translateX(213%) !important;
   }
 }
 

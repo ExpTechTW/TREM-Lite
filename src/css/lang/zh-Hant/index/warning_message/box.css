@@ -17,7 +17,7 @@
 }
 
 .report-wrapper.hidden ~ .warning-message-wrapper {
-  transform: translateX(163%);
+  transform: translateX(164%);
 }
 
 .warning-message-contain {
