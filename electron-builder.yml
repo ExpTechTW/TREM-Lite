@@ -3,7 +3,7 @@ appId: tw.exptech.trem_lite
 asar: true
 
 win:
-  icon: TREM.ico
+  icon: ./src/TREM.ico
 
 files:
   - src/**/*

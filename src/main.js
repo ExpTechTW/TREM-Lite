@@ -306,7 +306,8 @@ function trayIcon() {
     tray = null;
   }
 
-  tray = new Tray(nativeImage.createFromPath('TREM.ico'));
+  const iconPath = path.join(__dirname, 'TREM.ico');
+  tray = new Tray(nativeImage.createFromPath(iconPath));
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', () => {
     if (win != null) {
