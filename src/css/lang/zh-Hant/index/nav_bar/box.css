@@ -159,6 +159,7 @@ html[lang="zh-Hant"] {
   flex-wrap: wrap;
   text-align: center;
   border-radius: 5px;
+  display: none;
 
   .option {
     width: 4px;

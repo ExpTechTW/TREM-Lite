@@ -86,7 +86,7 @@
   }
 
   .station-pga-wrapper {
-    top: 9.5rem !important;
+    top: 9.55rem !important;
     left: 0.3rem !important;
   }
 
@@ -105,7 +105,7 @@
     left: 4.5rem !important;
     position: relative !important;
     height: 35px !important;
-    margin-top: -2px !important;
+    margin-top: -1px !important;
     width: 70px;
   }
 
