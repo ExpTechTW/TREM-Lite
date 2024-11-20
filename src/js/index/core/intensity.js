@@ -54,6 +54,13 @@ function show_intensity(ans) {
 
   TREM.variable.cache.show_intensity = true;
 
+  TREM.variable.events.emit('DataRts', {
+    info: {
+      type: TREM.variable.play_mode,
+    },
+    data: TREM.variable.data.rts,
+  });
+
   TREM.variable.cache.intensity.time = ans.data.id;
   if (TREM.variable.cache.intensity.max < ans.data.max) {
     TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
