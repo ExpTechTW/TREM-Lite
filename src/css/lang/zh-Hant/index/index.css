@@ -95,7 +95,7 @@ html[lang="zh-Hant"] {
 }
 
 .report-wrapper.hidden ~ .current-version-view {
-  transform: translateX(420%);
+  transform: translateX(475%);
 }
 
 .version-check {
