@@ -155,6 +155,10 @@
     transform: translateX(65%);
   }
 
+  .warning-message-wrapper {
+    transform: translateX(25%);
+  }
+
   .fab {
     margin-top: -10px;
   }

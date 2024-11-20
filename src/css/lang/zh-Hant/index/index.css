@@ -6,6 +6,7 @@
 @import url("./rts_intensity_list/box.css");
 @import url("./nav_bar/box.css");
 @import url("./eew/rwd.css");
+@import url("./warning_message/box.css");
 
 body {
   user-select: none;
