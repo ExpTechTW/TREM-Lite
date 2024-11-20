@@ -37,7 +37,7 @@ function createWindow() {
     width: 1280,
     height: 815,
     maximizable: true,
-    icon: 'TREM.ico',
+    icon: is_mac ? 'TREM.icns' : 'TREM.ico',
     frame: true,
     webPreferences: {
       nodeIntegration: true,
@@ -120,7 +120,7 @@ function createPiPWindow() {
     height: 147,
     minWidth: 276,
     maxWidth: 400,
-    icon: 'TREM.ico',
+    icon: is_mac ? 'TREM.icns' : 'TREM.ico',
     frame: false,
     show: false,
     focusable: true,
@@ -164,7 +164,7 @@ function createSettingWindow() {
     transparent: true,
     resizable: false,
     vibrancy: 'ultra-dark',
-    icon: 'TREM.ico',
+    icon: is_mac ? 'TREM.icns' : 'TREM.ico',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -306,7 +306,7 @@ function trayIcon() {
     tray = null;
   }
 
-  const iconPath = path.join(__dirname, 'TREM.ico');
+  const iconPath = path.join(__dirname, is_mac ? 'TREM.icns' : 'TREM.ico');
   tray = new Tray(nativeImage.createFromPath(iconPath));
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', () => {
