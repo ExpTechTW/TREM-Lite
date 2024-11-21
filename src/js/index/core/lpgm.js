@@ -1,3 +1,5 @@
+const TREM = require('../constant');
+
 const { generateMapStyle, search_loc_name } = require('../utils/utils');
 const drawEewArea = require('./estimate');
 
