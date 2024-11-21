@@ -72,6 +72,9 @@ function show_intensity(ans) {
 
   for (const code of Object.keys(code_intensity)) {
     const loc = search_loc_name(code);
+    if (!loc) {
+      continue;
+    }
     const loc_info = region[loc.city][loc.town];
     bounds.push({ lon: loc_info.lon, lat: loc_info.lat });
     data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [loc_info.lon, loc_info.lat] }, properties: { i: code_intensity[code] } });
