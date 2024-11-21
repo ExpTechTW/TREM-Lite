@@ -4,7 +4,7 @@ async function fetchData(url, timeout = 1000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await fetch(url, { signal: controller.signal, cache: 'no-cache' });
     clearTimeout(timeoutId);
     return response;
   }
