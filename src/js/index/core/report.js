@@ -238,6 +238,7 @@ class ReportManager {
     const wrapper = document.createElement('div');
     wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
     wrapper.setAttribute('data-id', item.id);
+    wrapper.setAttribute('trem-id', item.trem);
     wrapper.setAttribute('data-time', item.time);
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';
@@ -245,7 +246,7 @@ class ReportManager {
     buttons.className = 'report-buttons';
     const webButton = document.createElement('div');
     webButton.className = 'report-web';
-    webButton.textContent = '報告';
+    webButton.textContent = (item.trem) ? '檢知' : '報告';
     const replayButton = document.createElement('div');
     replayButton.className = 'report-replay';
     replayButton.textContent = '重播';
@@ -269,6 +270,19 @@ class ReportManager {
       self.currentFlashingId = null;
     }
 
+    this.reportWebButtons = document.querySelectorAll('.report-web');
+    this.reportWebButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const wrapper = event.target.closest('.report-box-item-wrapper');
+        if (wrapper) {
+          const id = wrapper.getAttribute('data-id');
+          const trem = Number(wrapper.getAttribute('trem-id'));
+          const reportId = id.replace(`-${id.split('-')[1]}`, '');
+          const url = (trem) ? `https://${TREM.variable.cache.report_server_url}/file/trem_info.html?id=${trem}` : `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
+          ipcRenderer.send('openUrl', url);
+        }
+      });
+    });
     this.reportReplyButtons = document.querySelectorAll('.report-replay');
     this.reportReplyButtons.forEach((button) => {
       button.addEventListener('click', async (event) => {
@@ -346,6 +360,7 @@ class ReportManager {
     if (!ans || !ans.ok) {
       return null;
     }
+    TREM.variable.cache.report_server_url = url;
     return await ans.json();
   }
 
