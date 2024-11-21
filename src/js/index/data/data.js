@@ -143,7 +143,7 @@ function EEWData(newData = []) {
 
 function IntensityData(newData = []) {
   const currentTime = now();
-  const EXPIRY_TIME = 240 * 1000;
+  const EXPIRY_TIME = 600 * 1000;
 
   TREM.variable.data.intensity
     .filter((item) =>
@@ -209,7 +209,7 @@ function IntensityData(newData = []) {
 
 function LpgmData(newData = []) {
   const currentTime = now();
-  const EXPIRY_TIME = 240 * 1000;
+  const EXPIRY_TIME = 600 * 1000;
 
   TREM.variable.data.lpgm
     .filter((item) =>
