@@ -282,12 +282,8 @@
   }
 
   .warning-message-wrapper {
-    width: 135px !important;
-    transform: translateX(32%) !important;
-
-    .warning-message-icon {
-      width: 40px !important;
-    }
+    width: auto !important;
+    transform: translateX(28%) !important;
 
     .title {
       font-size: 14px !important;
@@ -299,7 +295,7 @@
   }
 
   .report-wrapper.hidden ~ .warning-message-wrapper {
-    transform: translateX(213%) !important;
+    transform: translateX(182%) !important;
   }
 }
 

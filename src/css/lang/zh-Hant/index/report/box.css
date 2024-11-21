@@ -58,6 +58,7 @@ html[lang="zh-Hant"] {
 
   .report-box-items:hover + .custom-scrollbar {
     display: block;
+    pointer-events: none;
   }
 
   .report-box-items {
