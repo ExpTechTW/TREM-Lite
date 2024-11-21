@@ -3,7 +3,7 @@ const region = require('../../../resource/data/region.json');
 const TREM = require('../constant');
 const { generateMapStyle, convertIntensityToAreaFormat, int_to_string, search_loc_name } = require('../utils/utils');
 const drawEewArea = require('./estimate');
-const { focus_reset, focus } = require('./focus');
+const { focus } = require('./focus');
 const { generateReportBoxItems } = require('./report');
 
 TREM.variable.events.on('MapLoad', (map) => {
