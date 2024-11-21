@@ -129,6 +129,13 @@ initMap()
       { id: '7', bg: TREM.constant.COLOR.INTENSITY[9], text: TREM.constant.COLOR.INTENSITY_TEXT[9], stroke: TREM.constant.COLOR.INTENSITY_TEXT[9] },
     ];
 
+    const lpgm_icons = [
+      { id: '1', bg: TREM.constant.COLOR.LPGM[1], text: TREM.constant.COLOR.LPGM_TEXT[1], stroke: TREM.constant.COLOR.LPGM_TEXT[1] },
+      { id: '2', bg: TREM.constant.COLOR.LPGM[2], text: TREM.constant.COLOR.LPGM_TEXT[2], stroke: TREM.constant.COLOR.LPGM_TEXT[2] },
+      { id: '3', bg: TREM.constant.COLOR.LPGM[3], text: TREM.constant.COLOR.LPGM_TEXT[3], stroke: TREM.constant.COLOR.LPGM_TEXT[3] },
+      { id: '4', bg: TREM.constant.COLOR.LPGM[4], text: TREM.constant.COLOR.LPGM_TEXT[4], stroke: TREM.constant.COLOR.LPGM_TEXT[4] },
+    ];
+
     icons.forEach((icon, index) => {
       const image = createIntensityIcon(icon.id, icon.bg, icon.text, icon.stroke);
 
@@ -140,6 +147,14 @@ initMap()
 
       image_square.onload = () => {
         map.addImage(`intensity-square-${index}`, image_square);
+      };
+    });
+
+    lpgm_icons.forEach((icon) => {
+      const image_square = createIntensityIconSquare(icon.id, icon.bg, icon.text, icon.stroke);
+
+      image_square.onload = () => {
+        map.addImage(`lpgm-${icon.id}`, image_square);
       };
     });
 

@@ -45,6 +45,18 @@ const TREM = {
         8: '#ffffff',
         9: '#ffffff',
       },
+      LPGM: {
+        1: '#0040ff',
+        2: '#ffe600',
+        3: '#ff2800',
+        4: '#a50021',
+      },
+      LPGM_TEXT: {
+        1: '#ffffff',
+        2: '#000000',
+        3: '#ffffff',
+        4: '#ffffff',
+      },
       EEW: {
         S: {
           WARN: '#ffaa00',
@@ -102,6 +114,7 @@ const TREM = {
       EEW: 1500,
       REPORT: 5000,
       INTENSITY: 1500,
+      LPGM: 1500,
     },
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
@@ -140,6 +153,7 @@ const TREM = {
       intensity: [],
       report: [],
       eew: [],
+      lpgm: [],
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode: 0,

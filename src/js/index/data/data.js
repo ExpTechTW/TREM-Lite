@@ -48,6 +48,11 @@ TREM.variable.events.on('MapLoad', (map) => {
         IntensityData(data.intensity);
       }
 
+      if (data.lpgm) {
+        LpgmData(data.lpgm);
+      }
+      console.log(data.lpgm);
+
       if (data.rts) {
         TREM.variable.cache.last_data_time = local_now;
       }
@@ -200,5 +205,50 @@ function IntensityData(newData = []) {
   TREM.variable.events.emit('DataIntensity', {
     info: { type: TREM.variable.play_mode },
     data: TREM.variable.data.intensity,
+  });
+}
+
+function LpgmData(newData = []) {
+  const currentTime = now();
+  const EXPIRY_TIME = 240 * 1000;
+
+  TREM.variable.data.lpgm
+    .filter((item) =>
+      item.id
+      && (currentTime - item.id > EXPIRY_TIME || item.LpgmEnd),
+    )
+    .forEach((data) => {
+      TREM.variable.events.emit('LpgmEnd', {
+        info: { type: TREM.variable.play_mode },
+        data: { ...data, LpgmEnd: true },
+      });
+    });
+
+  TREM.variable.data.lpgm = TREM.variable.data.lpgm.filter((item) =>
+    item.id
+    && currentTime - item.id <= EXPIRY_TIME
+    && !item.LpgmEnd,
+  );
+
+  newData.forEach((data) => {
+    if (!data.id || currentTime - data.id > EXPIRY_TIME || data.LpgmEnd) {
+      return;
+    }
+
+    const existingIndex = TREM.variable.data.lpgm.findIndex((item) => item.id == data.id);
+    const eventData = {
+      info: { type: TREM.variable.play_mode },
+      data,
+    };
+
+    if (existingIndex == -1) {
+      TREM.variable.data.lpgm.push(data);
+      TREM.variable.events.emit('LpgmRelease', eventData);
+    }
+  });
+
+  TREM.variable.events.emit('DataLpgm', {
+    info: { type: TREM.variable.play_mode },
+    data: TREM.variable.data.lpgm,
   });
 }
