@@ -81,7 +81,7 @@ const TREM = {
       },
     },
 
-    SHOW_TREM_EEW: false,
+    SHOW_TREM_EEW: true,
 
     URL: {
       API: ['api-1.exptech.dev', 'api-2.exptech.dev'],
@@ -121,7 +121,7 @@ const TREM = {
 
     EEW_AUTHOR: ['trem', 'cwa'],
 
-    REPORT_LIMIT: 50,
+    REPORT_LIMIT: 500,
 
     MAP: {
       BOUNDS: [[118.0, 21.2], [124.0, 25.8]],
@@ -182,6 +182,7 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      unstable: 0,
       show_eew_box: false,
       rts_trigger: {
         max: 0,

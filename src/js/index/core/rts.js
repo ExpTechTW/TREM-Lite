@@ -21,7 +21,6 @@ const rts_info_level = document.getElementById('rts-info-level');
 const warning_box_unstable = document.getElementById('warning-box-unstable');
 
 const level_list = {};
-let unstable = 0;
 
 TREM.variable.events.on('MapLoad', (map) => {
   map.addSource('markers-geojson', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
@@ -148,7 +147,7 @@ TREM.variable.events.on('DataRts', (ans) => {
     }
     else {
       if (TREM.variable.cache.last_rts_alert && (ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 300000) {
-        unstable = ans.data.time;
+        TREM.variable.cache.unstable = ans.data.time;
       }
       TREM.variable.cache.last_rts_alert = ans.data?.time ?? 0;
     }
@@ -371,7 +370,7 @@ TREM.variable.events.on('DataRts', (ans) => {
 
   TREM.variable.cache.bounds.rts = coordinates;
 
-  if (unstable && (ans.data?.time ?? 0) - unstable < 300000) {
+  if (TREM.variable.cache.unstable && (ans.data?.time ?? 0) - TREM.variable.cache.unstable < 300000) {
     if (warning_box_unstable.classList.contains('hide')) {
       warning_box_unstable.classList.remove('hide');
     }
