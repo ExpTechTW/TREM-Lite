@@ -1,10 +1,10 @@
 ﻿html[lang="zh-Hant"] {
   .unstable .warning-message-text span {
     &:nth-child(1)::before {
-      content: "受地震影響";
+      content: "受地震活動的影響";
     }
     &:nth-child(2)::before {
-      content: "強震監視器可能不穩定";
+      content: "觀測點可能不穩定";
     }
   }
 
