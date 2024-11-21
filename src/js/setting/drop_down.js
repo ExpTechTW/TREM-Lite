@@ -1,9 +1,7 @@
 const Station_Wrapper = document.querySelector('.realtime-station');
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Station_Location = Station_Wrapper.querySelector('.location');
 const Station_Select_Wrapper = Station_Wrapper.querySelector('.select-wrapper');
 const Station_Local_Items = Station_Select_Wrapper.querySelector('.local');
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Station_Select = Station_Select_Wrapper.querySelector('.current-station');
 const Station_Items = Station_Select_Wrapper.querySelector('.station');
 
@@ -34,7 +32,6 @@ Location.onclick = function () {
   LocationSelWrapper.classList.toggle('select-show-big');
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const addLocationSelectEvent = (
   localItemsContainer,
   cityItemsContainer,
