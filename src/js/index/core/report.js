@@ -234,11 +234,11 @@ class ReportManager {
     return box;
   }
 
-  createReportItem(item, isSurvey = false) {
+  createReportItem(item, isSurvey = false, url = '') {
     const wrapper = document.createElement('div');
     wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
     wrapper.setAttribute('data-id', item.id);
-    wrapper.setAttribute('trem-id', item.trem);
+    wrapper.setAttribute('trem-url', url ? `https://${url}/file/trem_info.html?id=${item.trem}` : '');
     wrapper.setAttribute('data-time', item.time);
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';
@@ -276,9 +276,9 @@ class ReportManager {
         const wrapper = event.target.closest('.report-box-item-wrapper');
         if (wrapper) {
           const id = wrapper.getAttribute('data-id');
-          const trem = Number(wrapper.getAttribute('trem-id'));
+          const trem = wrapper.getAttribute('trem-url');
           const reportId = id.replace(`-${id.split('-')[1]}`, '');
-          const url = (trem) ? `https://${TREM.variable.cache.report_server_url}/file/trem_info.html?id=${trem}` : `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
+          const url = (trem) ? trem : `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
           ipcRenderer.send('openUrl', url);
         }
       });
@@ -315,7 +315,7 @@ class ReportManager {
     return Number(time) + (Date.now() - TREM.variable.replay.local_time);
   }
 
-  generateReportBoxItems(list, survey = null) {
+  generateReportBoxItems(list, survey = null, url = '') {
     const container = document.getElementById('report-box-items');
     if (!container) {
       return;
@@ -336,7 +336,7 @@ class ReportManager {
     }
 
     list.forEach((item) => {
-      container.appendChild(this.createReportItem(item, false));
+      container.appendChild(this.createReportItem(item, false, url));
     });
 
     this.clickEvent();
@@ -351,8 +351,7 @@ class ReportManager {
     this.updateScrollbar();
   }
 
-  async getReport() {
-    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+  async getReport(url) {
     const ans = await fetchData(
       `https://${url}/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
@@ -360,12 +359,10 @@ class ReportManager {
     if (!ans || !ans.ok) {
       return null;
     }
-    TREM.variable.cache.report_server_url = url;
     return await ans.json();
   }
 
-  async getReportInfo(id) {
-    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+  async getReportInfo(url, id) {
     const ans = await fetchData(
       `https://${url}/api/v2/eq/report/${id}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
@@ -377,7 +374,8 @@ class ReportManager {
   }
 
   async refresh() {
-    const reportList = await this.getReport();
+    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+    const reportList = await this.getReport(url);
     if (!reportList) {
       return;
     }
@@ -385,7 +383,7 @@ class ReportManager {
     if (!TREM.variable.data.report.length) {
       TREM.variable.data.report = reportList;
       if (TREM.constant.SHOW_REPORT) {
-        const data = await this.getReportInfo(reportList[0].id);
+        const data = await this.getReportInfo(url, reportList[0].id);
         TREM.variable.cache.last_report = data;
       }
       this.generateReportBoxItems(
@@ -396,6 +394,7 @@ class ReportManager {
               intensity: TREM.variable.cache.intensity.max,
             }
           : null,
+        url,
       );
       return;
     }
@@ -404,9 +403,9 @@ class ReportManager {
     const newReports = reportList.filter((report) => !existingIds.has(report.id));
 
     if (newReports.length > 0) {
-      const data = await this.getReportInfo(newReports[0].id);
+      const data = await this.getReportInfo(url, newReports[0].id);
       if (data) {
-        TREM.variable.events.emit('ReportRelease', { data });
+        TREM.variable.events.emit('ReportRelease', { info: { url }, data });
       }
     }
   }
@@ -492,6 +491,7 @@ class ReportManager {
             intensity: TREM.variable.cache.intensity.max,
           }
         : null,
+      ans.info.url,
     );
   }
 }
