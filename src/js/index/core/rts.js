@@ -130,6 +130,7 @@ TREM.variable.events.on('DataRts', (ans) => {
     const alert = Object.keys(ans.data.box).length;
 
     if (!alert) {
+      TREM.variable.cache.rts_alert = false;
       TREM.variable.cache.audio = {
         shindo: -1,
         pga: -1,
@@ -146,10 +147,11 @@ TREM.variable.events.on('DataRts', (ans) => {
       };
     }
     else {
-      if (TREM.variable.cache.last_rts_alert && (ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 300000) {
+      if (!TREM.variable.cache.rts_alert && TREM.variable.cache.last_rts_alert && (ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 300000) {
         TREM.variable.cache.unstable = ans.data.time;
       }
       TREM.variable.cache.last_rts_alert = ans.data?.time ?? 0;
+      TREM.variable.cache.rts_alert = true;
     }
 
     for (const id of Object.keys(ans.data.station)) {

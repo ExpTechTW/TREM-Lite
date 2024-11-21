@@ -141,6 +141,28 @@ function EEWData(newData = []) {
   });
 }
 
+const isAreaDifferent = (area1, area2) => {
+  if (!area1 || !area2) {
+    return true;
+  }
+
+  const keys1 = Object.keys(area1);
+  const keys2 = Object.keys(area2);
+
+  if (keys1.length !== keys2.length) {
+    return true;
+  }
+
+  return keys1.some((key) => {
+    const arr1 = area1[key] || [];
+    const arr2 = area2[key] || [];
+    if (arr1.length !== arr2.length) {
+      return true;
+    }
+    return !arr1.every((val) => arr2.includes(val));
+  });
+};
+
 function IntensityData(newData = []) {
   const currentTime = now();
   const EXPIRY_TIME = 600 * 1000;
@@ -188,9 +210,10 @@ function IntensityData(newData = []) {
 
     if (TREM.variable.cache.intensity_last[data.id] && TREM.variable.cache.intensity_last[data.id].serial < data.serial) {
       TREM.variable.cache.intensity_last[data.id].serial = data.serial;
-      TREM.variable.events.emit('IntensityUpdate', eventData);
-
-      TREM.variable.data.intensity[existingIndex] = data;
+      if (isAreaDifferent(data.area, TREM.variable.data.intensity[existingIndex].area)) {
+        TREM.variable.events.emit('IntensityUpdate', eventData);
+        TREM.variable.data.intensity[existingIndex] = data;
+      }
     }
   });
 
