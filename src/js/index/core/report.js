@@ -483,6 +483,12 @@ class ReportManager {
 
     const data = this.simplifyEarthquakeData(ans.data);
     TREM.variable.data.report.unshift(data);
+
+    if (data.trem && Math.abs(data.trem - TREM.variable.cache.intensity.time) < 5000) {
+      TREM.variable.cache.intensity.time = 0;
+      TREM.variable.cache.intensity.max = 0;
+    }
+
     this.generateReportBoxItems(
       TREM.variable.data.report,
       TREM.variable.cache.intensity.time
