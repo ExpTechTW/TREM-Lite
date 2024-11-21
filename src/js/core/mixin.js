@@ -1,9 +1,8 @@
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-class MixinManager {
-  static mixins = new Map();
-  static cache = new Map();
+const MixinManager = {
+  mixins: new Map(),
+  cache: new Map(),
 
-  static inject(targetClass, methodName, handler, priority = 0) {
+  inject(targetClass, methodName, handler, priority = 0) {
     if (typeof handler !== 'function') {
       throw new Error('Handler must be a function');
     }
@@ -15,18 +14,18 @@ class MixinManager {
     this.cache.delete(methodName);
 
     return id;
-  }
+  },
 
-  static batchInject(targetClass, injections) {
+  batchInject(targetClass, injections) {
     const ids = {};
     for (const [methodName, handler, priority] of injections) {
       ids[methodName] = this.inject(targetClass, methodName, handler, priority);
     }
 
     return ids;
-  }
+  },
 
-  static remove(methodName, mixinId) {
+  remove(methodName, mixinId) {
     const mixins = this.mixins.get(methodName);
     if (!mixins) {
       return false;
@@ -40,9 +39,9 @@ class MixinManager {
     mixins.splice(index, 1);
     this.cache.delete(methodName);
     return true;
-  }
+  },
 
-  static getSortedHandlers(methodName) {
+  getSortedHandlers(methodName) {
     if (this.cache.has(methodName)) {
       return this.cache.get(methodName);
     }
@@ -52,9 +51,9 @@ class MixinManager {
 
     this.cache.set(methodName, sorted);
     return sorted;
-  }
+  },
 
-  static getMixins(methodName) {
+  getMixins(methodName) {
     const mixins = this.mixins.get(methodName);
     if (!mixins) {
       return [];
@@ -65,14 +64,14 @@ class MixinManager {
       priority,
       methodName,
     }));
-  }
+  },
 
-  static clear(methodName) {
+  clear(methodName) {
     this.mixins.delete(methodName);
     this.cache.delete(methodName);
-  }
+  },
 
-  static _initializeMethod(targetClass, methodName) {
+  _initializeMethod(targetClass, methodName) {
     if (!this.mixins.has(methodName)) {
       this.mixins.set(methodName, []);
       const original = targetClass.prototype[methodName];
@@ -91,7 +90,9 @@ class MixinManager {
         return method(...args);
       };
     }
-  }
-}
+  },
+};
+
+Object.freeze(MixinManager);
 
 module.exports = MixinManager;
