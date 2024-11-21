@@ -6,6 +6,7 @@ const refresh_cross = require('./cross');
 const refresh_box = require('./box');
 
 const time = document.getElementById('time');
+const warning_box_internet = document.getElementById('warning-box-internet');
 
 let flash = false;
 
@@ -13,13 +14,25 @@ setInterval(() => {
   if (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3) {
     time.className = 'time-replay';
     time.textContent = formatTime(now());
+
+    if (!warning_box_internet.classList.contains('hide')) {
+      warning_box_internet.classList.add('hide');
+    }
   }
   else if ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) {
     time.className = 'time-error';
+
+    if (warning_box_internet.classList.contains('hide')) {
+      warning_box_internet.classList.remove('hide');
+    }
   }
   else {
     time.className = 'time-normal';
     time.textContent = formatTime(now());
+
+    if (!warning_box_internet.classList.contains('hide')) {
+      warning_box_internet.classList.add('hide');
+    }
   }
 }, 1000);
 
