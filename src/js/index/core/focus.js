@@ -31,6 +31,7 @@ class FocusManager {
     this.focusButton.addEventListener('click', () => {
       this.focusReset();
       this.lock = false;
+      this.isMouseDown = false;
       this.focusButton.style.color = 'white';
     });
 
@@ -57,6 +58,10 @@ class FocusManager {
     });
   }
 
+  getLock() {
+    return this.lock;
+  }
+
   focus() {
     if (this.lock) {
       return;
@@ -76,6 +81,9 @@ class FocusManager {
 
     if (bounds.length) {
       this.updateMapBounds(bounds);
+    }
+    else if (!TREM.variable.cache.bounds.report.length) {
+      this.focusReset();
     }
   }
 

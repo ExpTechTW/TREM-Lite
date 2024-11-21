@@ -48,10 +48,12 @@ class ReplayControler {
       data: null,
     });
     TREM.variable.cache.last_rts_alert = 0;
-    setTimeout(() => {
-      focus_reset();
-      focus();
-    }, 1500);
+    if (!TREM.class.FocusManager?.getInstance().getLock()) {
+      setTimeout(() => {
+        focus_reset();
+        focus();
+      }, 1500);
+    }
   }
 }
 

@@ -6,6 +6,7 @@
 @import url("./rts_intensity_list/box.css");
 @import url("./nav_bar/box.css");
 @import url("./eew/rwd.css");
+@import url("./warning_message/box.css");
 
 body {
   user-select: none;
@@ -47,6 +48,14 @@ body {
   height: 100%;
   width: 100%;
   outline: none;
+}
+
+.maplibregl-canvas:focus {
+  outline: none !important;
+}
+
+.maplibregl-canvas-container:focus {
+  outline: none !important;
 }
 
 .connect {
@@ -95,7 +104,7 @@ html[lang="zh-Hant"] {
 }
 
 .report-wrapper.hidden ~ .current-version-view {
-  transform: translateX(420%);
+  transform: translateX(475%);
 }
 
 .version-check {

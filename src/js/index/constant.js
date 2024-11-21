@@ -101,6 +101,7 @@ const TREM = {
       RTS: 1500,
       EEW: 1500,
       REPORT: 5000,
+      INTENSITY: 1500,
     },
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
