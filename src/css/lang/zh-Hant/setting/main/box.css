@@ -175,7 +175,7 @@ body {
 }
 
 .setting-item-content {
-  width: 50vw;
+  width: 65vw;
   margin-top: 3vw;
 }
 
@@ -227,6 +227,10 @@ body {
   background-color: rgb(255 255 255 / 6%);
 }
 
+.realtime-station .town div {
+  justify-content: flex-start !important;
+}
+
 /**description**/
 .setting-item-content .description {
   position: relative;
@@ -270,7 +274,6 @@ body {
   transform: rotate(180deg);
 }
 
-.current-local,
 .current-city,
 .current-town,
 .separate {
@@ -387,8 +390,7 @@ li {
 .select-items {
   position: relative;
   color: white;
-  border-radius: 5px;
-  width: 30%;
+  width: 100%;
   overflow-y: auto;
   padding: 13px;
   display: grid;
@@ -396,6 +398,7 @@ li {
   scroll-padding: 0.5em;
   overscroll-behavior: contain;
   align-items: center;
+  border-right: 1px solid #ffffff0f;
 }
 
 .local div,
@@ -430,10 +433,12 @@ li {
 
 .SE-Net {
   color: #ffc756;
+  margin-right: 10px;
 }
 
 .MS-Net {
   color: #56deff;
+  margin-right: 10px;
 }
 
 .select-arrow-active {
@@ -445,11 +450,13 @@ li {
   overflow: hidden;
   transition: max-height 0.5s ease;
   display: flex;
+  justify-content: space-around;
 }
 
 .select-wrapper.select-show-big {
   height: 1000px;
   max-height: 14rem;
+  border-top: 1px solid #ffffff0f;
 }
 
 .select-items.station {
