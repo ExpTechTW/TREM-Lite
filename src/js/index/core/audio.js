@@ -1,7 +1,11 @@
 const logger = require('../../core/utils/logger');
 
 const TREM = require('../constant');
-const { intensity_list, formatToChineseTime, int_to_string, findMaxIntensityCity, search_loc_name } = require('../utils/utils');
+const now = require('../utils/ntp');
+const { intensity_list, formatToChineseTime, int_to_string, findMaxIntensityCity, search_loc_name, formatTimestamp } = require('../utils/utils');
+
+const { BrowserWindow } = require('@electron/remote');
+const win = BrowserWindow.fromId(process.env.window * 1);
 
 class AudioQueue {
   constructor() {
@@ -153,6 +157,15 @@ class AudioManager {
       last: { loc: '', i: -1 },
       now: { loc: ans.data.eq.loc, i: ans.data.eq.max },
     };
+
+    const notification = new Notification(`${(ans.data.status == 1) ? '🚨 緊急地震速報' : '⚠️ 地震速報'} ${ans.data.serial}報`, {
+      body: `${formatTimestamp(ans.data.eq.time)} 最大預估${intensity_list[ans.data.eq.max]}\n${ans.data.eq.loc} M${ans.data.eq.mag} ${ans.data.eq.depth}km`,
+      icon: '../TREM.ico',
+    });
+
+    notification.onclick = () => {
+      win.show();
+    };
   }
 
   handleEewAlert(ans) {
@@ -171,6 +184,15 @@ class AudioManager {
 
     this.ttsCache[ans.data.id].now.loc = ans.data.eq.loc;
     this.ttsCache[ans.data.id].now.i = ans.data.eq.max;
+
+    const notification = new Notification(`${(ans.data.status == 1) ? '🚨 緊急地震速報' : '⚠️ 地震速報'} ${ans.data.serial}報`, {
+      body: `${formatTimestamp(ans.data.eq.time)} 最大預估${intensity_list[ans.data.eq.max]}\n${ans.data.eq.loc} M${ans.data.eq.mag} ${ans.data.eq.depth}km`,
+      icon: '../TREM.ico',
+    });
+
+    notification.onclick = () => {
+      win.show();
+    };
   }
 
   handleEewEnd(ans) {
@@ -187,14 +209,41 @@ class AudioManager {
 
   handleRtsShindo2() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO2, this.priorityRules.shindo);
+
+    const notification = new Notification(`🟥 強震檢測 [${formatTimestamp(now())}]`, {
+      body: `請注意今後的資訊。`,
+      icon: '../TREM.ico',
+    });
+
+    notification.onclick = () => {
+      win.show();
+    };
   }
 
   handleRtsShindo1() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO1, this.priorityRules.shindo);
+
+    const notification = new Notification(`🟧 震動檢測 [${formatTimestamp(now())}]`, {
+      body: `請注意今後的資訊。`,
+      icon: '../TREM.ico',
+    });
+
+    notification.onclick = () => {
+      win.show();
+    };
   }
 
   handleRtsShindo0() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO0);
+
+    const notification = new Notification(`🟩 弱反應 [${formatTimestamp(now())}]`, {
+      body: `請注意今後的資訊。`,
+      icon: '../TREM.ico',
+    });
+
+    notification.onclick = () => {
+      win.show();
+    };
   }
 
   handleReportRelease(ans) {
@@ -219,10 +268,14 @@ class AudioManager {
     const countyWithMaxIntensity = Object.entries(ans.data.list).find(([, data]) => data.int === maxIntensity)[0];
     const id = ans.data.id.split('-')[0];
 
-    new Notification(`🔔 地震報告 [${(id.includes('000')) ? '小區域有感地震' : id}]`, {
+    const notification = new Notification(`🔔 地震報告 [${(id.includes('000')) ? '小區域有感地震' : id}]`, {
       body: notificationText + `，${countyWithMaxIntensity}觀測到最大震度${maxIntensityText}。`,
       icon: '../TREM.ico',
     });
+
+    notification.onclick = () => {
+      win.show();
+    };
 
     let ttsText = [
       '地震報告',
@@ -337,10 +390,14 @@ class AudioManager {
       }
     });
 
-    new Notification('🔔 長週期地震動', {
+    const notification = new Notification('🔔 長週期地震動', {
       body: `${time.replace('點', ':').replace('分', '')}，${maxCity}觀測到最大長週期地震動階級${maxIntensity}。`,
       icon: '../TREM.ico',
     });
+
+    notification.onclick = () => {
+      win.show();
+    };
 
     let ttsText = [
       '長週期第震動觀測資訊',
@@ -386,6 +443,14 @@ class AudioManager {
 
     if (TREM.variable.cache.intensity.max < ans.data.max) {
       TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
+      const notification = new Notification(`📨 震度速報 [${formatTimestamp(ans.data.id)}]`, {
+        body: `震度${int_to_string(city_intensity_list.intensity).replace('級', '')} ${city_intensity_list.cities.join('、')}`,
+        icon: '../TREM.ico',
+      });
+
+      notification.onclick = () => {
+        win.show();
+      };
     }
   }
 
