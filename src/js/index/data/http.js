@@ -6,8 +6,9 @@ module.exports = async (time) => {
   const url = (time) ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)] : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
   const rts_ans = await fetchData(`https://${url}/api/v1/trem/rts${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.RTS);
   const eew_ans = await fetchData(`https://${url}/api/v1/eq/eew${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.EEW);
+  const intensity_ans = await fetchData(`https://${TREM.constant.URL.API[1]}/api/v1/trem/intensity${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.INTENSITY);
 
-  let rts = null, eew = null;
+  let rts = null, eew = null, intensity = null;
 
   if (rts_ans && rts_ans.ok) {
     rts = await rts_ans.json();
@@ -17,5 +18,9 @@ module.exports = async (time) => {
     eew = await eew_ans.json();
   }
 
-  return { rts, eew };
+  if (intensity_ans && intensity_ans.ok) {
+    intensity = await intensity_ans.json();
+  }
+
+  return { rts, eew, intensity };
 };

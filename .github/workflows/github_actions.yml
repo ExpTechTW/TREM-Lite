@@ -10,35 +10,10 @@ jobs:
     strategy:
       matrix:
         include:
-          # Windows builds
           - os: windows-latest
             platform: Windows
             arch: x64
             artifact-ext: exe
-          - os: windows-latest
-            platform: Windows
-            arch: ia32
-            artifact-ext: exe
-
-          # Linux builds
-          - os: ubuntu-latest
-            platform: Linux
-            arch: x64
-            artifact-ext: deb
-          - os: ubuntu-latest
-            platform: Linux
-            arch: ia32
-            artifact-ext: deb
-
-          # macOS builds
-          - os: macos-latest
-            platform: macOS
-            arch: x64
-            artifact-ext: dmg
-          - os: macos-latest
-            platform: macOS
-            arch: arm64
-            artifact-ext: dmg
 
     runs-on: ${{ matrix.os }}
 

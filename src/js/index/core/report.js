@@ -21,6 +21,7 @@ class ReportManager {
     this.customScrollbar = document.querySelector('.custom-scrollbar');
     this.isClose = false;
     this.isDragging = false;
+    this.currentFlashingId = null;
     this.startY = 0;
     this.initialScrollTop = 0;
     this.bindEvents();
@@ -259,33 +260,21 @@ class ReportManager {
   }
 
   clickEvent() {
+    const self = this;
+
     function stopFlashing() {
       document.querySelectorAll('.flashing').forEach((el) => {
         el.classList.remove('flashing');
       });
+      self.currentFlashingId = null;
     }
-
-    this.reportWebButtons = document.querySelectorAll('.report-web');
-    this.reportWebButtons.forEach((button) => {
-      button.addEventListener('click', (event) => {
-        const wrapper = event.target.closest('.report-box-item-wrapper');
-        if (wrapper) {
-          const id = wrapper.getAttribute('data-id');
-          const reportId = id.replace(`-${id.split('-')[1]}`, '');
-          const url = `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
-          ipcRenderer.send('openUrl', url);
-
-          stopFlashing();
-          wrapper.classList.add('flashing');
-        }
-      });
-    });
 
     this.reportReplyButtons = document.querySelectorAll('.report-replay');
     this.reportReplyButtons.forEach((button) => {
       button.addEventListener('click', async (event) => {
         const wrapper = event.target.closest('.report-box-item-wrapper');
         const time = Number(wrapper.getAttribute('data-time')) - 5000;
+        const itemId = wrapper.getAttribute('data-id');
 
         stopReplay();
 
@@ -300,6 +289,7 @@ class ReportManager {
 
         stopFlashing();
         wrapper.classList.add('flashing');
+        self.currentFlashingId = itemId;
       });
     });
   }
@@ -326,6 +316,7 @@ class ReportManager {
         time: survey.time,
         mag: '',
         depth: '',
+        id: 'survey-item',
       };
       container.appendChild(this.createReportItem(surveyItem, true));
     }
@@ -335,6 +326,13 @@ class ReportManager {
     });
 
     this.clickEvent();
+
+    if (this.currentFlashingId && last_replay_time !== 0) {
+      const itemToFlash = container.querySelector(`[data-id="${this.currentFlashingId}"]`);
+      if (itemToFlash) {
+        itemToFlash.classList.add('flashing');
+      }
+    }
 
     this.updateScrollbar();
   }

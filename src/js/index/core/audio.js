@@ -1,3 +1,5 @@
+const logger = require('../../core/utils/logger');
+
 const TREM = require('../constant');
 const { intensity_list, formatToChineseTime, int_to_string } = require('../utils/utils');
 
@@ -61,7 +63,7 @@ class AudioQueue {
         this.playNext();
       };
     }).catch((error) => {
-      console.error('音效播放失敗:', error);
+      logger.error('音效播放失敗:', error);
       this.isPlaying = false;
       this.playNext();
     });
