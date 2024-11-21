@@ -41,11 +41,11 @@
   display: flex;
   padding: 5;
   margin-bottom: 5px;
-  min-width: 150px;
+  min-width: 160px;
 }
 
 .report-wrapper.hidden ~ .warning-message-wrapper {
-  transform: translateX(182%);
+  transform: translateX(171%);
 }
 
 .warning-message-contain {
@@ -54,9 +54,10 @@
   background: #000000ab;
   height: 100%;
   width: 100%;
-  align-items: center;
-  padding: 5;
+  padding: 10px;
   flex-direction: column;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
 }
 
 .text {
@@ -64,7 +65,6 @@
   display: flex;
   flex-direction: column;
   font-size: 14px;
-  align-items: center;
 }
 
 .warning-message-icon {
@@ -72,6 +72,7 @@
   width: 100%;
   margin-left: 5px;
   margin-right: 5px;
+  margin-bottom: 3px;
 }
 
 .warning-message-text {
@@ -79,7 +80,6 @@
   display: flex;
   align-items: center;
   width: 100%;
-  justify-content: space-evenly;
 }
 
 .icon {
@@ -87,7 +87,6 @@
   width: 100%;
   color: #fff;
   align-items: center;
-  justify-content: center;
 }
 
 .icon svg {
@@ -103,4 +102,8 @@
 .unstable .icon {
   color: #ffca00;
   font-weight: bold;
+}
+
+.hide {
+  display: none;
 }

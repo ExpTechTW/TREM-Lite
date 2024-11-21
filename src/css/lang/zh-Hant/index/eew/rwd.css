@@ -283,7 +283,7 @@
 
   .warning-message-wrapper {
     width: auto !important;
-    transform: translateX(28%) !important;
+    transform: translateX(26%) !important;
 
     .title {
       font-size: 14px !important;
@@ -295,7 +295,11 @@
   }
 
   .report-wrapper.hidden ~ .warning-message-wrapper {
-    transform: translateX(182%) !important;
+    transform: translateX(171%) !important;
+  }
+
+  .warning-message-contain {
+    padding: 10px !important;
   }
 }
 
