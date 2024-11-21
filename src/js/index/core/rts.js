@@ -147,7 +147,7 @@ TREM.variable.events.on('DataRts', (ans) => {
       };
     }
     else {
-      if (!TREM.variable.cache.last_rts_alert && (ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 300000) {
+      if (TREM.variable.cache.last_rts_alert && (ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 300000) {
         unstable = ans.data.time;
       }
       TREM.variable.cache.last_rts_alert = ans.data?.time ?? 0;
