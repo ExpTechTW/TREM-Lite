@@ -44,6 +44,10 @@ TREM.variable.events.on('MapLoad', (map) => {
         EEWData();
       }
 
+      if (data.intensity) {
+        IntensityData(data.intensity);
+      }
+
       if (data.rts) {
         TREM.variable.cache.last_data_time = local_now;
       }
@@ -130,5 +134,71 @@ function EEWData(newData = []) {
   TREM.variable.events.emit('DataEew', {
     info: { type: TREM.variable.play_mode },
     data: TREM.variable.data.eew,
+  });
+}
+
+function IntensityData(newData = []) {
+  const currentTime = now();
+  const EXPIRY_TIME = 240 * 1000;
+
+  TREM.variable.data.intensity
+    .filter((item) =>
+      item.id
+      && (currentTime - item.id > EXPIRY_TIME || item.IntensityEnd),
+    )
+    .forEach((data) => {
+      TREM.variable.events.emit('IntensityEnd', {
+        info: { type: TREM.variable.play_mode },
+        data: { ...data, IntensityEnd: true },
+      });
+    });
+
+  TREM.variable.data.intensity = TREM.variable.data.intensity.filter((item) =>
+    item.id
+    && currentTime - item.id <= EXPIRY_TIME
+    && !item.IntensityEnd,
+  );
+
+  newData.forEach((data) => {
+    if (!data.id || currentTime - data.id > EXPIRY_TIME || data.IntensityEnd) {
+      return;
+    }
+
+    const existingIndex = TREM.variable.data.intensity.findIndex((item) => item.id == data.id);
+    const eventData = {
+      info: { type: TREM.variable.play_mode },
+      data,
+    };
+
+    if (existingIndex == -1) {
+      if (!TREM.variable.cache.intensity_last[data.id]) {
+        TREM.variable.cache.intensity_last[data.id] = {
+          last_time: currentTime,
+          serial: 1,
+        };
+        TREM.variable.data.intensity.push(data);
+        TREM.variable.events.emit('IntensityRelease', eventData);
+        return;
+      }
+    }
+
+    if (TREM.variable.cache.intensity_last[data.id] && TREM.variable.cache.intensity_last[data.id].serial < data.serial) {
+      TREM.variable.cache.intensity_last[data.id].serial = data.serial;
+      TREM.variable.events.emit('IntensityUpdate', eventData);
+
+      TREM.variable.data.intensity[existingIndex] = data;
+    }
+  });
+
+  Object.keys(TREM.variable.cache.intensity_last).forEach((id) => {
+    const item = TREM.variable.cache.intensity_last[id];
+    if (currentTime - item.last_time > 600000) {
+      delete TREM.variable.cache.intensity_last[id];
+    }
+  });
+
+  TREM.variable.events.emit('DataIntensity', {
+    info: { type: TREM.variable.play_mode },
+    data: TREM.variable.data.intensity,
   });
 }

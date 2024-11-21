@@ -82,6 +82,9 @@ class FocusManager {
     if (bounds.length) {
       this.updateMapBounds(bounds);
     }
+    else if (!TREM.variable.cache.bounds.report.length) {
+      this.focusReset();
+    }
   }
 
   focusReset() {
