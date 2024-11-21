@@ -9,6 +9,7 @@ class FocusManager {
       return FocusManager.instance;
     }
     this.lock = false;
+    this.isMouseDown = false;
     this.focusButton = document.getElementById('focus');
     this.initialize();
     this.bindEvents();
@@ -42,14 +43,23 @@ class FocusManager {
 
   onMapLoad() {
     TREM.variable.map.on('mousedown', () => {
+      this.isMouseDown = true;
       this.lock = true;
       this.focusButton.style.color = 'red';
+    });
+
+    TREM.variable.map.on('mouseup', () => {
+      this.isMouseDown = false;
     });
 
     TREM.variable.map.on('wheel', () => {
       this.lock = true;
       this.focusButton.style.color = 'red';
     });
+  }
+
+  mouseDown() {
+    return this.isMouseDown;
   }
 
   getLock() {

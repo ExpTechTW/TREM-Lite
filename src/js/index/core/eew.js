@@ -28,6 +28,7 @@ TREM.variable.events.on('EewRelease', (ans) => {
 
   TREM.variable.map.addSource(`${ans.data.id}-s-wave`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
   TREM.variable.map.addSource(`${ans.data.id}-p-wave`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
+  TREM.variable.map.addSource(`${ans.data.id}-s-wave-bg`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
 
   TREM.variable.map.addLayer({
     id: `${ans.data.id}-p-wave-outline`,
@@ -59,7 +60,7 @@ TREM.variable.events.on('EewRelease', (ans) => {
     {
       id: `${ans.data.id}-s-wave-background`,
       type: 'fill',
-      source: `${ans.data.id}-s-wave`,
+      source: `${ans.data.id}-s-wave-bg`,
       paint: {
         'fill-color': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? TREM.constant.COLOR.TREM.P : color,
         'fill-opacity': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0 : 0.25,
@@ -95,7 +96,7 @@ TREM.variable.events.on('EewAlert', (ans) => {
     {
       id: `${ans.data.id}-s-wave-background`,
       type: 'fill',
-      source: `${ans.data.id}-s-wave`,
+      source: `${ans.data.id}-s-wave-bg`,
       paint: {
         'fill-color': color,
         'fill-opacity': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0 : 0.25,
@@ -123,20 +124,25 @@ setInterval(() => {
 setInterval(() => {
   const alert = TREM.variable.data.eew.some((eew) => eew.author != 'trem');
 
+  const isMouseDown = TREM.class.FocusManager?.getInstance().mouseDown();
+
   for (const eew of TREM.variable.data.eew) {
     if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') {
       const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
+      const sWaveSourceBg = TREM.variable.map.getSource(`${eew.id}-s-wave-bg`);
       const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
-      if (sWaveSource && pWaveSource) {
+      if (sWaveSource && sWaveSourceBg && pWaveSource) {
         const center = [eew.eq.lon, eew.eq.lat];
         const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
 
         if (!alert && flash) {
           sWaveSource.setData({ type: 'FeatureCollection', features: [createCircleFeature(center, dist.s_dist)] });
+          sWaveSourceBg.setData({ type: 'FeatureCollection', features: (isMouseDown) ? [] : [createCircleFeature(center, dist.s_dist)] });
           pWaveSource.setData({ type: 'FeatureCollection', features: [createCircleFeature(center, dist.p_dist)] });
         }
         else {
           sWaveSource.setData({ type: 'FeatureCollection', features: [] });
+          sWaveSourceBg.setData({ type: 'FeatureCollection', features: [] });
           pWaveSource.setData({ type: 'FeatureCollection', features: [] });
         }
       }
@@ -148,13 +154,15 @@ setInterval(() => {
     }
 
     const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
+    const sWaveSourceBg = TREM.variable.map.getSource(`${eew.id}-s-wave-bg`);
     const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
 
-    if (sWaveSource && pWaveSource) {
+    if (sWaveSource && sWaveSourceBg && pWaveSource) {
       const center = [eew.eq.lon, eew.eq.lat];
       const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
       eew.dist = dist;
       sWaveSource.setData({ type: 'FeatureCollection', features: [createCircleFeature(center, dist.s_dist)] });
+      sWaveSourceBg.setData({ type: 'FeatureCollection', features: (isMouseDown) ? [] : [createCircleFeature(center, dist.s_dist)] });
       pWaveSource.setData({ type: 'FeatureCollection', features: [createCircleFeature(center, dist.p_dist)] });
     }
   }
@@ -318,6 +326,7 @@ function removeEewLayersAndSources(eewId) {
 
   const sourceIds = [
     `${eewId}-s-wave`,
+    `${eewId}-s-wave-bg`,
     `${eewId}-p-wave`,
   ];
 
