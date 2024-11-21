@@ -238,7 +238,7 @@ class ReportManager {
     const wrapper = document.createElement('div');
     wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
     wrapper.setAttribute('data-id', item.id);
-    wrapper.setAttribute('trem-url', url ? `https://${url}/file/trem_info.html?id=${item.trem}` : '');
+    wrapper.setAttribute('trem-url', (item.trem) ? `https://${url}/file/trem_info.html?id=${item.trem}` : '');
     wrapper.setAttribute('data-time', item.time);
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';

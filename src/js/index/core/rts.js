@@ -371,7 +371,7 @@ TREM.variable.events.on('DataRts', (ans) => {
 
   TREM.variable.cache.bounds.rts = coordinates;
 
-  if ((ans.data?.time ?? 0) - unstable < 300000) {
+  if (unstable && (ans.data?.time ?? 0) - unstable < 300000) {
     if (warning_box_unstable.classList.contains('hide')) {
       warning_box_unstable.classList.remove('hide');
     }
