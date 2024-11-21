@@ -81,7 +81,7 @@ const TREM = {
       },
     },
 
-    SHOW_TREM_EEW: true,
+    SHOW_TREM_EEW: false,
 
     URL: {
       API: ['api-1.exptech.dev', 'api-2.exptech.dev'],
@@ -121,7 +121,7 @@ const TREM = {
 
     EEW_AUTHOR: ['trem', 'cwa'],
 
-    REPORT_LIMIT: 500,
+    REPORT_LIMIT: 75,
 
     MAP: {
       BOUNDS: [[118.0, 21.2], [124.0, 25.8]],
