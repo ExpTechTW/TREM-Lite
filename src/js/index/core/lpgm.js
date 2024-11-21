@@ -88,6 +88,9 @@ function show_lpgm(ans) {
   TREM.variable.map.getSource('lpgm-markers-geojson').setData({ type: 'FeatureCollection', features: data_list });
 
   setTimeout(() => {
+    if (!TREM.variable.cache.show_lpgm) {
+      return;
+    }
     TREM.variable.cache.show_lpgm = false;
     TREM.variable.events.emit('DataRts', {
       info: {

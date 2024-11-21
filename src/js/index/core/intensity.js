@@ -84,6 +84,9 @@ function show_intensity(ans) {
   TREM.variable.map.getSource('intensity-markers-geojson').setData({ type: 'FeatureCollection', features: data_list });
 
   setTimeout(() => {
+    if (!TREM.variable.cache.show_intensity) {
+      return;
+    }
     TREM.variable.cache.show_intensity = false;
     TREM.variable.events.emit('DataRts', {
       info: {

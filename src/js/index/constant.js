@@ -132,6 +132,21 @@ const TREM = {
 
     GAME_MODE: true,
 
+    WINDOW_FOCUS_EVENTS: [
+      'EewRelease',
+      'EewAlert',
+      'RtsPga2',
+      'RtsPga1',
+      'RtsShindo2',
+      'RtsShindo1',
+      'RtsShindo0',
+      'ReportRelease',
+      'IntensityRelease',
+      'LpgmRelease',
+      'TsunamiRelease',
+      'EewNewAreaAlert',
+    ],
+
     SHOW_PIP_EVENTS: [
       'EewRelease',
       'EewAlert',
