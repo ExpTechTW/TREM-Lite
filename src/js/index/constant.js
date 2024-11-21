@@ -176,6 +176,7 @@ const TREM = {
       last_report: null,
       eewIntensityArea: {},
       show_intensity: false,
+      show_lpgm: false,
       eew_last: {},
       intensity_last: {},
       time: {
@@ -192,6 +193,7 @@ const TREM = {
         rts: [],
         intensity: [],
         report: [],
+        lpgm: [],
       },
       audio: {
         shindo: -1,

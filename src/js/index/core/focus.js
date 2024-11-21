@@ -67,6 +67,11 @@ class FocusManager {
       return;
     }
 
+    if (TREM.variable.cache.bounds.lpgm.length) {
+      this.updateMapBounds(TREM.variable.cache.bounds.lpgm);
+      return;
+    }
+
     if (TREM.variable.cache.bounds.intensity.length) {
       this.updateMapBounds(TREM.variable.cache.bounds.intensity);
       return;

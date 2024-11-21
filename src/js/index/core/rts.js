@@ -180,7 +180,7 @@ TREM.variable.events.on('DataRts', (ans) => {
       if (alert && ans.data.station[id].alert) {
         const I = intensity_float_to_int(ans.data.station[id].I);
 
-        if (TREM.variable.cache.show_intensity) {
+        if (TREM.variable.cache.show_intensity || TREM.variable.cache.show_lpgm) {
           data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
         }
         else
@@ -310,7 +310,7 @@ TREM.variable.events.on('DataRts', (ans) => {
       TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
 
-    if (((ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 15000) || TREM.variable.cache.show_intensity || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
+    if (((ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 15000) || TREM.variable.cache.show_lpgm || TREM.variable.cache.show_intensity || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
       if (TREM.variable.cache.bounds.report) {
         TREM.variable.cache.bounds.report = [];
         TREM.variable.map.getSource('report-markers-geojson').setData({ type: 'FeatureCollection', features: [] });

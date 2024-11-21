@@ -1,8 +1,13 @@
+const { generateMapStyle, search_loc_name } = require('../utils/utils');
+const drawEewArea = require('./estimate');
+
 TREM.variable.events.on('MapLoad', (map) => {
+  map.addSource('lpgm-markers-geojson', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+
   map.addLayer({
     id: 'lpgm-markers',
     type: 'symbol',
-    source: 'intensity-markers-geojson',
+    source: 'lpgm-markers-geojson',
     layout: {
       'symbol-sort-key': ['get', 'i'],
       'symbol-z-order': 'source',
@@ -25,13 +30,18 @@ TREM.variable.events.on('MapLoad', (map) => {
   });
 });
 
-function show_intensity(ans) {
+function show_lpgm(ans) {
+  TREM.variable.map.getSource('intensity-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
+  TREM.variable.cache.bounds.intensity = [];
+  TREM.variable.cache.show_intensity = false;
+
   const data_list = [];
   const bounds = [];
+  const code_intensity = {};
+  let max = 0;
+  let max_city = [];
 
-  const city_intensity_list = findMaxIntensityCity(ans.data.area);
-
-  TREM.variable.cache.show_intensity = true;
+  TREM.variable.cache.show_lpgm = true;
 
   TREM.variable.events.emit('DataRts', {
     info: {
@@ -40,50 +50,59 @@ function show_intensity(ans) {
     data: TREM.variable.data.rts,
   });
 
-  TREM.variable.cache.intensity.time = ans.data.id;
-  if (TREM.variable.cache.intensity.max < ans.data.max) {
-    TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
+  for (const station of ans.data.list) {
+    if (!station.lpgm) {
+      continue;
+    }
+
+    const station_info = TREM.variable.station[station.id];
+    if (!station_info) {
+      continue;
+    }
+    const station_location = station_info.info.at(-1);
+
+    const loc = search_loc_name(station_location.code);
+
+    if (loc && station.lpgm >= max) {
+      if (station.lpgm > max) {
+        max_city = [];
+      }
+      max = station.lpgm;
+      max_city.push(loc.city);
+    }
+
+    code_intensity[station_location.code] = station.lpgm;
+
+    bounds.push({ lon: station_location.lon, lat: station_location.lat });
+    data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: station.lpgm } });
   }
-  TREM.variable.cache.intensity.max = ans.data.max;
 
-  generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
-
-  const code_intensity = convertIntensityToAreaFormat(ans.data.area);
-
-  const mapStyle = generateMapStyle(code_intensity);
+  const mapStyle = generateMapStyle(code_intensity, false, true);
   TREM.variable.map.setPaintProperty('town', 'fill-color', mapStyle);
   TREM.variable.map.setPaintProperty('rts-layer', 'circle-opacity', 0.2);
 
-  for (const code of Object.keys(code_intensity)) {
-    const loc = search_loc_name(code);
-    if (!loc) {
-      continue;
-    }
-    const loc_info = region[loc.city][loc.town];
-    bounds.push({ lon: loc_info.lon, lat: loc_info.lat });
-    data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [loc_info.lon, loc_info.lat] }, properties: { i: code_intensity[code] } });
-  }
+  TREM.variable.cache.bounds.lpgm = bounds;
 
-  TREM.variable.cache.bounds.intensity = bounds;
+  focus();
 
-  TREM.variable.map.getSource('intensity-markers-geojson').setData({ type: 'FeatureCollection', features: data_list });
+  TREM.variable.map.getSource('lpgm-markers-geojson').setData({ type: 'FeatureCollection', features: data_list });
 
   setTimeout(() => {
-    TREM.variable.cache.show_intensity = false;
+    TREM.variable.cache.show_lpgm = false;
     TREM.variable.events.emit('DataRts', {
       info: {
         type: TREM.variable.play_mode,
       },
       data: TREM.variable.data.rts,
     });
-    TREM.variable.cache.bounds.intensity = [];
+    TREM.variable.cache.bounds.lpgm = [];
     if (!TREM.class.FocusManager?.getInstance().getLock()) {
       focus();
     }
     TREM.variable.map.setPaintProperty('rts-layer', 'circle-opacity', 1);
-    TREM.variable.map.getSource('intensity-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
+    TREM.variable.map.getSource('lpgm-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
     drawEewArea();
-  }, 7500);
+  }, 15000);
 }
 
 TREM.variable.events.on('LpgmRelease', (ans) => show_lpgm(ans));

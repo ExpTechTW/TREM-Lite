@@ -2,12 +2,15 @@ const TREM = require('../constant');
 
 const fetchData = require('../../core/utils/fetch');
 
+let t = 1732200325000;
+
 module.exports = async (time) => {
   const url = (time) ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)] : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
   const rts_ans = await fetchData(`https://${url}/api/v1/trem/rts${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.RTS);
   const eew_ans = await fetchData(`https://${url}/api/v1/eq/eew${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.EEW);
   const intensity_ans = await fetchData(`https://${TREM.constant.URL.API[1]}/api/v1/trem/intensity${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.INTENSITY);
-  time = 1732199147000;
+  time = t;
+  t += 1000;
   const lpgm_ans = await fetchData(`https://${TREM.constant.URL.API[1]}/api/v1/trem/lpgm${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.INTENSITY);
 
   let rts = null, eew = null, intensity = null, lpgm = null;

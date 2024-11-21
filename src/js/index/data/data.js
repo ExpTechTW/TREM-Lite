@@ -7,6 +7,8 @@ const file = require('./file');
 
 let last_fetch_time = 0;
 
+const t = Date.now();
+
 TREM.variable.events.on('MapLoad', (map) => {
   setInterval(async () => {
     const local_now = Date.now();
@@ -49,6 +51,9 @@ TREM.variable.events.on('MapLoad', (map) => {
       }
 
       if (data.lpgm) {
+        if (data.lpgm.length) {
+          data.lpgm[0].id = t;
+        }
         LpgmData(data.lpgm);
       }
       console.log(data.lpgm);

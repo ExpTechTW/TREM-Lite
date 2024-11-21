@@ -1,7 +1,7 @@
 const logger = require('../../core/utils/logger');
 
 const TREM = require('../constant');
-const { intensity_list, formatToChineseTime, int_to_string } = require('../utils/utils');
+const { intensity_list, formatToChineseTime, int_to_string, findMaxIntensityCity, search_loc_name } = require('../utils/utils');
 
 class AudioQueue {
   constructor() {
@@ -131,7 +131,8 @@ class AudioManager {
     TREM.variable.events.on('RtsShindo0', this.handleRtsShindo0.bind(this));
     TREM.variable.events.on('ReportRelease', this.handleReportRelease.bind(this));
     TREM.variable.events.on('IntensityRelease', this.handleIntensityRelease.bind(this));
-    TREM.variable.events.on('IntensityUpdate', this.handleIntensityRelease.bind(this));
+    TREM.variable.events.on('LpgmRelease', this.handleLpgmRelease.bind(this));
+    TREM.variable.events.on('IntensityUpdate', this.handleIntensityUpdate.bind(this));
     TREM.variable.events.on('TsunamiRelease', this.handleTsunamiRelease.bind(this));
     TREM.variable.events.on('EewNewAreaAlert', this.handleEewNewAreaAlert.bind(this));
   }
@@ -176,23 +177,23 @@ class AudioManager {
     delete this.ttsCache[ans.data.id];
   }
 
-  handleRtsPga2(ans) {
+  handleRtsPga2() {
     this.audioQueues.pga.add(TREM.constant.AUDIO.PGA2, this.priorityRules.pga);
   }
 
-  handleRtsPga1(ans) {
+  handleRtsPga1() {
     this.audioQueues.pga.add(TREM.constant.AUDIO.PGA1, this.priorityRules.pga);
   }
 
-  handleRtsShindo2(ans) {
+  handleRtsShindo2() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO2, this.priorityRules.shindo);
   }
 
-  handleRtsShindo1(ans) {
+  handleRtsShindo1() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO1, this.priorityRules.shindo);
   }
 
-  handleRtsShindo0(ans) {
+  handleRtsShindo0() {
     this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO0);
   }
 
@@ -275,8 +276,121 @@ class AudioManager {
     TREM.variable.speech.speak({ text: speechText });
   }
 
-  handleIntensityRelease() {
+  handleLpgmRelease(ans) {
     TREM.constant.AUDIO.INTENSITY.play();
+
+    const time = formatToChineseTime(ans.data.id);
+
+    let maxIntensity = 0;
+    let maxCity = '';
+
+    const intensityStations = {
+      4: [], 3: [], 2: [], 1: [],
+    };
+    const locationMaxIntensity = new Map();
+
+    ans.data.list.forEach((station) => {
+      if (!station.lpgm) {
+        return;
+      }
+
+      const station_info = TREM.variable.station[station.id];
+      if (!station_info) {
+        return;
+      }
+
+      const station_location = station_info.info.at(-1);
+      if (!station_location) {
+        return;
+      }
+
+      const loc = search_loc_name(station_location.code);
+      if (!loc) {
+        return;
+      }
+
+      if (station.lpgm > maxIntensity) {
+        maxIntensity = station.lpgm;
+        maxCity = loc.city;
+      }
+
+      const locationKey = `${loc.city}${loc.town}`;
+      const intensity = station.lpgm;
+
+      if (locationMaxIntensity.has(locationKey)) {
+        if (intensity > locationMaxIntensity.get(locationKey)) {
+          const oldIntensity = locationMaxIntensity.get(locationKey);
+          intensityStations[oldIntensity] = intensityStations[oldIntensity]
+            .filter((loc) => loc !== locationKey);
+
+          if (intensity in intensityStations) {
+            intensityStations[intensity].push(locationKey);
+            locationMaxIntensity.set(locationKey, intensity);
+          }
+        }
+      }
+      else {
+        if (intensity in intensityStations) {
+          intensityStations[intensity].push(locationKey);
+          locationMaxIntensity.set(locationKey, intensity);
+        }
+      }
+    });
+
+    new Notification('🔔 長週期地震動', {
+      body: `${time.replace('點', ':').replace('分', '')}，${maxCity}觀測到最大長週期地震動階級${maxIntensity}。`,
+      icon: '../TREM.ico',
+    });
+
+    let ttsText = [
+      '長週期第震動觀測資訊',
+      formatToChineseTime(ans.data.id),
+      `${maxCity}觀測到最大長週期地震動階級${maxIntensity}`,
+    ].join('，');
+
+    let count = 0;
+    for (let intensity = 4; intensity >= 1; intensity--) {
+      if (!intensityStations[intensity].length) {
+        continue;
+      }
+
+      const stationText = intensityStations[intensity].join('，');
+
+      if (count === 0) {
+        ttsText += `，這次地震，最大長週期地震動階級 ${intensity} 地區 ${stationText}`;
+      }
+      else if (count === 1) {
+        ttsText += `，此外，長週期地震動階級 ${intensity} 地區 ${stationText}`;
+      }
+      else {
+        ttsText += `，長週期地震動階級 ${intensity} 地區 ${stationText}`;
+        break;
+      }
+      count++;
+    }
+
+    const speechText = ttsText
+      .replace('2.', '二點')
+      .replaceAll('.2', '點二')
+      .replaceAll('三地門', '三弟門')
+      .replaceAll('.', '點')
+      .replaceAll('為', '圍');
+
+    TREM.variable.speech.speak({ text: speechText });
+  }
+
+  handleIntensityRelease(ans) {
+    TREM.constant.AUDIO.INTENSITY.play();
+
+    const city_intensity_list = findMaxIntensityCity(ans.data.area);
+
+    if (TREM.variable.cache.intensity.max < ans.data.max) {
+      TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
+    }
+  }
+
+  handleIntensityUpdate(ans) {
+    this.handleIntensityRelease(ans);
   }
 
   handleTsunamiRelease() {
