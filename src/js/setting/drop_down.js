@@ -3,13 +3,15 @@ class DropDown {
     this.store = require('./store');
     this.storeData = new this.store();
     this.config = require('./config');
-    this.initElements();
-    this.initEvents();
+    this.Instance = this.config.Instance;
+    this.init();
+    this.renderConfig(1);
+    this.renderConfig(2);
     this.renderCity(this.userCity);
     this.renderCity(this.realtimeCity);
   }
 
-  initElements() {
+  init() {
     this.userLocation = document.querySelector('.usr-location');
     this.userLocationSelect = this.userLocation.querySelector('.select-wrapper');
     this.userCity = this.userLocation.querySelector('.city');
@@ -18,9 +20,7 @@ class DropDown {
     this.realtimeStationSelect = this.realtimeStation.querySelector('.select-wrapper');
     this.realtimeCity = this.realtimeStation.querySelector('.city');
     this.realtimeTown = this.realtimeStation.querySelector('.town');
-  }
 
-  initEvents() {
     this.addToggleClick(this.userLocation, this.userLocationSelect);
     this.addToggleClick(this.realtimeStation, this.realtimeStationSelect);
     this.userCity.addEventListener('click', (event) => this.handleCityEvent(event, 1));
@@ -100,7 +100,19 @@ class DropDown {
       : `${selectedCity?.innerText || ''}-${target.textContent.trim()}`;
     currentElement.textContent = data;
     const key = type === 1 ? 'location' : 'station';
-    this.config.write({ STRING: { [key]: data } });
+    new this.config.Config().write({ DROPDOWN: { [key]: data } });
+  }
+
+  async renderConfig(type) {
+    await this.Instance.init();
+    const current = type === 1
+      ? this.Instance.data.DROPDOWN?.location || '未設定'
+      : this.Instance.data.DROPDOWN?.station || '未設定';
+    const currentElement = (type === 1 ? this.userLocation : this.realtimeStation)
+      .querySelector('.setting-option > .location > .current');
+    if (currentElement) {
+      currentElement.textContent = current;
+    }
   }
 }
 new DropDown();
