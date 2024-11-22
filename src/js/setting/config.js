@@ -1,24 +1,26 @@
 const { ipcRenderer } = require('electron');
-class Config {
-  constructor() {
-    this.get();
-  }
 
+class Config {
   get() {
-    ipcRenderer.send('get-config');
-    ipcRenderer.removeAllListeners('get-config-res');
-    ipcRenderer.on('get-config-res', (event, res) => {
-      console.log(res);
+    return new Promise((resolve) => {
+      ipcRenderer.send('get-config');
+      ipcRenderer.removeAllListeners('get-config-res');
+      ipcRenderer.on('get-config-res', (event, res) => {
+        resolve(res);
+      });
     });
   }
 
   write(data) {
-    ipcRenderer.send('write-config', data);
-    ipcRenderer.removeAllListeners('write-config-res');
-    ipcRenderer.on('write-config-res', (event, res) => {
-      console.log(res);
+    return new Promise((resolve) => {
+      ipcRenderer.send('write-config', data);
+      ipcRenderer.removeAllListeners('write-config-res');
+      ipcRenderer.on('write-config-res', (event, res) => {
+        resolve(res);
+      });
     });
   }
 }
+
 const config = new Config();
 module.exports = config;

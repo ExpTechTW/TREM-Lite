@@ -316,9 +316,6 @@ const loadConfig = () => {
         lang: 'zh-tw',
         version: app.getVersion(),
       },
-      STRING: {
-        init: true,
-      },
     });
     fs.writeFileSync(configDir, defaultConfig, 'utf-8');
   }
