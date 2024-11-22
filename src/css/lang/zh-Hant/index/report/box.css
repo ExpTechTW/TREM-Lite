@@ -284,6 +284,10 @@ html[lang="zh-Hant"] {
         }
       }
 
+      .isNum {
+        color: #ffe200;
+      }
+
       /**深度**/
       .report-depth {
         font-size: 28px;

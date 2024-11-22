@@ -213,6 +213,8 @@ class ReportManager {
     const magVal = document.createElement('div');
     magVal.className = 'report-mag-val';
     magVal.textContent = item.mag ? item.mag.toFixed(1) : '';
+    magVal.classList.add(item.id.split('-')[0] !== '113000' ? 'isNum' : null);
+
     mag.appendChild(magText);
     mag.appendChild(magVal);
 
