@@ -66,8 +66,8 @@ class DropDown {
 
   renderCity(targetElement) {
     this.storeData.processStation(TREM.variable.station);
-    const uniqueRegions = [...new Set(TREM.variable.city.map((city) => city.slice(0, -1)))].sort();
-    targetElement.innerHTML = uniqueRegions.map((city) => `<div>${city}</div>`).join('');
+    const uniqueCities = [...new Set(TREM.variable.city.sort((a, b) => a.code - b.code).map((item) => item.city))];
+    targetElement.innerHTML = uniqueCities.map((city) => `<div>${city}</div>`).join('');
   }
 
   renderTown(container, items, type) {
