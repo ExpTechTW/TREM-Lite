@@ -2,6 +2,7 @@ class DropDown {
   constructor() {
     this.store = require('./store');
     this.storeData = new this.store();
+    this.config = require('./config');
     this.initElements();
     this.initEvents();
     this.renderCity(this.userCity);
@@ -94,9 +95,12 @@ class DropDown {
     const container = type === 1 ? this.userLocation : this.realtimeStation;
     const selectedCity = (type === 1 ? this.userCity : this.realtimeCity).querySelector('.select-option-selected');
     const currentElement = container.querySelector('.setting-option > .location > .current');
-    currentElement.textContent = target.dataset?.name
+    const data = target.dataset?.name
       ? `${target.dataset.loc}-${target.dataset.name}`
       : `${selectedCity?.innerText || ''}-${target.textContent.trim()}`;
+    currentElement.textContent = data;
+    const key = type === 1 ? 'location' : 'station';
+    this.config.write({ STRING: { [key]: data } });
   }
 }
 new DropDown();
