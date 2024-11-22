@@ -9,6 +9,7 @@ const {
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const ini = require('ini');
 
 let win;
 let SettingWindow;
@@ -18,6 +19,7 @@ let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
 const test = process.argv.includes('--raw') ? 0 : 1;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
+const configDir = path.join(app.getPath('userData'), 'config.ini');
 
 const is_mac = process.platform === 'darwin';
 
@@ -305,6 +307,28 @@ ipcMain.on('openPluginFolder', () => {
     .catch((error) => {
       console.error(error);
     });
+});
+
+ipcMain.on('get-config', (event) => {
+  try {
+    event.reply('get-config-res', ini.parse(fs.readFileSync(configDir, 'utf-8')));
+  }
+  catch (error) {
+    console.error('Failed to load setting file:', error);
+    event.reply('get-config-res', { error: 'Failed to load setting file' });
+  }
+});
+
+ipcMain.on('write-config', (event, data) => {
+  try {
+    const content = ini.stringify(data);
+    console.log(configDir);
+    fs.writeFileSync(configDir, content, 'utf-8');
+    event.reply('write-config-res', { success: true });
+  }
+  catch (error) {
+    event.reply('write-config-res', { success: false, error: error.message });
+  }
 });
 
 function trayIcon() {
