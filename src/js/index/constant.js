@@ -115,6 +115,7 @@ const TREM = {
       REPORT: 5000,
       INTENSITY: 1500,
       LPGM: 1500,
+      NTP: 1500,
     },
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
