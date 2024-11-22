@@ -6,7 +6,6 @@ class Config {
   }
 
   get() {
-    console.log(true);
     ipcRenderer.send('get-config');
     ipcRenderer.removeAllListeners('get-config-res');
     ipcRenderer.on('get-config-res', (event, res) => {
@@ -15,7 +14,6 @@ class Config {
   }
 
   write(data) {
-    console.log(true);
     ipcRenderer.send('write-config', data);
     ipcRenderer.removeAllListeners('write-config-res');
     ipcRenderer.on('write-config-res', (event, res) => {
@@ -26,9 +24,6 @@ class Config {
 
 // 使用範例
 const config = new Config();
-
-// 讀取設定
-config.get();
 
 // 寫入設定
 config.write({
