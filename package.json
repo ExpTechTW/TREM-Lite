@@ -33,7 +33,6 @@
     "semver": "^7.6.3",
     "speak-tts": "^2.0.8",
     "winston": "^3.15.0",
-    "winston-daily-rotate-file": "^5.0.0",
-    "ws": "^8.18.0"
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

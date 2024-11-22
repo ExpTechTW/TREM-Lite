@@ -97,7 +97,7 @@ class FocusManager {
   }
 
   focusReset() {
-    TREM.variable.map.fitBounds(
+    TREM.variable.map?.fitBounds(
       TREM.constant.MAP.BOUNDS,
       TREM.constant.MAP.OPTIONS,
     );
@@ -110,7 +110,7 @@ class FocusManager {
       bounds.extend([coord.lon, coord.lat]);
     });
 
-    TREM.variable.map.fitBounds(bounds, {
+    TREM.variable.map?.fitBounds(bounds, {
       padding: {
         top: options.paddingTop || 150,
         bottom: options.paddingBottom || 150,
