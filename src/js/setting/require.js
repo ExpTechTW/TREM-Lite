@@ -1,4 +1,6 @@
-let TREM = JSON.parse(localStorage.getItem('constant'));
+TREM = JSON.parse(localStorage.getItem('constant'));
+const EventEmitter = require('events');
+TREM.variable.events = new EventEmitter();
 
 const logger = require('../js/core/utils/logger');
 
