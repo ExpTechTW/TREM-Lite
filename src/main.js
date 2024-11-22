@@ -309,9 +309,9 @@ ipcMain.on('openPluginFolder', () => {
     });
 });
 
-const initializeConfig = () => {
+const loadConfig = () => {
   if (!fs.existsSync(configDir)) {
-    const content = ini.stringify({
+    const defaultConfig = ini.stringify({
       INFO: {
         lang: 'zh-tw',
         version: app.getVersion(),
@@ -320,46 +320,39 @@ const initializeConfig = () => {
         init: true,
       },
     });
-    fs.writeFileSync(configDir, content, 'utf-8');
+    fs.writeFileSync(configDir, defaultConfig, 'utf-8');
   }
+  return ini.parse(fs.readFileSync(configDir, 'utf-8'));
 };
-initializeConfig();
+
+const saveConfig = (data) => {
+  const existingConfig = loadConfig();
+  const mergeDeep = (target, source) =>
+    Object.entries(source).reduce((acc, [key, value]) => {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        acc[key] = mergeDeep(acc[key] || {}, value);
+      }
+      else if (value === null) {
+        acc = Object.fromEntries(Object.entries(acc).filter(([k]) => k !== key));
+      }
+      else {
+        acc[key] = value;
+      }
+      return acc;
+    }, { ...target });
+
+  const updatedConfig = mergeDeep(existingConfig, data);
+  fs.writeFileSync(configDir, ini.stringify(updatedConfig), 'utf-8');
+
+  return { status: true };
+};
 
 ipcMain.on('get-config', (event) => {
-  try {
-    event.reply('get-config-res', ini.parse(fs.readFileSync(configDir, 'utf-8')));
-  }
-  catch (error) {
-    console.error('Failed to load setting file:', error);
-    event.reply('get-config-res', { error: 'Failed to load setting file' });
-  }
+  event.reply('get-config-res', loadConfig());
 });
 
 ipcMain.on('write-config', (event, data) => {
-  try {
-    const exist = fs.existsSync(configDir)
-      ? ini.parse(fs.readFileSync(configDir, 'utf-8'))
-      : {};
-    const mergeDeep = (target, source) =>
-      Object.entries(source).reduce((acc, [key, value]) => {
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-          acc[key] = mergeDeep(acc[key] || {}, value);
-        }
-        else if (value === null) {
-          acc = Object.fromEntries(Object.entries(acc).filter(([k]) => k !== key));
-        }
-        else {
-          acc[key] = value;
-        }
-        return acc;
-      }, { ...target });
-    const updated = mergeDeep(exist, data);
-    fs.writeFileSync(configDir, ini.stringify(updated), 'utf-8');
-    event.reply('write-config-res', { success: true });
-  }
-  catch (error) {
-    event.reply('write-config-res', { success: false, error: error.message });
-  }
+  event.reply('write-config-res', saveConfig(data));
 });
 
 function trayIcon() {

@@ -1,5 +1,4 @@
 const { ipcRenderer } = require('electron');
-
 class Config {
   constructor() {
     this.get();
