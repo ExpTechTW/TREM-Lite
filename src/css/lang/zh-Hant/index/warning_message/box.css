@@ -1,4 +1,12 @@
 ﻿html[lang="zh-Hant"] {
+  .internet-error .title:before {
+    content: "網路異常";
+  }
+
+  .unstable .title:before {
+    content: "不穩定";
+  }
+
   .unstable .warning-message-text span {
     &:nth-child(1)::before {
       content: "受地震活動的影響";
