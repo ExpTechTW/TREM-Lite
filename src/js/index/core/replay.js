@@ -1,4 +1,5 @@
 const TREM = require('../constant');
+const { abortAll } = require('../data/http');
 const { focus, focus_reset } = require('./focus');
 
 class ReplayControler {
@@ -19,6 +20,7 @@ class ReplayControler {
   }
 
   clear() {
+    abortAll();
     TREM.variable.cache.last_data_time = 0;
     TREM.variable.data.rts = null;
     TREM.variable.replay = {
