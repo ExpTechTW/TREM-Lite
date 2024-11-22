@@ -398,7 +398,8 @@ li {
   scroll-padding: 0.5em;
   overscroll-behavior: contain;
   align-items: center;
-  border-right: 1px solid #ffffff0f;
+  border-right: 1px solid black;
+  border-color: rgb(255 255 255 / 2%);
 }
 
 .local div,
@@ -456,7 +457,8 @@ li {
 .select-wrapper.select-show-big {
   height: 1000px;
   max-height: 14rem;
-  border-top: 1px solid #ffffff0f;
+  border-top: 1px solid black;
+  border-color: rgb(255 255 255 / 2%);
 }
 
 .select-items.station {
