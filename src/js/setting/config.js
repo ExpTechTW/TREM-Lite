@@ -8,7 +8,7 @@ class Config {
   get() {
     console.log(true);
     ipcRenderer.send('get-config');
-    ipcRenderer.removeAllListeners('config-res');
+    ipcRenderer.removeAllListeners('get-config-res');
     ipcRenderer.on('get-config-res', (event, res) => {
       console.log(res);
     });
@@ -17,7 +17,7 @@ class Config {
   write(data) {
     console.log(true);
     ipcRenderer.send('write-config', data);
-    ipcRenderer.removeAllListeners('write-config');
+    ipcRenderer.removeAllListeners('write-config-res');
     ipcRenderer.on('write-config-res', (event, res) => {
       console.log(res);
     });
