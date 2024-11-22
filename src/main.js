@@ -309,6 +309,22 @@ ipcMain.on('openPluginFolder', () => {
     });
 });
 
+const initializeConfig = () => {
+  if (!fs.existsSync(configDir)) {
+    const content = ini.stringify({
+      INFO: {
+        lang: 'zh-tw',
+        version: app.getVersion(),
+      },
+      STRING: {
+        init: true,
+      },
+    });
+    fs.writeFileSync(configDir, content, 'utf-8');
+  }
+};
+initializeConfig();
+
 ipcMain.on('get-config', (event) => {
   try {
     event.reply('get-config-res', ini.parse(fs.readFileSync(configDir, 'utf-8')));
@@ -321,9 +337,24 @@ ipcMain.on('get-config', (event) => {
 
 ipcMain.on('write-config', (event, data) => {
   try {
-    const content = ini.stringify(data);
-    console.log(configDir);
-    fs.writeFileSync(configDir, content, 'utf-8');
+    const exist = fs.existsSync(configDir)
+      ? ini.parse(fs.readFileSync(configDir, 'utf-8'))
+      : {};
+    const mergeDeep = (target, source) =>
+      Object.entries(source).reduce((acc, [key, value]) => {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          acc[key] = mergeDeep(acc[key] || {}, value);
+        }
+        else if (value === null) {
+          acc = Object.fromEntries(Object.entries(acc).filter(([k]) => k !== key));
+        }
+        else {
+          acc[key] = value;
+        }
+        return acc;
+      }, { ...target });
+    const updated = mergeDeep(exist, data);
+    fs.writeFileSync(configDir, ini.stringify(updated), 'utf-8');
     event.reply('write-config-res', { success: true });
   }
   catch (error) {

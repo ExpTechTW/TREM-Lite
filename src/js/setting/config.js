@@ -21,12 +21,5 @@ class Config {
     });
   }
 }
-
-// 使用範例
 const config = new Config();
-
-// 寫入設定
-config.write({
-  INFO: { langid: 'en-us', version: '3.0.1' },
-  STRING: { 'trem-eew': 'false' },
-});
+module.exports = config;
