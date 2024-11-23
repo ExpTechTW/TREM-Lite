@@ -6,7 +6,10 @@
   "author": "ExpTechTW <ExpTech.tw@gmail.com>",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder",
+    "build": "electron-builder build --mac --win --linux",
+    "build:mac": "electron-builder build --mac",
+    "build:win": "electron-builder build --win",
+    "build:linux": "electron-builder build --linux",
     "lint": "eslint \"src/**/*.{js,ts}\" --fix"
   },
   "repository": {
