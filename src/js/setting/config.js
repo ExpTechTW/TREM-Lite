@@ -1,14 +1,26 @@
 const { ipcRenderer } = require('electron');
+const os = require('node:os');
+const { app } = require('@electron/remote');
 
 class Config {
   constructor() {
-    this.data = null;
+    this.version = document.querySelector('.app_ver');
+    this.os = document.querySelector('.system_os');
+    this.cpu = document.querySelector('.system_cpu');
     this.init();
+    this.info();
+    this.data = null;
   }
 
   async init() {
     this.data = await this.get();
     TREM.variable.events.emit('config-ready', this.data);
+  }
+
+  info() {
+    this.version.textContent = app.getVersion();
+    this.os.textContent = `${os.version()} (${os.release()})`;
+    this.cpu.textContent = os.cpus()[0].model;
   }
 
   async get() {
