@@ -168,7 +168,7 @@
   }
 
   .current-version-view {
-    transform: translateX(65%);
+    transform: translateX(60px);
   }
 
   .fab {
