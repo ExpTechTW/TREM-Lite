@@ -9,21 +9,35 @@
     <div class="setting-wrapper">
       <div class="setting-container">
         <div class="setting-header">
-          <div class="usr-account-info-wrapper">
-            <div class="usr-account-info-container">
-              <div class="usr-account-info-content show-account-info">
+          <div class="account-info-wrapper">
+            <div class="account-info-container">
+              <div class="account-info-content show-account-info">
                 <div class="account">尚未登入</div>
-                <div class="vip_time"></div>
+                <div class="vip-time"></div>
+                <div class="buy-vip">購買VIP</div>
                 <div class="login-btn">登入</div>
                 <div class="logout-btn">登出</div>
               </div>
               <div class="login-forms-content">
+                <div class="login-back">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 -960 960 960"
+                    width="18px"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z"
+                    />
+                  </svg>
+                  <span>返回</span>
+                </div>
                 <div class="login-form-input">
-                  <input type="text" id="email" placeholder="信箱" />
-                  <input type="password" id="password" placeholder="密碼" />
-                  <span class="login_msg error"></span>
-                  <div id="form-login" class="login-btn">登入</div>
-                  <div target="_blank" href="javascript:;" id="forget">
+                  <input type="text" class="email" placeholder="信箱" />
+                  <input type="password" class="password" placeholder="密碼" />
+                  <span class="login-msg error"></span>
+                  <div class="login-btn form-login">登入</div>
+                  <div target="_blank" href="javascript:;" class="forget">
                     <span>忘記密碼？</span>
                   </div>
                 </div>
@@ -47,7 +61,6 @@
           </div>
         </div>
         <div class="setting-content">
-          <div class="top-frame"></div>
           <div class="windows-wrapper">
             <div class="windows-buttons minimize">━</div>
             <div class="windows-buttons close">✖</div>
@@ -239,6 +252,19 @@
                     <span>語音播報（繁體中文）</span>
                     <label class="switch">
                       <input id="other-voice" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-item-content">
+                <span class="setting-item-title">重設</span>
+                <div class="setting-option">
+                  <div>
+                    <span>開機自動啟動（Windows）</span>
+                    <label class="switch">
+                      <input id="other-auto-launch" type="checkbox" />
                       <div class="slider round"></div>
                     </label>
                   </div>
@@ -458,12 +484,16 @@
                 >
                 <div class="setting-option">
                   <div class="setting-item">
+                    <span>程式版本</span>
+                    <span class="app_ver">---</span>
+                  </div>
+                  <div class="setting-item">
                     <span>系統版本</span>
-                    <span id="system_os">---</span>
+                    <span class="system_os">---</span>
                   </div>
                   <div class="setting-item">
                     <span>CPU</span>
-                    <span id="system_cpu">---</span>
+                    <span class="system_cpu">---</span>
                   </div>
                 </div>
               </div>

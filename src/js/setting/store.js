@@ -38,5 +38,9 @@ class Store {
     }
     return null;
   }
+
+  formatTime(timestamp) {
+    return new Date(timestamp).toISOString().replace('T', ' ').split('.')[0];
+  }
 }
 module.exports = Store;

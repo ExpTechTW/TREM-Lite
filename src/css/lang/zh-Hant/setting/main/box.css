@@ -3,6 +3,11 @@ body {
   outline: none;
 }
 
+.content-loaded {
+  background-color: unset;
+  border-radius: unset;
+}
+
 ::-webkit-scrollbar {
   width: 0px;
 }
@@ -10,19 +15,6 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #ffffff00;
   border-radius: 4px;
-}
-
-.switch {
-  display: inline-block;
-  width: 45px;
-  height: 26px;
-  position: sticky;
-  left: 84vw;
-}
-
-.block {
-  opacity: 0.5;
-  pointer-events: none;
 }
 
 .slider {
@@ -51,6 +43,14 @@ body {
   }
 }
 
+.switch {
+  display: inline-block;
+  width: 45px;
+  height: 26px;
+  position: sticky;
+  left: 84vw;
+}
+
 .switch input {
   display: none;
 }
@@ -62,6 +62,27 @@ body {
   &:before {
     transform: translateX(18px);
   }
+}
+
+.block {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.show {
+  display: block;
+}
+
+.hide {
+  display: none;
+}
+
+.flex {
+  display: flex;
+}
+
+.none {
+  display: none;
 }
 
 .setting-wrapper {
@@ -89,11 +110,16 @@ body {
 }
 
 .setting-buttons {
-  padding: 12px;
+  -webkit-app-region: no-drag;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 10px;
 }
 
 .button {
-  background: rgb(44 51 68 / 61%);
+  background: #2d2d31;
   border-radius: 10px;
   margin-top: 5px;
   margin-bottom: 6px;
@@ -102,15 +128,20 @@ body {
   display: flex;
   height: 44px;
   cursor: pointer;
+  width: 23vw;
+}
+
+.button:hover {
+  background: #9d9d9d;
 }
 
 .button.on {
-  background: rgb(84 107 165 / 61%);
+  background: #9d9d9d;
 }
 
 .button span {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: bold;
   opacity: 1;
   color: #fff;
 }
@@ -118,12 +149,6 @@ body {
 .setting-title span {
   font-size: 24px;
   font-weight: 500;
-}
-
-.top-frame {
-  width: 73%;
-  height: 60px;
-  position: fixed;
 }
 
 .setting-options-page {
@@ -149,18 +174,19 @@ body {
 }
 
 .setting-content {
-  background-color: rgb(45 45 45 / 94%);
+  background-color: #313131f0;
   flex: 1;
   border-bottom-right-radius: 15px;
   border-top-right-radius: 15px;
   border: 1px solid #ffffff42;
   border-left: none;
+  -webkit-app-region: drag;
 }
 
 .setting-item-wrapper {
   position: absolute;
   top: 4rem;
-  width: 100%;
+  width: auto;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -168,6 +194,7 @@ body {
   overflow-y: scroll;
   height: calc(100% - 85px);
   padding-bottom: 1.5rem;
+  -webkit-app-region: no-drag;
 
   &:hover {
     overflow-y: auto;
@@ -185,7 +212,7 @@ body {
 
 .setting-option span {
   font-size: 15px;
-  font-weight: normal;
+  font-weight: bold;
 }
 
 .setting-item-title {
@@ -195,7 +222,7 @@ body {
 
 .setting-option {
   display: grid;
-  background-color: #0000003b;
+  background-color: #1c1c1e;
   border-radius: 10px;
   margin-top: 3vh;
 }
@@ -292,9 +319,9 @@ body {
   flex-direction: row;
 }
 
-#version,
-#system_os,
-#system_cpu {
+.app_ver,
+.system_os,
+.system_cpu {
   padding: 0;
   color: #adadad;
   font-weight: bold;
@@ -514,14 +541,15 @@ li {
   align-items: center;
 }
 
-.usr-account-info-wrapper {
+.account-info-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-top: 4vw;
+  -webkit-app-region: no-drag;
 }
 
-.usr-account-info-content {
+.account-info-content {
   text-align: center;
 }
 
@@ -531,7 +559,7 @@ li {
   margin: 5px;
 }
 
-.usr-account-info-container {
+.account-info-container {
   width: 21vw;
   justify-content: center;
   border-radius: 15px;
@@ -539,7 +567,7 @@ li {
   flex-direction: row;
   justify-items: center;
   align-items: center;
-  background-color: rgb(27 33 50 / 0%);
+  background-color: #2d2d31;
   backdrop-filter: blur(1px);
   padding: 15px;
   border-width: 1px 1px 1px 1px;
@@ -548,7 +576,7 @@ li {
   overflow: hidden;
 }
 
-.usr-account-info-content {
+.account-info-content {
   transform: translateX(-175%);
   opacity: 1;
   transition: transform 0.3s ease, opacity 0.3s ease;
@@ -586,7 +614,7 @@ li {
   align-items: center;
 }
 
-.login_msg {
+.login-msg {
   font-weight: bold;
 }
 
@@ -655,7 +683,7 @@ li {
   align-items: flex-end;
   color: #377aff;
   font-weight: bold;
-  margin-bottom: 0.5vw;
+  margin-bottom: 10px;
   cursor: pointer;
   width: 100%;
 
@@ -668,8 +696,13 @@ li {
   font-size: 18px;
 }
 
-.vip_time {
+.vip-time {
   margin-top: 1vh;
+}
+
+.buy-vip {
+  color: #ffd63a;
+  cursor: pointer;
 }
 
 .login-btn {
@@ -679,13 +712,15 @@ li {
   width: 5rem;
   height: 1.5rem;
   text-align: center;
-  margin-right: 0.5vw;
-  margin-left: 0.5vw;
   cursor: pointer;
   align-items: center;
   display: flex;
   justify-content: center;
-  margin-top: 1vh;
+  margin-top: 10px;
+}
+
+.login-btn:hover {
+  background: #ffffff24;
 }
 
 .logout-btn {
@@ -704,8 +739,8 @@ li {
   margin-top: 2vh;
 }
 
-#forget {
-  margin-top: 0.5vw;
+.forget {
+  margin-top: 10px;
   cursor: pointer;
   color: #ff6060;
   text-decoration: none;
@@ -743,17 +778,13 @@ li {
 }
 
 .setting-header {
-  background-color: rgb(77 77 77 / 94%);
+  background-color: #535353eb;
   border-bottom-left-radius: 15px;
   border-top-left-radius: 15px;
   border: 1px solid #ffffff42;
   border-right: none;
   z-index: 2;
-}
-
-.top-frame {
   -webkit-app-region: drag;
-  user-select: none;
 }
 
 .windows-wrapper {
@@ -775,6 +806,14 @@ li {
   color: #ffffff;
   align-items: center;
   justify-content: center;
+}
+
+.minimize:hover {
+  background: #868484;
+}
+
+.close:hover {
+  background: hsl(0 68% 52% / 1);
 }
 
 .windows-buttons {
