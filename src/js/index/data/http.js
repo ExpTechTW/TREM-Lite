@@ -14,7 +14,7 @@ async function getData(time) {
   const rts_req = fetchData.withController(`https://${url}/api/v1/trem/rts${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.RTS);
   const eew_req = fetchData.withController(`https://${url}/api/v1/eq/eew${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.EEW);
   const intensity_req = fetchData.withController(`https://${TREM.constant.URL.API[1]}/api/v1/trem/intensity${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.INTENSITY);
-  const lpgm_req = fetchData.withController(`https://${TREM.constant.URL.API[1]}/api/v1/trem/lpgm${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.INTENSITY);
+  const lpgm_req = fetchData.withController(`https://${TREM.constant.URL.API[1]}/api/v1/trem/lpgm${(time) ? `/${time}` : ''}`, TREM.constant.HTTP_TIMEOUT.LPGM);
 
   activeRequests.push(rts_req, eew_req, intensity_req, lpgm_req);
 
