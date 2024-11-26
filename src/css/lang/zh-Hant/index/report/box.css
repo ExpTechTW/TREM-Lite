@@ -43,22 +43,32 @@ html[lang="zh-Hant"] {
     padding-top: 2px;
   }
 
+  .custom-scrollbar-wrapper {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 8px;
+    z-index: 1001;
+    opacity: 0;
+  }
+
   .custom-scrollbar {
     position: absolute;
     right: 0;
     top: 0;
-    width: 5px;
+    width: 7px;
     height: 50px;
-    background-color: rgb(255 255 255 / 50%);
-    border-radius: 4px;
+    background-color: rgb(255 255 255 / 60%);
+    border-radius: 3px;
     cursor: pointer;
     border: 1px solid #cfcfcf;
-    display: none;
   }
 
-  .report-box-items:hover + .custom-scrollbar {
-    display: block;
-    pointer-events: none;
+  .report-box-items:hover + .custom-scrollbar-wrapper,
+  .custom-scrollbar-wrapper:hover,
+  .custom-scrollbar-wrapper:active {
+    opacity: 1;
   }
 
   .report-box-items {

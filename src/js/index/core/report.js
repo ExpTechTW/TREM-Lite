@@ -132,7 +132,7 @@ class ReportManager {
 
   updateScrollbar() {
     const { scrollHeight, clientHeight, scrollTop } = this.reportBoxItems;
-    const maxScrollbarTop = clientHeight - this.customScrollbar.clientHeight;
+    const maxScrollbarTop = clientHeight - this.customScrollbar.clientHeight - 8;
     this.customScrollbar.style.height = `${Math.max((clientHeight / scrollHeight) * clientHeight, 30)}px`;
     this.customScrollbar.style.top = `${(scrollTop / (scrollHeight - clientHeight)) * maxScrollbarTop}px`;
   }
