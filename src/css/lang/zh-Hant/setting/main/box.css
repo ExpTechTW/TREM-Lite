@@ -588,9 +588,9 @@ body {
   flex-direction: row;
 }
 
-.app_ver,
-.system_os,
-.system_cpu {
+.app-ver,
+.system-os,
+.system-cpu {
   padding: 0;
   color: #adadad;
   font-weight: bold;

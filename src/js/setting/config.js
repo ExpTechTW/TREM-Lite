@@ -4,9 +4,9 @@ const { app } = require('@electron/remote');
 
 class Config {
   constructor() {
-    this.version = document.querySelector('.app_ver');
-    this.os = document.querySelector('.system_os');
-    this.cpu = document.querySelector('.system_cpu');
+    this.version = document.querySelector('.app-ver');
+    this.os = document.querySelector('.system-os');
+    this.cpu = document.querySelector('.system-cpu');
     this.resetButton = document.querySelector('.reset-button');
     this.checkBoxes = document.querySelectorAll('.switch input');
     this.resetConfirmWrapper = document.querySelector('.reset-confirm-wrapper');
