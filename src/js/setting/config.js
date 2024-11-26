@@ -7,6 +7,11 @@ class Config {
     this.version = document.querySelector('.app_ver');
     this.os = document.querySelector('.system_os');
     this.cpu = document.querySelector('.system_cpu');
+    this.resetButton = document.querySelector('.reset-button');
+    this.checkBoxes = document.querySelectorAll('.switch input');
+    this.resetConfirmWrapper = document.querySelector('.reset-confirm-wrapper');
+    this.resetSureButton = document.querySelector('.reset-sure');
+    this.resetCancelButton = document.querySelector('.reset-cancel');
     this.init();
     this.info();
     this.data = null;
@@ -15,6 +20,21 @@ class Config {
   async init() {
     this.data = await this.get();
     TREM.variable.events.emit('config-ready', this.data);
+    this.resetSureButton.addEventListener('click', () => this.resetSetting());
+    this.resetButton.addEventListener('click', () => this.resetConfirmWrapper.style.bottom = '0%');
+    this.resetCancelButton.addEventListener('click', () => this.resetConfirmWrapper.style.bottom = '-100%');
+  }
+
+  async resetSetting() {
+    const resetConfig = {};
+    this.checkBoxes.forEach((checkbox) => {
+      checkbox.checked = false;
+      resetConfig[checkbox.id] = false;
+    });
+    const res = await this.write({ CHECKBOX: resetConfig });
+    if (res.status == true) {
+      this.resetConfirmWrapper.style.bottom = '-100%';
+    }
   }
 
   info() {
