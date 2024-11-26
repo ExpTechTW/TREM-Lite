@@ -4,6 +4,26 @@ class DropDown {
     this.storeData = new this.store();
     this.config = require('./config');
     this.Instance = this.config.Instance;
+
+    this.userLocation = document.querySelector('.usr-location');
+    this.userLocationSelect = this.userLocation.querySelector('.select-wrapper');
+    this.userCity = this.userLocation.querySelector('.city');
+    this.userTown = this.userLocation.querySelector('.town');
+
+    this.realtimeStation = document.querySelector('.realtime-station');
+    this.realtimeStationSelect = this.realtimeStation.querySelector('.select-wrapper');
+    this.realtimeCity = this.realtimeStation.querySelector('.city');
+    this.realtimeTown = this.realtimeStation.querySelector('.town');
+    this.realtimeStationSelect = this.realtimeStation.querySelector('.select-wrapper');
+
+    this.warningRtsStation = document.querySelector('.warning-realtime-station');
+    this.warningRtsStationSelect = this.warningRtsStation.querySelector('.select-wrapper');
+
+    this.warningEstStation = document.querySelector('.warning-estimate-int');
+    this.warningEstStationSelect = this.warningEstStation.querySelector('.select-wrapper');
+
+    this.mapDisplayEffect = document.querySelector('.map-display-effect');
+    this.mapDisplayEffectSelect = this.mapDisplayEffect.querySelector('.select-wrapper');
     this.init();
     this.renderConfig(1);
     this.renderConfig(2);
@@ -12,17 +32,11 @@ class DropDown {
   }
 
   init() {
-    this.userLocation = document.querySelector('.usr-location');
-    this.userLocationSelect = this.userLocation.querySelector('.select-wrapper');
-    this.userCity = this.userLocation.querySelector('.city');
-    this.userTown = this.userLocation.querySelector('.town');
-    this.realtimeStation = document.querySelector('.realtime-station');
-    this.realtimeStationSelect = this.realtimeStation.querySelector('.select-wrapper');
-    this.realtimeCity = this.realtimeStation.querySelector('.city');
-    this.realtimeTown = this.realtimeStation.querySelector('.town');
-
     this.addToggleClick(this.userLocation, this.userLocationSelect);
     this.addToggleClick(this.realtimeStation, this.realtimeStationSelect);
+    this.addToggleClick(this.warningRtsStation, this.warningRtsStationSelect);
+    this.addToggleClick(this.warningEstStation, this.warningEstStationSelect);
+    this.addToggleClick(this.mapDisplayEffect, this.mapDisplayEffectSelect);
     this.userCity.addEventListener('click', (event) => this.handleCityEvent(event, 1));
     this.realtimeCity.addEventListener('click', (event) => this.handleCityEvent(event, 2));
     this.userTown.addEventListener('click', (event) => this.handleTownEvent(event, 1));
