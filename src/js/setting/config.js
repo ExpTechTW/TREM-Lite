@@ -4,7 +4,7 @@ const { app } = require('@electron/remote');
 
 class Config {
   constructor() {
-    this.version = document.querySelector('.app-ver');
+    this.version = document.querySelector('.app-version');
     this.os = document.querySelector('.system-os');
     this.cpu = document.querySelector('.system-cpu');
     this.resetButton = document.querySelector('.reset-button');

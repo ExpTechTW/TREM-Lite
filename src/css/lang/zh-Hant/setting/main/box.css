@@ -156,13 +156,13 @@
 .info-trem-description::before {
   content: "TREM-Lite是一款開源地震速報軟體，提供給您即時的地震資訊，利用自製的測站，顯示各地的即時震度，在地震發生的第一時間取得各管道發布的強震即時警報訊息。";
 }
-.app-version::before {
+.app-version-title::before {
   content: "程式版本";
 }
-.system-os::before {
+.system-os-title::before {
   content: "系統版本";
 }
-.system-cpu::before {
+.system-cpu-title::before {
   content: "CPU";
 }
 .source-title::before {
@@ -588,7 +588,7 @@ body {
   flex-direction: row;
 }
 
-.app-ver,
+.app-version,
 .system-os,
 .system-cpu {
   padding: 0;
