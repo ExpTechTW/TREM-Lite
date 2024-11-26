@@ -151,7 +151,7 @@
   }
 
   .rts-intensity-list-wrapper {
-    bottom: 3px;
+    bottom: 2px;
     max-height: 100px !important;
     width: 125px !important;
     right: 16.5rem;
@@ -168,7 +168,7 @@
   }
 
   .current-version-view {
-    transform: translateX(60px);
+    transform: translateX(50px);
   }
 
   .fab {

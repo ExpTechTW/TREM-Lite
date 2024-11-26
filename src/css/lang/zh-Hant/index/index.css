@@ -96,7 +96,7 @@ html[lang="zh-Hant"] {
 
 .current-version-view {
   top: 0.3em;
-  right: 360px;
+  right: 350px;
   font-size: 15px;
   position: absolute;
   color: #ffffff4f;
@@ -104,7 +104,7 @@ html[lang="zh-Hant"] {
 }
 
 .report-wrapper.hidden ~ .current-version-view {
-  transform: translateX(325px);
+  transform: translateX(320px);
 }
 
 .version-check {
