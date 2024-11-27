@@ -39,11 +39,7 @@
 .current-realtime-station::before {
   content: "即時測站（任一站）";
 }
-.realtime-int:empty::before,
-.estimate-int:empty::before {
-  content: "0級";
-}
-.current-estimate-int::before {
+.current-estimate-intensity::before {
   content: "預估震度（所在地）";
 }
 .show-window-title::before {
@@ -79,7 +75,7 @@
 .earthquake-detect::before {
   content: "地震檢知";
 }
-.realtime-intensity::before {
+.rts-intensity::before {
   content: "近即時震度";
 }
 .get-trem-eew::before {
@@ -197,6 +193,13 @@
 }
 .reset-cancel::before {
   content: "取消";
+}
+.intensity-0::after {
+  content: "0" !important;
+  font-size: unset !important;
+}
+.current:empty:before {
+  content: "未設定";
 }
 
 .eew-2 {
@@ -708,7 +711,7 @@ li {
 .city div,
 .town div,
 .station div,
-.int div,
+.intensity div,
 .effect div {
   color: white;
   cursor: pointer;
@@ -723,7 +726,7 @@ li {
 .city div:hover,
 .town div:hover,
 .station div:hover,
-.int div:hover,
+.intensity div:hover,
 .effect div:hover,
 .select-option-selected {
   background-color: rgb(255 255 255 / 6%);
@@ -1022,8 +1025,8 @@ li {
   border-bottom: 0px dotted;
 }
 
-.realtime-int,
-.estimate-int {
+.warning-intensity,
+.estimate-intensity {
   border: 1px solid #ffffff36;
   width: 35px;
   display: inline-flex;
@@ -1034,14 +1037,14 @@ li {
 }
 
 .warning-realtime-station .select-items,
-.warning-estimate-int .select-items,
+.warning-estimate-intensity .select-items,
 .map-display-effect .select-items {
   width: 100%;
   justify-content: center;
   display: block;
 }
 
-.int div {
+.intensity div {
   justify-content: center !important;
   font-weight: 100;
   font-family: auto;

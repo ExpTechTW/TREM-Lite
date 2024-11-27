@@ -4,6 +4,7 @@ class DropDown {
     this.storeData = new this.store();
     this.config = require('./config');
     this.Instance = this.config.Instance;
+    this.intensityText = ['0級', '1級', '2級', '3級', '4級', '5弱', '5強', '6弱', '6強', '7級'];
 
     this.userLocation = document.querySelector('.usr-location');
     this.userLocationSelect = this.userLocation.querySelector('.select-wrapper');
@@ -19,16 +20,28 @@ class DropDown {
     this.warningRtsStation = document.querySelector('.warning-realtime-station');
     this.warningRtsStationSelect = this.warningRtsStation.querySelector('.select-wrapper');
 
-    this.warningEstStation = document.querySelector('.warning-estimate-int');
+    this.warningEstStation = document.querySelector('.warning-estimate-intensity');
     this.warningEstStationSelect = this.warningEstStation.querySelector('.select-wrapper');
 
     this.mapDisplayEffect = document.querySelector('.map-display-effect');
     this.mapDisplayEffectSelect = this.mapDisplayEffect.querySelector('.select-wrapper');
+
+    this.warningRealtimeStation = document.querySelector('.warning-realtime-station');
+    this.warningRealtimeStationSelect = this.warningRealtimeStation.querySelector('.select-wrapper');
+    this.warningRealtimeIntensity = this.warningRealtimeStationSelect.querySelector('.intensity');
+
+    this.warningEstimateStation = document.querySelector('.warning-estimate-intensity');
+    this.warningEstimateStationSelect = this.warningEstimateStation.querySelector('.select-wrapper');
+    this.warningEstimateIntensity = this.warningEstimateStationSelect.querySelector('.intensity');
     this.init();
-    this.renderConfig(1);
-    this.renderConfig(2);
+    this.renderConfig(1, 'location');
+    this.renderConfig(2, 'location');
+    this.renderConfig(3, 'intensity');
+    this.renderConfig(4, 'intensity');
     this.renderCity(this.userCity);
     this.renderCity(this.realtimeCity);
+    this.renderInstensity(this.warningRealtimeIntensity);
+    this.renderInstensity(this.warningEstimateIntensity);
   }
 
   init() {
@@ -36,11 +49,13 @@ class DropDown {
     this.addToggleClick(this.realtimeStation, this.realtimeStationSelect);
     this.addToggleClick(this.warningRtsStation, this.warningRtsStationSelect);
     this.addToggleClick(this.warningEstStation, this.warningEstStationSelect);
-    this.addToggleClick(this.mapDisplayEffect, this.mapDisplayEffectSelect);
+    this.addToggleClick(this.warningRealtimeIntensity, this.warningEstimateIntensity);
     this.userCity.addEventListener('click', (event) => this.handleCityEvent(event, 1));
     this.realtimeCity.addEventListener('click', (event) => this.handleCityEvent(event, 2));
     this.userTown.addEventListener('click', (event) => this.handleTownEvent(event, 1));
     this.realtimeTown.addEventListener('click', (event) => this.handleTownEvent(event, 2));
+    this.warningRealtimeIntensity.addEventListener('click', (event) => this.handleIntensityEvent(event, 1));
+    this.warningEstimateIntensity.addEventListener('click', (event) => this.handleIntensityEvent(event, 2));
   }
 
   addToggleClick(container, toggleClass) {
@@ -58,9 +73,9 @@ class DropDown {
     if (!target) {
       return;
     }
-    const container = type === 1 ? this.userTown : this.realtimeTown;
-    const selected = type === 1 ? this.userCity : this.realtimeCity;
-    const data = type === 1
+    const container = type == 1 ? this.userTown : this.realtimeTown;
+    const selected = type == 1 ? this.userCity : this.realtimeCity;
+    const data = type == 1
       ? TREM.variable.region[Object.keys(TREM.variable.region).find((region) => region.includes(target.textContent))]
       : TREM.variable.station.filter((station) => station.loc.includes(target.textContent));
     selected.querySelectorAll('.select-option-selected').forEach((div) => div.classList.remove('select-option-selected'));
@@ -73,10 +88,21 @@ class DropDown {
     if (!target) {
       return;
     }
-    const container = type === 1 ? this.userTown : this.realtimeTown;
+    const container = type == 1 ? this.userTown : this.realtimeTown;
     container.querySelectorAll('.select-option-selected').forEach((item) => item.classList.remove('select-option-selected'));
     target.classList.add('select-option-selected');
-    this.renderCurrent(target, type);
+    this.renderCurrent(target, type, 'location');
+  }
+
+  handleIntensityEvent(event, type) {
+    const target = event.target.closest('.select-items > div');
+    if (!target) {
+      return;
+    }
+    const selected = type == 1 ? this.warningRealtimeIntensity : this.warningEstimateIntensity;
+    selected.querySelectorAll('.select-option-selected').forEach((div) => div.classList.remove('select-option-selected'));
+    target.classList.add('select-option-selected');
+    this.renderCurrent(target, type, 'intensity');
   }
 
   renderCity(targetElement) {
@@ -86,11 +112,11 @@ class DropDown {
   }
 
   renderTown(container, items, type) {
-    const sortedItems = type === 1
+    const sortedItems = type == 1
       ? Object.entries(items).sort(([, a], [, b]) => a.code - b.code).map(([loc, data]) => ({ loc, ...data }))
       : items.sort((a, b) => a.code - b.code);
     container.innerHTML = sortedItems.map((item) =>
-      type === 1
+      type == 1
         ? `<div>${item.loc}</div>`
         : `<div 
             data-net="${item.net}" 
@@ -105,27 +131,46 @@ class DropDown {
     ).join('');
   }
 
-  renderCurrent(target, type) {
-    const container = type === 1 ? this.userLocation : this.realtimeStation;
-    const selectedCity = (type === 1 ? this.userCity : this.realtimeCity).querySelector('.select-option-selected');
-    const currentElement = container.querySelector('.setting-option > .location > .current');
-    const data = target.dataset?.name
-      ? `${target.dataset.loc}-${target.dataset.name}`
-      : `${selectedCity?.innerText || ''}-${target.textContent.trim()}`;
-    currentElement.textContent = data;
-    const key = type === 1 ? 'location' : 'station';
+  renderCurrent(target, type, mode) {
+    const isLocationMode = mode == 'location';
+    const container = type == 1 ? (isLocationMode ? this.userLocation : this.warningRealtimeStation) : (isLocationMode ? this.realtimeStation : this.warningEstimateStation);
+    const selectedElement = (type == 1 ? (isLocationMode ? this.userCity : this.warningRealtimeIntensity) : (isLocationMode ? this.realtimeCity : this.warningEstimateIntensity)).querySelector('.select-option-selected');
+    const key = `${isLocationMode ? (type == 1 ? 'location' : 'station') : (type == 1 ? 'realtime-int' : 'estimate-int')}`;
+    const currentElement = container.querySelector(`.setting-option > .location > .current${isLocationMode ? '' : ' > .warning-intensity'}`);
+    const data = isLocationMode ? target.dataset?.name ? `${target.dataset.loc}-${target.dataset.name}` : `${selectedElement?.innerText || ''}-${target.textContent.trim()}` : selectedElement.dataset.id;
+    if (isLocationMode) {
+      currentElement.textContent = data;
+    }
+    else {
+      currentElement.className = currentElement.className.split(' ').filter((cls) => !cls.startsWith('intensity-')).join(' ');
+      currentElement.classList.add(`intensity-${data}`);
+    }
     new this.config.Config().write({ DROPDOWN: { [key]: data } });
   }
 
-  async renderConfig(type) {
+  renderInstensity(targetElement) {
+    const uniqueIntensity = [...new Set(this.intensityText)];
+    targetElement.innerHTML = uniqueIntensity.map((int, index) => `<div data-id="${index}">${int}</div>`).join('');
+  }
+
+  async renderConfig(type, mode) {
+    const isLocationMode = mode == 'location';
     await this.Instance.init();
-    const current = type === 1
-      ? this.Instance.data.DROPDOWN?.location || '未設定'
-      : this.Instance.data.DROPDOWN?.station || '未設定';
-    const currentElement = (type === 1 ? this.userLocation : this.realtimeStation)
-      .querySelector('.setting-option > .location > .current');
-    if (currentElement) {
+    const current = type == 1 ? (isLocationMode ? this.Instance.data.DROPDOWN['location'] : this.Instance.data.DROPDOWN['realtime-int']) : (isLocationMode ? this.Instance.data.DROPDOWN['station'] : this.Instance.data.DROPDOWN['estimate-int']);
+    const container = type == 1
+      ? (isLocationMode ? this.userLocation : this.warningRealtimeStation)
+      : (isLocationMode ? this.realtimeStation : this.warningEstimateStation);
+
+    const currentElement = container.querySelector(
+      `.setting-option > .location > .current${isLocationMode ? '' : ' > .warning-intensity'}`,
+    );
+
+    if (isLocationMode) {
       currentElement.textContent = current;
+    }
+    else {
+      currentElement.className = currentElement.className.split(' ').filter((cls) => !cls.startsWith('intensity-')).join(' ');
+      currentElement.classList.add(`intensity-${current}`);
     }
   }
 }

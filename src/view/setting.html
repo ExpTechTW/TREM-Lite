@@ -3,8 +3,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../css/core/loading.css" />
+    <link rel="stylesheet" href="../css/core/intensity.css" />
   </head>
-
   <body class="setting">
     <div class="setting-wrapper">
       <div class="setting-container">
@@ -119,9 +119,9 @@
                 <span class="description warning-description"> </span>
                 <div class="setting-option warning-realtime-station">
                   <div class="location">
-                    <span class="current-realtime-station"
-                      ><span class="realtime-int"></span
-                    ></span>
+                    <span class="current-realtime-station current">
+                      <span class="warning-intensity intensity-0"></span>
+                    </span>
                     <svg
                       class="selected-btn"
                       xmlns="http://www.w3.org/2000/svg"
@@ -136,14 +136,14 @@
                     </svg>
                   </div>
                   <div class="select-wrapper">
-                    <div class="select-items int"></div>
+                    <div class="select-items intensity"></div>
                   </div>
                 </div>
-                <div class="setting-option warning-estimate-int">
+                <div class="setting-option warning-estimate-intensity">
                   <div class="location">
-                    <span class="current-estimate-int"
-                      ><span class="estimate-int"></span
-                    ></span>
+                    <span class="current-estimate-intensity current">
+                      <span class="warning-intensity intensity-0"></span>
+                    </span>
                     <svg
                       class="selected-btn"
                       xmlns="http://www.w3.org/2000/svg"
@@ -158,7 +158,7 @@
                     </svg>
                   </div>
                   <div class="select-wrapper">
-                    <div class="select-items int"></div>
+                    <div class="select-items intensity"></div>
                   </div>
                 </div>
               </div>
@@ -188,12 +188,9 @@
                     </label>
                   </div>
                   <div>
-                    <span class="realtime-intensity"></span>
+                    <span class="rts-intensity"></span>
                     <label class="switch">
-                      <input
-                        id="show-window-realtime-intensity"
-                        type="checkbox"
-                      />
+                      <input id="show-window-rts-intensity" type="checkbox" />
                       <div class="slider round"></div>
                     </label>
                   </div>
@@ -232,7 +229,6 @@
                   </div>
                 </div>
               </div>
-
               <div class="setting-item-content">
                 <span class="setting-item-title reset-setting-title"></span>
                 <div class="setting-option">
@@ -273,7 +269,6 @@
                   </div>
                 </div>
               </div>
-
               <div class="setting-item-content">
                 <span class="setting-item-title auto-zoom-title"></span>
                 <span class="description auto-zoom-description"></span>
@@ -287,7 +282,6 @@
                   </div>
                 </div>
               </div>
-
               <div class="setting-item-content">
                 <span class="setting-item-title show-fault-title"></span>
                 <span class="description show-fault-description"></span>
@@ -305,7 +299,6 @@
           </div>
           <div class="setting-options-page sound-effects">
             <div class="setting-page-title sound-effects-title"></div>
-
             <div class="setting-item-wrapper">
               <div class="setting-item-content">
                 <span class="setting-item-title effects-dong-title"></span>
@@ -320,11 +313,9 @@
                   </div>
                 </div>
               </div>
-
               <div class="setting-item-content">
-                <span
-                  class="setting-item-title sound-effects-list-title"
-                ></span>
+                <span class="setting-item-title sound-effects-list-title">
+                </span>
                 <span class="description sound-effects-list-description"></span>
                 <div class="setting-option">
                   <div>
@@ -361,8 +352,8 @@
                   </div>
                   <div>
                     <span class="pga-2">
-                      <span class="special-text"> </span
-                    ></span>
+                      <span class="special-text"> </span>
+                    </span>
                     <label class="switch">
                       <input id="sound-effects-PGA2" type="checkbox" />
                       <div class="slider round"></div>
@@ -376,27 +367,27 @@
                     </label>
                   </div>
                   <div>
-                    <span class="shindo-0"
-                      ><span class="special-text"></span
-                    ></span>
+                    <span class="shindo-0">
+                      <span class="special-text"></span>
+                    </span>
                     <label class="switch">
                       <input id="sound-effects-Shindo0" type="checkbox" />
                       <div class="slider round"></div>
                     </label>
                   </div>
                   <div>
-                    <span class="shindo-1"
-                      ><span class="special-text"></span
-                    ></span>
+                    <span class="shindo-1">
+                      <span class="special-text"></span>
+                    </span>
                     <label class="switch">
                       <input id="sound-effects-Shindo1" type="checkbox" />
                       <div class="slider round"></div>
                     </label>
                   </div>
                   <div>
-                    <span class="shindo-2"
-                      ><span class="special-text"></span
-                    ></span>
+                    <span class="shindo-2">
+                      <span class="special-text"></span>
+                    </span>
                     <label class="switch">
                       <input id="sound-effects-Shindo2" type="checkbox" />
                       <div class="slider round"></div>
@@ -413,11 +404,8 @@
               </div>
             </div>
           </div>
-
-          <!--擴充-->
           <div class="setting-options-page extended">
             <div class="setting-page-title extended-title"></div>
-
             <div class="setting-item-wrapper">
               <div class="setting-item-content">
                 <span class="setting-item-title extended-list-title"></span>
@@ -430,11 +418,8 @@
               </div>
             </div>
           </div>
-
-          <!--關於-->
           <div class="setting-options-page info">
             <div class="setting-page-title info-title"></div>
-
             <div class="setting-item-wrapper">
               <div class="setting-item-content">
                 <span class="setting-item-title info-trem-lite"></span>
@@ -442,19 +427,18 @@
                 <div class="setting-option">
                   <div class="setting-item">
                     <span class="app-version-title"></span>
-                    <span class="app-version">---</span>
+                    <span class="app-version"></span>
                   </div>
                   <div class="setting-item">
                     <span class="system-os-title"></span>
-                    <span class="system-os">---</span>
+                    <span class="system-os"></span>
                   </div>
                   <div class="setting-item">
                     <span class="system-cpu-title"></span>
-                    <span class="system-cpu">---</span>
+                    <span class="system-cpu"></span>
                   </div>
                 </div>
               </div>
-
               <div class="setting-item-content setting-info">
                 <span class="setting-item-title source-title"></span>
                 <div class="setting-option">
@@ -475,7 +459,6 @@
                   </div>
                 </div>
               </div>
-
               <div class="setting-item-content">
                 <span class="setting-item-title contributor-title"></span>
                 <span class="description contributor-description"></span>
@@ -493,7 +476,6 @@
             </div>
           </div>
         </div>
-
         <div class="reset-confirm-wrapper">
           <div class="reset-confirm-content">
             <span class="reset-confirm-title"></span>
