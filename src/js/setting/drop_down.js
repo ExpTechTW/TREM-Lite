@@ -17,22 +17,16 @@ class DropDown {
     this.realtimeTown = this.realtimeStation.querySelector('.town');
     this.realtimeStationSelect = this.realtimeStation.querySelector('.select-wrapper');
 
-    this.warningRtsStation = document.querySelector('.warning-realtime-station');
-    this.warningRtsStationSelect = this.warningRtsStation.querySelector('.select-wrapper');
-
-    this.warningEstStation = document.querySelector('.warning-estimate-intensity');
-    this.warningEstStationSelect = this.warningEstStation.querySelector('.select-wrapper');
-
     this.mapDisplayEffect = document.querySelector('.map-display-effect');
     this.mapDisplayEffectSelect = this.mapDisplayEffect.querySelector('.select-wrapper');
 
-    this.warningRealtimeStation = document.querySelector('.warning-realtime-station');
-    this.warningRealtimeStationSelect = this.warningRealtimeStation.querySelector('.select-wrapper');
-    this.warningRealtimeIntensity = this.warningRealtimeStationSelect.querySelector('.intensity');
+    this.warningRtsStation = document.querySelector('.warning-realtime-station');
+    this.warningRtsStationSelect = this.warningRtsStation.querySelector('.select-wrapper');
+    this.warningRtsIntensity = this.warningRtsStationSelect.querySelector('.intensity');
 
-    this.warningEstimateStation = document.querySelector('.warning-estimate-intensity');
-    this.warningEstimateStationSelect = this.warningEstimateStation.querySelector('.select-wrapper');
-    this.warningEstimateIntensity = this.warningEstimateStationSelect.querySelector('.intensity');
+    this.warningEstStation = document.querySelector('.warning-estimate-intensity');
+    this.warningEstStationSelect = this.warningEstStation.querySelector('.select-wrapper');
+    this.warningEstIntensity = this.warningEstStationSelect.querySelector('.intensity');
     this.init();
     this.renderConfig(1, 'location');
     this.renderConfig(2, 'location');
@@ -40,8 +34,8 @@ class DropDown {
     this.renderConfig(4, 'intensity');
     this.renderCity(this.userCity);
     this.renderCity(this.realtimeCity);
-    this.renderInstensity(this.warningRealtimeIntensity);
-    this.renderInstensity(this.warningEstimateIntensity);
+    this.renderInstensity(this.warningRtsIntensity);
+    this.renderInstensity(this.warningEstIntensity);
   }
 
   init() {
@@ -49,13 +43,12 @@ class DropDown {
     this.addToggleClick(this.realtimeStation, this.realtimeStationSelect);
     this.addToggleClick(this.warningRtsStation, this.warningRtsStationSelect);
     this.addToggleClick(this.warningEstStation, this.warningEstStationSelect);
-    this.addToggleClick(this.warningRealtimeIntensity, this.warningEstimateIntensity);
     this.userCity.addEventListener('click', (event) => this.handleCityEvent(event, 1));
     this.realtimeCity.addEventListener('click', (event) => this.handleCityEvent(event, 2));
     this.userTown.addEventListener('click', (event) => this.handleTownEvent(event, 1));
     this.realtimeTown.addEventListener('click', (event) => this.handleTownEvent(event, 2));
-    this.warningRealtimeIntensity.addEventListener('click', (event) => this.handleIntensityEvent(event, 1));
-    this.warningEstimateIntensity.addEventListener('click', (event) => this.handleIntensityEvent(event, 2));
+    this.warningRtsIntensity.addEventListener('click', (event) => this.handleIntensityEvent(event, 3));
+    this.warningEstIntensity.addEventListener('click', (event) => this.handleIntensityEvent(event, 4));
   }
 
   addToggleClick(container, toggleClass) {
@@ -99,7 +92,7 @@ class DropDown {
     if (!target) {
       return;
     }
-    const selected = type == 1 ? this.warningRealtimeIntensity : this.warningEstimateIntensity;
+    const selected = type == 1 ? this.warningRtsIntensity : this.warningEstIntensity;
     selected.querySelectorAll('.select-option-selected').forEach((div) => div.classList.remove('select-option-selected'));
     target.classList.add('select-option-selected');
     this.renderCurrent(target, type, 'intensity');
@@ -133,8 +126,8 @@ class DropDown {
 
   renderCurrent(target, type, mode) {
     const isLocationMode = mode == 'location';
-    const container = type == 1 ? (isLocationMode ? this.userLocation : this.warningRealtimeStation) : (isLocationMode ? this.realtimeStation : this.warningEstimateStation);
-    const selectedElement = (type == 1 ? (isLocationMode ? this.userCity : this.warningRealtimeIntensity) : (isLocationMode ? this.realtimeCity : this.warningEstimateIntensity)).querySelector('.select-option-selected');
+    const container = type == 1 ? (isLocationMode ? this.userLocation : this.warningRtsStation) : (isLocationMode ? this.realtimeStation : this.warningEstStation);
+    const selectedElement = (type == 1 ? (isLocationMode ? this.userCity : this.warningRtsIntensity) : (isLocationMode ? this.realtimeCity : this.warningEstIntensity)).querySelector('.select-option-selected');
     const key = `${isLocationMode ? (type == 1 ? 'location' : 'station') : (type == 1 ? 'realtime-int' : 'estimate-int')}`;
     const currentElement = container.querySelector(`.setting-option > .location > .current${isLocationMode ? '' : ' > .warning-intensity'}`);
     const data = isLocationMode ? target.dataset?.name ? `${target.dataset.loc}-${target.dataset.name}` : `${selectedElement?.innerText || ''}-${target.textContent.trim()}` : selectedElement.dataset.id;
@@ -158,8 +151,9 @@ class DropDown {
     await this.Instance.init();
     const current = type == 1 ? (isLocationMode ? this.Instance.data.DROPDOWN['location'] : this.Instance.data.DROPDOWN['realtime-int']) : (isLocationMode ? this.Instance.data.DROPDOWN['station'] : this.Instance.data.DROPDOWN['estimate-int']);
     const container = type == 1
-      ? (isLocationMode ? this.userLocation : this.warningRealtimeStation)
-      : (isLocationMode ? this.realtimeStation : this.warningEstimateStation);
+      ? (isLocationMode ? this.userLocation : this.warningRtsStation)
+      : (isLocationMode ? this.realtimeStation : this.warningEstStation);
+    console.log(container, type, isLocationMode);
 
     const currentElement = container.querySelector(
       `.setting-option > .location > .current${isLocationMode ? '' : ' > .warning-intensity'}`,
