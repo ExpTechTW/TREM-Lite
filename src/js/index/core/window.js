@@ -24,21 +24,7 @@ class WindowControler {
   }
 
   bindEvents() {
-    const events = [
-      'EewRelease',
-      'EewAlert',
-      'RtsPga2',
-      'RtsPga1',
-      'RtsShindo2',
-      'RtsShindo1',
-      'RtsShindo0',
-      'ReportRelease',
-      'IntensityRelease',
-      'TsunamiRelease',
-      'EewNewAreaAlert',
-    ];
-
-    events.forEach((event) => {
+    TREM.constant.WINDOW_FOCUS_EVENTS.forEach((event) => {
       TREM.variable.events.on(event, (ans) => this.windowFocus(event, ans));
     });
   }

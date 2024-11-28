@@ -9,6 +9,7 @@ const {
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const ini = require('ini');
 
 let win;
 let SettingWindow;
@@ -18,6 +19,7 @@ let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
 const test = process.argv.includes('--raw') ? 0 : 1;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
+const configDir = path.join(app.getPath('userData'), 'config.ini');
 
 const is_mac = process.platform === 'darwin';
 
@@ -305,6 +307,49 @@ ipcMain.on('openPluginFolder', () => {
     .catch((error) => {
       console.error(error);
     });
+});
+
+const loadConfig = () => {
+  if (!fs.existsSync(configDir)) {
+    const defaultConfig = ini.stringify({
+      INFO: {
+        lang: 'zh-tw',
+        version: app.getVersion(),
+      },
+    });
+    fs.writeFileSync(configDir, defaultConfig, 'utf-8');
+  }
+  return ini.parse(fs.readFileSync(configDir, 'utf-8'));
+};
+
+const saveConfig = (data) => {
+  const existingConfig = loadConfig();
+  const mergeDeep = (target, source) =>
+    Object.entries(source).reduce((acc, [key, value]) => {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        acc[key] = mergeDeep(acc[key] || {}, value);
+      }
+      else if (value === null) {
+        acc = Object.fromEntries(Object.entries(acc).filter(([k]) => k !== key));
+      }
+      else {
+        acc[key] = value;
+      }
+      return acc;
+    }, { ...target });
+
+  const updatedConfig = mergeDeep(existingConfig, data);
+  fs.writeFileSync(configDir, ini.stringify(updatedConfig), 'utf-8');
+
+  return { status: true };
+};
+
+ipcMain.on('get-config', (event) => {
+  event.reply('get-config-res', loadConfig());
+});
+
+ipcMain.on('write-config', (event, data) => {
+  event.reply('write-config-res', saveConfig(data));
 });
 
 function trayIcon() {

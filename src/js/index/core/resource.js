@@ -10,7 +10,7 @@ async function get_station_info() {
   const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
   const ans = await fetchData(`https://${url}/api/v1/trem/station`, TREM.constant.HTTP_TIMEOUT.RESOURCE);
 
-  if (ans) {
+  if (ans && ans.ok) {
     TREM.variable.station = await ans.json();
   }
   else {

@@ -49,7 +49,7 @@ class EewAreaManager {
   }
 
   drawEewArea(end = false) {
-    if (TREM.variable.cache.show_intensity) {
+    if (TREM.variable.cache.show_lpgm || TREM.variable.cache.show_intensity) {
       return;
     }
 

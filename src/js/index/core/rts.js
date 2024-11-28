@@ -18,6 +18,8 @@ const current_station_intensity_text = document.getElementById('current-station-
 const rts_info_trigger = document.getElementById('rts-info-trigger');
 const rts_info_level = document.getElementById('rts-info-level');
 
+const warning_box_unstable = document.getElementById('warning-box-unstable');
+
 const level_list = {};
 
 TREM.variable.events.on('MapLoad', (map) => {
@@ -128,6 +130,7 @@ TREM.variable.events.on('DataRts', (ans) => {
     const alert = Object.keys(ans.data.box).length;
 
     if (!alert) {
+      TREM.variable.cache.rts_alert = false;
       TREM.variable.cache.audio = {
         shindo: -1,
         pga: -1,
@@ -144,7 +147,11 @@ TREM.variable.events.on('DataRts', (ans) => {
       };
     }
     else {
+      if (!TREM.variable.cache.rts_alert && TREM.variable.cache.last_rts_alert && (ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 300000) {
+        TREM.variable.cache.unstable = ans.data.time;
+      }
       TREM.variable.cache.last_rts_alert = ans.data?.time ?? 0;
+      TREM.variable.cache.rts_alert = true;
     }
 
     for (const id of Object.keys(ans.data.station)) {
@@ -180,7 +187,7 @@ TREM.variable.events.on('DataRts', (ans) => {
       if (alert && ans.data.station[id].alert) {
         const I = intensity_float_to_int(ans.data.station[id].I);
 
-        if (TREM.variable.cache.show_intensity) {
+        if (TREM.variable.cache.show_intensity || TREM.variable.cache.show_lpgm) {
           data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: I } });
         }
         else
@@ -310,7 +317,7 @@ TREM.variable.events.on('DataRts', (ans) => {
       TREM.variable.cache.audio.shindo = rts_max_shindo;
     }
 
-    if (((ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 15000) || TREM.variable.cache.show_intensity || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
+    if (((ans.data?.time ?? 0) - TREM.variable.cache.last_rts_alert < 15000) || TREM.variable.cache.show_lpgm || TREM.variable.cache.show_intensity || eew_alert || (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3)) {
       if (TREM.variable.cache.bounds.report) {
         TREM.variable.cache.bounds.report = [];
         TREM.variable.map.getSource('report-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
@@ -364,6 +371,17 @@ TREM.variable.events.on('DataRts', (ans) => {
   rts_info_trigger.textContent = trigger;
 
   TREM.variable.cache.bounds.rts = coordinates;
+
+  if (TREM.variable.cache.unstable && (ans.data?.time ?? 0) - TREM.variable.cache.unstable < 300000) {
+    if (warning_box_unstable.classList.contains('hide')) {
+      warning_box_unstable.classList.remove('hide');
+    }
+  }
+  else {
+    if (!warning_box_unstable.classList.contains('hide')) {
+      warning_box_unstable.classList.add('hide');
+    }
+  }
 });
 
 function filterIntArray(data = []) {

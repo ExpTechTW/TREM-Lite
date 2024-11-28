@@ -45,6 +45,18 @@ const TREM = {
         8: '#ffffff',
         9: '#ffffff',
       },
+      LPGM: {
+        1: '#0040ff',
+        2: '#ffe600',
+        3: '#ff2800',
+        4: '#a50021',
+      },
+      LPGM_TEXT: {
+        1: '#ffffff',
+        2: '#000000',
+        3: '#ffffff',
+        4: '#ffffff',
+      },
       EEW: {
         S: {
           WARN: '#ffaa00',
@@ -102,13 +114,15 @@ const TREM = {
       EEW: 1500,
       REPORT: 5000,
       INTENSITY: 1500,
+      LPGM: 1500,
+      NTP: 1500,
     },
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
 
     EEW_AUTHOR: ['trem', 'cwa'],
 
-    REPORT_LIMIT: 50,
+    REPORT_LIMIT: 75,
 
     MAP: {
       BOUNDS: [[118.0, 21.2], [124.0, 25.8]],
@@ -118,6 +132,21 @@ const TREM = {
     SHOW_REPORT: true,
 
     GAME_MODE: true,
+
+    WINDOW_FOCUS_EVENTS: [
+      'EewRelease',
+      'EewAlert',
+      'RtsPga2',
+      'RtsPga1',
+      'RtsShindo2',
+      'RtsShindo1',
+      'RtsShindo0',
+      'ReportRelease',
+      'IntensityRelease',
+      'LpgmRelease',
+      'TsunamiRelease',
+      'EewNewAreaAlert',
+    ],
 
     SHOW_PIP_EVENTS: [
       'EewRelease',
@@ -140,6 +169,7 @@ const TREM = {
       intensity: [],
       report: [],
       eew: [],
+      lpgm: [],
     },
     // 0 realtime (http) | 1 realtime (websocket) | 2 replay (http) | 3 replay (file)
     play_mode: 0,
@@ -153,6 +183,8 @@ const TREM = {
 
     // 不要動下方的東西
     cache: {
+      rts_alert: false,
+      unstable: 0,
       show_eew_box: false,
       rts_trigger: {
         max: 0,
@@ -162,6 +194,7 @@ const TREM = {
       last_report: null,
       eewIntensityArea: {},
       show_intensity: false,
+      show_lpgm: false,
       eew_last: {},
       intensity_last: {},
       time: {
@@ -178,6 +211,7 @@ const TREM = {
         rts: [],
         intensity: [],
         report: [],
+        lpgm: [],
       },
       audio: {
         shindo: -1,

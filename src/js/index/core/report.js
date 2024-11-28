@@ -132,7 +132,7 @@ class ReportManager {
 
   updateScrollbar() {
     const { scrollHeight, clientHeight, scrollTop } = this.reportBoxItems;
-    const maxScrollbarTop = clientHeight - this.customScrollbar.clientHeight;
+    const maxScrollbarTop = clientHeight - this.customScrollbar.clientHeight - 8;
     this.customScrollbar.style.height = `${Math.max((clientHeight / scrollHeight) * clientHeight, 30)}px`;
     this.customScrollbar.style.top = `${(scrollTop / (scrollHeight - clientHeight)) * maxScrollbarTop}px`;
   }
@@ -213,6 +213,8 @@ class ReportManager {
     const magVal = document.createElement('div');
     magVal.className = 'report-mag-val';
     magVal.textContent = item.mag ? item.mag.toFixed(1) : '';
+    magVal.classList.add(item.id.split('-')[0] !== '113000' ? 'isNum' : null);
+
     mag.appendChild(magText);
     mag.appendChild(magVal);
 
@@ -234,10 +236,11 @@ class ReportManager {
     return box;
   }
 
-  createReportItem(item, isSurvey = false) {
+  createReportItem(item, isSurvey = false, url = '') {
     const wrapper = document.createElement('div');
     wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
     wrapper.setAttribute('data-id', item.id);
+    wrapper.setAttribute('trem-url', (item.trem) ? `https://${url}/file/trem_info.html?id=${item.trem}` : '');
     wrapper.setAttribute('data-time', item.time);
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';
@@ -245,7 +248,7 @@ class ReportManager {
     buttons.className = 'report-buttons';
     const webButton = document.createElement('div');
     webButton.className = 'report-web';
-    webButton.textContent = '報告';
+    webButton.textContent = (item.trem) ? '檢知' : '報告';
     const replayButton = document.createElement('div');
     replayButton.className = 'report-replay';
     replayButton.textContent = '重播';
@@ -269,6 +272,19 @@ class ReportManager {
       self.currentFlashingId = null;
     }
 
+    this.reportWebButtons = document.querySelectorAll('.report-web');
+    this.reportWebButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const wrapper = event.target.closest('.report-box-item-wrapper');
+        if (wrapper) {
+          const id = wrapper.getAttribute('data-id');
+          const trem = wrapper.getAttribute('trem-url');
+          const reportId = id.replace(`-${id.split('-')[1]}`, '');
+          const url = (trem) ? trem : `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
+          ipcRenderer.send('openUrl', url);
+        }
+      });
+    });
     this.reportReplyButtons = document.querySelectorAll('.report-replay');
     this.reportReplyButtons.forEach((button) => {
       button.addEventListener('click', async (event) => {
@@ -301,7 +317,7 @@ class ReportManager {
     return Number(time) + (Date.now() - TREM.variable.replay.local_time);
   }
 
-  generateReportBoxItems(list, survey = null) {
+  generateReportBoxItems(list, survey = null, url = '') {
     const container = document.getElementById('report-box-items');
     if (!container) {
       return;
@@ -322,7 +338,7 @@ class ReportManager {
     }
 
     list.forEach((item) => {
-      container.appendChild(this.createReportItem(item, false));
+      container.appendChild(this.createReportItem(item, false, url));
     });
 
     this.clickEvent();
@@ -337,8 +353,7 @@ class ReportManager {
     this.updateScrollbar();
   }
 
-  async getReport() {
-    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+  async getReport(url) {
     const ans = await fetchData(
       `https://${url}/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
@@ -349,8 +364,7 @@ class ReportManager {
     return await ans.json();
   }
 
-  async getReportInfo(id) {
-    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+  async getReportInfo(url, id) {
     const ans = await fetchData(
       `https://${url}/api/v2/eq/report/${id}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
@@ -362,7 +376,8 @@ class ReportManager {
   }
 
   async refresh() {
-    const reportList = await this.getReport();
+    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+    const reportList = await this.getReport(url);
     if (!reportList) {
       return;
     }
@@ -370,7 +385,7 @@ class ReportManager {
     if (!TREM.variable.data.report.length) {
       TREM.variable.data.report = reportList;
       if (TREM.constant.SHOW_REPORT) {
-        const data = await this.getReportInfo(reportList[0].id);
+        const data = await this.getReportInfo(url, reportList[0].id);
         TREM.variable.cache.last_report = data;
       }
       this.generateReportBoxItems(
@@ -381,6 +396,7 @@ class ReportManager {
               intensity: TREM.variable.cache.intensity.max,
             }
           : null,
+        url,
       );
       return;
     }
@@ -389,9 +405,9 @@ class ReportManager {
     const newReports = reportList.filter((report) => !existingIds.has(report.id));
 
     if (newReports.length > 0) {
-      const data = await this.getReportInfo(newReports[0].id);
+      const data = await this.getReportInfo(url, newReports[0].id);
       if (data) {
-        TREM.variable.events.emit('ReportRelease', { data });
+        TREM.variable.events.emit('ReportRelease', { info: { url }, data });
       }
     }
   }
@@ -469,6 +485,12 @@ class ReportManager {
 
     const data = this.simplifyEarthquakeData(ans.data);
     TREM.variable.data.report.unshift(data);
+
+    if (data.trem && Math.abs(data.trem - TREM.variable.cache.intensity.time) < 5000) {
+      TREM.variable.cache.intensity.time = 0;
+      TREM.variable.cache.intensity.max = 0;
+    }
+
     this.generateReportBoxItems(
       TREM.variable.data.report,
       TREM.variable.cache.intensity.time
@@ -477,6 +499,7 @@ class ReportManager {
             intensity: TREM.variable.cache.intensity.max,
           }
         : null,
+      ans.info.url,
     );
   }
 }
