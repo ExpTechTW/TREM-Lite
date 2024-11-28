@@ -88,12 +88,6 @@
 .reset-setting::before {
   content: "重置所有設定";
 }
-.display-effect-title::before {
-  content: "地圖顯示效果";
-}
-.display-effect-description::before {
-  content: "設定在地圖上的顯示效果。";
-}
 .auto-zoom-title::before {
   content: "地圖自動縮放";
 }
@@ -131,7 +125,10 @@
 .extended-list-description::before {
   content: "選擇啟用的擴充，擴充將在程式啟動時載入。";
 }
-.extended-info span::before {
+.file-path-button::before {
+  content: "資料夾";
+}
+.extended-info span:empty::before {
   content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
 }
 .eew-1::before {
@@ -500,8 +497,12 @@ body {
 }
 
 .extended .setting-option {
-  display: grid;
-  justify-content: center;
+  display: grid !important;
+  color: #fff;
+}
+
+.extended .setting-option:first-child {
+  margin-top: 0;
 }
 
 .info .setting-option div {
@@ -510,7 +511,7 @@ body {
 
 .setting-item-content
   div
-  div:not(.select-items, .select-wrapper, .condition-items) {
+  div:not(.select-items, .select-wrapper, .condition-items, .extended-info) {
   padding: 13px;
   justify-content: unset;
   display: flex;
@@ -1119,4 +1120,27 @@ li {
 
 .reset-setting + .switch {
   width: 60px;
+}
+
+.file-path-button {
+  border-radius: 5px;
+  border: 1px solid #ffffff24;
+  width: auto;
+  height: 3px;
+  cursor: pointer;
+  color: #ffb84a;
+}
+
+.file-path-button:hover {
+  background: #48484d;
+}
+
+.extended-info {
+  .setting-option {
+    margin-top: 0;
+  }
+
+  .switch {
+    width: auto;
+  }
 }
