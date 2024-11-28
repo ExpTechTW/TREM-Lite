@@ -119,7 +119,7 @@
 .sound-effects-list-description::before {
   content: "開啟或關閉特定的音效";
 }
-.extended-list-title::before {
+.extended-list-title:empty::before {
   content: "擴充列表";
 }
 .extended-list-description:empty::before {
