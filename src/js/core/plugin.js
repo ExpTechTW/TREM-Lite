@@ -1,5 +1,6 @@
 const TREM = require('../index/constant');
 const logger = require('./utils/logger');
+const { Logger } = require('./utils/logger');
 const { app } = require('@electron/remote');
 const semver = require('semver');
 const path = require('path');
@@ -16,7 +17,11 @@ class PluginLoader {
     this.ctx = {
       TREM,
       logger,
+      Logger,
       MixinManager,
+      info: {
+        pluginDir: this.pluginDir,
+      },
       utils: {
         path,
         fs,

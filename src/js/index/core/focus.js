@@ -31,6 +31,7 @@ class FocusManager {
     this.focusButton.addEventListener('click', () => {
       this.focusReset();
       this.lock = false;
+      this.isMouseDown = false;
       this.focusButton.style.color = 'white';
     });
 
@@ -40,25 +41,38 @@ class FocusManager {
     TREM.variable.events.on('MapLoad', (map) => this.onMapLoad(map));
   }
 
-  onMapLoad(map) {
+  onMapLoad() {
     TREM.variable.map.on('mousedown', () => {
       this.isMouseDown = true;
+      this.lock = true;
+      this.focusButton.style.color = 'red';
     });
 
     TREM.variable.map.on('mouseup', () => {
       this.isMouseDown = false;
     });
 
-    TREM.variable.map.on('movestart', () => {
-      if (this.isMouseDown) {
-        this.lock = true;
-        this.focusButton.style.color = 'red';
-      }
+    TREM.variable.map.on('wheel', () => {
+      this.lock = true;
+      this.focusButton.style.color = 'red';
     });
+  }
+
+  mouseDown() {
+    return this.isMouseDown;
+  }
+
+  getLock() {
+    return this.lock;
   }
 
   focus() {
     if (this.lock) {
+      return;
+    }
+
+    if (TREM.variable.cache.bounds.lpgm.length) {
+      this.updateMapBounds(TREM.variable.cache.bounds.lpgm);
       return;
     }
 
@@ -77,10 +91,13 @@ class FocusManager {
     if (bounds.length) {
       this.updateMapBounds(bounds);
     }
+    else if (!TREM.variable.cache.bounds.report.length) {
+      this.focusReset();
+    }
   }
 
   focusReset() {
-    TREM.variable.map.fitBounds(
+    TREM.variable.map?.fitBounds(
       TREM.constant.MAP.BOUNDS,
       TREM.constant.MAP.OPTIONS,
     );
@@ -93,7 +110,7 @@ class FocusManager {
       bounds.extend([coord.lon, coord.lat]);
     });
 
-    TREM.variable.map.fitBounds(bounds, {
+    TREM.variable.map?.fitBounds(bounds, {
       padding: {
         top: options.paddingTop || 150,
         bottom: options.paddingBottom || 150,
