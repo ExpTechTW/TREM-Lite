@@ -370,5 +370,7 @@ class PluginLoader {
 
 const pluginLoader = new PluginLoader();
 pluginLoader.loadPlugins();
+pluginLoader.getLoadedPlugins();
+localStorage.setItem('loaded-plugins', JSON.stringify(pluginLoader.getLoadedPlugins()));
 
 module.exports = PluginLoader;

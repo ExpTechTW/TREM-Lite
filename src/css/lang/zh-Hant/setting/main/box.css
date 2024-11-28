@@ -1,21 +1,21 @@
 .button[for="general"]:before,
-.general .setting-page-title::before {
+.general .setting-page-header-title::before {
   content: "一般";
 }
 .button[for="graphics"]:before,
-.graphics-title:before {
+.graphics-header-title:before {
   content: "圖形";
 }
 .button[for="sound-effects"]:before,
-.sound-effects-title::before {
+.sound-effects-header-title::before {
   content: "音效";
 }
 .button[for="extended"]:before,
-.extended-title:before {
+.extended-header-title:before {
   content: "擴充";
 }
 .button[for="info"]:before,
-.info-title::before {
+.info-header-title::before {
   content: "關於";
 }
 .location-title::before {
@@ -122,11 +122,11 @@
 .extended-list-title::before {
   content: "擴充列表";
 }
-.extended-list-description::before {
+.extended-list-description:empty::before {
   content: "選擇啟用的擴充，擴充將在程式啟動時載入。";
 }
-.file-path-button::before {
-  content: "資料夾";
+.extended-setting-button::before {
+  content: "設定";
 }
 .extended-info span:empty::before {
   content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
@@ -433,7 +433,7 @@ body {
   display: flex;
 }
 
-.setting-page-title {
+.setting-page-header-title {
   font-size: 25px;
   font-weight: bold;
   padding-top: 1vw;
@@ -499,6 +499,7 @@ body {
 .extended .setting-option {
   display: grid !important;
   color: #fff;
+  padding: 3px !important;
 }
 
 .extended .setting-option:first-child {
@@ -513,7 +514,6 @@ body {
   div
   div:not(.select-items, .select-wrapper, .condition-items, .extended-info) {
   padding: 13px;
-  justify-content: unset;
   display: flex;
   align-items: center;
 
@@ -1122,7 +1122,7 @@ li {
   width: 60px;
 }
 
-.file-path-button {
+.extended-setting-button {
   border-radius: 5px;
   border: 1px solid #ffffff24;
   width: auto;
@@ -1131,8 +1131,19 @@ li {
   color: #ffb84a;
 }
 
-.file-path-button:hover {
+.extended-setting-button:hover {
   background: #48484d;
+}
+
+.extended-list {
+  justify-content: space-between;
+  padding: 0 !important;
+  width: 100%;
+}
+
+.extended-list-description {
+  padding: 0;
+  color: #adadad;
 }
 
 .extended-info {
@@ -1141,6 +1152,59 @@ li {
   }
 
   .switch {
-    width: auto;
+    left: unset;
   }
+}
+
+.extended-list-box {
+  width: 100%;
+  border-bottom: unset !important;
+  padding: 2 !important;
+  justify-content: space-between;
+}
+
+.extended-header-title-box,
+.extended-list-author-version {
+  width: 100%;
+  border-bottom: unset !important;
+  padding: 3 !important;
+}
+
+.extended-list-author-version span:first-child {
+  border: 1px solid #ffffff29;
+  border-radius: 5px;
+  background-color: #007bff99;
+  padding: 5;
+}
+
+.author {
+  padding: 0 !important;
+  width: 150px;
+  display: flex !important;
+  justify-content: space-between;
+}
+
+.extended-version {
+  border: 1px solid #ffffff29;
+  border-radius: 5px;
+  padding: 5;
+}
+
+.extended-list-left,
+.extended-list-description-box,
+.extended-list-title-box {
+  flex-direction: column;
+  padding: 5 !important;
+  border-bottom: unset !important;
+  width: auto;
+  align-items: unset !important;
+}
+
+.extended-list-buttons {
+  width: 25%;
+  display: flex;
+  flex-direction: row;
+  padding: 0 !important;
+  justify-content: space-around;
+  margin-left: 10px;
 }

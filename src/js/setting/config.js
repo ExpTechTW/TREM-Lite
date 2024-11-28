@@ -1,15 +1,10 @@
 const { ipcRenderer } = require('electron');
 const os = require('node:os');
 const { app } = require('@electron/remote');
-const path = require('path');
-const fs = require('fs');
 
 class Config {
   constructor() {
-    this.pluginDir = path.join(app.getPath('userData'), 'plugins');
     this.data = null;
-    this.extendedElement = '';
-
     this.version = document.querySelector('.app-version');
     this.os = document.querySelector('.system-os');
     this.cpu = document.querySelector('.system-cpu');
@@ -21,10 +16,8 @@ class Config {
     this.resetCancelButton = document.querySelector('.reset-cancel');
     this.userLocation = document.querySelector('.usr-location');
     this.realtimeStation = document.querySelector('.realtime-station');
-    this.extendedInfo = document.querySelector('.extended-info');
     this.init();
     this.info();
-    this.initExtendedList();
   }
 
   async init() {
@@ -33,26 +26,6 @@ class Config {
     this.resetSureButton.addEventListener('click', () => this.resetSetting());
     this.resetButton.addEventListener('click', () => this.resetConfirmWrapper.style.bottom = '0%');
     this.resetCancelButton.addEventListener('click', () => this.resetConfirmWrapper.style.bottom = '-100%');
-  }
-
-  initExtendedList() {
-    const directories = fs.readdirSync(this.pluginDir)
-      .filter((file) => fs.statSync(path.join(this.pluginDir, file)).isDirectory());
-    directories.forEach((item) => {
-      if (item) {
-        this.extendedElement += `
-        <div class="setting-option">
-          <div>
-            <span>${item}</span>
-            <label class="switch">
-              <div class="file-path-button"></div>
-            </label>
-          </div>
-        </div>
-        `;
-      }
-    });
-    this.extendedInfo.innerHTML = this.extendedElement;
   }
 
   async resetSetting() {
