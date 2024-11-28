@@ -59,19 +59,15 @@ body {
 }
 
 .connect {
-  position: absolute;
-  left: 68px;
-  bottom: 0.3em;
   border-radius: 5px;
   border: 2px solid #00000008;
   background-color: #505050c7;
   display: flex;
   align-items: center;
   z-index: 1001;
-  margin-left: 5px;
   padding: 3px;
   pointer-events: none;
-  min-width: 155px;
+  min-width: 145px;
   justify-content: space-around;
 
   .time-error {
