@@ -5,14 +5,17 @@ const { app } = require('@electron/remote');
 const semver = require('semver');
 const path = require('path');
 const fs = require('fs');
+const AdmZip = require('adm-zip');
 const MixinManager = require('./mixin');
 
 class PluginLoader {
   constructor() {
     this.pluginDir = path.join(app.getPath('userData'), 'plugins');
+    this.tempDir = path.join(app.getPath('temp'), 'trem-plugins');
     this.plugins = new Map();
     this.loadOrder = [];
     this.tremVersion = app.getVersion();
+    this.extractedPaths = new Map();
 
     this.ctx = {
       TREM,
@@ -28,112 +31,56 @@ class PluginLoader {
         semver,
       },
     };
+
+    fs.mkdirSync(this.pluginDir, { recursive: true });
+    fs.mkdirSync(this.tempDir, { recursive: true });
   }
 
-  /**
-   * Assigns a priority to a semantic version string based on its prerelease
-   * identifier.
-   *
-   * @param {string} version - The version string to evaluate.
-   * @returns {number} Priority level:
-   *   - `3` for stable versions (no prerelease).
-   *   - `2` if prerelease is 'rc'.
-   *   - `1` if prerelease is 'pre'.
-   *   - `0` for all other cases or invalid versions.
-   */
   getVersionPriority(version) {
-    if (!version) {
-      return 0;
-    }
+    if (!version) { return 0; }
     const parsed = semver.parse(version);
-    if (!parsed) {
-      return 0;
-    }
+    if (!parsed) { return 0; }
 
     const prerelease = parsed.prerelease[0];
-    if (!prerelease) {
-      return 3;
-    }
-    if (prerelease === 'rc') {
-      return 2;
-    }
-    if (prerelease === 'pre') {
-      return 1;
-    }
+    if (!prerelease) { return 3; }
+    if (prerelease === 'rc') { return 2; }
+    if (prerelease === 'pre') { return 1; }
     return 0;
   }
 
-  /**
-   * Checks if two semantic version strings are an exact match, including major,
-   * minor, patch, and up to the first two prerelease identifiers.
-   *
-   * @param {string} v1 - The first version string.
-   * @param {string} v2 - The second version string.
-   * @returns {boolean} True if the versions match exactly, otherwise false.
-   */
   isExactVersionMatch(v1, v2) {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
-    if (!parsed1 || !parsed2) {
-      return false;
-    }
+    if (!parsed1 || !parsed2) { return false; }
 
-    if (parsed1.major !== parsed2.major
-      || parsed1.minor !== parsed2.minor
-      || parsed1.patch !== parsed2.patch) {
+    if (parsed1.major !== parsed2.major || parsed1.minor !== parsed2.minor || parsed1.patch !== parsed2.patch) {
       return false;
     }
 
     const pre1 = parsed1.prerelease;
     const pre2 = parsed2.prerelease;
 
-    if (pre1.length !== pre2.length) {
-      return false;
-    }
-    if (pre1.length === 0) {
-      return true;
-    }
+    if (pre1.length !== pre2.length) { return false; }
+    if (pre1.length === 0) { return true; }
 
     return pre1[0] === pre2[0] && pre1[1] === pre2[1];
   }
 
-  /**
-   * Determines if the first semantic version string is greater than or equal to
-   * the second.
-   *
-   * @param {string} v1 - The first version string to compare.
-   * @param {string} v2 - The second version string to compare.
-   * @returns {boolean} True if `v1` is greater than or equal to `v2`, otherwise
-   * false.
-   */
   compareVersions(v1, v2) {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
-    if (!parsed1 || !parsed2) {
-      return false;
-    }
+    if (!parsed1 || !parsed2) { return false; }
 
-    if (parsed1.major !== parsed2.major) {
-      return parsed1.major >= parsed2.major;
-    }
-
-    if (parsed1.minor !== parsed2.minor) {
-      return parsed1.minor >= parsed2.minor;
-    }
-
-    if (parsed1.patch !== parsed2.patch) {
-      return parsed1.patch >= parsed2.patch;
-    }
+    if (parsed1.major !== parsed2.major) { return parsed1.major >= parsed2.major; }
+    if (parsed1.minor !== parsed2.minor) { return parsed1.minor >= parsed2.minor; }
+    if (parsed1.patch !== parsed2.patch) { return parsed1.patch >= parsed2.patch; }
 
     const priority1 = this.getVersionPriority(v1);
     const priority2 = this.getVersionPriority(v2);
 
-    if (priority1 !== priority2) {
-      return priority1 >= priority2;
-    }
-
+    if (priority1 !== priority2) { return priority1 >= priority2; }
     if (parsed1.prerelease.length > 1 && parsed2.prerelease.length > 1) {
       return parsed1.prerelease[1] >= parsed2.prerelease[1];
     }
@@ -141,14 +88,6 @@ class PluginLoader {
     return true;
   }
 
-  /**
-   * Validates whether a current version satisfies a required version
-   * constraint.
-   *
-   * @param {string} current - The current version string.
-   * @param {string} required - The required version constraint, which may include comparison operators (e.g., `>=1.2.3`), separated by whitespaces.
-   * @returns {boolean} True if the current version meets the required constraint(s), otherwise false.
-   */
   validateVersionRequirement(current, required) {
     if (required.includes(' ')) {
       const ranges = required.split(' ');
@@ -159,18 +98,57 @@ class PluginLoader {
     const reqVersion = required.replace(/^[>=<]+/, '');
 
     switch (operator) {
-      case '=':
-        return this.isExactVersionMatch(current, reqVersion);
-      case '>=':
-        return this.compareVersions(current, reqVersion);
-      case '>':
-        return this.compareVersions(current, reqVersion) && !this.isExactVersionMatch(current, reqVersion);
-      case '<':
-        return !this.compareVersions(current, reqVersion);
-      case '<=':
-        return !this.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
-      default:
-        return this.compareVersions(current, reqVersion);
+      case '=': return this.isExactVersionMatch(current, reqVersion);
+      case '>=': return this.compareVersions(current, reqVersion);
+      case '>': return this.compareVersions(current, reqVersion) && !this.isExactVersionMatch(current, reqVersion);
+      case '<': return !this.compareVersions(current, reqVersion);
+      case '<=': return !this.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
+      default: return this.compareVersions(current, reqVersion);
+    }
+  }
+
+  extractTremPlugin(tremFile) {
+    try {
+      if (this.extractedPaths.has(tremFile)) {
+        return this.extractedPaths.get(tremFile);
+      }
+
+      logger.info('Extracting plugin:', tremFile);
+      const zip = new AdmZip(tremFile);
+      const entries = zip.getEntries();
+
+      const pluginName = path.basename(tremFile, '.trem');
+      const extractPath = path.join(this.tempDir, pluginName);
+
+      if (fs.existsSync(extractPath)) {
+        fs.rmSync(extractPath, { recursive: true });
+      }
+
+      const pluginRoot = entries
+        .filter((entry) => !entry.entryName.includes('__MACOSX') && !path.basename(entry.entryName).startsWith('._'))
+        .reduce((root, entry) => {
+          const parts = entry.entryName.split('/');
+          return parts[0];
+        }, '');
+
+      logger.info('Plugin root directory:', pluginRoot);
+
+      zip.extractAllTo(this.tempDir, true);
+
+      const tempPath = path.join(this.tempDir, pluginRoot);
+      if (tempPath !== extractPath && fs.existsSync(tempPath)) {
+        if (fs.existsSync(extractPath)) {
+          fs.rmSync(extractPath, { recursive: true });
+        }
+        fs.renameSync(tempPath, extractPath);
+      }
+
+      this.extractedPaths.set(tremFile, extractPath);
+      return extractPath;
+    }
+    catch (error) {
+      logger.error(`Failed to extract plugin ${tremFile}:`, error);
+      return null;
     }
   }
 
@@ -178,12 +156,10 @@ class PluginLoader {
     const infoPath = path.join(pluginPath, 'info.json');
     try {
       const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-
       if (!info.name) {
         logger.error(`(${infoPath}) -> Plugin info.json must contain a name field`);
         return null;
       }
-
       return info;
     }
     catch (error) {
@@ -193,9 +169,7 @@ class PluginLoader {
   }
 
   validateDependencies(pluginInfo) {
-    if (!pluginInfo.dependencies) {
-      return true;
-    }
+    if (!pluginInfo.dependencies) { return true; }
 
     if (pluginInfo.dependencies.trem) {
       if (!this.validateVersionRequirement(this.tremVersion, pluginInfo.dependencies.trem)) {
@@ -205,9 +179,7 @@ class PluginLoader {
     }
 
     for (const [dep, version] of Object.entries(pluginInfo.dependencies)) {
-      if (dep === 'trem') {
-        continue;
-      }
+      if (dep === 'trem') { continue; }
 
       const dependencyPlugin = this.plugins.get(dep);
       if (!dependencyPlugin) {
@@ -230,13 +202,8 @@ class PluginLoader {
     this.loadOrder = [];
 
     const visit = (pluginName) => {
-      if (tempMark.has(pluginName)) {
-        throw new Error(`Circular dependency detected: ${pluginName}`);
-      }
-
-      if (visited.has(pluginName)) {
-        return;
-      }
+      if (tempMark.has(pluginName)) { throw new Error(`Circular dependency detected: ${pluginName}`); }
+      if (visited.has(pluginName)) { return; }
 
       tempMark.add(pluginName);
       const plugin = this.plugins.get(pluginName);
@@ -283,27 +250,54 @@ class PluginLoader {
     }
   }
 
-  async loadPlugins() {
-    logger.info(`Loading plugins (TREM version: ${this.tremVersion})`);
+  async scanPlugins() {
+    const files = fs.readdirSync(this.pluginDir);
+    const allPlugins = [];
 
-    if (!fs.existsSync(this.pluginDir)) {
-      fs.mkdirSync(this.pluginDir, { recursive: true });
-      return;
+    for (const file of files) {
+      const filePath = path.join(this.pluginDir, file);
+      if (file.endsWith('.trem')) {
+        const extractPath = this.extractTremPlugin(filePath);
+        if (extractPath) {
+          const info = this.readPluginInfo(extractPath);
+          if (info) {
+            allPlugins.push({
+              name: info.name,
+              version: info.version,
+              description: info.description,
+              author: info.author,
+            });
+          }
+        }
+      }
     }
 
-    const directories = fs.readdirSync(this.pluginDir)
-      .filter((file) => fs.statSync(path.join(this.pluginDir, file)).isDirectory());
+    localStorage.setItem('plugin-list', JSON.stringify(allPlugins));
+    return allPlugins;
+  }
 
-    for (const dir of directories) {
-      const pluginPath = path.join(this.pluginDir, dir);
-      const info = this.readPluginInfo(pluginPath);
+  async loadPlugins() {
+    logger.info(`Loading plugins (TREM version: ${this.tremVersion})`);
+    this.plugins.clear();
+    this.loadOrder = [];
 
-      if (info) {
-        this.plugins.set(info.name, {
-          path: pluginPath,
-          info,
-          dependencies: info.dependencies || {},
-        });
+    const files = fs.readdirSync(this.pluginDir);
+    const enabledPlugins = JSON.parse(localStorage.getItem('enabled-plugins') || '[]');
+
+    for (const file of files) {
+      const filePath = path.join(this.pluginDir, file);
+      if (file.endsWith('.trem')) {
+        const extractPath = this.extractTremPlugin(filePath);
+        if (!extractPath) { continue; }
+
+        const info = this.readPluginInfo(extractPath);
+        if (info && enabledPlugins.includes(info.name)) {
+          this.plugins.set(info.name, {
+            path: extractPath,
+            info,
+            dependencies: info.dependencies || {},
+          });
+        }
       }
     }
 
@@ -329,6 +323,7 @@ class PluginLoader {
       try {
         if (fs.existsSync(indexPath)) {
           const PluginClass = require(indexPath);
+
           if (this.isValidPluginClass(PluginClass)) {
             const success = await this.initializePlugin(pluginName, plugin, PluginClass);
             if (!success) {
@@ -336,7 +331,7 @@ class PluginLoader {
             }
           }
           else {
-            logger.error(`Plugin ${pluginName} does not export a valid plugin class (must implement onLoad and onUnload methods)`);
+            logger.error(`Plugin ${pluginName} does not export a valid plugin class`);
             this.plugins.delete(pluginName);
           }
         }
@@ -346,6 +341,8 @@ class PluginLoader {
         this.plugins.delete(pluginName);
       }
     }
+
+    localStorage.setItem('loaded-plugins', JSON.stringify(this.getLoadedPlugins()));
   }
 
   async unloadPlugin(pluginName) {
@@ -369,8 +366,25 @@ class PluginLoader {
 }
 
 const pluginLoader = new PluginLoader();
-pluginLoader.loadPlugins();
-pluginLoader.getLoadedPlugins();
-localStorage.setItem('loaded-plugins', JSON.stringify(pluginLoader.getLoadedPlugins()));
 
-module.exports = PluginLoader;
+(async () => {
+  await pluginLoader.scanPlugins();
+  await pluginLoader.loadPlugins();
+
+  const info = {
+    version: pluginLoader.tremVersion,
+    pluginList: JSON.parse(localStorage.getItem('plugin-list') || '[]'),
+    enabledPlugins: JSON.parse(localStorage.getItem('enabled-plugins') || '[]'),
+    loadedPlugins: pluginLoader.getLoadedPlugins(),
+    pluginCount: pluginLoader.plugins.size,
+    pluginDir: pluginLoader.pluginDir,
+    tempDir: pluginLoader.tempDir,
+  };
+
+  logger.info('Plugin system initialized:', info);
+})();
+
+module.exports = {
+  default: PluginLoader,
+  pluginLoader,
+};
