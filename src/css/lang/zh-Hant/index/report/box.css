@@ -2,6 +2,15 @@ html[lang="zh-Hant"] {
   .report-intensity-text::before {
     content: "觀測最大震度";
   }
+  .web-detection::before {
+    content: "檢知";
+  }
+  .web-report::before {
+    content: "報告";
+  }
+  .report-replay::before {
+    content: "重播";
+  }
 }
 
 /**最外包**/
@@ -137,6 +146,12 @@ html[lang="zh-Hant"] {
       display: none;
     }
 
+    .report-web,
+    .report-replay {
+      width: auto;
+      padding: 2px;
+    }
+
     &:hover:not(.survey) {
       background-color: #8a8a8ac7;
 
@@ -153,7 +168,6 @@ html[lang="zh-Hant"] {
         .report-web,
         .report-replay {
           height: 30px;
-          width: 50px;
           border-radius: 5px;
           display: flex;
           align-items: center;
@@ -341,7 +355,6 @@ html[lang="zh-Hant"] {
 
     /**觀測最大震度文字**/
     .report-intensity-text {
-      font-size: 13px;
       font-weight: bold;
       margin-top: 0.3em;
       display: block;

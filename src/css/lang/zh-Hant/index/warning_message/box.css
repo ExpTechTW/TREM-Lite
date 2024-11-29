@@ -53,7 +53,7 @@
 }
 
 .report-wrapper.hidden ~ .warning-message-wrapper {
-  transform: translateX(171%);
+  transform: translateX(315px);
 }
 
 .warning-message-contain {

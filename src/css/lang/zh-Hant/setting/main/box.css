@@ -144,10 +144,10 @@
   content: "Update（地震預警更正時播放）";
 }
 .info-trem-lite::before {
-  content: "關於TREM Lite";
+  content: "關於 TREM Lite";
 }
 .info-trem-description::before {
-  content: "TREM-Lite是一款開源地震速報軟體，提供給您即時的地震資訊，利用自製的測站，顯示各地的即時震度，在地震發生的第一時間取得各管道發布的強震即時警報訊息。";
+  content: "TREM-Lite 是一款開源地震速報軟體，提供給您即時的地震資訊，利用自製的測站，顯示各地的即時震度，在地震發生的第一時間取得各管道發布的強震即時警報訊息。";
 }
 .app-version-title::before {
   content: "程式版本";
@@ -292,7 +292,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgb(12 16 22 / 20%);
+  background-color: rgb(73 73 73 / 90%);
   transition: 0.4s;
 }
 
@@ -324,7 +324,7 @@ body {
 }
 
 .switch input:checked + .slider {
-  background-color: #1bd337;
+  background-color: #1cb577;
   box-shadow: inset 0 0 3px rgb(0 0 0 /40%);
 
   &:before {
@@ -604,6 +604,7 @@ body {
 .setting-info div div {
   flex-direction: column;
   padding: 10px;
+  width: 100%;
 }
 
 .contributor ul {
@@ -1054,6 +1055,7 @@ li {
 .responsive-image {
   max-width: 100%;
   height: auto;
+  pointer-events: none;
 }
 
 .setting-header {
@@ -1129,6 +1131,7 @@ li {
   height: 3px;
   cursor: pointer;
   color: #ffb84a;
+  margin-left: 5;
 }
 
 .extended-setting-button:hover {
@@ -1165,7 +1168,7 @@ li {
 
 .extended-header-title-box,
 .extended-list-author-version {
-  width: 100%;
+  width: 75%;
   border-bottom: unset !important;
   padding: 3 !important;
 }
@@ -1173,8 +1176,8 @@ li {
 .extended-list-author-version span:first-child {
   border: 1px solid #ffffff29;
   border-radius: 5px;
-  background-color: #007bff99;
   padding: 5;
+  font-size: 12px;
 }
 
 .author {
@@ -1188,6 +1191,8 @@ li {
   border: 1px solid #ffffff29;
   border-radius: 5px;
   padding: 5;
+  font-size: 12px !important;
+  margin-left: 5;
 }
 
 .extended-list-left,
@@ -1202,9 +1207,11 @@ li {
 
 .extended-list-buttons {
   width: 25%;
-  display: flex;
   flex-direction: row;
   padding: 0 !important;
   justify-content: space-around;
-  margin-left: 10px;
+}
+
+.disable .round {
+  background-color: rgb(159 15 15 / 90%);
 }
