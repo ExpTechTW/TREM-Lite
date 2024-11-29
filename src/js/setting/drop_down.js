@@ -4,7 +4,7 @@ class DropDown {
     this.storeData = new this.store();
     this.config = require('./config');
     this.Instance = this.config.Instance;
-    this.intensityText = ['0級', '1級', '2級', '3級', '4級', '5弱', '5強', '6弱', '6強', '7級'];
+    this.intensityText = ['0', '1', '2', '3', '4', '5-', '5+', '6-', '6+', '7'];
     this.KEYS = ['location', 'station', 'realtime-int', 'estimate-int'];
 
     this.userLocation = document.querySelector('.usr-location');
