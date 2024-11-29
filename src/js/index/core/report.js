@@ -247,11 +247,9 @@ class ReportManager {
     const buttons = document.createElement('div');
     buttons.className = 'report-buttons';
     const webButton = document.createElement('div');
-    webButton.className = 'report-web';
-    webButton.textContent = (item.trem) ? '檢知' : '報告';
+    webButton.className = `report-web ${(item.trem) ? 'web-detection' : 'web-report'}`;
     const replayButton = document.createElement('div');
     replayButton.className = 'report-replay';
-    replayButton.textContent = '重播';
 
     contain.appendChild(this.createIntensityBox(item.int));
     contain.appendChild(this.createInfoBox(item, isSurvey));
