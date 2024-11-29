@@ -30,21 +30,52 @@ class PluginLoader {
         fs,
         semver,
       },
+      require: (modulePath) => {
+        if (modulePath.startsWith('.')) {
+          const currentPlugin = this.currentLoadingPlugin;
+          if (currentPlugin) {
+            if (modulePath.startsWith('../')) {
+              const parts = modulePath.split('/');
+              const targetPlugin = parts[1];
+              const remainingPath = parts.slice(2).join('/');
+
+              const targetPath = path.join(this.tempDir, targetPlugin, remainingPath);
+              return require(targetPath);
+            }
+            else {
+              return require(path.resolve(currentPlugin.path, modulePath));
+            }
+          }
+        }
+        return require(modulePath);
+      },
     };
+
+    this.currentLoadingPlugin = null;
 
     fs.mkdirSync(this.pluginDir, { recursive: true });
     fs.mkdirSync(this.tempDir, { recursive: true });
   }
 
   getVersionPriority(version) {
-    if (!version) { return 0; }
+    if (!version) {
+      return 0;
+    }
     const parsed = semver.parse(version);
-    if (!parsed) { return 0; }
+    if (!parsed) {
+      return 0;
+    }
 
     const prerelease = parsed.prerelease[0];
-    if (!prerelease) { return 3; }
-    if (prerelease === 'rc') { return 2; }
-    if (prerelease === 'pre') { return 1; }
+    if (!prerelease) {
+      return 3;
+    }
+    if (prerelease === 'rc') {
+      return 2;
+    }
+    if (prerelease === 'pre') {
+      return 1;
+    }
     return 0;
   }
 
@@ -52,7 +83,9 @@ class PluginLoader {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
-    if (!parsed1 || !parsed2) { return false; }
+    if (!parsed1 || !parsed2) {
+      return false;
+    }
 
     if (parsed1.major !== parsed2.major || parsed1.minor !== parsed2.minor || parsed1.patch !== parsed2.patch) {
       return false;
@@ -61,8 +94,12 @@ class PluginLoader {
     const pre1 = parsed1.prerelease;
     const pre2 = parsed2.prerelease;
 
-    if (pre1.length !== pre2.length) { return false; }
-    if (pre1.length === 0) { return true; }
+    if (pre1.length !== pre2.length) {
+      return false;
+    }
+    if (pre1.length === 0) {
+      return true;
+    }
 
     return pre1[0] === pre2[0] && pre1[1] === pre2[1];
   }
@@ -71,16 +108,26 @@ class PluginLoader {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
-    if (!parsed1 || !parsed2) { return false; }
+    if (!parsed1 || !parsed2) {
+      return false;
+    }
 
-    if (parsed1.major !== parsed2.major) { return parsed1.major >= parsed2.major; }
-    if (parsed1.minor !== parsed2.minor) { return parsed1.minor >= parsed2.minor; }
-    if (parsed1.patch !== parsed2.patch) { return parsed1.patch >= parsed2.patch; }
+    if (parsed1.major !== parsed2.major) {
+      return parsed1.major >= parsed2.major;
+    }
+    if (parsed1.minor !== parsed2.minor) {
+      return parsed1.minor >= parsed2.minor;
+    }
+    if (parsed1.patch !== parsed2.patch) {
+      return parsed1.patch >= parsed2.patch;
+    }
 
     const priority1 = this.getVersionPriority(v1);
     const priority2 = this.getVersionPriority(v2);
 
-    if (priority1 !== priority2) { return priority1 >= priority2; }
+    if (priority1 !== priority2) {
+      return priority1 >= priority2;
+    }
     if (parsed1.prerelease.length > 1 && parsed2.prerelease.length > 1) {
       return parsed1.prerelease[1] >= parsed2.prerelease[1];
     }
@@ -169,7 +216,9 @@ class PluginLoader {
   }
 
   validateDependencies(pluginInfo) {
-    if (!pluginInfo.dependencies) { return true; }
+    if (!pluginInfo.dependencies) {
+      return true;
+    }
 
     if (pluginInfo.dependencies.trem) {
       if (!this.validateVersionRequirement(this.tremVersion, pluginInfo.dependencies.trem)) {
@@ -179,7 +228,9 @@ class PluginLoader {
     }
 
     for (const [dep, version] of Object.entries(pluginInfo.dependencies)) {
-      if (dep === 'trem') { continue; }
+      if (dep === 'trem') {
+        continue;
+      }
 
       const dependencyPlugin = this.plugins.get(dep);
       if (!dependencyPlugin) {
@@ -202,8 +253,12 @@ class PluginLoader {
     this.loadOrder = [];
 
     const visit = (pluginName) => {
-      if (tempMark.has(pluginName)) { throw new Error(`Circular dependency detected: ${pluginName}`); }
-      if (visited.has(pluginName)) { return; }
+      if (tempMark.has(pluginName)) {
+        throw new Error(`Circular dependency detected: ${pluginName}`);
+      }
+      if (visited.has(pluginName)) {
+        return;
+      }
 
       tempMark.add(pluginName);
       const plugin = this.plugins.get(pluginName);
@@ -234,6 +289,7 @@ class PluginLoader {
 
   async initializePlugin(pluginName, plugin, PluginClass) {
     try {
+      this.currentLoadingPlugin = plugin;
       const instance = new PluginClass(this.ctx);
       plugin.instance = instance;
 
@@ -247,6 +303,26 @@ class PluginLoader {
     catch (error) {
       logger.error(`Failed to initialize plugin ${pluginName}:`, error);
       return false;
+    }
+    finally {
+      this.currentLoadingPlugin = null;
+    }
+  }
+
+  copyToTemp(sourcePath, pluginName) {
+    try {
+      const targetPath = path.join(this.tempDir, pluginName);
+
+      if (fs.existsSync(targetPath)) {
+        fs.rmSync(targetPath, { recursive: true });
+      }
+
+      fs.cpSync(sourcePath, targetPath, { recursive: true });
+      return targetPath;
+    }
+    catch (error) {
+      logger.error(`Failed to copy plugin ${pluginName}:`, error);
+      return null;
     }
   }
 
@@ -307,16 +383,26 @@ class PluginLoader {
       const filePath = path.join(this.pluginDir, file);
       const isDirectory = fs.statSync(filePath).isDirectory();
 
-      const pluginPath = isDirectory ? filePath : (file.endsWith('.trem') ? this.extractTremPlugin(filePath) : null);
-      if (!pluginPath) { continue; }
+      let targetPath;
+      if (isDirectory) {
+        const info = this.readPluginInfo(filePath);
+        if (info) {
+          targetPath = this.copyToTemp(filePath, info.name);
+        }
+      }
+      else if (file.endsWith('.trem')) {
+        targetPath = this.extractTremPlugin(filePath);
+      }
 
-      const info = this.readPluginInfo(pluginPath);
-      if (info && enabledPlugins.includes(info.name)) {
-        this.plugins.set(info.name, {
-          path: pluginPath,
-          info,
-          dependencies: info.dependencies || {},
-        });
+      if (targetPath) {
+        const info = this.readPluginInfo(targetPath);
+        if (info && enabledPlugins.includes(info.name)) {
+          this.plugins.set(info.name, {
+            path: targetPath,
+            info,
+            dependencies: info.dependencies || {},
+          });
+        }
       }
     }
 
@@ -383,6 +469,9 @@ class PluginLoader {
     }));
   }
 }
+
+const manager = require('./manager');
+manager.enable('test');
 
 const pluginLoader = new PluginLoader();
 
