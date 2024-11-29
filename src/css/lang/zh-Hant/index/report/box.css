@@ -1,16 +1,14 @@
-html[lang="zh-Hant"] {
-  .report-intensity-text::before {
-    content: "觀測最大震度";
-  }
-  .web-detection::before {
-    content: "檢知";
-  }
-  .web-report::before {
-    content: "報告";
-  }
-  .report-replay::before {
-    content: "重播";
-  }
+.report-intensity-text::before {
+  content: "觀測最大震度";
+}
+.web-detection::before {
+  content: "檢知";
+}
+.web-report::before {
+  content: "報告";
+}
+.report-replay::before {
+  content: "重播";
 }
 
 /**最外包**/
