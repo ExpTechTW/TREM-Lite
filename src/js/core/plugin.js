@@ -252,28 +252,47 @@ class PluginLoader {
 
   async scanPlugins() {
     const files = fs.readdirSync(this.pluginDir);
-    const allPlugins = [];
+    const allPlugins = new Map();
 
     for (const file of files) {
       const filePath = path.join(this.pluginDir, file);
+      const isDirectory = fs.statSync(filePath).isDirectory();
+
+      if (isDirectory) {
+        const info = this.readPluginInfo(filePath);
+        if (info) {
+          allPlugins.set(info.name, {
+            name: info.name,
+            version: info.version,
+            description: info.description,
+            author: info.author,
+          });
+        }
+        continue;
+      }
+
       if (file.endsWith('.trem')) {
-        const extractPath = this.extractTremPlugin(filePath);
-        if (extractPath) {
-          const info = this.readPluginInfo(extractPath);
-          if (info) {
-            allPlugins.push({
-              name: info.name,
-              version: info.version,
-              description: info.description,
-              author: info.author,
-            });
+        const pluginName = path.basename(file, '.trem');
+        if (!allPlugins.has(pluginName)) {
+          const extractPath = this.extractTremPlugin(filePath);
+          if (extractPath) {
+            const info = this.readPluginInfo(extractPath);
+            if (info) {
+              allPlugins.set(info.name, {
+                name: info.name,
+                version: info.version,
+                description: info.description,
+                author: info.author,
+              });
+            }
           }
         }
       }
     }
 
-    localStorage.setItem('plugin-list', JSON.stringify(allPlugins));
-    return allPlugins;
+    const pluginList = Array.from(allPlugins.values());
+    localStorage.setItem('plugin-list', JSON.stringify(pluginList));
+    return pluginList;
   }
 
   async loadPlugins() {
@@ -286,18 +305,18 @@ class PluginLoader {
 
     for (const file of files) {
       const filePath = path.join(this.pluginDir, file);
-      if (file.endsWith('.trem')) {
-        const extractPath = this.extractTremPlugin(filePath);
-        if (!extractPath) { continue; }
+      const isDirectory = fs.statSync(filePath).isDirectory();
 
-        const info = this.readPluginInfo(extractPath);
-        if (info && enabledPlugins.includes(info.name)) {
-          this.plugins.set(info.name, {
-            path: extractPath,
-            info,
-            dependencies: info.dependencies || {},
-          });
-        }
+      const pluginPath = isDirectory ? filePath : (file.endsWith('.trem') ? this.extractTremPlugin(filePath) : null);
+      if (!pluginPath) { continue; }
+
+      const info = this.readPluginInfo(pluginPath);
+      if (info && enabledPlugins.includes(info.name)) {
+        this.plugins.set(info.name, {
+          path: pluginPath,
+          info,
+          dependencies: info.dependencies || {},
+        });
       }
     }
 
