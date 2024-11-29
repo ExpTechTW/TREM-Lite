@@ -1,7 +1,7 @@
 const region = require('../../../resource/data/region.json');
 
 const TREM = require('../constant');
-const { generateMapStyle, convertIntensityToAreaFormat, int_to_string, search_loc_name } = require('../utils/utils');
+const { generateMapStyle, convertIntensityToAreaFormat, search_loc_name } = require('../utils/utils');
 const drawEewArea = require('./estimate');
 const { focus } = require('./focus');
 const { generateReportBoxItems } = require('./report');
@@ -42,10 +42,12 @@ TREM.variable.events.on('MapLoad', (map) => {
 });
 
 function show_intensity(ans) {
+  TREM.variable.map.getSource('lpgm-markers-geojson').setData({ type: 'FeatureCollection', features: [] });
+  TREM.variable.cache.bounds.lpgm = [];
+  TREM.variable.cache.show_lpgm = false;
+
   const data_list = [];
   const bounds = [];
-
-  const city_intensity_list = findMaxIntensityCity(ans.data.area);
 
   TREM.variable.cache.show_intensity = true;
 
@@ -57,9 +59,6 @@ function show_intensity(ans) {
   });
 
   TREM.variable.cache.intensity.time = ans.data.id;
-  if (TREM.variable.cache.intensity.max < ans.data.max) {
-    TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
-  }
   TREM.variable.cache.intensity.max = ans.data.max;
 
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
@@ -85,6 +84,9 @@ function show_intensity(ans) {
   TREM.variable.map.getSource('intensity-markers-geojson').setData({ type: 'FeatureCollection', features: data_list });
 
   setTimeout(() => {
+    if (!TREM.variable.cache.show_intensity) {
+      return;
+    }
     TREM.variable.cache.show_intensity = false;
     TREM.variable.events.emit('DataRts', {
       info: {
@@ -111,25 +113,3 @@ TREM.variable.events.on('IntensityEnd', () => {
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);
   drawEewArea();
 });
-
-function findMaxIntensityCity(eqArea) {
-  if (!eqArea || Object.keys(eqArea).length === 0) {
-    return null;
-  }
-
-  const maxIntensity = Math.max(...Object.keys(eqArea).map(Number));
-
-  const maxIntensityCodes = eqArea[maxIntensity] || [];
-
-  const citiesWithMaxIntensity = maxIntensityCodes
-    .map((code) => search_loc_name(parseInt(code)))
-    .filter((location) => location !== null)
-    .map((location) => location.city);
-
-  const uniqueCities = [...new Set(citiesWithMaxIntensity)];
-
-  return {
-    intensity: maxIntensity,
-    cities: uniqueCities,
-  };
-}

@@ -111,13 +111,13 @@
 
 /**即時震度列表外包**/
 .report-wrapper.hidden ~ .rts-intensity-list-wrapper {
-  transform: translateX(215%);
+  transform: translateX(216%);
 }
 
 .rts-intensity-list-wrapper {
   position: absolute;
   display: flex;
-  bottom: 5px;
+  bottom: 3px;
   max-height: 300px;
   width: 145px;
   margin-right: 8px;

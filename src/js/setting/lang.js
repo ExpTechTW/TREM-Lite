@@ -1,3 +1,39 @@
+const TREM = require('../index/constant');
+
+function generateColorCSS() {
+  const styleContent = `
+  <style id="dynamic-colors">
+    :root {
+      ${Object.entries(TREM.constant.COLOR.RTS)
+        .map(([key, value]) => `--rts-${key.replace('_', '-')}: ${value};`)
+        .join('\n')}
+      
+      ${Object.entries(TREM.constant.COLOR.INTENSITY)
+        .map(([key, value]) => `--intensity-${key}: ${value};`)
+        .join('\n')}
+      
+      ${Object.entries(TREM.constant.COLOR.INTENSITY_TEXT)
+        .map(([key, value]) => `--intensity-text-${key}: ${value};`)
+        .join('\n')}
+
+      --rts-trigger-low: ${TREM.constant.COLOR.EEW.TRIGGER.LOW};
+      --rts-trigger-middle: ${TREM.constant.COLOR.EEW.TRIGGER.MIDDLE};
+      --rts-trigger-high: ${TREM.constant.COLOR.EEW.TRIGGER.HIGH};
+      
+      --eew-s-warn: ${TREM.constant.COLOR.EEW.S.WARN};
+      --eew-s-alert: ${TREM.constant.COLOR.EEW.S.ALERT};
+      --eew-s-cancel: ${TREM.constant.COLOR.EEW.S.CANCEL};
+      --eew-p: ${TREM.constant.COLOR.EEW.P};
+    }
+  </style>
+`;
+  return styleContent;
+}
+
+function injectColorStyles() {
+  document.head.insertAdjacentHTML('beforeend', generateColorCSS());
+}
+
 function loadCSS(href) {
   return new Promise((resolve, reject) => {
     const link = document.createElement('link');
@@ -46,6 +82,7 @@ async function initializeStyles() {
   const loadingIndicator = showLoadingIndicator();
 
   try {
+    injectColorStyles();
     await loadCSS('../css/lang/zh-Hant/setting/index.css');
 
     await new Promise((resolve) => setTimeout(resolve, 100));

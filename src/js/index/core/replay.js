@@ -1,4 +1,5 @@
 const TREM = require('../constant');
+const { abortAll } = require('../data/http');
 const { focus, focus_reset } = require('./focus');
 
 class ReplayControler {
@@ -19,6 +20,7 @@ class ReplayControler {
   }
 
   clear() {
+    abortAll();
     TREM.variable.cache.last_data_time = 0;
     TREM.variable.data.rts = null;
     TREM.variable.replay = {
@@ -41,6 +43,7 @@ class ReplayControler {
     this.clear();
     TREM.variable.cache.int_cache_list = {};
     TREM.variable.play_mode = 0;
+    TREM.variable.cache.unstable = 0;
     TREM.variable.events.emit('DataRts', {
       info: {
         type: TREM.variable.play_mode,

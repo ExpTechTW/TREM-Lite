@@ -1,12 +1,6 @@
 const TREM = require('../constant');
-
 const now = require('../utils/ntp');
-
 const http = require('./http');
-const file = require('./file');
-
-let last_fetch_time = 0;
-
 class DataManager {
   static instance = null;
 
@@ -14,7 +8,8 @@ class DataManager {
     if (DataManager.instance) {
       return DataManager.instance;
     }
-    this.bindEvents();
+    this.lastFetchTime = 0;
+    this.initialize();
     DataManager.instance = this;
   }
 
@@ -25,62 +20,66 @@ class DataManager {
     return DataManager.instance;
   }
 
-  bindEvents() {
-    TREM.variable.events.on('MapLoad', () => this.onMapLoad());
+  initialize() {
+    TREM.variable.events.on('MapLoad', () => {
+      setInterval(async () => {
+        await this.fetchData();
+      }, 0);
+    });
   }
 
-  onMapLoad() {
-    setInterval(async () => {
-      const local_now = Date.now();
-      if (TREM.variable.play_mode == 3) {
-        // replay (file)
-        const data = null;
+  async fetchData() {
+    const localNow = Date.now();
+
+    if (TREM.variable.play_mode === 3) {
+      // replay (file)
+      return null;
+    }
+    else if (TREM.variable.play_mode === 1) {
+      // realtime (websocket)
+      return null;
+    }
+
+    // http (realtime/replay)
+    if (localNow - this.lastFetchTime < 1000) {
+      return;
+    }
+    this.lastFetchTime = localNow;
+
+      const data = await http((TREM.variable.play_mode == 0) ? null : now());
+
+      if (!TREM.variable.data.rts || (!data.rts && ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR)) || TREM.variable.data.rts.time < (data.rts?.time ?? 0)) {
+        TREM.variable.data.rts = data.rts;
+        TREM.variable.events.emit('DataRts', {
+          info: {
+            type: TREM.variable.play_mode,
+          },
+          data: data.rts,
+        });
       }
-      else if (TREM.variable.play_mode == 1) {
-        // realtime (websocket)
-        const data = null;
+
+      if (data.eew) {
+        EEWData(data.eew);
       }
       else {
-        // http (realtime/replay)
-        if (local_now - last_fetch_time < 1000) {
-          return;
-        }
-        last_fetch_time = local_now;
-
-        const data = await http((TREM.variable.play_mode == 0) ? null : now());
-
-        if (!TREM.variable.data.rts || (!data.rts && ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR)) || TREM.variable.data.rts.time < (data.rts?.time ?? 0)) {
-          TREM.variable.data.rts = data.rts;
-          TREM.variable.events.emit('DataRts', {
-            info: {
-              type: TREM.variable.play_mode,
-            },
-            data: data.rts,
-          });
-        }
-
-        if (data.eew) {
-          this.EEWData(data.eew);
-        }
-        else {
-          this.EEWData();
-        }
-
-        if (data.intensity) {
-          this.IntensityData(data.intensity);
-        }
-
-        if (data.rts) {
-          TREM.variable.cache.last_data_time = local_now;
-        }
+        EEWData();
       }
-    }, 0);
-  }
 
-  EEWData(newData = []) {
-    const currentTime = now();
-    const EXPIRY_TIME = 240 * 1000;
-    const STATUS_3_TIMEOUT = 30 * 1000;
+      if (data.intensity) {
+        IntensityData(data.intensity);
+      }
+
+      if (data.rts) {
+        TREM.variable.cache.last_data_time = local_now;
+      }
+    }
+  }, 0);
+});
+
+function EEWData(newData = []) {
+  const currentTime = now();
+  const EXPIRY_TIME = 240 * 1000;
+  const STATUS_3_TIMEOUT = 30 * 1000;
 
     TREM.variable.data.eew
       .filter((item) =>
@@ -146,12 +145,12 @@ class DataManager {
       }
     });
 
-    Object.keys(TREM.variable.cache.eew_last).forEach((id) => {
-      const item = TREM.variable.cache.eew_last[id];
-      if (currentTime - item.last_time > 600000) {
-        Reflect.deleteProperty(TREM.variable.cache.eew_last, id);
-      }
-    });
+  Object.keys(TREM.variable.cache.eew_last).forEach((id) => {
+    const item = TREM.variable.cache.eew_last[id];
+    if (currentTime - item.last_time > 600000) {
+      delete TREM.variable.cache.eew_last[id];
+    }
+  });
 
     TREM.variable.events.emit('DataEew', {
       info: { type: TREM.variable.play_mode },
@@ -159,9 +158,9 @@ class DataManager {
     });
   }
 
-  IntensityData(newData = []) {
-    const currentTime = now();
-    const EXPIRY_TIME = 240 * 1000;
+function IntensityData(newData = []) {
+  const currentTime = now();
+  const EXPIRY_TIME = 240 * 1000;
 
     TREM.variable.data.intensity
       .filter((item) =>
@@ -204,29 +203,23 @@ class DataManager {
         }
       }
 
-      if (TREM.variable.cache.intensity_last[data.id] && TREM.variable.cache.intensity_last[data.id].serial < data.serial) {
-        TREM.variable.cache.intensity_last[data.id].serial = data.serial;
-        TREM.variable.events.emit('IntensityUpdate', eventData);
+    if (TREM.variable.cache.intensity_last[data.id] && TREM.variable.cache.intensity_last[data.id].serial < data.serial) {
+      TREM.variable.cache.intensity_last[data.id].serial = data.serial;
+      TREM.variable.events.emit('IntensityUpdate', eventData);
 
-        TREM.variable.data.intensity[existingIndex] = data;
-      }
-    });
+      TREM.variable.data.intensity[existingIndex] = data;
+    }
+  });
 
-    Object.keys(TREM.variable.cache.intensity_last).forEach((id) => {
-      const item = TREM.variable.cache.intensity_last[id];
-      if (currentTime - item.last_time > 600000) {
-        Reflect.deleteProperty(TREM.variable.cache.intensity_last, id);
-      }
-    });
+  Object.keys(TREM.variable.cache.intensity_last).forEach((id) => {
+    const item = TREM.variable.cache.intensity_last[id];
+    if (currentTime - item.last_time > 600000) {
+      delete TREM.variable.cache.intensity_last[id];
+    }
+  });
 
-    TREM.variable.events.emit('DataIntensity', {
-      info: { type: TREM.variable.play_mode },
-      data: TREM.variable.data.intensity,
-    });
-  }
+  TREM.variable.events.emit('DataIntensity', {
+    info: { type: TREM.variable.play_mode },
+    data: TREM.variable.data.intensity,
+  });
 }
-
-TREM.class.DataManager = DataManager;
-
-const dataManager = DataManager.getInstance();
-module.exports = dataManager;

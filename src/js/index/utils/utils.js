@@ -140,7 +140,7 @@ function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor)
   return img;
 }
 
-function generateMapStyle(eewArea, end = false) {
+function generateMapStyle(eewArea, end = false, lpgm = false) {
   if (end) {
     return TREM.constant.COLOR.MAP.TW_COUNTY_FILL;
   }
@@ -152,7 +152,7 @@ function generateMapStyle(eewArea, end = false) {
       matchExpression.push(parseInt(code));
       matchExpression.push(
         intensity
-          ? TREM.constant.COLOR.INTENSITY[intensity]
+          ? (lpgm) ? TREM.constant.COLOR.LPGM[intensity] : TREM.constant.COLOR.INTENSITY[intensity]
           : TREM.constant.COLOR.MAP.TW_COUNTY_FILL,
       );
     });
@@ -173,6 +173,28 @@ function convertIntensityToAreaFormat(intensityData) {
   return result;
 }
 
+function findMaxIntensityCity(eqArea) {
+  if (!eqArea || Object.keys(eqArea).length === 0) {
+    return null;
+  }
+
+  const maxIntensity = Math.max(...Object.keys(eqArea).map(Number));
+
+  const maxIntensityCodes = eqArea[maxIntensity] || [];
+
+  const citiesWithMaxIntensity = maxIntensityCodes
+    .map((code) => search_loc_name(parseInt(code)))
+    .filter((location) => location !== null)
+    .map((location) => location.city);
+
+  const uniqueCities = [...new Set(citiesWithMaxIntensity)];
+
+  return {
+    intensity: maxIntensity,
+    cities: uniqueCities,
+  };
+}
+
 module.exports = {
   formatTime,
   distance,
@@ -188,4 +210,5 @@ module.exports = {
   generateMapStyle,
   convertIntensityToAreaFormat,
   intensity_list,
+  findMaxIntensityCity,
 };
