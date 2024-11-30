@@ -3,7 +3,7 @@ class PluginList {
     this.pluginManagerStore = require('../core/manager');
     this.extendedElement = '';
     this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins'));
-    this.pluginList = JSON.parse(localStorage.getItem('loaded-plugins'));
+    this.pluginList = JSON.parse(localStorage.getItem('plugin-list'));
     this.extendedInfo = document.querySelector('.extended-info');
     this.init();
     this.addToggleClick();
