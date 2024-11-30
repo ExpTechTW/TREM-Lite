@@ -131,9 +131,6 @@
 .extended-info span:empty::before {
   content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
 }
-.eew-1::before {
-  content: "EEW（收到地震預警時播放）";
-}
 .p-alert::before {
   content: "P-Alert（收到近即時震度時播放）";
 }
@@ -199,6 +196,9 @@
   content: "未設定";
 }
 
+.eew-1::before {
+  content: "EEW（收到地震預警時播放）";
+}
 .eew-2 {
   &::before {
     content: "EEW2（最大預估";
@@ -742,11 +742,13 @@ li {
 .SE-Net {
   color: #ffc756;
   margin-right: 10px;
+  font-size: 12px !important;
 }
 
 .MS-Net {
   color: #56deff;
   margin-right: 10px;
+  font-size: 12px !important;
 }
 
 .select-arrow-active {
