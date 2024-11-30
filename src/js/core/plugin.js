@@ -39,10 +39,10 @@ class PluginLoader {
       system: 4,
       filesystem: 3,
       events: 2,
-      mixin: 2,
+      mixin: 3,
       logging: 1,
       metadata: 1,
-      version: 1,
+      version: 0,
     };
 
     this.ctx = {
@@ -556,9 +556,9 @@ class PluginLoader {
   getSensitivityDescription(level) {
     switch (level) {
       case 4: return '極高敏感度 - 包含系統核心API存取權限';
-      case 3: return '高敏感度 - 包含檔案系統存取權限';
-      case 2: return '中等敏感度 - 包含事件或混入系統權限';
-      case 1: return '低敏感度 - 包含日誌/元數據/版本資訊存取';
+      case 3: return '高敏感度 - 包含注入或檔案系統存取權限';
+      case 2: return '中等敏感度 - 包含事件權限';
+      case 1: return '低敏感度 - 包含日誌/元數據存取';
       default: return '無敏感操作';
     }
   }
