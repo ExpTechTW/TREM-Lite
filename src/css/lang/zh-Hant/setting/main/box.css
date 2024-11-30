@@ -128,7 +128,7 @@
 .extended-setting-button::before {
   content: "設定";
 }
-.extended-info span:empty::before {
+.extended-info .extended-info-warning:empty::before {
   content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
 }
 .p-alert::before {
@@ -479,9 +479,10 @@ body {
   padding-left: 1vw;
 }
 
-.setting-option span {
+.setting-option .extended-info-warning {
   font-size: 15px;
   font-weight: bold;
+  justify-content: center;
 }
 
 .setting-item-title {
@@ -494,12 +495,13 @@ body {
   background-color: #1c1c1e;
   border-radius: 10px;
   margin-top: 3vh;
+  height: auto;
 }
 
 .extended .setting-option {
   display: grid !important;
   color: #fff;
-  padding: 3px !important;
+  padding: 2px !important;
 }
 
 .extended .setting-option:first-child {
@@ -544,7 +546,7 @@ body {
 
 .extended-info {
   color: #ff5656;
-  align-items: center;
+  height: auto;
 }
 
 .extended-info .material-symbols-rounded {
@@ -1172,7 +1174,8 @@ li {
 .extended-list-author-version {
   width: 75%;
   border-bottom: unset !important;
-  padding: 3 !important;
+  padding: 0px !important;
+  margin-top: 5;
 }
 
 .extended-list-author-version span:first-child {
@@ -1201,7 +1204,7 @@ li {
 .extended-list-description-box,
 .extended-list-title-box {
   flex-direction: column;
-  padding: 5 !important;
+  padding: 3px !important;
   border-bottom: unset !important;
   width: auto;
   align-items: unset !important;
