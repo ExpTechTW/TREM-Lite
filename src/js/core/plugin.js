@@ -19,11 +19,13 @@ class PluginLoader {
 
     this.ctx = {
       TREM,
+      events: TREM.variable.events,
       logger,
       Logger,
       MixinManager,
       info: {
         pluginDir: this.pluginDir,
+        originalPath: null,
       },
       utils: {
         path,
@@ -38,7 +40,6 @@ class PluginLoader {
               const parts = modulePath.split('/');
               const targetPlugin = parts[1];
               const remainingPath = parts.slice(2).join('/');
-
               const targetPath = path.join(this.tempDir, targetPlugin, remainingPath);
               return require(targetPath);
             }
@@ -290,6 +291,8 @@ class PluginLoader {
   async initializePlugin(pluginName, plugin, PluginClass) {
     try {
       this.currentLoadingPlugin = plugin;
+      this.ctx.info.originalPath = plugin.originalPath;
+
       const instance = new PluginClass(this.ctx);
       plugin.instance = instance;
 
@@ -306,12 +309,13 @@ class PluginLoader {
     }
     finally {
       this.currentLoadingPlugin = null;
+      this.ctx.info.originalPath = null;
     }
   }
 
-  copyToTemp(sourcePath, pluginName) {
+  copyToTemp(sourcePath, info) {
     try {
-      const targetPath = path.join(this.tempDir, pluginName);
+      const targetPath = path.join(this.tempDir, info.name);
 
       if (fs.existsSync(targetPath)) {
         fs.rmSync(targetPath, { recursive: true });
@@ -321,7 +325,7 @@ class PluginLoader {
       return targetPath;
     }
     catch (error) {
-      logger.error(`Failed to copy plugin ${pluginName}:`, error);
+      logger.error(`Failed to copy plugin ${info.name}:`, error);
       return null;
     }
   }
@@ -384,14 +388,17 @@ class PluginLoader {
       const isDirectory = fs.statSync(filePath).isDirectory();
 
       let targetPath;
+      let originalPath = filePath;
+
       if (isDirectory) {
         const info = this.readPluginInfo(filePath);
         if (info) {
-          targetPath = this.copyToTemp(filePath, info.name);
+          targetPath = this.copyToTemp(filePath, info);
         }
       }
       else if (file.endsWith('.trem')) {
         targetPath = this.extractTremPlugin(filePath);
+        originalPath = path.join(this.pluginDir, path.basename(file, '.trem'));
       }
 
       if (targetPath) {
@@ -399,6 +406,7 @@ class PluginLoader {
         if (info && enabledPlugins.includes(info.name)) {
           this.plugins.set(info.name, {
             path: targetPath,
+            originalPath,
             info,
             dependencies: info.dependencies || {},
           });
@@ -470,8 +478,10 @@ class PluginLoader {
   }
 }
 
-const manager = require('./manager');
-manager.enable('test');
+// const manager = require('./manager');
+// manager.enable('test');
+// manager.enable('exptech');
+// manager.enable('websocket');
 
 const pluginLoader = new PluginLoader();
 
@@ -489,7 +499,7 @@ const pluginLoader = new PluginLoader();
     tempDir: pluginLoader.tempDir,
   };
 
-  logger.info('Plugin system initialized:', info);
+  // logger.info('Plugin system initialized:', info);
 })();
 
 module.exports = {
