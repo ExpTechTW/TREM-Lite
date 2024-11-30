@@ -1118,6 +1118,7 @@ li {
   height: 3px;
   cursor: pointer;
   color: #ff4a4a;
+  justify-content: center;
 }
 
 .reset-button:hover {
