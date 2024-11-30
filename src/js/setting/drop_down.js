@@ -1,8 +1,8 @@
 class DropDown {
   constructor() {
     this.store = require('./store');
-    this.intensityText = require('../index/utils/utils').intensity_list;
     this.storeData = new this.store();
+    this.intensityText = require('../index/utils/utils').intensity_list;
     this.config = require('./config');
     this.Instance = this.config.Instance;
     this.KEYS = ['location', 'station', 'realtime-int', 'estimate-int'];
