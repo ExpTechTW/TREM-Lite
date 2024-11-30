@@ -7,6 +7,8 @@ const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
 const MixinManager = require('./mixin');
+const acorn = require('acorn');
+const walk = require('acorn-walk');
 
 class PluginLoader {
   constructor() {
@@ -17,6 +19,31 @@ class PluginLoader {
     this.tremVersion = app.getVersion();
     this.extractedPaths = new Map();
     this.eventHandlers = new Map();
+
+    this.availableCtxItems = {
+      TREM: 'system',
+      events: 'events',
+      logger: 'logging',
+      Logger: 'logging',
+      MixinManager: 'mixin',
+      info: 'metadata',
+      utils: {
+        path: 'filesystem',
+        fs: 'filesystem',
+        semver: 'version',
+      },
+      on: 'events',
+    };
+
+    this.sensitivityLevels = {
+      system: 4,
+      filesystem: 3,
+      events: 2,
+      mixin: 2,
+      logging: 1,
+      metadata: 1,
+      version: 1,
+    };
 
     this.ctx = {
       TREM,
@@ -62,6 +89,178 @@ class PluginLoader {
 
     fs.mkdirSync(this.pluginDir, { recursive: true });
     fs.mkdirSync(this.tempDir, { recursive: true });
+  }
+
+  analyzePluginCode(code) {
+    const usedDependencies = new Set();
+    try {
+      const ast = acorn.parse(code, {
+        sourceType: 'module',
+        ecmaVersion: 'latest',
+      });
+
+      walk.simple(ast, {
+        VariableDeclarator: (node) => {
+          if (node.init?.type === 'MemberExpression' && node.init.object?.name === 'ctx') {
+            if (node.id.type === 'ObjectPattern') {
+              node.id.properties.forEach((prop) => {
+                const key = prop.key.name;
+                this.addDependency(key, usedDependencies);
+              });
+            }
+          }
+        },
+        MemberExpression: (node) => {
+          if (node.object?.name === 'ctx') {
+            const prop = node.property?.name;
+            if (prop) {
+              this.addDependency(prop, usedDependencies);
+            }
+          }
+          if (node.object?.type === 'MemberExpression'
+            && node.object.object?.name === 'ctx'
+            && node.object.property?.name === 'utils') {
+            const prop = node.property?.name;
+            if (prop) {
+              usedDependencies.add(`utils.${prop} (${this.availableCtxItems.utils[prop]})`);
+            }
+          }
+        },
+        FunctionDeclaration: (node) => {
+          const ctxParam = node.params.find((p) => p.name === 'ctx');
+          if (ctxParam) {
+            usedDependencies.add('ctx (system)');
+          }
+        },
+        ClassDeclaration: (node) => {
+          const constructor = node.body.body.find((m) => m.kind === 'constructor');
+          if (constructor) {
+            const ctxParam = constructor.value.params.find((p) => p.name === 'ctx');
+            if (ctxParam) {
+              usedDependencies.add('ctx (system)');
+            }
+          }
+        },
+      });
+
+      if (usedDependencies.size === 0 && code.includes('ctx')) {
+        usedDependencies.add('ctx (system)');
+      }
+
+      return {
+        usedDependencies: Array.from(usedDependencies),
+        sensitivity: this.calculateSensitivity(usedDependencies),
+      };
+    }
+    catch (error) {
+      logger.error('Failed to analyze plugin code:', error);
+      if (code) {
+        return {
+          usedDependencies: ['ctx (system)'],
+          sensitivity: { level: 1, description: this.getSensitivityDescription(1) },
+        };
+      }
+      return {
+        usedDependencies: [],
+        sensitivity: { level: 0, description: '分析失败' },
+      };
+    }
+  }
+
+  addDependency(key, dependencies) {
+    if (this.availableCtxItems[key]) {
+      if (typeof this.availableCtxItems[key] === 'object') {
+        dependencies.add(`${key}.*`);
+      }
+      else {
+        dependencies.add(`${key} (${this.availableCtxItems[key]})`);
+      }
+    }
+  }
+
+  calculateSensitivity(dependencies) {
+    let maxSensitivity = 0;
+    dependencies.forEach((dep) => {
+      const category = dep.match(/\((.*?)\)/)?.[1];
+      if (category && this.sensitivityLevels[category]) {
+        maxSensitivity = Math.max(maxSensitivity, this.sensitivityLevels[category]);
+      }
+    });
+
+    return {
+      level: maxSensitivity,
+      description: this.getSensitivityDescription(maxSensitivity),
+    };
+  }
+
+  validateDependencies(pluginInfo) {
+    if (!pluginInfo.dependencies) {
+      return true;
+    }
+
+    const { trem, ...pluginDependencies } = pluginInfo.dependencies;
+
+    if (trem) {
+      if (!this.validateVersionRequirement(this.tremVersion, trem)) {
+        logger.error(`Plugin ${pluginInfo.name} requires TREM version ${trem}, but ${this.tremVersion} is installed`);
+        return false;
+      }
+    }
+
+    for (const [dep, version] of Object.entries(pluginDependencies)) {
+      const dependencyPlugin = this.plugins.get(dep);
+      if (!dependencyPlugin) {
+        logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name}`);
+        return false;
+      }
+
+      if (!this.validateVersionRequirement(dependencyPlugin.info.version, version)) {
+        logger.error(`Plugin ${pluginInfo.name} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  readPluginInfo(pluginPath) {
+    const infoPath = path.join(pluginPath, 'info.json');
+    const indexPath = path.join(pluginPath, 'index.js');
+
+    try {
+      const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+      if (!info.name) {
+        logger.error(`(${infoPath}) -> Plugin info.json must contain a name field`);
+        return null;
+      }
+
+      info.dependencies = info.dependencies || {};
+
+      if (fs.existsSync(indexPath)) {
+        const pluginCode = fs.readFileSync(indexPath, 'utf8');
+        const analysis = this.analyzePluginCode(pluginCode);
+
+        info.ctxDependencies = analysis.usedDependencies;
+        info.sensitivity = analysis.sensitivity;
+      }
+
+      return info;
+    }
+    catch (error) {
+      logger.error(`(${infoPath}) -> Failed to read plugin info:`, error);
+      return null;
+    }
+  }
+
+  getLoadedPlugins() {
+    return Array.from(this.plugins.entries()).map(([name, plugin]) => ({
+      name,
+      version: plugin.info.version,
+      description: plugin.info.description,
+      author: plugin.info.author,
+      ctxDependencies: plugin.info.dependencies?.ctx || [],
+      sensitivity: plugin.info.sensitivity || { level: 0, description: '未分析' },
+    }));
   }
 
   getVersionPriority(version) {
@@ -206,54 +405,6 @@ class PluginLoader {
     }
   }
 
-  readPluginInfo(pluginPath) {
-    const infoPath = path.join(pluginPath, 'info.json');
-    try {
-      const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-      if (!info.name) {
-        logger.error(`(${infoPath}) -> Plugin info.json must contain a name field`);
-        return null;
-      }
-      return info;
-    }
-    catch (error) {
-      logger.error(`(${infoPath}) -> Failed to read plugin info:`, error);
-      return null;
-    }
-  }
-
-  validateDependencies(pluginInfo) {
-    if (!pluginInfo.dependencies) {
-      return true;
-    }
-
-    if (pluginInfo.dependencies.trem) {
-      if (!this.validateVersionRequirement(this.tremVersion, pluginInfo.dependencies.trem)) {
-        logger.error(`Plugin ${pluginInfo.name} requires TREM version ${pluginInfo.dependencies.trem}, but ${this.tremVersion} is installed`);
-        return false;
-      }
-    }
-
-    for (const [dep, version] of Object.entries(pluginInfo.dependencies)) {
-      if (dep === 'trem') {
-        continue;
-      }
-
-      const dependencyPlugin = this.plugins.get(dep);
-      if (!dependencyPlugin) {
-        logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name}`);
-        return false;
-      }
-
-      if (!this.validateVersionRequirement(dependencyPlugin.info.version, version)) {
-        logger.error(`Plugin ${pluginInfo.name} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   buildDependencyGraph() {
     const visited = new Set();
     const tempMark = new Set();
@@ -369,6 +520,8 @@ class PluginLoader {
             version: info.version,
             description: info.description,
             author: info.author,
+            ctxDependencies: info.dependencies?.ctx || [],
+            sensitivity: info.sensitivity || { level: 0, description: '未分析' },
           });
         }
         continue;
@@ -386,6 +539,8 @@ class PluginLoader {
                 version: info.version,
                 description: info.description,
                 author: info.author,
+                ctxDependencies: info.dependencies?.ctx || [],
+                sensitivity: info.sensitivity || { level: 0, description: '未分析' },
               });
             }
           }
@@ -396,6 +551,16 @@ class PluginLoader {
     const pluginList = Array.from(allPlugins.values());
     localStorage.setItem('plugin-list', JSON.stringify(pluginList));
     return pluginList;
+  }
+
+  getSensitivityDescription(level) {
+    switch (level) {
+      case 4: return '極高敏感度 - 包含系統核心API存取權限';
+      case 3: return '高敏感度 - 包含檔案系統存取權限';
+      case 2: return '中等敏感度 - 包含事件或混入系統權限';
+      case 1: return '低敏感度 - 包含日誌/元數據/版本資訊存取';
+      default: return '無敏感操作';
+    }
   }
 
   async loadPlugins() {
@@ -490,15 +655,6 @@ class PluginLoader {
       this.plugins.delete(pluginName);
     }
   }
-
-  getLoadedPlugins() {
-    return Array.from(this.plugins.entries()).map(([name, plugin]) => ({
-      name,
-      version: plugin.info.version,
-      description: plugin.info.description,
-      author: plugin.info.author,
-    }));
-  }
 }
 
 // const manager = require('./manager');
@@ -522,7 +678,7 @@ const pluginLoader = new PluginLoader();
     tempDir: pluginLoader.tempDir,
   };
 
-  // logger.info('Plugin system initialized:', info);
+  logger.info('Plugin system initialized:', info);
 })();
 
 module.exports = {
