@@ -16,6 +16,7 @@ class PluginLoader {
     this.loadOrder = [];
     this.tremVersion = app.getVersion();
     this.extractedPaths = new Map();
+    this.eventHandlers = new Map();
 
     this.ctx = {
       TREM,
@@ -31,6 +32,11 @@ class PluginLoader {
         path,
         fs,
         semver,
+      },
+      on: (event, handler) => {
+        const handlers = this.eventHandlers.get(this.currentLoadingPlugin) || new Map();
+        handlers.set(event, handler);
+        this.eventHandlers.set(this.currentLoadingPlugin, handlers);
       },
       require: (modulePath) => {
         if (modulePath.startsWith('.')) {
@@ -285,6 +291,9 @@ class PluginLoader {
   }
 
   isValidPluginClass(PluginClass) {
+    if (typeof PluginClass === 'function' && PluginClass.prototype?.constructor === PluginClass) {
+      return true;
+    }
     return typeof PluginClass === 'function';
   }
 
@@ -293,11 +302,25 @@ class PluginLoader {
       this.currentLoadingPlugin = plugin;
       this.ctx.info.originalPath = plugin.originalPath;
 
-      const instance = new PluginClass(this.ctx);
-      plugin.instance = instance;
+      const isClass = PluginClass.toString().startsWith('class');
 
-      if (typeof instance.onLoad === 'function') {
-        await instance.onLoad();
+      if (isClass) {
+        const instance = new PluginClass(this.ctx);
+        plugin.instance = instance;
+
+        if (typeof instance.onLoad === 'function') {
+          await instance.onLoad();
+        }
+      }
+      else {
+        PluginClass(this.ctx);
+
+        const handlers = this.eventHandlers.get(plugin);
+        const loadHandler = handlers?.get('load');
+
+        if (loadHandler) {
+          await loadHandler();
+        }
       }
 
       logger.info(`Successfully loaded plugin: ${pluginName} (version ${plugin.info.version})`);
