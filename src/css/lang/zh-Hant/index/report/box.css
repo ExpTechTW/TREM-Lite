@@ -147,7 +147,7 @@
     .report-web,
     .report-replay {
       width: auto;
-      padding: 2px;
+      padding: 3px;
     }
 
     &:hover:not(.survey) {
@@ -165,7 +165,7 @@
 
         .report-web,
         .report-replay {
-          height: 30px;
+          height: 22px;
           border-radius: 5px;
           display: flex;
           align-items: center;

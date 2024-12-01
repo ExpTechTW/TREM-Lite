@@ -122,14 +122,15 @@
 .extended-list-title:empty::before {
   content: "擴充列表";
 }
-.extended-list-description:empty::before {
+.extended-list-description:empty::before,
+.extended-info .extended-info-warning:empty::before {
+  content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
+}
+.extended-list-descriptions:empty::before {
   content: "選擇啟用的擴充，擴充將在程式啟動時載入。";
 }
 .extended-setting-button::before {
   content: "設定";
-}
-.extended-info .extended-info-warning:empty::before {
-  content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
 }
 .p-alert::before {
   content: "P-Alert（收到近即時震度時播放）";
@@ -179,7 +180,7 @@
 .contributor-description::before {
   content: "感謝以下的貢獻者們，因為有了他們的貢獻， TREM Lite 才得以實現。";
 }
-.reset-confirm-title::before {
+.confirm-title::before {
   content: "您確定要重置設定嗎？重設後將無法返回。";
 }
 .reset-sure::before {
@@ -628,18 +629,18 @@ li {
   cursor: pointer;
 }
 
-.reset-confirm-wrapper {
+.confirm-wrapper {
   display: grid;
   position: fixed;
   width: 100%;
-  height: auto;
   bottom: -100%;
   transition: bottom 0.3s ease;
   z-index: 1001;
-  border-bottom-left-radius: 11px;
+  height: 100%;
+  align-items: end;
 }
 
-.reset-confirm-content {
+.confirm-content {
   display: flex;
   flex-direction: column;
   justify-items: center;
@@ -650,9 +651,14 @@ li {
   border-width: 1px 0px 0px 0px;
   border-color: #ffffff1c;
   border-style: solid;
+  border-bottom-left-radius: 13px;
+  border-bottom-right-radius: 13px;
+  border: 1px solid #ffffff42;
+  justify-content: flex-end;
+  height: auto;
 }
 
-.reset-confirm-content span {
+.confirm-content span {
   color: #fff;
 }
 
@@ -1083,6 +1089,7 @@ li {
   top: 0.6em;
   font-weight: bold;
   -webkit-app-region: no-drag;
+  z-index: 1002;
 }
 
 .minimize,
@@ -1149,7 +1156,7 @@ li {
   width: 100%;
 }
 
-.extended-list-description {
+.extended-list-descriptions {
   padding: 0;
   color: #adadad;
 }
