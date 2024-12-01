@@ -180,13 +180,22 @@
 .contributor-description::before {
   content: "感謝以下的貢獻者們，因為有了他們的貢獻， TREM Lite 才得以實現。";
 }
-.confirm-title::before {
+.reset .confirm-title::before {
   content: "您確定要重置設定嗎？重設後將無法返回。";
 }
-.reset-sure::before {
+.extendedOpen .confirm-title::before {
+  content: "您確定要啟用 ";
+}
+.extendedOpen .confirm-title::after {
+  content: " 擴充嗎，若使用來源不明或無法信任的擴充可能危及您的個人資訊安全。";
+}
+.confirm-sure:empty::before {
   content: "確定";
 }
-.reset-cancel::before {
+.confirm-sure:not(:empty)::after {
+  content: "秒";
+}
+.confirm-cancel::before {
   content: "取消";
 }
 .intensity-0::after {
@@ -444,7 +453,7 @@ body {
 }
 
 .setting-content {
-  background-color: rgb(49 49 49 / 97%);
+  background-color: rgb(49 49 49);
   flex: 1;
   border-bottom-right-radius: 15px;
   border-top-right-radius: 15px;
@@ -1069,7 +1078,7 @@ li {
 }
 
 .setting-header {
-  background-color: hsl(0deg 0% 32.55% / 97%);
+  background-color: hsl(0deg 0% 32.55%);
   border-bottom-left-radius: 15px;
   border-top-left-radius: 15px;
   border: 1px solid #ffffff42;
@@ -1143,7 +1152,7 @@ li {
   height: 3px;
   cursor: pointer;
   color: #ffb84a;
-  margin-left: 5;
+  margin-left: 5px;
 }
 
 .extended-setting-button:hover {
@@ -1198,6 +1207,7 @@ li {
   width: 150px;
   display: flex !important;
   justify-content: space-between;
+  max-width: 115px;
 }
 
 .extended-version {
@@ -1223,8 +1233,16 @@ li {
   flex-direction: row;
   padding: 0 !important;
   justify-content: space-around;
+  margin-right: 3px;
+  margin-left: 3px;
 }
 
 .disable .round {
   background-color: rgb(159 15 15 / 90%);
+}
+
+.disabled {
+  background: #0000008c;
+  color: #ffffff70;
+  pointer-events: none;
 }
