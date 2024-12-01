@@ -10,7 +10,7 @@ class Config {
     this.cpu = document.querySelector('.system-cpu');
     this.resetButton = document.querySelector('.reset-button');
     this.checkBoxes = document.querySelectorAll('.switch input');
-    this.resetConfirmWrapper = document.querySelector('.reset-confirm-wrapper');
+    this.resetConfirmWrapper = document.querySelector('.confirm-wrapper');
     this.resetSureButton = document.querySelector('.reset-sure');
     this.warningIntensity = document.querySelectorAll('.warning-intensity');
     this.resetCancelButton = document.querySelector('.reset-cancel');
@@ -24,8 +24,15 @@ class Config {
     this.data = await this.get();
     TREM.variable.events.emit('config-ready', this.data);
     this.resetSureButton.addEventListener('click', () => this.resetSetting());
-    this.resetButton.addEventListener('click', () => this.resetConfirmWrapper.style.bottom = '0%');
-    this.resetCancelButton.addEventListener('click', () => this.resetConfirmWrapper.style.bottom = '-100%');
+    this.resetButton.addEventListener('click', () => {
+      this.resetConfirmWrapper.classList.add('reset');
+      this.resetConfirmWrapper.style.bottom = '0%';
+    });
+
+    this.resetCancelButton.addEventListener('click', () => {
+      this.resetConfirmWrapper.classList.remove('reset');
+      this.resetConfirmWrapper.style.bottom = '-100%';
+    });
   }
 
   async resetSetting() {

@@ -33,7 +33,7 @@ class PluginList {
               </div>  
               </div>
               <div class="extended-list-description-box">
-                <span class="extended-list-description">${item.description['zh_tw']}</span>
+                <span class="extended-list-descriptions">${item.description['zh_tw']}</span>
               </div>
             </div>
             <div class="extended-list-buttons">
