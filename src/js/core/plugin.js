@@ -4,14 +4,23 @@ const { Logger } = require('./utils/logger');
 const { app } = require('@electron/remote');
 const semver = require('semver');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const AdmZip = require('adm-zip');
 const MixinManager = require('./mixin');
 const acorn = require('acorn');
 const walk = require('acorn-walk');
+const PluginVerifier = require('./verify');
 
 class PluginLoader {
   constructor() {
+    const keysDir = path.join(app.getPath('userData'), 'keys');
+    fs.mkdirSync(keysDir, { recursive: true });
+
+    const officialKey = `-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzQn1ouv0mfzVKJevJiq+\n6rV9mwCEvQpauQ2QNjy4TiwhqzqNiOPwpM3qo+8+3Ld+DUhzZzSzyx894dmJGlWQ\nwNss9Vs5/gnuvn6PurNXC42wkxY6Dmsnp/M6g08iqGXVcM6ZWmvCZ3BzBvwExxRR\n09KxHZVhwoMcF5Kp9l/hNZqXRgYMn3GLt+m78Hr+ZUjHiF8K9UH2TPxKRa/4ttPX\n6nDBZxZUCwFD7Zh6RePg07JDbO5fI/UYrqZYyDPK8w9xdXtke9LbdXmMuuk/x57h\nfoRArUkhPvUk/77mxo4++3EFnTUxYMnQVuMkDaYNRu7w83abUuhsjNlL/es24HSm\nlwIDAQAB\n-----END PUBLIC KEY-----`;
+
+    this.verifier = new PluginVerifier(officialKey);
+
+    this.verifier.loadKeysFromDirectory(keysDir);
     this.pluginDir = path.join(app.getPath('userData'), 'plugins');
     this.tempDir = path.join(app.getPath('temp'), 'trem-plugins');
     this.plugins = new Map();
@@ -595,11 +604,16 @@ class PluginLoader {
       if (targetPath) {
         info = this.readPluginInfo(targetPath);
         if (info) {
+          const verification = this.verifier.verify(targetPath);
+
           const pluginData = {
             name: info.name,
             version: info.version,
             description: info.description,
             author: info.author,
+            verified: verification.valid,
+            verifyError: verification.error,
+            keyId: verification.keyId,
             ctxDependencies: info.dependencies?.ctx || [],
             sensitivity: info.sensitivity || { level: 0, description: '未分析' },
             path: targetPath,
@@ -636,6 +650,9 @@ class PluginLoader {
 
     for (const [name, pluginData] of scannedPlugins.entries()) {
       if (enabledPlugins.includes(name)) {
+        if (!pluginData.verified) {
+          logger.warn(`Loading unverified plugin ${name}: ${pluginData.verifyError}`);
+        }
         this.plugins.set(name, pluginData);
       }
     }
@@ -715,7 +732,7 @@ const pluginLoader = new PluginLoader();
     tempDir: pluginLoader.tempDir,
   };
 
-  logger.info('Plugin system initialized:', info);
+  // logger.info('Plugin system initialized:', info);
 })();
 
 module.exports = {

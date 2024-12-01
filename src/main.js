@@ -8,7 +8,7 @@ const {
   Menu,
 } = require('electron');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const ini = require('ini');
 
 let win;
