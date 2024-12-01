@@ -81,6 +81,10 @@ class PluginVerifier {
       const all_file_content = this.getAllFiles(pluginPath);
 
       for (const [file, content] of Object.entries(all_file_content)) {
+        if (file == 'trem.json') {
+          continue;
+        }
+
         if (!fileHashes[file]) {
           return { valid: false, error: `Extra file: ${file}` };
         }

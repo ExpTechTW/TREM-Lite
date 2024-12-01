@@ -10,6 +10,7 @@ const MixinManager = require('./mixin');
 const acorn = require('acorn');
 const walk = require('acorn-walk');
 const PluginVerifier = require('./verify');
+const crypto = require('crypto');
 
 class PluginLoader {
   constructor() {
@@ -411,70 +412,6 @@ class PluginLoader {
     return isValidName;
   }
 
-  hasFileChanged(filePath) {
-    try {
-      const stats = fs.statSync(filePath);
-      const currentState = {
-        size: stats.size,
-        mtime: stats.mtimeMs,
-      };
-      const oldState = this.pluginStates[filePath];
-
-      if (!oldState
-        || oldState.size !== currentState.size
-        || oldState.mtime !== currentState.mtime) {
-        this.pluginStates[filePath] = currentState;
-        localStorage.setItem('plugin-states', JSON.stringify(this.pluginStates));
-        return true;
-      }
-      return false;
-    }
-    catch {
-      return true;
-    }
-  }
-
-  extractTremPlugin(tremFile) {
-    try {
-      const extractPath = path.join(this.tempDir, path.basename(tremFile, '.trem'));
-
-      if (fs.existsSync(extractPath) && !this.hasFileChanged(tremFile)) {
-        return extractPath;
-      }
-
-      logger.info('Extracting plugin:', tremFile);
-      const zip = new AdmZip(tremFile);
-      const entries = zip.getEntries();
-
-      if (fs.existsSync(extractPath)) {
-        fs.rmSync(extractPath, { recursive: true });
-      }
-
-      const pluginRoot = entries
-        .filter((entry) => !entry.entryName.includes('__MACOSX') && !path.basename(entry.entryName).startsWith('._'))
-        .reduce((root, entry) => {
-          const parts = entry.entryName.split('/');
-          return parts[0];
-        }, '');
-
-      zip.extractAllTo(this.tempDir, true);
-
-      const tempPath = path.join(this.tempDir, pluginRoot);
-      if (tempPath !== extractPath && fs.existsSync(tempPath)) {
-        if (fs.existsSync(extractPath)) {
-          fs.rmSync(extractPath, { recursive: true });
-        }
-        fs.renameSync(tempPath, extractPath);
-      }
-
-      return extractPath;
-    }
-    catch (error) {
-      logger.error(`Failed to extract plugin ${tremFile}:`, error);
-      return null;
-    }
-  }
-
   clearPluginStates() {
     this.pluginStates = {};
     localStorage.setItem('plugin-states', '{}');
@@ -562,67 +499,483 @@ class PluginLoader {
     }
   }
 
-  copyToTemp(sourcePath, info) {
+  hasDirectoryChanged(dirPath, oldState = {}) {
     try {
-      const targetPath = path.join(this.tempDir, info.name);
+      const files = fs.readdirSync(dirPath);
+      const currentState = {
+        files: {},
+        totalSize: 0,
+        lastModified: 0,
+      };
 
-      if (fs.existsSync(targetPath)) {
-        fs.rmSync(targetPath, { recursive: true });
+      for (const file of files) {
+        const filePath = path.join(dirPath, file);
+        const stats = fs.statSync(filePath);
+
+        if (stats.isDirectory()) {
+          const subDirState = this.hasDirectoryChanged(filePath, oldState.files?.[file]);
+          currentState.files[file] = subDirState.currentState;
+          currentState.totalSize += subDirState.currentState.totalSize;
+          currentState.lastModified = Math.max(currentState.lastModified, subDirState.currentState.lastModified);
+
+          if (subDirState.hasChanged) {
+            return { hasChanged: true, currentState };
+          }
+        }
+        else {
+          currentState.files[file] = {
+            size: stats.size,
+            mtime: stats.mtimeMs,
+          };
+          currentState.totalSize += stats.size;
+          currentState.lastModified = Math.max(currentState.lastModified, stats.mtimeMs);
+        }
       }
 
-      fs.cpSync(sourcePath, targetPath, { recursive: true });
+      const hasChanged = !oldState.files
+        || oldState.totalSize !== currentState.totalSize
+        || oldState.lastModified !== currentState.lastModified;
+
+      return { hasChanged, currentState };
+    }
+    catch (error) {
+      logger.error('Error checking directory changes:', error);
+      return { hasChanged: true, currentState: null };
+    }
+  }
+
+  hasFileChanged(filePath) {
+    try {
+      const stats = fs.statSync(filePath);
+      const currentState = {
+        size: stats.size,
+        mtime: stats.mtimeMs,
+      };
+
+      const isDirectory = stats.isDirectory();
+      const tremInfo = this.readTremInfoFile(filePath);
+      const oldState = tremInfo?.fileState;
+
+      if (isDirectory) {
+        const dirState = this.hasDirectoryChanged(filePath, oldState);
+        return {
+          hasChanged: dirState.hasChanged,
+          currentState: dirState.currentState,
+        };
+      }
+
+      const hasChanged = !oldState
+        || oldState.size !== currentState.size
+        || oldState.mtime !== currentState.mtime;
+
+      return { hasChanged, currentState };
+    }
+    catch {
+      return { hasChanged: true, currentState: null };
+    }
+  }
+
+  createTremInfoFile(pluginPath, data) {
+    const tremJsonPath = path.join(pluginPath, 'trem.json');
+    try {
+      const existingData = this.readTremInfoFile(pluginPath) || {};
+      const updatedData = { ...existingData, ...data };
+      fs.writeFileSync(tremJsonPath, JSON.stringify(updatedData, null, 2));
+    }
+    catch (error) {
+      logger.error('Error creating trem.json:', error);
+    }
+  }
+
+  readTremInfoFile(pluginPath) {
+    const tremJsonPath = path.join(pluginPath, 'trem.json');
+    try {
+      if (fs.existsSync(tremJsonPath)) {
+        return JSON.parse(fs.readFileSync(tremJsonPath, 'utf8'));
+      }
+      return null;
+    }
+    catch (error) {
+      logger.error('Error reading trem.json:', error);
+      return null;
+    }
+  }
+
+  async copyToTemp(sourcePath, defaultInfo) {
+    try {
+      const sourceInfoPath = path.join(sourcePath, 'info.json');
+      let pluginName = defaultInfo.name;
+
+      if (fs.existsSync(sourceInfoPath)) {
+        try {
+          const info = JSON.parse(fs.readFileSync(sourceInfoPath, 'utf8'));
+          if (info && info.name) {
+            pluginName = info.name;
+          }
+        }
+        catch (error) {
+          logger.error('Error parsing info.json in directory:', error);
+        }
+      }
+
+      const targetPath = path.join(this.tempDir, pluginName);
+
+      const normalizedSource = path.resolve(sourcePath);
+      const normalizedTarget = path.resolve(targetPath);
+
+      if (normalizedTarget.startsWith(normalizedSource)
+        || normalizedSource.startsWith(normalizedTarget)) {
+        logger.error(`Invalid path: source and target paths overlap:\nSource: ${normalizedSource}\nTarget: ${normalizedTarget}`);
+        return null;
+      }
+
+      if (fs.existsSync(targetPath)) {
+        await fs.remove(targetPath);
+      }
+
+      const filesToCopy = [];
+      const processDir = (dir, base = '') => {
+        const items = fs.readdirSync(dir);
+        for (const item of items) {
+          const fullPath = path.join(dir, item);
+          const relativePath = path.join(base, item);
+          const stat = fs.statSync(fullPath);
+
+          if (stat.isDirectory()) {
+            if (item !== 'node_modules') {
+              processDir(fullPath, relativePath);
+            }
+          }
+          else {
+            filesToCopy.push({
+              from: fullPath,
+              to: path.join(targetPath, relativePath),
+              relative: relativePath,
+            });
+          }
+        }
+      };
+
+      processDir(sourcePath);
+
+      await fs.ensureDir(targetPath);
+
+      for (const file of filesToCopy) {
+        await fs.ensureDir(path.dirname(file.to));
+        await fs.copyFile(file.from, file.to);
+      }
+
+      const verification = this.verifier.verify(targetPath);
+      const pluginInfo = this.readPluginInfo(targetPath);
+
+      const md5Map = new Map(filesToCopy.map((file) => [
+        file.relative,
+        this.calculateMD5(file.from),
+      ]));
+
+      this.createTremInfoFile(targetPath, {
+        md5s: Object.fromEntries(md5Map),
+        lastUpdated: Date.now(),
+        verification,
+        pluginInfo,
+      });
+
       return targetPath;
     }
     catch (error) {
-      logger.error(`Failed to copy plugin ${info.name}:`, error);
+      logger.error(`Failed to copy plugin ${sourcePath}:`, error);
       return null;
     }
+  }
+
+  async extractTremPlugin(tremFile) {
+    try {
+      const extractPath = path.join(this.tempDir, path.basename(tremFile, '.trem'));
+      let finalPath = extractPath;
+
+      const tremInfo = this.readTremInfoFile(extractPath);
+      const { hasChanged, currentState } = this.hasFileChanged(tremFile);
+
+      const needExtract = !tremInfo || hasChanged || !fs.existsSync(extractPath);
+
+      if (!needExtract) {
+        logger.debug('Plugin unchanged, using existing files:', extractPath);
+        return extractPath;
+      }
+
+      logger.info('Extracting plugin:', tremFile);
+      const zip = new AdmZip(tremFile);
+      const entries = zip.getEntries();
+
+      const tempExtractPath = path.join(this.tempDir, `${path.basename(tremFile, '.trem')}_temp`);
+
+      if (fs.existsSync(tempExtractPath)) {
+        await fs.remove(tempExtractPath);
+      }
+
+      const validEntries = entries.filter((entry) =>
+        !entry.entryName.includes('__MACOSX')
+        && !path.basename(entry.entryName).startsWith('._'),
+      );
+
+      if (validEntries.length === 0) {
+        logger.error('No valid entries found in plugin archive');
+        return null;
+      }
+
+      await fs.ensureDir(tempExtractPath);
+
+      const firstEntry = validEntries[0].entryName.split('/')[0];
+      const hasCommonRoot = validEntries.every((entry) => {
+        const parts = entry.entryName.split('/');
+        return parts.length > 1 && parts[0] === firstEntry;
+      });
+
+      if (hasCommonRoot) {
+        zip.extractAllTo(this.tempDir, true);
+        await fs.move(path.join(this.tempDir, firstEntry), tempExtractPath, { overwrite: true });
+      }
+      else {
+        zip.extractAllTo(tempExtractPath, true);
+      }
+
+      const infoPath = path.join(tempExtractPath, 'info.json');
+      if (fs.existsSync(infoPath)) {
+        try {
+          const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+          if (info && info.name) {
+            finalPath = path.join(this.tempDir, info.name);
+          }
+        }
+        catch (error) {
+          logger.error('Error parsing info.json:', error);
+        }
+      }
+
+      if (fs.existsSync(finalPath)) {
+        await fs.remove(finalPath);
+      }
+
+      await fs.move(tempExtractPath, finalPath, { overwrite: true });
+
+      const verification = this.verifier.verify(finalPath);
+      const pluginInfo = this.readPluginInfo(finalPath);
+
+      this.createTremInfoFile(finalPath, {
+        fileState: currentState,
+        lastExtracted: Date.now(),
+        originalPath: tremFile,
+        tremMD5: this.calculateMD5(tremFile),
+        verification,
+        pluginInfo,
+      });
+
+      return finalPath;
+    }
+    catch (error) {
+      logger.error(`Failed to extract plugin ${tremFile}:`, error.message);
+      return null;
+    }
+  }
+
+  calculateMD5(filePath) {
+    const content = fs.readFileSync(filePath);
+    return crypto.createHash('md5').update(content).digest('hex');
+  }
+
+  getFileMD5s(dirPath) {
+    const md5Map = new Map();
+
+    const processDirectory = (currentPath, relativePath = '') => {
+      const files = fs.readdirSync(currentPath);
+
+      for (const file of files) {
+        const fullPath = path.join(currentPath, file);
+        const relativeFilePath = relativePath ? path.join(relativePath, file) : file;
+
+        if (fs.statSync(fullPath).isDirectory()) {
+          processDirectory(fullPath, relativeFilePath);
+        }
+        else {
+          md5Map.set(relativeFilePath, this.calculateMD5(fullPath));
+        }
+      }
+    };
+
+    processDirectory(dirPath);
+    return md5Map;
   }
 
   async scanPlugins() {
     this.validatedNames.clear();
     const files = fs.readdirSync(this.pluginDir);
-    const allPlugins = new Map();
+    const pluginPaths = new Map();
+    const processedPlugins = new Set();
 
     for (const file of files) {
-      const filePath = path.join(this.pluginDir, file);
-      const isDirectory = fs.statSync(filePath).isDirectory();
+      try {
+        const filePath = path.join(this.pluginDir, file);
+        const stats = fs.statSync(filePath);
 
-      let targetPath = null;
-      let info = null;
+        if (stats.isDirectory()) {
+          const infoPath = path.join(filePath, 'info.json');
+          if (fs.existsSync(infoPath)) {
+            const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+            if (info?.name) {
+              pluginPaths.set(info.name, {
+                path: filePath,
+                type: 'directory',
+                info,
+              });
+            }
+          }
+        }
+        else if (file.endsWith('.trem')) {
+          const tempExtractPath = path.join(this.tempDir, '_temp_extract');
+          if (fs.existsSync(tempExtractPath)) {
+            await fs.remove(tempExtractPath);
+          }
 
-      if (isDirectory) {
-        targetPath = path.join(this.tempDir, file);
-        if (!fs.existsSync(targetPath) || this.hasFileChanged(filePath)) {
-          this.copyToTemp(filePath, { name: file });
+          const zip = new AdmZip(filePath);
+          zip.extractAllTo(tempExtractPath, true);
+
+          const infoPath = path.join(tempExtractPath, 'info.json');
+          if (fs.existsSync(infoPath)) {
+            const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+            if (info?.name && !pluginPaths.has(info.name)) {
+              pluginPaths.set(info.name, {
+                path: filePath,
+                type: 'trem',
+                info,
+              });
+            }
+          }
+
+          await fs.remove(tempExtractPath);
         }
       }
-      else if (file.endsWith('.trem')) {
-        targetPath = this.extractTremPlugin(filePath);
+      catch (error) {
+        logger.error(`Error processing ${file}:`, error);
+      }
+    }
+
+    const allPlugins = new Map();
+
+    for (const [pluginName, pathInfo] of pluginPaths) {
+      if (processedPlugins.has(pluginName)) {
+        continue;
       }
 
-      if (targetPath) {
-        info = this.readPluginInfo(targetPath);
-        if (info) {
-          const verification = this.verifier.verify(targetPath);
+      try {
+        const { path: sourcePath, type, info } = pathInfo;
+        const targetPath = path.join(this.tempDir, pluginName);
+        let needUpdate = false;
+        let fileMD5s = new Map();
 
+        if (type === 'directory') {
+          const signaturePath = path.join(sourcePath, 'signature.json');
+          const sourceFileMD5s = this.getFileMD5s(sourcePath);
+
+          if (fs.existsSync(signaturePath)) {
+            const signatures = JSON.parse(fs.readFileSync(signaturePath, 'utf8'));
+            needUpdate = Object.entries(signatures).some(([file, md5]) =>
+              sourceFileMD5s.get(file) !== md5,
+            );
+            fileMD5s = new Map(Object.entries(signatures));
+          }
+          else {
+            if (fs.existsSync(targetPath)) {
+              const tempFileMD5s = this.getFileMD5s(targetPath);
+              needUpdate = Array.from(sourceFileMD5s.entries()).some(([file, md5]) =>
+                tempFileMD5s.get(file) !== md5,
+              );
+            }
+            else {
+              needUpdate = true;
+            }
+            fileMD5s = sourceFileMD5s;
+          }
+
+          if (needUpdate) {
+            if (fs.existsSync(targetPath)) {
+              await fs.remove(targetPath);
+            }
+            await fs.ensureDir(targetPath);
+
+            const copyFiles = async (dir, baseTarget, baseSource) => {
+              const items = await fs.readdir(dir);
+              for (const item of items) {
+                const sourceFull = path.join(dir, item);
+                const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
+                const stat = await fs.stat(sourceFull);
+
+                if (stat.isDirectory()) {
+                  await fs.ensureDir(targetFull);
+                  await copyFiles(sourceFull, baseTarget, baseSource);
+                }
+                else {
+                  await fs.copyFile(sourceFull, targetFull);
+                }
+              }
+            };
+
+            await copyFiles(sourcePath, targetPath, sourcePath);
+
+            const verification = this.verifier.verify(targetPath);
+            const pluginInfo = this.readPluginInfo(targetPath);
+
+            this.createTremInfoFile(targetPath, {
+              md5s: Object.fromEntries(fileMD5s),
+              lastUpdated: Date.now(),
+              verification,
+              pluginInfo,
+            });
+          }
+        }
+        else if (type === 'trem') {
+          const tremInfo = this.readTremInfoFile(targetPath);
+          const currentMD5 = this.calculateMD5(sourcePath);
+
+          needUpdate = !tremInfo || !tremInfo.tremMD5
+          || tremInfo.tremMD5 !== currentMD5
+          || !fs.existsSync(targetPath);
+
+          if (needUpdate) {
+            await this.extractTremPlugin(sourcePath);
+          }
+        }
+
+        const tremInfo = this.readTremInfoFile(targetPath);
+        const verified = tremInfo.verification?.valid || false;
+        if (!verified) {
+          logger.warn('【!!!嚴重警告!!!】未發現有效簽名，除非信任擴充來源否則應立即停用 ->', pluginName);
+          logger.warn('【!!!WARNING!!!】No valid signature found, disable immediately unless plugin source is trusted ->', pluginName);
+        }
+        if (fs.existsSync(targetPath) && tremInfo) {
           const pluginData = {
-            name: info.name,
+            name: pluginName,
             version: info.version,
             description: info.description,
             author: info.author,
-            verified: verification.valid,
-            verifyError: verification.error,
-            keyId: verification.keyId,
-            ctxDependencies: info.dependencies?.ctx || [],
-            sensitivity: info.sensitivity || { level: 0, description: '未分析' },
+            verified,
+            verifyError: tremInfo.verification?.error || null,
+            keyId: tremInfo.verification?.keyId || null,
+            ctxDependencies: tremInfo.pluginInfo?.ctxDependencies || [],
+            sensitivity: tremInfo.pluginInfo?.sensitivity || { level: 0, description: '未分析' },
             path: targetPath,
-            originalPath: filePath,
-            info,
+            originalPath: sourcePath,
+            info: tremInfo.pluginInfo || info,
             dependencies: info.dependencies || {},
+            type,
+            lastUpdated: tremInfo.lastUpdated || Date.now(),
           };
-          allPlugins.set(info.name, pluginData);
+
+          allPlugins.set(pluginName, pluginData);
+          processedPlugins.add(pluginName);
         }
+      }
+      catch (error) {
+        logger.error(`Error processing plugin ${pluginName}:`, error);
       }
     }
 
@@ -712,28 +1065,9 @@ class PluginLoader {
   }
 }
 
-const manager = require('./manager');
-manager.enable('Setting Button');
-// manager.enable('exptech');
-// manager.enable('websocket');
-
 const pluginLoader = new PluginLoader();
 
-(async () => {
-  await pluginLoader.loadPlugins();
-
-  const info = {
-    version: pluginLoader.tremVersion,
-    pluginList: JSON.parse(localStorage.getItem('plugin-list') || '[]'),
-    enabledPlugins: JSON.parse(localStorage.getItem('enabled-plugins') || '[]'),
-    loadedPlugins: pluginLoader.getLoadedPlugins(),
-    pluginCount: pluginLoader.plugins.size,
-    pluginDir: pluginLoader.pluginDir,
-    tempDir: pluginLoader.tempDir,
-  };
-
-  // logger.info('Plugin system initialized:', info);
-})();
+pluginLoader.loadPlugins();
 
 module.exports = {
   default: PluginLoader,
