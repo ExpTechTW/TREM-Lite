@@ -1,23 +1,46 @@
+const { ipcRenderer } = require('electron');
+
 class PluginList {
   constructor() {
     this.pluginManagerStore = require('../core/manager');
-    this.extendedElement = '';
-    this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins'));
-    this.pluginList = JSON.parse(localStorage.getItem('plugin-list'));
+    this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins')) || [];
+    this.pluginList = JSON.parse(localStorage.getItem('plugin-list')) || [];
     this.extendedInfo = document.querySelector('.extended-info');
+    this.extendedConfirmWrapper = document.querySelector('.confirm-wrapper');
+    this.ConfirmSure = this.extendedConfirmWrapper.querySelector('.confirm-sure');
+    this.ConfirmTitle = this.extendedConfirmWrapper.querySelector('.confirm-title');
+    this.lastState = null;
+    this.lastTarget = null;
+    this.lastBox = null;
+    this.countdown = null;
+    this.interval = null;
     this.init();
     this.addToggleClick();
+    this.renderElements();
   }
 
   init() {
-    if (!this.pluginList || (this.pluginList && this.pluginList.length == 0)) {
+    this.extendedConfirmWrapper.addEventListener('click', (event) => {
+      const { classList } = event.target;
+      if (classList.contains('confirm-sure')) {
+        this.setExtendedState();
+      }
+      else if (classList.contains('confirm-cancel')) {
+        this.checkExtendedState();
+      }
+    });
+  }
+
+  renderElements() {
+    if (!this.pluginList.length) {
       return;
     }
-    this.pluginList.forEach((item) => {
-      if (item) {
-        const isEnabled = this.enablePluginList.includes(item.name);
-
-        this.extendedElement += `
+    const elements = this.pluginList.map((item) => {
+      if (!item) {
+        return;
+      }
+      const isEnabled = this.enablePluginList.includes(item.name);
+      return `
         <div class="setting-option">
           <div class="extended-list">
             <div class="extended-list-box">
@@ -46,38 +69,84 @@ class PluginList {
           </div>
         </div>
         `;
-      }
-    });
-    this.extendedInfo.innerHTML = this.extendedElement;
+    }).join('');
+    this.extendedInfo.innerHTML = elements;
   }
 
   addToggleClick() {
     this.extendedInfo.addEventListener('click', (event) => {
-      if (event.target.classList.contains('slider')) {
-        const checkbox = event.target.previousElementSibling;
-        if (checkbox) {
-          this.setExtendedState(checkbox);
-        }
+      if (!event.target.classList.contains('slider')) {
+        return;
+      }
+      const checkbox = event.target.previousElementSibling;
+      this.lastState = checkbox.checked;
+      this.lastTarget = event.target;
+      if (!checkbox.checked) {
+        setTimeout(() => {
+          this.extendedConfirmWrapper.classList.add('extendedOpen');
+          this.extendedConfirmWrapper.style.bottom = '0%';
+          this.lastBox = checkbox;
+          this.addCountDown(checkbox.dataset);
+        }, 0);
+      }
+      else {
+        this.setExtendedState();
       }
     });
   }
 
-  setExtendedState(checkbox) {
-    const pluginInfo = {
-      name: checkbox.dataset.name,
-      enabled: checkbox.checked,
-    };
-    if (pluginInfo.enabled) {
-      this.pluginManagerStore.disable(pluginInfo.name);
-      this.enablePluginList = this.enablePluginList.filter((name) => name !== pluginInfo.name);
+  checkExtendedState() {
+    if (this.lastBox) {
+      this.lastBox.checked = this.lastState;
+    }
+    this.hideConfirmWrapper();
+  }
+
+  addCountDown(dataset) {
+    this.countdown = 10;
+    clearInterval(this.interval);
+    this.ConfirmSure.classList.add('disabled');
+    this.ConfirmSure.textContent = this.countdown;
+    this.ConfirmTitle.textContent = `${dataset.name}`;
+    this.interval = setInterval(() => {
+      this.countdown--;
+      if (this.countdown > 0) {
+        this.ConfirmSure.textContent = this.countdown;
+      }
+      else {
+        this.ConfirmSure.textContent = '';
+        this.ConfirmSure.classList.remove('disabled');
+        clearInterval(this.interval);
+      }
+    }, 1000);
+  }
+
+  setExtendedState() {
+    const checkbox = this.lastTarget?.previousElementSibling;
+    if (!checkbox) {
+      return;
+    }
+    const pluginName = checkbox.dataset.name;
+    const isEnabled = this.lastState;
+    if (isEnabled) {
+      this.pluginManagerStore.disable(pluginName);
+      this.enablePluginList = this.enablePluginList.filter((name) => name !== pluginName);
     }
     else {
-      this.pluginManagerStore.enable(pluginInfo.name);
-      if (!this.enablePluginList.includes(pluginInfo.name)) {
-        this.enablePluginList.push(pluginInfo.name);
+      this.pluginManagerStore.enable(pluginName);
+      if (!this.enablePluginList.includes(pluginName)) {
+        this.enablePluginList.push(pluginName);
       }
     }
     localStorage.setItem('enabled-plugins', JSON.stringify(this.enablePluginList));
+    ipcRenderer.send('all-reload');
+    this.hideConfirmWrapper();
+  }
+
+  hideConfirmWrapper() {
+    this.extendedConfirmWrapper.classList.remove('extendedOpen');
+    this.extendedConfirmWrapper.style.bottom = '-100%';
+    this.ConfirmTitle.textContent = '';
   }
 }
 

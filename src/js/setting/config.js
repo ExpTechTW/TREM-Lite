@@ -8,12 +8,12 @@ class Config {
     this.version = document.querySelector('.app-version');
     this.os = document.querySelector('.system-os');
     this.cpu = document.querySelector('.system-cpu');
-    this.resetButton = document.querySelector('.reset-button');
     this.checkBoxes = document.querySelectorAll('.switch input');
+    this.resetButton = document.querySelector('.reset-button');
     this.resetConfirmWrapper = document.querySelector('.confirm-wrapper');
-    this.resetSureButton = document.querySelector('.reset-sure');
+    this.resetSureButton = document.querySelector('.confirm-content .confirm-sure');
+    this.resetCancelButton = document.querySelector('.confirm-content .confirm-cancel');
     this.warningIntensity = document.querySelectorAll('.warning-intensity');
-    this.resetCancelButton = document.querySelector('.reset-cancel');
     this.userLocation = document.querySelector('.usr-location');
     this.realtimeStation = document.querySelector('.realtime-station');
     this.init();
