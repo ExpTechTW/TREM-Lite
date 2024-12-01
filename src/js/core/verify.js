@@ -35,6 +35,35 @@ class PluginVerifier {
     }
   }
 
+  normalizeContent(content) {
+    return content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  }
+
+  getAllFiles(dir, baseDir = dir) {
+    let results = {};
+    const list = fs.readdirSync(dir);
+
+    for (const file of list) {
+      if (file.startsWith('.') || file === 'signature.json') {
+        continue;
+      }
+
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
+
+      if (stat.isDirectory()) {
+        Object.assign(results, this.getAllFiles(filePath, baseDir));
+      }
+      else {
+        const relativePath = path.relative(baseDir, filePath).replace(/\\/g, '/');
+        const content = this.normalizeContent(fs.readFileSync(filePath, 'utf8'));
+        results[relativePath] = content;
+      }
+    }
+
+    return results;
+  }
+
   verify(pluginPath) {
     try {
       const signaturePath = path.join(pluginPath, 'signature.json');
@@ -49,20 +78,16 @@ class PluginVerifier {
         return { valid: false, error: 'Invalid signature data format' };
       }
 
-      for (const [file, expectedHash] of Object.entries(fileHashes)) {
-        if (file === 'signature.json') {
-          continue;
+      const all_file_content = this.getAllFiles(pluginPath);
+
+      for (const [file, content] of Object.entries(all_file_content)) {
+        if (!fileHashes[file]) {
+          return { valid: false, error: `Extra file: ${file}` };
         }
 
-        const filePath = path.join(pluginPath, file);
-        if (!fs.existsSync(filePath)) {
-          return { valid: false, error: `Missing file: ${file}` };
-        }
-
-        const content = fs.readFileSync(filePath);
         const actualHash = crypto.createHash('sha256').update(content).digest('hex');
 
-        if (actualHash !== expectedHash) {
+        if (actualHash != fileHashes[file]) {
           return { valid: false, error: `Modified file: ${file}` };
         }
       }
