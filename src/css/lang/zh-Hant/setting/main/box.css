@@ -79,7 +79,7 @@
   content: "近即時震度";
 }
 .get-trem-eew::before {
-  content: "接收TREM EEW";
+  content: "接收 TREM EEW";
 }
 .reset-button::before,
 .reset-setting-title::before {
