@@ -19,6 +19,14 @@ class PluginLoader {
     this.tremVersion = app.getVersion();
     this.extractedPaths = new Map();
     this.eventHandlers = new Map();
+    this.validatedNames = new Map();
+
+    try {
+      this.pluginStates = JSON.parse(localStorage.getItem('plugin-states') || '{}');
+    }
+    catch {
+      this.pluginStates = {};
+    }
 
     this.availableCtxItems = {
       TREM: 'system',
@@ -228,9 +236,22 @@ class PluginLoader {
     const indexPath = path.join(pluginPath, 'index.js');
 
     try {
+      if (!this.validatedNames) {
+        this.validatedNames = new Map();
+      }
+
       const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-      if (!info.name) {
-        logger.error(`(${infoPath}) -> Plugin info.json must contain a name field`);
+
+      if (!info || !info.name) {
+        logger.error(`${infoPath} -> Plugin info.json must contain a name field`);
+        return null;
+      }
+
+      const isValidName = /^[a-zA-Z-_]+$/.test(info.name);
+      this.validatedNames.set(info.name, isValidName);
+
+      if (!isValidName) {
+        logger.error(`Plugin name "${info.name}" is invalid. Only English letters, hyphens and underscores are allowed`);
         return null;
       }
 
@@ -247,7 +268,7 @@ class PluginLoader {
       return info;
     }
     catch (error) {
-      logger.error(`(${infoPath}) -> Failed to read plugin info:`, error);
+      logger.error(`${infoPath} -> Failed to read plugin info:`, error);
       return null;
     }
   }
@@ -360,18 +381,61 @@ class PluginLoader {
     }
   }
 
+  validatePluginName(name) {
+    if (this.validatedNames.has(name)) {
+      return this.validatedNames.get(name);
+    }
+
+    if (name.includes(' ')) {
+      logger.error(`Plugin name "${name}" is invalid. Only English letters, hyphens and underscores are allowed`);
+      this.validatedNames.set(name, false);
+      return false;
+    }
+
+    const isValidName = /^[a-zA-Z-_]+$/.test(name);
+    this.validatedNames.set(name, isValidName);
+
+    if (!isValidName) {
+      logger.error(`Plugin name "${name}" is invalid. Only English letters, hyphens and underscores are allowed`);
+    }
+
+    return isValidName;
+  }
+
+  hasFileChanged(filePath) {
+    try {
+      const stats = fs.statSync(filePath);
+      const currentState = {
+        size: stats.size,
+        mtime: stats.mtimeMs,
+      };
+      const oldState = this.pluginStates[filePath];
+
+      if (!oldState
+        || oldState.size !== currentState.size
+        || oldState.mtime !== currentState.mtime) {
+        this.pluginStates[filePath] = currentState;
+        localStorage.setItem('plugin-states', JSON.stringify(this.pluginStates));
+        return true;
+      }
+      return false;
+    }
+    catch {
+      return true;
+    }
+  }
+
   extractTremPlugin(tremFile) {
     try {
-      if (this.extractedPaths.has(tremFile)) {
-        return this.extractedPaths.get(tremFile);
+      const extractPath = path.join(this.tempDir, path.basename(tremFile, '.trem'));
+
+      if (fs.existsSync(extractPath) && !this.hasFileChanged(tremFile)) {
+        return extractPath;
       }
 
       logger.info('Extracting plugin:', tremFile);
       const zip = new AdmZip(tremFile);
       const entries = zip.getEntries();
-
-      const pluginName = path.basename(tremFile, '.trem');
-      const extractPath = path.join(this.tempDir, pluginName);
 
       if (fs.existsSync(extractPath)) {
         fs.rmSync(extractPath, { recursive: true });
@@ -384,8 +448,6 @@ class PluginLoader {
           return parts[0];
         }, '');
 
-      logger.info('Plugin root directory:', pluginRoot);
-
       zip.extractAllTo(this.tempDir, true);
 
       const tempPath = path.join(this.tempDir, pluginRoot);
@@ -396,13 +458,17 @@ class PluginLoader {
         fs.renameSync(tempPath, extractPath);
       }
 
-      this.extractedPaths.set(tremFile, extractPath);
       return extractPath;
     }
     catch (error) {
       logger.error(`Failed to extract plugin ${tremFile}:`, error);
       return null;
     }
+  }
+
+  clearPluginStates() {
+    this.pluginStates = {};
+    localStorage.setItem('plugin-states', '{}');
   }
 
   buildDependencyGraph() {
@@ -505,6 +571,7 @@ class PluginLoader {
   }
 
   async scanPlugins() {
+    this.validatedNames.clear();
     const files = fs.readdirSync(this.pluginDir);
     const allPlugins = new Map();
 
@@ -512,45 +579,41 @@ class PluginLoader {
       const filePath = path.join(this.pluginDir, file);
       const isDirectory = fs.statSync(filePath).isDirectory();
 
+      let targetPath = null;
+      let info = null;
+
       if (isDirectory) {
-        const info = this.readPluginInfo(filePath);
+        targetPath = path.join(this.tempDir, file);
+        if (!fs.existsSync(targetPath) || this.hasFileChanged(filePath)) {
+          this.copyToTemp(filePath, { name: file });
+        }
+      }
+      else if (file.endsWith('.trem')) {
+        targetPath = this.extractTremPlugin(filePath);
+      }
+
+      if (targetPath) {
+        info = this.readPluginInfo(targetPath);
         if (info) {
-          allPlugins.set(info.name, {
+          const pluginData = {
             name: info.name,
             version: info.version,
             description: info.description,
             author: info.author,
             ctxDependencies: info.dependencies?.ctx || [],
             sensitivity: info.sensitivity || { level: 0, description: '未分析' },
-          });
-        }
-        continue;
-      }
-
-      if (file.endsWith('.trem')) {
-        const pluginName = path.basename(file, '.trem');
-        if (!allPlugins.has(pluginName)) {
-          const extractPath = this.extractTremPlugin(filePath);
-          if (extractPath) {
-            const info = this.readPluginInfo(extractPath);
-            if (info) {
-              allPlugins.set(info.name, {
-                name: info.name,
-                version: info.version,
-                description: info.description,
-                author: info.author,
-                ctxDependencies: info.dependencies?.ctx || [],
-                sensitivity: info.sensitivity || { level: 0, description: '未分析' },
-              });
-            }
-          }
+            path: targetPath,
+            originalPath: filePath,
+            info,
+            dependencies: info.dependencies || {},
+          };
+          allPlugins.set(info.name, pluginData);
         }
       }
     }
 
-    const pluginList = Array.from(allPlugins.values());
-    localStorage.setItem('plugin-list', JSON.stringify(pluginList));
-    return pluginList;
+    localStorage.setItem('plugin-list', JSON.stringify(Array.from(allPlugins.values())));
+    return allPlugins;
   }
 
   getSensitivityDescription(level) {
@@ -568,37 +631,12 @@ class PluginLoader {
     this.plugins.clear();
     this.loadOrder = [];
 
-    const files = fs.readdirSync(this.pluginDir);
     const enabledPlugins = JSON.parse(localStorage.getItem('enabled-plugins') || '[]');
+    const scannedPlugins = await this.scanPlugins();
 
-    for (const file of files) {
-      const filePath = path.join(this.pluginDir, file);
-      const isDirectory = fs.statSync(filePath).isDirectory();
-
-      let targetPath;
-      let originalPath = filePath;
-
-      if (isDirectory) {
-        const info = this.readPluginInfo(filePath);
-        if (info) {
-          targetPath = this.copyToTemp(filePath, info);
-        }
-      }
-      else if (file.endsWith('.trem')) {
-        targetPath = this.extractTremPlugin(filePath);
-        originalPath = path.join(this.pluginDir, path.basename(file, '.trem'));
-      }
-
-      if (targetPath) {
-        const info = this.readPluginInfo(targetPath);
-        if (info && enabledPlugins.includes(info.name)) {
-          this.plugins.set(info.name, {
-            path: targetPath,
-            originalPath,
-            info,
-            dependencies: info.dependencies || {},
-          });
-        }
+    for (const [name, pluginData] of scannedPlugins.entries()) {
+      if (enabledPlugins.includes(name)) {
+        this.plugins.set(name, pluginData);
       }
     }
 
@@ -657,15 +695,14 @@ class PluginLoader {
   }
 }
 
-// const manager = require('./manager');
-// manager.enable('test');
+const manager = require('./manager');
+manager.enable('Setting Button');
 // manager.enable('exptech');
 // manager.enable('websocket');
 
 const pluginLoader = new PluginLoader();
 
 (async () => {
-  await pluginLoader.scanPlugins();
   await pluginLoader.loadPlugins();
 
   const info = {
