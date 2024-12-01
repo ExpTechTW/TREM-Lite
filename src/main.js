@@ -163,7 +163,7 @@ function createSettingWindow() {
     height: 590,
     show: false,
     frame: false,
-    transparent: true,
+    transparent: is_mac ? false : true,
     resizable: false,
     ...(is_mac && {
       vibrancy: 'ultra-dark',
@@ -180,6 +180,7 @@ function createSettingWindow() {
   require('@electron/remote/main').enable(SettingWindow.webContents);
   SettingWindow.loadFile('./src/view/setting.html');
   SettingWindow.setMenu(null);
+  SettingWindow.webContents.openDevTools({ mode: 'detach' });
   SettingWindow.webContents.on('did-finish-load', () => SettingWindow.show());
   SettingWindow.on('close', () => {
     SettingWindow = null;
