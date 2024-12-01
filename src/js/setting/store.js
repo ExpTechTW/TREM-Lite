@@ -1,7 +1,5 @@
 class Store {
   constructor() {
-    this.path = require('path');
-    TREM.variable.region = require(this.path.join(__dirname, '../../resource/data/region.json'));
     this.station = [];
   }
 

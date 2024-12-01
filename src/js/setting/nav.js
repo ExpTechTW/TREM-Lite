@@ -12,6 +12,12 @@ document.onkeydown = (e) => {
   }
 
   switch (e.code) {
+    case 'F1':
+      return ipcRenderer.send('openPluginFolder');
+
+    case 'F2':
+      return ipcRenderer.send('openConfigFolder');
+
     case 'F11':
       return ipcRenderer.send('toggleFullscreen');
 

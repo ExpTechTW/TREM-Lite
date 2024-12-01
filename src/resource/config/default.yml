@@ -1,0 +1,11 @@
+ver: 1
+
+location:
+  city: 臺南市
+  town: 歸仁區
+
+realtime-station-id: 6732340
+
+alert-level:
+  rts-intensity: 0 # 任意即時站震度
+  eew-intensity: 0 # EEW 所在地預估震度

@@ -247,6 +247,4 @@ if (TREM.constant.SHOW_TREM_EEW) {
   TREM.constant.EEW_AUTHOR = TREM.constant.EEW_AUTHOR.filter((author) => author != 'cwa');
 }
 
-localStorage.setItem('constant', JSON.stringify(TREM));
-
 module.exports = TREM;
