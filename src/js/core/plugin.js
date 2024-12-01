@@ -27,16 +27,7 @@ class PluginLoader {
     this.plugins = new Map();
     this.loadOrder = [];
     this.tremVersion = app.getVersion();
-    this.extractedPaths = new Map();
     this.eventHandlers = new Map();
-    this.validatedNames = new Map();
-
-    try {
-      this.pluginStates = JSON.parse(localStorage.getItem('plugin-states') || '{}');
-    }
-    catch {
-      this.pluginStates = {};
-    }
 
     this.availableCtxItems = {
       TREM: 'system',
@@ -246,10 +237,6 @@ class PluginLoader {
     const indexPath = path.join(pluginPath, 'index.js');
 
     try {
-      if (!this.validatedNames) {
-        this.validatedNames = new Map();
-      }
-
       const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
 
       if (!info || !info.name) {
@@ -258,7 +245,6 @@ class PluginLoader {
       }
 
       const isValidName = /^[a-zA-Z-_]+$/.test(info.name);
-      this.validatedNames.set(info.name, isValidName);
 
       if (!isValidName) {
         logger.error(`Plugin name "${info.name}" is invalid. Only English letters, hyphens and underscores are allowed`);
@@ -389,32 +375,6 @@ class PluginLoader {
       case '<=': return !this.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
       default: return this.compareVersions(current, reqVersion);
     }
-  }
-
-  validatePluginName(name) {
-    if (this.validatedNames.has(name)) {
-      return this.validatedNames.get(name);
-    }
-
-    if (name.includes(' ')) {
-      logger.error(`Plugin name "${name}" is invalid. Only English letters, hyphens and underscores are allowed`);
-      this.validatedNames.set(name, false);
-      return false;
-    }
-
-    const isValidName = /^[a-zA-Z-_]+$/.test(name);
-    this.validatedNames.set(name, isValidName);
-
-    if (!isValidName) {
-      logger.error(`Plugin name "${name}" is invalid. Only English letters, hyphens and underscores are allowed`);
-    }
-
-    return isValidName;
-  }
-
-  clearPluginStates() {
-    this.pluginStates = {};
-    localStorage.setItem('plugin-states', '{}');
   }
 
   buildDependencyGraph() {
@@ -601,93 +561,6 @@ class PluginLoader {
     }
   }
 
-  async copyToTemp(sourcePath, defaultInfo) {
-    try {
-      const sourceInfoPath = path.join(sourcePath, 'info.json');
-      let pluginName = defaultInfo.name;
-
-      if (fs.existsSync(sourceInfoPath)) {
-        try {
-          const info = JSON.parse(fs.readFileSync(sourceInfoPath, 'utf8'));
-          if (info && info.name) {
-            pluginName = info.name;
-          }
-        }
-        catch (error) {
-          logger.error('Error parsing info.json in directory:', error);
-        }
-      }
-
-      const targetPath = path.join(this.tempDir, pluginName);
-
-      const normalizedSource = path.resolve(sourcePath);
-      const normalizedTarget = path.resolve(targetPath);
-
-      if (normalizedTarget.startsWith(normalizedSource)
-        || normalizedSource.startsWith(normalizedTarget)) {
-        logger.error(`Invalid path: source and target paths overlap:\nSource: ${normalizedSource}\nTarget: ${normalizedTarget}`);
-        return null;
-      }
-
-      if (fs.existsSync(targetPath)) {
-        await fs.remove(targetPath);
-      }
-
-      const filesToCopy = [];
-      const processDir = (dir, base = '') => {
-        const items = fs.readdirSync(dir);
-        for (const item of items) {
-          const fullPath = path.join(dir, item);
-          const relativePath = path.join(base, item);
-          const stat = fs.statSync(fullPath);
-
-          if (stat.isDirectory()) {
-            if (item !== 'node_modules') {
-              processDir(fullPath, relativePath);
-            }
-          }
-          else {
-            filesToCopy.push({
-              from: fullPath,
-              to: path.join(targetPath, relativePath),
-              relative: relativePath,
-            });
-          }
-        }
-      };
-
-      processDir(sourcePath);
-
-      await fs.ensureDir(targetPath);
-
-      for (const file of filesToCopy) {
-        await fs.ensureDir(path.dirname(file.to));
-        await fs.copyFile(file.from, file.to);
-      }
-
-      const verification = this.verifier.verify(targetPath);
-      const pluginInfo = this.readPluginInfo(targetPath);
-
-      const md5Map = new Map(filesToCopy.map((file) => [
-        file.relative,
-        this.calculateMD5(file.from),
-      ]));
-
-      this.createTremInfoFile(targetPath, {
-        md5s: Object.fromEntries(md5Map),
-        lastUpdated: Date.now(),
-        verification,
-        pluginInfo,
-      });
-
-      return targetPath;
-    }
-    catch (error) {
-      logger.error(`Failed to copy plugin ${sourcePath}:`, error);
-      return null;
-    }
-  }
-
   async extractTremPlugin(tremFile) {
     try {
       const extractPath = path.join(this.tempDir, path.basename(tremFile, '.trem'));
@@ -759,6 +632,7 @@ class PluginLoader {
       await fs.move(tempExtractPath, finalPath, { overwrite: true });
 
       const verification = this.verifier.verify(finalPath);
+
       const pluginInfo = this.readPluginInfo(finalPath);
 
       this.createTremInfoFile(finalPath, {
@@ -807,7 +681,6 @@ class PluginLoader {
   }
 
   async scanPlugins() {
-    this.validatedNames.clear();
     const files = fs.readdirSync(this.pluginDir);
     const pluginPaths = new Map();
     const processedPlugins = new Set();
@@ -922,6 +795,7 @@ class PluginLoader {
             await copyFiles(sourcePath, targetPath, sourcePath);
 
             const verification = this.verifier.verify(targetPath);
+
             const pluginInfo = this.readPluginInfo(targetPath);
 
             this.createTremInfoFile(targetPath, {
@@ -970,7 +844,14 @@ class PluginLoader {
             lastUpdated: tremInfo.lastUpdated || Date.now(),
           };
 
-          allPlugins.set(pluginName, pluginData);
+          if (!tremInfo.pluginInfo) {
+            logger.error(`Plugin ${pluginName} fails to load, please contact the plugin developer!`);
+            fs.removeSync(targetPath);
+          }
+          else {
+            allPlugins.set(pluginName, pluginData);
+          }
+
           processedPlugins.add(pluginName);
         }
       }
@@ -1002,7 +883,11 @@ class PluginLoader {
     const scannedPlugins = await this.scanPlugins();
 
     for (const [name, pluginData] of scannedPlugins.entries()) {
-      if (enabledPlugins.includes(name)) {
+      const isValidPlugin
+      = pluginData.info?.['auto-enable'] == true
+      && pluginData.info?.author.includes('ExpTech')
+      && pluginData.verified == true;
+      if (enabledPlugins.includes(name) || isValidPlugin) {
         if (!pluginData.verified) {
           logger.warn(`Loading unverified plugin ${name}: ${pluginData.verifyError}`);
         }
