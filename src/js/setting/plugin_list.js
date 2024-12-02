@@ -1,10 +1,10 @@
-const { ipcRenderer } = require('electron');
+const manager = require('../core/manager');
 
 class PluginList {
   constructor() {
-    this.pluginManagerStore = require('../core/manager');
     this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins')) || [];
     this.pluginList = JSON.parse(localStorage.getItem('plugin-list')) || [];
+    this.loadedPlugins = JSON.parse(localStorage.getItem('loaded-plugins')) || [];
     this.extendedInfo = document.querySelector('.extended-info');
     this.extendedConfirmWrapper = document.querySelector('.confirm-wrapper');
     this.ConfirmSure = this.extendedConfirmWrapper.querySelector('.confirm-sure');
@@ -31,6 +31,13 @@ class PluginList {
     });
   }
 
+  getPluginLoadStatus(pluginName) {
+    if (Array.isArray(this.loadedPlugins)) {
+      return this.loadedPlugins.map((_) => _.name).includes(pluginName);
+    }
+    return this.loadedPlugins[pluginName] !== undefined;
+  }
+
   renderElements() {
     if (!this.pluginList.length) {
       return;
@@ -40,31 +47,51 @@ class PluginList {
         return;
       }
       const isEnabled = this.enablePluginList.includes(item.name);
+      const isLoaded = this.getPluginLoadStatus(item.name);
+
+      const waveClassName = isEnabled
+        ? (!isLoaded
+            ? 'wave-unloaded'
+            : !item.verified
+                ? 'wave-unverified'
+                : '')
+        : '';
+
       return `
-        <div class="setting-option">
-          <div class="extended-list">
-            <div class="extended-list-box">
-            <div class="extended-list-left">
-              <div class="extended-list-title-box">
-                <span class="extended-list-title">${item.name}</span>
-              </div>
-              <div class="extended-list-author-version">
-                <div class="author">
-                  <span class="author-name">${item.author[0]}</span>
-                  <span class="extended-version">${item.version}</span>
+        <div class="wave-container ${waveClassName}">
+          <div class="setting-option">
+            <div class="extended-list">
+              <div class="extended-list-box">
+                <div class="extended-list-left">
+                  <div class="extended-list-title-box">
+                    <span class="extended-list-title">${item.name}</span>
+                    ${!item.verified ? '<span class="unverified-badge">未驗證</span>' : ''}
+                    ${!isEnabled ? '' : isLoaded ? '<span class="loaded-badge">已載入</span>' : '<span class="unloaded-badge">未載入</span>'}
+                  </div>
+                  <div class="extended-list-author-version">
+                    <div class="author">
+                      <span class="author-name">${item.author[0]}</span>
+                      <span class="extended-version">${item.version}</span>
+                    </div>
+                  </div>  
                 </div>
-              </div>  
+                <div class="extended-list-description-box">
+                  <span class="extended-list-descriptions">${item.description['zh_tw']}</span>
+                </div>
               </div>
-              <div class="extended-list-description-box">
-                <span class="extended-list-descriptions">${item.description['zh_tw']}</span>
+              <div class="extended-list-buttons">
+                <label class="switch">
+                  <input type="checkbox" 
+                    data-name="${item.name}" 
+                    data-author="${item.author[0]}" 
+                    data-version="${item.version}"
+                    data-verified="${item.verified}"
+                    data-loaded="${isLoaded}"
+                    ${isEnabled ? 'checked' : ''}>
+                  <div class="slider round"></div>
+                </label>
+                <div class="extended-setting-button"></div>
               </div>
-            </div>
-            <div class="extended-list-buttons">
-              <label class="switch">
-                <input type="checkbox" data-name="${item.name}" data-author="${item.author[0]}" data-version="${item.version}" ${isEnabled ? 'checked' : ''}>
-                <div class="slider round"></div>
-              </label>
-              <div class="extended-setting-button"></div>
             </div>
           </div>
         </div>
@@ -79,9 +106,15 @@ class PluginList {
         return;
       }
       const checkbox = event.target.previousElementSibling;
+      if (checkbox.disabled) {
+        return;
+      }
+
       this.lastState = checkbox.checked;
       this.lastTarget = event.target;
-      if (!checkbox.checked) {
+
+      const isVerified = checkbox.dataset.verified === 'true';
+      if (!checkbox.checked && !isVerified) {
         setTimeout(() => {
           this.extendedConfirmWrapper.classList.add('extendedOpen');
           this.extendedConfirmWrapper.style.bottom = '0%';
@@ -123,23 +156,23 @@ class PluginList {
 
   setExtendedState() {
     const checkbox = this.lastTarget?.previousElementSibling;
-    if (!checkbox) {
+    if (!checkbox || checkbox.disabled) {
       return;
     }
     const pluginName = checkbox.dataset.name;
     const isEnabled = this.lastState;
+
     if (isEnabled) {
-      this.pluginManagerStore.disable(pluginName);
+      manager.disable(pluginName);
       this.enablePluginList = this.enablePluginList.filter((name) => name !== pluginName);
     }
     else {
-      this.pluginManagerStore.enable(pluginName);
+      manager.enable(pluginName);
       if (!this.enablePluginList.includes(pluginName)) {
         this.enablePluginList.push(pluginName);
       }
     }
     localStorage.setItem('enabled-plugins', JSON.stringify(this.enablePluginList));
-    ipcRenderer.send('all-reload');
     this.hideConfirmWrapper();
   }
 
@@ -147,6 +180,7 @@ class PluginList {
     this.extendedConfirmWrapper.classList.remove('extendedOpen');
     this.extendedConfirmWrapper.style.bottom = '-100%';
     this.ConfirmTitle.textContent = '';
+    clearInterval(this.interval);
   }
 }
 

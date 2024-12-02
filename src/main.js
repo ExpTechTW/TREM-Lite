@@ -276,13 +276,6 @@ ipcMain.on('reload', () => {
   }
 });
 
-ipcMain.on('all-reload', () => {
-  const allWindows = BrowserWindow.getAllWindows();
-  allWindows.forEach((window) => {
-    window.webContents.reload();
-  });
-});
-
 ipcMain.on('minimize', () => {
   if (win) {
     win.minimize();
