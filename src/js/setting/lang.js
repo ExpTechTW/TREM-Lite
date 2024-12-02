@@ -1,3 +1,4 @@
+// 只有顏色而已，可用 ../index/constant
 const TREM = require('../index/constant');
 
 function generateColorCSS() {

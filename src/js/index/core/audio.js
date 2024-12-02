@@ -400,7 +400,7 @@ class AudioManager {
     };
 
     let ttsText = [
-      '長週期第震動觀測資訊',
+      '長週期地震動觀測資訊',
       formatToChineseTime(ans.data.id),
       `${maxCity}觀測到最大長週期地震動階級${maxIntensity}`,
     ].join('，');

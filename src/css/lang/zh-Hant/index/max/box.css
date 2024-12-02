@@ -1,22 +1,20 @@
-﻿html[lang="zh-Hant"] {
-  .current-station-intensity-text::before {
-    content: "震度";
-  }
+﻿.current-station-intensity-text::before {
+  content: "震度";
+}
 
-  .current-station-pga-text::before {
-    content: "加速度";
-  }
+.current-station-pga-text::before {
+  content: "加速度";
+}
 
-  .current-station-intensity-val:empty::before,
-  .current-station-pga-val:empty::before,
-  .current-station-loc:empty::before {
-    content: "---";
-  }
+.current-station-intensity-val:empty::before,
+.current-station-pga-val:empty::before,
+.current-station-loc:empty::before {
+  content: "---";
+}
 
-  .rts-info-level:empty::before,
-  .rts-info-trigger:empty::before {
-    content: "0";
-  }
+.rts-info-level:empty::before,
+.rts-info-trigger:empty::before {
+  content: "0";
 }
 
 .station-pga-wrapper {
