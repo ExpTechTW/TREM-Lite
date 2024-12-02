@@ -18,12 +18,46 @@ class Config {
     this.defaultDir = path.join(__dirname, '../../resource/config/default.yml');
     this.configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
+    this.initIPC();
     this.checkConfigExists();
     this.readDefaultYaml();
     this.readConfigYaml();
     this.checkConfigVersion();
 
     Config.instance = this;
+  }
+
+  initIPC() {
+    if (ipcMain) {
+      ipcMain.on('config-updated', () => {
+        this.readConfigYaml();
+      });
+
+      ipcMain.on('reset-config', () => {
+        this.resetConfig();
+      });
+    }
+
+    if (ipcRenderer) {
+      ipcRenderer.on('refresh-config', () => {
+        this.readConfigYaml();
+      });
+    }
+  }
+
+  resetConfig() {
+    try {
+      fs.copyFileSync(this.defaultDir, this.configDir);
+      logger.info('Config has been reset to default');
+      this.readConfigYaml();
+
+      if (ipcRenderer) {
+        ipcRenderer.send('config-updated');
+      }
+    }
+    catch (error) {
+      logger.error('Failed to reset config:', error);
+    }
   }
 
   static getInstance() {
@@ -102,6 +136,18 @@ class Config {
 
       fs.writeFileSync(this.configDir, configContent, 'utf8');
       logger.info('Config has been saved to file');
+    }
+    catch (error) {
+      logger.error('Failed to write config:', error);
+    }
+
+    try {
+      fs.writeFileSync(this.configDir, configContent, 'utf8');
+      logger.info('Config has been saved to file');
+
+      if (ipcRenderer) {
+        ipcRenderer.send('config-updated');
+      }
     }
     catch (error) {
       logger.error('Failed to write config:', error);

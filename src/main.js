@@ -182,6 +182,7 @@ function createSettingWindow() {
   SettingWindow.webContents.on('did-finish-load', () => SettingWindow.show());
   SettingWindow.on('close', () => {
     SettingWindow = null;
+    win.webContents.reload();
   });
   ipcMain.on('minimize-window', () => {
     if (SettingWindow) {
@@ -260,6 +261,12 @@ ipcMain.on('openDevtool', () => {
   if (currentWindow) {
     currentWindow.webContents.openDevTools({ mode: 'detach' });
   }
+});
+
+ipcMain.on('config-updated', () => {
+  BrowserWindow.getAllWindows().forEach((window) => {
+    window.webContents.send('refresh-config');
+  });
 });
 
 ipcMain.on('reload', () => {
