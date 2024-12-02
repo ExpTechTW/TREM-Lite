@@ -1,4 +1,6 @@
 const manager = require('../core/manager');
+const { ipcRenderer } = require('electron');
+const fs = require('fs-extra');
 
 class PluginList {
   constructor() {
@@ -39,65 +41,123 @@ class PluginList {
   }
 
   renderElements() {
-    if (!this.pluginList.length) {
+    if (!this.pluginList?.length) {
+      this.extendedInfo.innerHTML = '';
       return;
     }
-    const elements = this.pluginList.map((item) => {
-      if (!item) {
-        return;
-      }
-      const isEnabled = this.enablePluginList.includes(item.name);
-      const isLoaded = this.getPluginLoadStatus(item.name);
 
-      const waveClassName = isEnabled
-        ? (!isLoaded
-            ? 'wave-unloaded'
-            : !item.verified
-                ? 'wave-unverified'
-                : '')
-        : '';
+    const elements = this.pluginList
+      .filter((item) => item)
+      .map((item) => this.renderPluginItem(item))
+      .join('');
 
-      return `
+    this.extendedInfo.innerHTML = elements;
+    this.attachEventListeners();
+  }
+
+  getWaveClassName(item, isEnabled, isLoaded) {
+    if (!isEnabled) {
+      return '';
+    }
+    if (!isLoaded) {
+      return 'wave-unloaded';
+    }
+    if (!item.verified) {
+      return 'wave-unverified';
+    }
+    return '';
+  }
+
+  renderStatusBadges(item, isEnabled, isLoaded) {
+    const badges = [];
+
+    if (!item.verified) {
+      badges.push('<span class="unverified-badge">未驗證</span>');
+    }
+
+    if (isEnabled) {
+      badges.push(isLoaded
+        ? '<span class="loaded-badge">已載入</span>'
+        : '<span class="unloaded-badge">未載入</span>',
+      );
+    }
+
+    return badges.join('');
+  }
+
+  renderPluginItem(item) {
+    const isEnabled = this.enablePluginList.includes(item.name);
+    const isLoaded = this.getPluginLoadStatus(item.name);
+    const waveClassName = this.getWaveClassName(item, isEnabled, isLoaded);
+    const statusBadges = this.renderStatusBadges(item, isEnabled, isLoaded);
+
+    const is_config_exist = fs.existsSync(`${item.path}/config.yml`);
+
+    return `
         <div class="wave-container ${waveClassName}">
           <div class="setting-option">
             <div class="extended-list">
               <div class="extended-list-box">
                 <div class="extended-list-left">
                   <div class="extended-list-title-box">
-                    <span class="extended-list-title">${item.name}</span>
-                    ${!item.verified ? '<span class="unverified-badge">未驗證</span>' : ''}
-                    ${!isEnabled ? '' : isLoaded ? '<span class="loaded-badge">已載入</span>' : '<span class="unloaded-badge">未載入</span>'}
+                    <span class="extended-list-title">${this.escapeHtml(item.name)}</span>
+                    ${statusBadges}
                   </div>
                   <div class="extended-list-author-version">
                     <div class="author">
-                      <span class="author-name">${item.author[0]}</span>
-                      <span class="extended-version">${item.version}</span>
+                      <span class="author-name">${this.escapeHtml(item.author[0])}</span>
+                      <span class="extended-version">${this.escapeHtml(item.version)}</span>
                     </div>
                   </div>  
                 </div>
                 <div class="extended-list-description-box">
-                  <span class="extended-list-descriptions">${item.description['zh_tw']}</span>
+                  <span class="extended-list-descriptions">${this.escapeHtml(item.description?.zh_tw || '')}</span>
                 </div>
               </div>
               <div class="extended-list-buttons">
                 <label class="switch">
                   <input type="checkbox" 
-                    data-name="${item.name}" 
-                    data-author="${item.author[0]}" 
-                    data-version="${item.version}"
+                    data-name="${this.escapeHtml(item.name)}" 
+                    data-author="${this.escapeHtml(item.author[0])}" 
+                    data-version="${this.escapeHtml(item.version)}"
                     data-verified="${item.verified}"
                     data-loaded="${isLoaded}"
                     ${isEnabled ? 'checked' : ''}>
                   <div class="slider round"></div>
                 </label>
-                <div class="extended-setting-button"></div>
+                ${is_config_exist ? `<div id="extended-setting-button.${this.escapeHtml(item.name)}" class="extended-setting-button"></div>` : ''}
               </div>
             </div>
           </div>
         </div>
-        `;
-    }).join('');
-    this.extendedInfo.innerHTML = elements;
+      `;
+  }
+
+  escapeHtml(str) {
+    if (!str) {
+      return '';
+    }
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  attachEventListeners() {
+    this.pluginList.forEach((item) => {
+      if (!item) {
+        return;
+      }
+
+      const settingButton = document.getElementById(`extended-setting-button.${item.name}`);
+      if (settingButton) {
+        settingButton.replaceWith(settingButton.cloneNode(true));
+
+        document.getElementById(`extended-setting-button.${item.name}`)
+          .addEventListener('click', () => {
+            ipcRenderer.send('open-yaml-editor', `${item.path}/config.yml`);
+          });
+      }
+    });
   }
 
   addToggleClick() {
