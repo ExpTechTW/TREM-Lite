@@ -3,6 +3,7 @@ const fs = require('fs-extra');
 const yaml = require('js-yaml');
 const { app } = require('@electron/remote');
 const path = require('path');
+const { ipcMain, ipcRenderer } = require('electron');
 
 class Config {
   static instance = null;
