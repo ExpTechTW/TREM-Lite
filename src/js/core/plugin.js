@@ -1003,7 +1003,7 @@ class PluginLoader {
     for (const [name, pluginData] of scannedPlugins.entries()) {
       const isValidPlugin
       = pluginData.info?.['auto-enable'] == true
-      && pluginData.info?.author.includes('ExpTech')
+      && pluginData.info?.author.includes('ExpTechTW')
       && pluginData.verified == true;
       if (isValidPlugin) {
         manager.enable(pluginData.name);
