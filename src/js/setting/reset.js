@@ -28,14 +28,14 @@ class Reset {
       const { classList } = event.target;
       if (classList[0] == 'confirm-sure') {
         this.resetConfirmWrapper.style.bottom = '-100%';
-        this.bubble.showBubble('success', 30000);
+        this.bubble.showBubble('success', 3000);
         Config.getInstance().resetConfig();
         setTimeout(() => {
           ipcRenderer.send('all-reload');
         }, 4000);
       }
       else if (classList[0] == 'confirm-cancel') {
-        this.resetConfirmWrapper.style.bottom = '-100%';
+        this.hideConfirmWrapper();
       }
     });
   }
@@ -84,6 +84,12 @@ class Reset {
         clearInterval(this.interval);
       }
     }, 1000);
+  }
+
+  hideConfirmWrapper() {
+    this.resetConfirmWrapper.classList.remove('reset');
+    this.resetConfirmWrapper.style.bottom = '-100%';
+    clearInterval(this.interval);
   }
 }
 new Reset();

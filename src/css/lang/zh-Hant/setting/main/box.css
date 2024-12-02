@@ -1201,7 +1201,7 @@ li {
 }
 
 .extended-list-box {
-  width: 100%;
+  width: 80%;
   border-bottom: unset !important;
   padding: 2 !important;
   justify-content: space-between;
