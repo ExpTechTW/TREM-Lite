@@ -1,8 +1,6 @@
-ver: 1
+ver: 2
 
-location:
-  city: 臺南市
-  town: 歸仁區
+location-code: 711
 
 realtime-station-id: 6732340
 
