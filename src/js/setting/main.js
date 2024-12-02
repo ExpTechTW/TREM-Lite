@@ -10,6 +10,8 @@ class Main {
     this.settingLeftBtns = document.querySelector('.setting-buttons');
     this.settingContent = document.querySelector('.setting-content');
     this.windowsWrapper = document.querySelector('.windows-wrapper');
+    this.messageContent = document.querySelector('.message-content');
+    this.messageBox = document.querySelector('.message-box');
     this.settingTab = localStorage.getItem('setting-tab') || null;
     this.init();
     this.info();
@@ -53,6 +55,18 @@ class Main {
     }
   }
 
+  showBubble(message, duration = 3000) {
+    if (!this.messageContent || !this.messageBox) {
+      console.error('Message elements not found');
+      return;
+    }
+    this.messageBox.classList.add(message);
+    this.messageContent.classList.add(message);
+    setTimeout(() => {
+      this.messageContent.classList.remove(message);
+    }, duration);
+  }
+
   info() {
     this.version.textContent = app.getVersion();
     this.os.textContent = `${os.version()} (${os.release()})`;
@@ -60,3 +74,4 @@ class Main {
   }
 }
 new Main();
+module.exports = Main;

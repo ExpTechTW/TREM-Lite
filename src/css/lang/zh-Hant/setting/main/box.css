@@ -217,6 +217,12 @@
 .loaded-badge::before {
   content: "已載入";
 }
+.success.message-box:before {
+  content: "操作成功！";
+}
+.failed.message-box:before {
+  content: "操作失敗！";
+}
 
 .eew-1::before {
   content: "EEW（收到地震預警時播放）";
@@ -683,7 +689,7 @@ li {
   color: #fff;
 }
 
-.reset-confirm-btn div {
+.confirm-btn div {
   border-radius: 5px;
   border: 1px solid #ffffff24;
   padding: 5px;
@@ -698,17 +704,17 @@ li {
   justify-content: center;
 }
 
-.reset-confirm-btn div:hover {
+.confirm-btn div:hover {
   background: #48484d;
 }
 
-.reset-confirm-btn {
+.confirm-btn {
   display: flex;
   margin-top: 1vw;
   color: #fff;
 }
 
-.reset-confirm-btn span {
+.confirm-btn span {
   font-size: 15px;
 }
 
@@ -1270,4 +1276,48 @@ li {
 .wave-container:last-child {
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
+}
+
+.message-wrapper {
+  display: flex;
+  position: fixed;
+  width: 100%;
+  bottom: 0%;
+  transition: bottom 0.3s ease;
+  z-index: 1001;
+  height: 100%;
+  justify-content: center;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.message-content {
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-items: center;
+  align-items: center;
+  background-color: hsl(121.85deg 100% 57.58% / 44%);
+  backdrop-filter: blur(12px);
+  padding: 10px;
+  border-style: solid;
+  border-radius: 13px;
+  border: 1px solid #ffffff42;
+  justify-content: flex-end;
+  height: auto;
+  width: auto;
+  min-width: 100px;
+  bottom: 20px;
+  position: fixed;
+  font-size: 18px;
+  font-weight: bold;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.message-content.success {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }

@@ -4,6 +4,8 @@ const { ipcRenderer } = require('electron');
 class Reset {
   constructor() {
     this.data = null;
+    this.store = require('./main');
+    this.bubble = new this.store();
     this.resetButton = document.querySelector('.reset-button');
     this.checkBoxes = document.querySelectorAll('.switch input');
     this.resetConfirmWrapper = document.querySelector('.confirm-wrapper');
@@ -20,14 +22,19 @@ class Reset {
       this.addCountDown(confirmSureBtn);
     });
     this.resetConfirmWrapper.addEventListener('click', (event) => {
+      if (!this.resetConfirmWrapper.classList.contains('reset')) {
+        return;
+      }
       const { classList } = event.target;
       if (classList[0] == 'confirm-sure') {
-        console.log(Config.getInstance().resetConfig());
-        ipcRenderer.send('all-reload');
+        this.resetConfirmWrapper.style.bottom = '-100%';
+        this.bubble.showBubble('success', 30000);
+        Config.getInstance().resetConfig();
+        setTimeout(() => {
+          ipcRenderer.send('all-reload');
+        }, 4000);
       }
       else if (classList[0] == 'confirm-cancel') {
-        console.log(classList[0]);
-        this.resetConfirmWrapper.classList.add('reset');
         this.resetConfirmWrapper.style.bottom = '-100%';
       }
     });

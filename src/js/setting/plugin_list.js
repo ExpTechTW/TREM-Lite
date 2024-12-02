@@ -4,6 +4,8 @@ const fs = require('fs-extra');
 
 class PluginList {
   constructor() {
+    this.store = require('./main');
+    this.bubble = new this.store();
     this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins')) || [];
     this.pluginList = JSON.parse(localStorage.getItem('plugin-list')) || [];
     this.loadedPlugins = JSON.parse(localStorage.getItem('loaded-plugins')) || [];
@@ -235,10 +237,14 @@ class PluginList {
   }
 
   hideConfirmWrapper() {
+    this.bubble.showBubble('success', 30000);
     this.extendedConfirmWrapper.classList.remove('extendedOpen');
     this.extendedConfirmWrapper.style.bottom = '-100%';
     this.ConfirmTitle.textContent = '';
     clearInterval(this.interval);
+    setTimeout(() => {
+      ipcRenderer.send('all-reload');
+    }, 4000);
   }
 }
 
