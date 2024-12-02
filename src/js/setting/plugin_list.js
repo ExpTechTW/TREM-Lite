@@ -31,10 +31,6 @@ class PluginList {
       const { classList } = event.target;
       if (classList.contains('confirm-sure')) {
         this.setExtendedState();
-        this.bubble.showBubble('success', 3000);
-        setTimeout(() => {
-          ipcRenderer.send('all-reload');
-        }, 4000);
       }
       else if (classList.contains('confirm-cancel')) {
         this.checkExtendedState();
@@ -242,6 +238,9 @@ class PluginList {
     localStorage.setItem('enabled-plugins', JSON.stringify(this.enablePluginList));
     this.hideConfirmWrapper();
     this.bubble.showBubble('success', 3000);
+    setTimeout(() => {
+      ipcRenderer.send('all-reload');
+    }, 4000);
   }
 
   hideConfirmWrapper() {
