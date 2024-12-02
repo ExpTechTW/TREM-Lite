@@ -12,6 +12,7 @@ async function get_station_info() {
 
   if (ans && ans.ok) {
     TREM.variable.station = await ans.json();
+    localStorage.setItem('cache.station', JSON.stringify(TREM.variable.station));
   }
   else {
     setTimeout(get_station_info, 3000);

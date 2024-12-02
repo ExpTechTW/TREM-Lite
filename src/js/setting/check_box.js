@@ -1,31 +1,40 @@
+const Config = require('../core/config');
+
 class CheckBox {
   constructor() {
-    this.checkBoxes = document.querySelectorAll('.switch input');
-    this.config = require('./config');
-    this.Instance = this.config.Instance;
-    this.renderConfig();
-    this.getSelected();
-  }
+    this.instance = Config.getInstance();
+    this.config = this.instance.getConfig();
 
-  async renderConfig() {
-    await this.Instance.init();
-    const data = this.Instance.data.CHECKBOX;
-    if (data) {
-      Object.entries(data).forEach(([id, checked]) => {
-        const checkbox = document.getElementById(id);
-        if (checkbox) {
-          checkbox.checked = checked;
-        }
-      });
+    if (!this.config['check-box']) {
+      this.config['check-box'] = {};
     }
+
+    this.checkBoxes = document.querySelectorAll('.switch input');
+
+    this.renderConfig();
+    this.bindEvents();
   }
 
-  getSelected() {
+  renderConfig() {
+    this.checkBoxes.forEach((checkbox) => {
+      const id = checkbox.id;
+      checkbox.checked = this.config['check-box'][id] ?? false;
+    });
+  }
+
+  bindEvents() {
     this.checkBoxes.forEach((checkbox) => {
       checkbox.addEventListener('change', (event) => {
         const { checked, id } = event.target;
-        this.Instance.write({ CHECKBOX: { [id]: checked } })
-          .catch((error) => console.error(error));
+
+        this.config['check-box'][id] = checked;
+
+        try {
+          this.instance.writeConfig(this.config);
+        }
+        catch (error) {
+          console.error('Failed to save checkbox state:', error);
+        }
       });
     });
   }

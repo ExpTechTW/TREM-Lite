@@ -1,11 +1,12 @@
+const TREM = require('./constant');
+const intensityText = require('../index/utils/utils').intensity_list;
+
+const Config = require('../core/config');
+
 class DropDown {
   constructor() {
-    this.store = require('./store');
-    this.storeData = new this.store();
-    this.intensityText = require('../index/utils/utils').intensity_list;
-    this.config = require('./config');
-    this.Instance = this.config.Instance;
-    this.KEYS = ['location', 'station', 'realtime-int', 'estimate-int'];
+    this.config = Config.getInstance().getConfig(true);
+    this.station = localStorage.getItem('cache.station') ?? {};
 
     this.userLocation = document.querySelector('.usr-location');
     this.userLocationSelect = this.userLocation.querySelector('.select-wrapper');
@@ -100,8 +101,46 @@ class DropDown {
     this.renderCurrent(target, type, 'intensity');
   }
 
+  processStation(data) {
+    TREM.variable.city = TREM.variable.city || [];
+    Object.entries(data).forEach(([station, { info = [], net = '未知' } = {}]) => {
+      const latestInfo = info.at(-1);
+      if (!latestInfo || latestInfo.code === 0) {
+        return;
+      }
+      const loc = this.codeToString(TREM.variable.region, latestInfo.code);
+      if (loc?.city && !TREM.variable.city.some((city) => city.city === loc.city)) {
+        TREM.variable.city.push({ code: loc.code, city: loc.city });
+      }
+      this.station.push({
+        name: station,
+        net,
+        loc: loc?.city ? `${loc.city}${loc.town}` : loc,
+        code: latestInfo.code,
+        lat: latestInfo.lat,
+        lon: latestInfo.lon,
+      });
+    });
+    return (TREM.variable.station = this.station);
+  }
+
+  codeToString(region, code) {
+    for (const [city, towns] of Object.entries(region)) {
+      for (const [town, details] of Object.entries(towns)) {
+        if (details.code === code) {
+          return { city, town, ...details };
+        }
+      }
+    }
+    return null;
+  }
+
+  formatTime(timestamp) {
+    return new Date(timestamp).toISOString().replace('T', ' ').split('.')[0];
+  }
+
   renderCity(targetElement) {
-    this.storeData.processStation(TREM.variable.station);
+    this.processStation(this.station);
     const uniqueCities = [...new Set(TREM.variable.city.sort((a, b) => a.code - b.code).map((item) => item.city))];
     targetElement.innerHTML = uniqueCities.map((city) => `<div>${city}</div>`).join('');
   }
@@ -155,26 +194,26 @@ class DropDown {
   }
 
   renderInstensity(targetElement) {
-    const uniqueIntensity = [...new Set(this.intensityText)];
+    const uniqueIntensity = [...new Set(intensityText)];
     targetElement.innerHTML = uniqueIntensity.map((int, index) => `<div data-id="${index}">${int}</div>`).join('');
   }
 
-  async renderConfig(type, mode) {
+  renderConfig(type, mode) {
     if (type > 4) {
       return;
     }
     const isLocationMode = mode === 'location';
-    await this.Instance.init();
-    const current = this.Instance.data.DROPDOWN[this.KEYS[type - 1]];
-    const container = this.CONTAINERS[type - 1];
-    const currentElement = container.querySelector(`.setting-option > .location > .current${isLocationMode ? '' : ' > .warning-intensity'}`);
-    if (isLocationMode) {
-      currentElement.textContent = current;
-    }
-    else {
-      currentElement.className = currentElement.className.split(' ').filter((cls) => !cls.startsWith('intensity-')).join(' ');
-      currentElement.classList.add(`intensity-${current || 0}`);
-    }
+    this.init();
+    // const current = this.Instance.data.DROPDOWN[this.KEYS[type - 1]];
+    // const container = this.CONTAINERS[type - 1];
+    // const currentElement = container.querySelector(`.setting-option > .location > .current${isLocationMode ? '' : ' > .warning-intensity'}`);
+    // if (isLocationMode) {
+    //   currentElement.textContent = current;
+    // }
+    // else {
+    //   currentElement.className = currentElement.className.split(' ').filter((cls) => !cls.startsWith('intensity-')).join(' ');
+    //   currentElement.classList.add(`intensity-${current || 0}`);
+    // }
   }
 }
 new DropDown();

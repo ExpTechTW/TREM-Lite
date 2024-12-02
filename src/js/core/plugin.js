@@ -11,6 +11,7 @@ const acorn = require('acorn');
 const walk = require('acorn-walk');
 const PluginVerifier = require('./verify');
 const crypto = require('crypto');
+const manager = require('./manager');
 
 class PluginLoader {
   constructor() {
@@ -887,6 +888,9 @@ class PluginLoader {
       = pluginData.info?.['auto-enable'] == true
       && pluginData.info?.author.includes('ExpTech')
       && pluginData.verified == true;
+      if (isValidPlugin) {
+        manager.enable(pluginData.name);
+      }
       if (enabledPlugins.includes(name) || isValidPlugin) {
         if (!pluginData.verified) {
           logger.warn(`Loading unverified plugin ${name}: ${pluginData.verifyError}`);
