@@ -263,12 +263,6 @@ ipcMain.on('openDevtool', () => {
   }
 });
 
-ipcMain.on('config-updated', () => {
-  BrowserWindow.getAllWindows().forEach((window) => {
-    window.webContents.send('refresh-config');
-  });
-});
-
 ipcMain.on('reload', () => {
   const currentWindow = BrowserWindow.getFocusedWindow();
   if (currentWindow) {
