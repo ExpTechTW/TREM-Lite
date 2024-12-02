@@ -175,7 +175,6 @@ function createField(key, value, parent, path = '') {
 
     const addButton = document.createElement('button');
     addButton.className = 'btn btn-add';
-    addButton.textContent = '添加項目';
     addButton.onclick = () => {
       if (value.length > 0) {
         const lastItem = value[value.length - 1];
@@ -230,8 +229,7 @@ function renderVisualEditor() {
   });
 
   const addButton = document.createElement('button');
-  addButton.className = 'btn btn-add';
-  addButton.textContent = '添加根級欄位';
+  addButton.className = 'btn btn-add root';
   addButton.onclick = () => {
     const newKey = prompt('輸入新欄位名稱：');
     if (newKey && !Object.prototype.hasOwnProperty.call(yamlObject, newKey)) {

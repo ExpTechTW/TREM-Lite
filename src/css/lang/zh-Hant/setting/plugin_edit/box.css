@@ -1,3 +1,10 @@
+.btn-add:before {
+  content: "新增項目";
+}
+.root:before {
+  content: "新增根級欄位";
+}
+
 :root {
   --bg-color: #1a1a1a;
   --container-bg: #2d2d2d;
