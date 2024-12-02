@@ -681,7 +681,7 @@ class PluginLoader {
   }
 
   async cleanupOrphanedPlugins() {
-    logger.info('Cleaning up orphaned plugin data...');
+    logger.debug('Cleaning up orphaned plugin data...');
 
     const pluginFiles = fs.readdirSync(this.pluginDir);
 
@@ -742,7 +742,7 @@ class PluginLoader {
       if (fs.statSync(tempPath).isDirectory()) {
         if (!validPluginNames.has(file)) {
           try {
-            logger.info(`Removing orphaned plugin directory: ${file}`);
+            logger.debug(`Removing orphaned plugin directory: ${file}`);
             await fs.remove(tempPath);
             manager.disable(file);
           }
@@ -780,32 +780,72 @@ class PluginLoader {
           }
         }
         else if (file.endsWith('.trem')) {
-          const tempExtractPath = path.join(this.tempDir, '_temp_extract');
-          if (fs.existsSync(tempExtractPath)) {
-            await fs.remove(tempExtractPath);
-          }
+          const uniqueTempDir = path.join(
+            this.tempDir,
+            `_temp_extract_${file}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          );
 
-          const zip = new AdmZip(filePath);
-          zip.extractAllTo(tempExtractPath, true);
+          try {
+            if (fs.existsSync(uniqueTempDir)) {
+              await fs.remove(uniqueTempDir);
+            }
 
-          const infoPath = path.join(tempExtractPath, 'info.json');
-          if (fs.existsSync(infoPath)) {
-            const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-            if (info?.name && !pluginPaths.has(info.name)) {
-              pluginPaths.set(info.name, {
-                path: filePath,
-                type: 'trem',
-                info,
-              });
+            await fs.ensureDir(uniqueTempDir);
+
+            const zip = new AdmZip(filePath);
+            zip.extractAllTo(uniqueTempDir, true);
+
+            const infoPath = path.join(uniqueTempDir, 'info.json');
+            if (fs.existsSync(infoPath)) {
+              const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+              if (info?.name && !pluginPaths.has(info.name)) {
+                pluginPaths.set(info.name, {
+                  path: filePath,
+                  type: 'trem',
+                  info,
+                });
+              }
             }
           }
-
-          await fs.remove(tempExtractPath);
+          catch (error) {
+            logger.error(`Error processing ${file} in temp dir ${uniqueTempDir}:`, error);
+          }
+          finally {
+            try {
+              if (fs.existsSync(uniqueTempDir)) {
+                await fs.remove(uniqueTempDir);
+                if (fs.existsSync(uniqueTempDir)) {
+                  logger.warn(`Failed to remove temp directory: ${uniqueTempDir}`);
+                }
+              }
+            }
+            catch (cleanupError) {
+              logger.error(`Error cleaning up temp directory ${uniqueTempDir}:`, cleanupError);
+            }
+          }
         }
       }
       catch (error) {
         logger.error(`Error processing ${file}:`, error);
       }
+    }
+
+    try {
+      const tempFiles = fs.readdirSync(this.tempDir);
+      for (const tempFile of tempFiles) {
+        if (tempFile.startsWith('_temp_extract_')) {
+          const tempPath = path.join(this.tempDir, tempFile);
+          try {
+            await fs.remove(tempPath);
+          }
+          catch (error) {
+            logger.error(`Error removing leftover temp directory ${tempPath}:`, error);
+          }
+        }
+      }
+    }
+    catch (error) {
+      logger.error('Error cleaning up temp directories:', error);
     }
 
     const allPlugins = new Map();
@@ -968,7 +1008,7 @@ class PluginLoader {
       }
       if (enabledPlugins.includes(name) || isValidPlugin) {
         if (!pluginData.verified) {
-          logger.warn(`Loading unverified plugin ${name}: ${pluginData.verifyError}`);
+          logger.debug(`Loading unverified plugin ${name}: ${pluginData.verifyError}`);
         }
         this.plugins.set(name, pluginData);
       }
