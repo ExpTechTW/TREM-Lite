@@ -19,6 +19,8 @@ const rts_info_trigger = document.getElementById('rts-info-trigger');
 const rts_info_level = document.getElementById('rts-info-level');
 
 const warning_box_unstable = document.getElementById('warning-box-unstable');
+const Config = require('../../core/config');
+const config = Config.getInstance().getConfig();
 
 const level_list = {};
 
@@ -165,7 +167,7 @@ TREM.variable.events.on('DataRts', (ans) => {
         pga = ans.data.station[id].pga;
       }
 
-      if (id == TREM.variable.rts_station_id) {
+      if (id == config['realtime-station-id']) {
         const I = (alert && ans.data.station[id].alert) ? ans.data.station[id].I : ans.data.station[id].i;
         const loc = search_loc_name(station_location.code);
         current_station_loc.textContent = `${loc.city}${loc.town}`;

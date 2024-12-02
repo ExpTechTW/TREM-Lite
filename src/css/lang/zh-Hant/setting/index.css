@@ -172,3 +172,9 @@ input[data-loaded="false"]:checked + .slider {
   background-color: #ffd700;
   color: black;
 }
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: black !important;
+}

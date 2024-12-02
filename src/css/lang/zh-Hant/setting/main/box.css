@@ -76,7 +76,7 @@
   content: "地震檢知";
 }
 .rts-intensity::before {
-  content: "近即時震度";
+  content: "震度速報";
 }
 .get-trem-eew::before {
   content: "接收 TREM EEW";
@@ -133,13 +133,13 @@
   content: "設定";
 }
 .p-alert::before {
-  content: "P-Alert（收到近即時震度時播放）";
+  content: "INTENSITY（收到震度速報時播放）";
 }
 .report::after {
-  content: "Report（收到地震報告時播放）";
+  content: "REPORT（收到地震報告時播放）";
 }
 .update::before {
-  content: "Update（地震預警更正時播放）";
+  content: "UPDATE（地震預警更正時播放）";
 }
 .info-trem-lite::before {
   content: "關於 TREM Lite";
@@ -262,7 +262,7 @@
 }
 .shindo-0 {
   &::before {
-    content: "Shindo0（地震檢知";
+    content: "SHINDO0（地震檢知";
   }
   .special-text:before {
     content: "震度0級";
@@ -273,7 +273,7 @@
 }
 .shindo-1 {
   &::before {
-    content: "Shindo1（地震檢知";
+    content: "SHINDO1（地震檢知";
   }
   .special-text:before {
     content: "震度2級";
@@ -284,7 +284,7 @@
 }
 .shindo-2 {
   &::before {
-    content: "Shindo2（地震檢知";
+    content: "SHINDO2（地震檢知";
   }
   .special-text:before {
     content: "震度4級";

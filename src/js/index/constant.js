@@ -160,7 +160,7 @@ const TREM = {
   },
 
   variable: {
-    rts_station_id: 6110036,
+    rts_station_id: 0,
     map: null,
     events: null,
     time: null,

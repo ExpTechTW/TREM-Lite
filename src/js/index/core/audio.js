@@ -7,10 +7,14 @@ const { intensity_list, formatToChineseTime, int_to_string, findMaxIntensityCity
 const { BrowserWindow } = require('@electron/remote');
 const win = BrowserWindow.fromId(process.env.window * 1);
 
+const Config = require('../../core/config');
+
 class AudioQueue {
   constructor() {
     this.queue = [];
     this.isPlaying = false;
+
+    this.config = Config.getInstance().getConfig();
   }
 
   getAudioName(audio) {
@@ -147,10 +151,14 @@ class AudioManager {
     }
 
     if (ans.data.status == 1) {
-      this.audioQueues.eew.add(TREM.constant.AUDIO.ALERT, this.priorityRules.eew);
+      if (this.config['check-box']['sound-effects-EEW2']) {
+        this.audioQueues.eew.add(TREM.constant.AUDIO.ALERT, this.priorityRules.eew);
+      }
     }
     else {
-      this.audioQueues.eew.add(TREM.constant.AUDIO.EEW, this.priorityRules.eew);
+      if (this.config['check-box']['sound-effects-EEW']) {
+        this.audioQueues.eew.add(TREM.constant.AUDIO.EEW, this.priorityRules.eew);
+      }
     }
 
     this.ttsCache[ans.data.id] = {
@@ -172,7 +180,9 @@ class AudioManager {
     if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') {
       return;
     }
-    this.audioQueues.eew.add(TREM.constant.AUDIO.ALERT, this.priorityRules.eew);
+    if (this.config['check-box']['sound-effects-EEW2']) {
+      this.audioQueues.eew.add(TREM.constant.AUDIO.ALERT, this.priorityRules.eew);
+    }
   }
 
   handleEewUpdate(ans) {
@@ -180,7 +190,9 @@ class AudioManager {
       return;
     }
     this.audioQueues.update.clear();
-    this.audioQueues.update.add(TREM.constant.AUDIO.UPDATE);
+    if (this.config['check-box']['sound-effects-Update']) {
+      this.audioQueues.update.add(TREM.constant.AUDIO.UPDATE);
+    }
 
     this.ttsCache[ans.data.id].now.loc = ans.data.eq.loc;
     this.ttsCache[ans.data.id].now.i = ans.data.eq.max;
@@ -200,15 +212,21 @@ class AudioManager {
   }
 
   handleRtsPga2() {
-    this.audioQueues.pga.add(TREM.constant.AUDIO.PGA2, this.priorityRules.pga);
+    if (this.config['check-box']['sound-effects-PGA2']) {
+      this.audioQueues.pga.add(TREM.constant.AUDIO.PGA2, this.priorityRules.pga);
+    }
   }
 
   handleRtsPga1() {
-    this.audioQueues.pga.add(TREM.constant.AUDIO.PGA1, this.priorityRules.pga);
+    if (this.config['check-box']['sound-effects-PGA1']) {
+      this.audioQueues.pga.add(TREM.constant.AUDIO.PGA1, this.priorityRules.pga);
+    }
   }
 
   handleRtsShindo2() {
-    this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO2, this.priorityRules.shindo);
+    if (this.config['check-box']['sound-effects-Shindo2']) {
+      this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO2, this.priorityRules.shindo);
+    }
 
     const notification = new Notification(`🟥 強震檢測 [${formatTimestamp(now())}]`, {
       body: `請注意今後的資訊。`,
@@ -221,7 +239,9 @@ class AudioManager {
   }
 
   handleRtsShindo1() {
-    this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO1, this.priorityRules.shindo);
+    if (this.config['check-box']['sound-effects-Shindo1']) {
+      this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO1, this.priorityRules.shindo);
+    }
 
     const notification = new Notification(`🟧 震動檢測 [${formatTimestamp(now())}]`, {
       body: `請注意今後的資訊。`,
@@ -234,7 +254,9 @@ class AudioManager {
   }
 
   handleRtsShindo0() {
-    this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO0);
+    if (this.config['check-box']['sound-effects-Shindo0']) {
+      this.audioQueues.shindo.add(TREM.constant.AUDIO.SHINDO0);
+    }
 
     const notification = new Notification(`🟩 弱反應 [${formatTimestamp(now())}]`, {
       body: `請注意今後的資訊。`,
@@ -247,7 +269,9 @@ class AudioManager {
   }
 
   handleReportRelease(ans) {
-    TREM.constant.AUDIO.REPORT.play();
+    if (this.config['check-box']['sound-effects-Report']) {
+      TREM.constant.AUDIO.REPORT.play();
+    }
     let maxIntensity = 0;
     Object.values(ans.data.list).forEach((county) => {
       if (county.int > maxIntensity) {
@@ -330,7 +354,9 @@ class AudioManager {
   }
 
   handleLpgmRelease(ans) {
-    TREM.constant.AUDIO.INTENSITY.play();
+    if (this.config['check-box']['sound-effects-PAlert']) {
+      TREM.constant.AUDIO.INTENSITY.play();
+    }
 
     const time = formatToChineseTime(ans.data.id);
 
@@ -437,7 +463,9 @@ class AudioManager {
   }
 
   handleIntensityRelease(ans) {
-    TREM.constant.AUDIO.INTENSITY.play();
+    if (this.config['check-box']['sound-effects-PAlert']) {
+      TREM.constant.AUDIO.INTENSITY.play();
+    }
 
     const city_intensity_list = findMaxIntensityCity(ans.data.area);
 

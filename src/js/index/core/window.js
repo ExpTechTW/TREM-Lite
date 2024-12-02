@@ -4,6 +4,7 @@ const { BrowserWindow } = require('@electron/remote');
 const win = BrowserWindow.fromId(process.env.window * 1);
 
 const { ipcRenderer } = require('electron');
+const Config = require('../../core/config');
 
 class WindowControler {
   static instance = null;
@@ -12,6 +13,8 @@ class WindowControler {
     if (WindowControler.instance) {
       return WindowControler.instance;
     }
+    this.config = Config.getInstance().getConfig();
+
     this.bindEvents();
     WindowControler.instance = this;
   }
@@ -30,6 +33,18 @@ class WindowControler {
   }
 
   windowFocus(event, ans) {
+    if (event == 'ReportRelease' && !this.config['check-box']['show-window-report']) {
+      return;
+    }
+    if (event.startsWith('Rts') && !this.config['check-box']['show-window-detect']) {
+      return;
+    }
+    if ((event == 'IntensityRelease' || event == 'LpgmRelease') && !this.config['check-box']['show-window-rts-intensity']) {
+      return;
+    }
+    if (event.startsWith('Eew') && !this.config['check-box']['show-window-eew']) {
+      return;
+    }
     if ((win.isMinimized() || !win.isVisible()) && TREM.constant.GAME_MODE) {
       if (TREM.constant.SHOW_PIP_EVENTS.includes(event)) {
         const isEew = event.startsWith('Eew');

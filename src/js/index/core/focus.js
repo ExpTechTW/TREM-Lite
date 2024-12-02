@@ -1,5 +1,6 @@
 const TREM = require('../constant');
 const maplibregl = require('maplibre-gl');
+const Config = require('../../core/config');
 
 class FocusManager {
   static instance = null;
@@ -10,6 +11,8 @@ class FocusManager {
     }
     this.lock = false;
     this.isMouseDown = false;
+    this.config = Config.getInstance().getConfig();
+
     this.focusButton = document.getElementById('focus');
     this.initialize();
     this.bindEvents();
@@ -67,6 +70,9 @@ class FocusManager {
   }
 
   focus() {
+    if (this.config['check-box']['graphics-block-auto-zoom']) {
+      return;
+    }
     if (this.lock) {
       return;
     }
@@ -97,6 +103,10 @@ class FocusManager {
   }
 
   focusReset() {
+    if (this.config['check-box']['graphics-block-auto-zoom']) {
+      return;
+    }
+
     TREM.variable.map?.fitBounds(
       TREM.constant.MAP.BOUNDS,
       TREM.constant.MAP.OPTIONS,
