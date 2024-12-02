@@ -14,6 +14,9 @@ class PluginEditor {
     this.jsonSection = document.getElementById('jsonSection');
     this.jsonEditor = document.getElementById('jsonEditor');
     this.status = document.getElementById('status');
+    this.showStatus = this.showStatus.bind(this);
+    this.saveContent = this.saveContent.bind(this);
+    this.updateFromJson = this.updateFromJson.bind(this);
     this.currentPath = '';
     this.saveTimeout = null;
     this.yamlObject = {};
@@ -45,7 +48,7 @@ class PluginEditor {
         this.renderVisualEditor();
       }
       catch (e) {
-        this.showStatus(`YAML 解析錯誤: ${e.message}`, true);
+        this.showStatus('yaml-extract-error', true, e.message);
       }
     });
 
@@ -53,7 +56,7 @@ class PluginEditor {
       if (this.saveTimeout) {
         clearTimeout(this.saveTimeout);
       }
-      this.saveTimeout = setTimeout(this.updateFromJson, 500);
+      this.saveTimeout = setTimeout(() => this.updateFromJson(), 500);
     });
 
     ipcRenderer.on('load-path', async (event, path) => {
@@ -67,7 +70,7 @@ class PluginEditor {
         this.renderVisualEditor();
       }
       catch (error) {
-        this.showStatus(`讀取錯誤: ${error.message}`, true);
+        this.showStatus('load-error', true, error.message);
       }
     });
 
@@ -79,12 +82,12 @@ class PluginEditor {
     });
   }
 
-  showStatus(message, isError = false) {
-    this.status.textContent = message;
-    this.status.className = `status ${isError ? 'error' : 'success'}`;
+  showStatus(message, isError = false, text) {
+    this.status.className = `status ${isError ? 'error' : 'success'} ${message ? message : ''}`;
+    this.status.textContent = text ? text : '';
     setTimeout(() => {
-      this.status.textContent = '';
       this.status.className = 'status';
+      this.status.textContent = '';
     }, 3000);
   }
 
@@ -129,7 +132,6 @@ class PluginEditor {
     if (parent && key !== 'ver') {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'btn btn-remove';
-      deleteBtn.textContent = '刪除';
       deleteBtn.onclick = () => {
         if (Array.isArray(parent)) {
           parent.splice(key, 1);
@@ -309,7 +311,7 @@ class PluginEditor {
       this.autoSave();
     }
     catch (e) {
-      this.showStatus(`YAML 轉換錯誤: ${e.message}`, true);
+      this.showStatus('yaml-transfer-error', true, e.message);
     }
   }
 
@@ -320,7 +322,7 @@ class PluginEditor {
       this.updateFromVisual();
     }
     catch (e) {
-      this.showStatus('JSON 格式錯誤', true);
+      this.showStatus('yaml-transfer-error', true);
       console.log(e);
     }
   }
@@ -332,10 +334,10 @@ class PluginEditor {
 
     try {
       await ipcRenderer.invoke('write-yaml', this.currentPath, this.editor.value);
-      this.showStatus('已自動儲存');
+      this.showStatus('auto-save-success');
     }
     catch (error) {
-      this.showStatus(`儲存錯誤: ${error.message}`, true);
+      this.showStatus('auto-save-error', true, error.message);
     }
   }
 
@@ -343,7 +345,7 @@ class PluginEditor {
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
     }
-    this.saveTimeout = setTimeout(this.saveContent, 1000);
+    this.saveTimeout = setTimeout(() => this.saveContent(), 1000);
   }
 }
 new PluginEditor();

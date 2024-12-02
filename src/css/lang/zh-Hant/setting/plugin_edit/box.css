@@ -13,6 +13,24 @@
 .visual-editor-title:before {
   content: "視覺化編輯";
 }
+.json-error:before {
+  content: "JSON 格式錯誤";
+}
+.yaml-transfer-error:before {
+  content: "YAML 轉換錯誤";
+}
+.yaml-extract-error:before {
+  content: "YAML 解析錯誤";
+}
+.auto-save-success:before {
+  content: "已自動儲存";
+}
+.auto-save-error:before {
+  content: "儲存錯誤";
+}
+.load-error:before {
+  content: "讀取錯誤";
+}
 
 :root {
   --bg-color: #1a1a1a;
@@ -133,14 +151,14 @@ body {
 .success {
   background-color: var(--success-color);
   color: white;
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .error {
   background-color: var(--error-color);
   color: white;
-}
-
-.status.show {
   display: block;
   opacity: 1;
   transform: translateY(0);
