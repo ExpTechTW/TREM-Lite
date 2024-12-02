@@ -374,3 +374,140 @@ function restart() {
   forceQuit = true;
   app.quit();
 }
+
+const pluginWindows = new Map();
+
+function createPluginWindow(pluginId, htmlPath, options = {}) {
+  const defaultOptions = {
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      backgroundThrottling: false,
+    },
+  };
+
+  const windowOptions = { ...defaultOptions, ...options };
+  const pluginWindow = new BrowserWindow(windowOptions);
+
+  require('@electron/remote/main').enable(pluginWindow.webContents);
+
+  if (path.isAbsolute(htmlPath)) {
+    pluginWindow.loadFile(htmlPath);
+  }
+  else {
+    const absolutePath = path.join(pluginDir, htmlPath);
+    pluginWindow.loadFile(absolutePath);
+  }
+
+  pluginWindow.setMenu(null);
+
+  const windowInfo = {
+    window: pluginWindow,
+    pluginId,
+    htmlPath,
+    options,
+  };
+
+  pluginWindows.set(pluginWindow.id, windowInfo);
+
+  pluginWindow.on('closed', () => {
+    pluginWindows.delete(pluginWindow.id);
+    if (win) {
+      win.webContents.send('plugin-window-closed', {
+        windowId: pluginWindow.id,
+        pluginId,
+      });
+    }
+  });
+
+  return pluginWindow;
+}
+
+ipcMain.on('open-plugin-window', (event, data) => {
+  const { pluginId, htmlPath, options } = data;
+
+  for (const [windowId, windowInfo] of pluginWindows.entries()) {
+    if (windowInfo.pluginId === pluginId) {
+      if (!windowInfo.window.isDestroyed()) {
+        windowInfo.window.close();
+      }
+      pluginWindows.delete(windowId);
+    }
+  }
+
+  try {
+    const pluginWindow = createPluginWindow(pluginId, htmlPath, options);
+
+    event.reply('plugin-window-opened', {
+      success: true,
+      windowId: pluginWindow.id,
+      pluginId,
+    });
+  }
+  catch (error) {
+    console.error('Error opening plugin window:', error);
+    event.reply('plugin-window-opened', {
+      success: false,
+      error: error.message,
+      pluginId,
+    });
+  }
+});
+
+ipcMain.on('close-plugin-window', (event, windowId) => {
+  const windowInfo = pluginWindows.get(windowId);
+  if (windowInfo) {
+    windowInfo.window.close();
+    event.reply('plugin-window-closed', {
+      success: true,
+      windowId,
+      pluginId: windowInfo.pluginId,
+    });
+  }
+});
+
+ipcMain.on('close-plugin-windows', (event, pluginId) => {
+  for (const [windowId, windowInfo] of pluginWindows.entries()) {
+    if (windowInfo.pluginId === pluginId) {
+      windowInfo.window.close();
+    }
+  }
+  event.reply('plugin-windows-closed', {
+    success: true,
+    pluginId,
+  });
+});
+
+ipcMain.on('get-plugin-windows', (event, pluginId) => {
+  const windows = Array.from(pluginWindows.entries())
+    .filter(([_, info]) => info.pluginId === pluginId)
+    .map(([windowId, info]) => ({
+      windowId,
+      htmlPath: info.htmlPath,
+      options: info.options,
+    }));
+
+  event.reply('plugin-windows-list', {
+    pluginId,
+    windows,
+  });
+});
+
+ipcMain.on('send-to-plugin-window', (event, data) => {
+  const { windowId, channel, payload } = data;
+  const windowInfo = pluginWindows.get(windowId);
+  if (windowInfo) {
+    windowInfo.window.webContents.send(channel, payload);
+  }
+});
+
+ipcMain.on('broadcast-to-plugin-windows', (event, data) => {
+  const { pluginId, channel, payload } = data;
+  for (const windowInfo of pluginWindows.values()) {
+    if (windowInfo.pluginId === pluginId) {
+      windowInfo.window.webContents.send(channel, payload);
+    }
+  }
+});

@@ -62,8 +62,8 @@ class PluginLoader {
       Logger,
       MixinManager,
       info: {
-        pluginDir: this.pluginDir,
-        originalPath: null,
+        pluginDir: this.tempDir,
+        originalPath: this.pluginDir,
       },
       utils: {
         path,
@@ -456,7 +456,6 @@ class PluginLoader {
     }
     finally {
       this.currentLoadingPlugin = null;
-      this.ctx.info.originalPath = null;
     }
   }
 
@@ -920,6 +919,8 @@ class PluginLoader {
 
       try {
         if (fs.existsSync(indexPath)) {
+          this.ctx.info.pluginDir = path.join(this.tempDir, pluginName);
+
           const PluginClass = require(indexPath);
 
           if (this.isValidPluginClass(PluginClass)) {
