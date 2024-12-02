@@ -1,652 +1,305 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>YAML 編輯器</title>
     <style>
-        :root {
-            --bg-color: #1a1a1a;
-            --container-bg: #2d2d2d;
-            --text-color: #ffffff;
-            --border-color: #404040;
-            --input-bg: #3d3d3d;
-            --hover-color: #404040;
-            --primary-color: #64B5F6;
-            --error-color: #ff6b6b;
-            --success-color: #81C784;
-            --field-bg: #363636;
-        }
+      :root {
+        --bg-color: #1a1a1a;
+        --container-bg: #2d2d2d;
+        --text-color: #ffffff;
+        --border-color: #404040;
+        --input-bg: #3d3d3d;
+        --hover-color: #404040;
+        --primary-color: #64b5f6;
+        --error-color: #ff6b6b;
+        --success-color: #81c784;
+        --field-bg: #363636;
+      }
 
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
 
-        .container {
-            margin: 0;
-            background-color: var(--container-bg);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+      .container {
+        margin: 0;
+        background-color: var(--container-bg);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
 
-        .editor-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            padding: 20px;
-            flex: 1;
-            overflow: hidden;
-        }
+      .editor-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+        padding: 20px;
+        flex: 1;
+        overflow: hidden;
+      }
 
-        .section {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            overflow: hidden;
-        }
+      .section {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+      }
 
-        .section-title {
-            margin: 0 0 10px 0;
-            padding: 0;
-        }
+      .section-title {
+        margin: 0 0 10px 0;
+        padding: 0;
+      }
 
-        .editor,
-        .preview {
-            font-family: monospace;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            resize: none;
-            white-space: pre;
-            tab-size: 2;
-            flex: 1;
-            overflow: auto;
-        }
+      .editor,
+      .preview {
+        font-family: monospace;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        resize: none;
+        white-space: pre;
+        tab-size: 2;
+        flex: 1;
+        overflow: auto;
+      }
 
-        .visual-editor {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: var(--input-bg);
-            overflow-y: auto;
-        }
+      .visual-editor {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: var(--input-bg);
+        overflow-y: auto;
+      }
 
-        .status {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            border-radius: 4px;
-            display: none;
-            z-index: 1000;
-        }
+      .status {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 4px;
+        display: none;
+        z-index: 1000;
+      }
 
-        .success {
-            background-color: var(--success-color);
-            color: white;
-            display: block;
-        }
+      .success {
+        background-color: var(--success-color);
+        color: white;
+        display: block;
+      }
 
-        .error {
-            background-color: var(--error-color);
-            color: white;
-            display: block;
-        }
+      .error {
+        background-color: var(--error-color);
+        color: white;
+        display: block;
+      }
 
-        .field {
-            margin: 10px 0;
-            padding: 15px;
-            background-color: var(--field-bg);
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-        }
+      .field {
+        margin: 10px 0;
+        padding: 15px;
+        background-color: var(--field-bg);
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+      }
 
-        .field-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+      .field-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
 
-        .field-label {
-            font-weight: bold;
-            color: var(--primary-color);
-        }
+      .field-label {
+        font-weight: bold;
+        color: var(--primary-color);
+      }
 
-        .field-value {
-            margin-top: 5px;
-        }
+      .field-value {
+        margin-top: 5px;
+      }
 
-        .input {
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 8px;
-            border-radius: 4px;
-            width: calc(100% - 18px);
-            margin: 2px 0;
-        }
+      .input {
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        padding: 8px;
+        border-radius: 4px;
+        width: calc(100% - 18px);
+        margin: 2px 0;
+      }
 
-        .toggle {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
+      .toggle {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
 
-        .toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
 
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 34px;
+      }
 
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
 
-        input:checked+.slider {
-            background-color: var(--primary-color);
-        }
+      input:checked + .slider {
+        background-color: var(--primary-color);
+      }
 
-        input:checked+.slider:before {
-            transform: translateX(26px);
-        }
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
 
-        .array-item {
-            margin-left: 20px;
-            margin-bottom: 10px;
-        }
+      .array-item {
+        margin-left: 20px;
+        margin-bottom: 10px;
+      }
 
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            margin: 5px;
-        }
+      .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        color: white;
+        margin: 5px;
+      }
 
-        .btn-add {
-            background-color: var(--success-color);
-        }
+      .btn-add {
+        background-color: var(--success-color);
+      }
 
-        .btn-remove {
-            background-color: var(--error-color);
-        }
+      .btn-remove {
+        background-color: var(--error-color);
+      }
 
-        .nested {
-            margin-left: 20px;
-            padding-left: 10px;
-            border-left: 2px solid var(--primary-color);
-        }
+      .nested {
+        margin-left: 20px;
+        padding-left: 10px;
+        border-left: 2px solid var(--primary-color);
+      }
 
-        select.input {
-            width: 100%;
-        }
+      select.input {
+        width: 100%;
+      }
 
-        .type-indicator {
-            font-size: 0.8em;
-            color: #888;
-            margin-left: 10px;
-        }
+      .type-indicator {
+        font-size: 0.8em;
+        color: #888;
+        margin-left: 10px;
+      }
 
-        .mode-selector {
-            padding: 20px;
-            display: flex;
-            gap: 10px;
-            background-color: var(--container-bg);
-        }
+      .mode-selector {
+        padding: 20px;
+        display: flex;
+        gap: 10px;
+        background-color: var(--container-bg);
+      }
 
-        .mode-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+      .mode-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
 
-        .mode-checkbox input {
-            margin: 0;
-        }
+      .mode-checkbox input {
+        margin: 0;
+      }
 
-        .disabled {
-            opacity: 0.5;
-            pointer-events: none;
-            user-select: none;
-        }
+      .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        user-select: none;
+      }
 
-        .hidden {
-            display: none;
-        }
+      .hidden {
+        display: none;
+      }
 
-        .version {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            color: #666;
-            font-size: 12px;
-            padding: 5px;
-            background-color: var(--bg-color);
-            border-radius: 4px;
-        }
+      .version {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        color: #666;
+        font-size: 12px;
+        padding: 5px;
+        background-color: var(--bg-color);
+        border-radius: 4px;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="container">
-        <div class="mode-selector">
-            <div class="mode-checkbox">
-                <input type="checkbox" id="yamlMode" checked>
-                <label for="yamlMode">YAML</label>
-            </div>
-            <div class="mode-checkbox">
-                <input type="checkbox" id="visualMode" checked>
-                <label for="visualMode">視覺化編輯</label>
-            </div>
-            <div class="mode-checkbox">
-                <input type="checkbox" id="jsonMode" checked>
-                <label for="jsonMode">JSON</label>
-            </div>
+      <div class="mode-selector">
+        <div class="mode-checkbox">
+          <input type="checkbox" id="yamlMode" checked />
+          <label for="yamlMode">YAML</label>
         </div>
-        <div class="editor-container" id="editorContainer">
-            <div class="section" id="yamlSection">
-                <h3 class="section-title">YAML</h3>
-                <textarea id="editor" class="editor" placeholder="YAML 內容..."></textarea>
-            </div>
-            <div class="section" id="visualSection">
-                <h3 class="section-title">視覺化編輯</h3>
-                <div id="visualEditor" class="visual-editor"></div>
-            </div>
-            <div class="section" id="jsonSection">
-                <h3 class="section-title">JSON</h3>
-                <textarea id="jsonEditor" class="editor" placeholder="JSON 內容..."></textarea>
-            </div>
+        <div class="mode-checkbox">
+          <input type="checkbox" id="visualMode" checked />
+          <label for="visualMode">視覺化編輯</label>
         </div>
-        <div id="status" class="status"></div>
-        <div class="version">v1.0.0</div>
+        <div class="mode-checkbox">
+          <input type="checkbox" id="jsonMode" checked />
+          <label for="jsonMode">JSON</label>
+        </div>
+      </div>
+      <div class="editor-container" id="editorContainer">
+        <div class="section" id="yamlSection">
+          <h3 class="section-title">YAML</h3>
+          <textarea
+            id="editor"
+            class="editor"
+            placeholder="YAML 內容..."
+          ></textarea>
+        </div>
+        <div class="section" id="visualSection">
+          <h3 class="section-title">視覺化編輯</h3>
+          <div id="visualEditor" class="visual-editor"></div>
+        </div>
+        <div class="section" id="jsonSection">
+          <h3 class="section-title">JSON</h3>
+          <textarea
+            id="jsonEditor"
+            class="editor"
+            placeholder="JSON 內容..."
+          ></textarea>
+        </div>
+      </div>
+      <div id="status" class="status"></div>
+      <div class="version">v1.0.0</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-    <script>
-        const { ipcRenderer } = require('electron');
-
-        const editor = document.getElementById('editor');
-        const visualEditor = document.getElementById('visualEditor');
-        const yamlMode = document.getElementById('yamlMode');
-        const visualMode = document.getElementById('visualMode');
-        const jsonMode = document.getElementById('jsonMode');
-        const editorContainer = document.getElementById('editorContainer');
-        const yamlSection = document.getElementById('yamlSection');
-        const visualSection = document.getElementById('visualSection');
-        const jsonSection = document.getElementById('jsonSection');
-        const jsonEditor = document.getElementById('jsonEditor');
-        const status = document.getElementById('status');
-
-        let currentPath = '';
-        let saveTimeout = null;
-        let yamlObject = null;
-        let originalComments = {};
-
-        function showStatus(message, isError = false) {
-            status.textContent = message;
-            status.className = `status ${isError ? 'error' : 'success'}`;
-            setTimeout(() => {
-                status.textContent = '';
-                status.className = 'status';
-            }, 3000);
-        }
-
-        function getTypeString(value) {
-            if (value === null) return 'null';
-            if (Array.isArray(value)) return 'array';
-            return typeof value;
-        }
-
-        function extractComments(yamlText) {
-            const lines = yamlText.split('\n');
-            const comments = {};
-            lines.forEach(line => {
-                const [content, ...commentParts] = line.split('#');
-                if (commentParts.length > 0) {
-                    const key = content.split(':')[0].trim();
-                    if (key) {
-                        comments[key] = '#' + commentParts.join('#');
-                    }
-                }
-            });
-            return comments;
-        }
-
-        function createField(key, value, parent, path = '') {
-            const field = document.createElement('div');
-            field.className = 'field';
-
-            const header = document.createElement('div');
-            header.className = 'field-header';
-
-            const label = document.createElement('div');
-            label.className = 'field-label';
-            label.textContent = key;
-            const typeSpan = document.createElement('span');
-            typeSpan.className = 'type-indicator';
-            typeSpan.textContent = `(${getTypeString(value)})`;
-            label.appendChild(typeSpan);
-            header.appendChild(label);
-
-            if (parent && key !== 'ver') {
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-remove';
-                deleteBtn.textContent = '刪除';
-                deleteBtn.onclick = () => {
-                    if (Array.isArray(parent)) {
-                        parent.splice(key, 1);
-                    } else {
-                        delete parent[key];
-                    }
-                    updateFromVisual();
-                };
-                header.appendChild(deleteBtn);
-            }
-
-            field.appendChild(header);
-
-            const valueContainer = document.createElement('div');
-            valueContainer.className = 'field-value';
-
-            if (key === 'ver') {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'input';
-                input.value = value;
-                input.disabled = true;
-                valueContainer.appendChild(input);
-            }
-            else if (value === null) {
-                const nullSpan = document.createElement('span');
-                nullSpan.textContent = 'null';
-                valueContainer.appendChild(nullSpan);
-            }
-            else if (typeof value === 'boolean') {
-                const toggle = document.createElement('label');
-                toggle.className = 'toggle';
-
-                const input = document.createElement('input');
-                input.type = 'checkbox';
-                input.checked = value;
-
-                input.onchange = () => {
-                    if (Array.isArray(parent)) {
-                        parent[key] = input.checked;
-                    } else {
-                        parent[key] = input.checked;
-                    }
-                    updateFromVisual();
-                };
-
-                const slider = document.createElement('span');
-                slider.className = 'slider';
-
-                toggle.appendChild(input);
-                toggle.appendChild(slider);
-                valueContainer.appendChild(toggle);
-            }
-            else if (typeof value === 'number') {
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.className = 'input';
-                input.value = value;
-                input.step = 'any';
-
-                input.onchange = () => {
-                    const newValue = input.value === '' ? null : Number(input.value);
-                    if (Array.isArray(parent)) {
-                        parent[key] = newValue;
-                    } else {
-                        parent[key] = newValue;
-                    }
-                    updateFromVisual();
-                };
-                valueContainer.appendChild(input);
-            }
-            else if (typeof value === 'string') {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'input';
-                input.value = value;
-
-                input.oninput = () => {
-                    if (Array.isArray(parent)) {
-                        parent[key] = input.value;
-                    } else {
-                        parent[key] = input.value;
-                    }
-                    updateFromVisual();
-                };
-                valueContainer.appendChild(input);
-            }
-            else if (Array.isArray(value)) {
-                const arrayContainer = document.createElement('div');
-
-                value.forEach((item, index) => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'array-item';
-                    itemDiv.appendChild(createField(index, item, value, `${path}[${index}]`));
-                    arrayContainer.appendChild(itemDiv);
-                });
-
-                const addButton = document.createElement('button');
-                addButton.className = 'btn btn-add';
-                addButton.textContent = '添加項目';
-                addButton.onclick = () => {
-                    if (value.length > 0) {
-                        const lastItem = value[value.length - 1];
-                        const newItem = typeof lastItem === 'object' ? null : '';
-                        value.push(newItem);
-                    } else {
-                        value.push('');
-                    }
-                    updateFromVisual();
-                };
-
-                arrayContainer.appendChild(addButton);
-                valueContainer.appendChild(arrayContainer);
-            }
-            else if (typeof value === 'object' && value !== null) {
-                const objectContainer = document.createElement('div');
-                objectContainer.className = 'nested';
-
-                Object.entries(value).forEach(([k, v]) => {
-                    objectContainer.appendChild(createField(k, v, value, `${path}.${k}`));
-                });
-
-                const addButton = document.createElement('button');
-                addButton.className = 'btn btn-add';
-                addButton.textContent = '添加欄位';
-                addButton.onclick = () => {
-                    const newKey = prompt('輸入新欄位名稱：');
-                    if (newKey && !value.hasOwnProperty(newKey)) {
-                        value[newKey] = '';
-                        updateFromVisual();
-                    }
-                };
-
-                objectContainer.appendChild(addButton);
-                valueContainer.appendChild(objectContainer);
-            }
-
-            field.appendChild(valueContainer);
-            return field;
-        }
-
-        function renderVisualEditor() {
-            visualEditor.innerHTML = '';
-            if (!yamlObject) return;
-
-            Object.entries(yamlObject).forEach(([key, value]) => {
-                const field = createField(key, value, yamlObject, key);
-                visualEditor.appendChild(field);
-            });
-
-            const addButton = document.createElement('button');
-            addButton.className = 'btn btn-add';
-            addButton.textContent = '添加根級欄位';
-            addButton.onclick = () => {
-                const newKey = prompt('輸入新欄位名稱：');
-                if (newKey && !yamlObject.hasOwnProperty(newKey)) {
-                    yamlObject[newKey] = '';
-                    updateFromVisual();
-                }
-            };
-            visualEditor.appendChild(addButton);
-        }
-
-        function updateLayout() {
-            const enabledCount = [yamlMode, visualMode, jsonMode]
-                .filter(mode => mode.checked).length;
-
-            editorContainer.style.gridTemplateColumns = `repeat(${enabledCount}, 1fr)`;
-
-            yamlSection.classList.toggle('hidden', !yamlMode.checked);
-            visualSection.classList.toggle('hidden', !visualMode.checked);
-            jsonSection.classList.toggle('hidden', !jsonMode.checked);
-        }
-
-        [visualMode, jsonMode].forEach(mode => {
-            mode.addEventListener('change', () => {
-                const enabledModes = [visualMode, jsonMode]
-                    .filter(m => m.checked).length;
-
-                if (enabledModes === 0) {
-                    mode.checked = true;
-                    return;
-                }
-
-                updateLayout();
-            });
-        });
-
-        function updateFromVisual() {
-            try {
-                // 獲取新的 YAML 文本，但保留註釋
-                const newYaml = jsyaml.dump(yamlObject, {
-                    indent: 2,
-                    lineWidth: -1,
-                    noRefs: true,
-                    sortKeys: false
-                });
-
-                // 分別處理每一行
-                const newLines = newYaml.split('\n');
-                const finalLines = newLines.map(line => {
-                    const key = line.split(':')[0].trim();
-                    const comment = originalComments[key];
-                    return comment ? `${line} ${comment}` : line;
-                });
-
-                editor.value = finalLines.join('\n');
-                jsonEditor.value = JSON.stringify(yamlObject, null, 2);
-                autoSave();
-            } catch (e) {
-                showStatus(`YAML 轉換錯誤: ${e.message}`, true);
-            }
-        }
-
-        function updateFromJson() {
-            try {
-                const jsonData = JSON.parse(jsonEditor.value);
-                yamlObject = jsonData;
-
-                updateFromVisual();
-            } catch (e) {
-                showStatus('JSON 格式錯誤', true);
-            }
-        }
-
-        editor.addEventListener('input', () => {
-            try {
-                const content = editor.value;
-                originalComments = extractComments(content);
-                yamlObject = jsyaml.load(content);
-                jsonEditor.value = JSON.stringify(yamlObject, null, 2);
-                renderVisualEditor();
-            } catch (e) {
-                showStatus(`YAML 解析錯誤: ${e.message}`, true);
-            }
-        });
-
-        jsonEditor.addEventListener('input', () => {
-            if (saveTimeout) clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(updateFromJson, 500);
-        });
-
-        async function saveContent() {
-            if (!currentPath || !editor.value.trim()) return;
-
-            try {
-                await ipcRenderer.invoke('write-yaml', currentPath, editor.value);
-                showStatus('已自動儲存');
-            } catch (error) {
-                showStatus(`儲存錯誤: ${error.message}`, true);
-            }
-        }
-
-        function autoSave() {
-            if (saveTimeout) clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveContent, 1000);
-        }
-
-        ipcRenderer.on('load-path', async (event, path) => {
-            currentPath = path;
-            try {
-                const content = await ipcRenderer.invoke('read-yaml', path);
-                originalComments = extractComments(content);
-                editor.value = content;
-                yamlObject = jsyaml.load(content);
-                jsonEditor.value = JSON.stringify(yamlObject, null, 2);
-                renderVisualEditor();
-            } catch (error) {
-                showStatus(`讀取錯誤: ${error.message}`, true);
-            }
-        });
-
-        window.addEventListener('beforeunload', async (event) => {
-            if (saveTimeout) {
-                clearTimeout(saveTimeout);
-                await saveContent();
-            }
-        });
-
-        // 初始化
-        updateLayout();
-        yamlObject = {};
-        renderVisualEditor();
-    </script>
-</body>
-
+    <script src="../js/plugin_edit/require.js" defer></script>
+  </body>
 </html>
