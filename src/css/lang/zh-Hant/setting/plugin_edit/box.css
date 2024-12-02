@@ -76,7 +76,7 @@ body {
   padding: 20px;
   flex: 1;
   overflow: hidden;
-  -webkit-app-region: no-drag;
+  padding-top: 0;
 }
 
 .section {
@@ -84,6 +84,7 @@ body {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  -webkit-app-region: no-drag;
 }
 
 .section-title {
@@ -177,6 +178,7 @@ body {
   border-radius: 4px;
   width: calc(100% - 18px);
   margin: 2px 0;
+  outline: none;
 }
 
 .toggle {
