@@ -71,12 +71,12 @@ class PluginList {
   renderStatusBadges(item, isEnabled, isLoaded) {
     const badges = [];
 
-    badges.push(!item.verified ? '<span class="unverified-badge">未驗證</span>' : '<span class="verified-badge">已驗證</span>');
+    badges.push(!item.verified ? '<span class="unverified-badge"></span>' : '<span class="verified-badge"></span>');
 
     if (isEnabled) {
       badges.push(isLoaded
-        ? '<span class="loaded-badge">已載入</span>'
-        : '<span class="unloaded-badge">未載入</span>',
+        ? '<span class="loaded-badge"></span>'
+        : '<span class="unloaded-badge"></span>',
       );
     }
 

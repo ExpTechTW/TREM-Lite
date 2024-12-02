@@ -2,7 +2,7 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
-    <title>YAML 編輯器</title>
+    <title>YAML Editor</title>
     <link rel="stylesheet" href="../css/core/loading.css" />
   </head>
   <body>
@@ -10,36 +10,38 @@
       <div class="mode-selector">
         <div class="mode-checkbox">
           <input type="checkbox" id="yamlMode" checked />
-          <label for="yamlMode">YAML</label>
+          <label for="yamlMode" class="yaml-title"></label>
         </div>
         <div class="mode-checkbox">
           <input type="checkbox" id="visualMode" checked />
-          <label for="visualMode">視覺化編輯</label>
+          <label for="visualMode" class="visual-editor-title"></label>
         </div>
         <div class="mode-checkbox">
           <input type="checkbox" id="jsonMode" checked />
-          <label for="jsonMode">JSON</label>
+          <label for="jsonMode" class="json-title"></label>
         </div>
       </div>
       <div class="editor-container" id="editorContainer">
         <div class="section" id="yamlSection">
-          <h3 class="section-title">YAML</h3>
+          <h3 class="section-title yaml-title"></h3>
           <textarea
             id="editor"
             class="editor"
             placeholder="YAML 內容..."
+            spellcheck="false"
           ></textarea>
         </div>
         <div class="section" id="visualSection">
-          <h3 class="section-title">視覺化編輯</h3>
+          <h3 class="section-title visual-editor-title"></h3>
           <div id="visualEditor" class="visual-editor"></div>
         </div>
         <div class="section" id="jsonSection">
-          <h3 class="section-title">JSON</h3>
+          <h3 class="section-title json-title"></h3>
           <textarea
             id="jsonEditor"
             class="editor"
             placeholder="JSON 內容..."
+            spellcheck="false"
           ></textarea>
         </div>
       </div>
