@@ -24,21 +24,7 @@ class WindowControler {
   }
 
   bindEvents() {
-    const events = [
-      'EewRelease',
-      'EewAlert',
-      'RtsPga2',
-      'RtsPga1',
-      'RtsShindo2',
-      'RtsShindo1',
-      'RtsShindo0',
-      'ReportRelease',
-      'IntensityRelease',
-      'TsunamiRelease',
-      'EewNewAreaAlert',
-    ];
-
-    events.forEach((event) => {
+    TREM.constant.WINDOW_FOCUS_EVENTS.forEach((event) => {
       TREM.variable.events.on(event, (ans) => this.windowFocus(event, ans));
     });
   }
@@ -77,8 +63,6 @@ win.on('close', () => {
 function status_alert() {
   return TREM.variable.cache.rts_trigger.loc.length || TREM.variable.cache.show_eew_box;
 }
-
-ipcRenderer.send('toggle-pip');
 
 TREM.class.WindowControler = WindowControler;
 

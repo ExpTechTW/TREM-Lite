@@ -7,44 +7,11 @@ on:
 
 jobs:
   build:
+    runs-on: macos-latest
+
     strategy:
       matrix:
-        include:
-          # Windows builds
-          - os: windows-latest
-            platform: Windows
-            arch: x64
-            artifact-ext: exe
-          - os: windows-latest
-            platform: Windows
-            arch: ia32
-            artifact-ext: exe
-
-          # Linux builds
-          - os: ubuntu-latest
-            platform: Linux
-            arch: x64
-            artifact-ext: deb
-          - os: ubuntu-latest
-            platform: Linux
-            arch: ia32
-            artifact-ext: deb
-
-          # macOS builds
-          - os: macos-latest
-            platform: macOS
-            arch: x64
-            artifact-ext: dmg
-          - os: macos-latest
-            platform: macOS
-            arch: arm64
-            artifact-ext: dmg
-
-    runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        working-directory: src
+        node-version: [18]
 
     steps:
       - uses: actions/checkout@v3
@@ -52,20 +19,39 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Build All Platforms
         env:
-          ELECTRON_ARCH: ${{ matrix.arch }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
 
-      - name: Upload Artifact
+      - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: TREM-Lite.${{ matrix.platform }}_${{ matrix.arch }}.${{ matrix.artifact-ext }}
+          name: TREM-Lite-Windows
           path: |
-            ${{ github.workspace }}/dist/*.${{ matrix.artifact-ext }}
+            dist/*.exe
+            dist/*.msi
+          if-no-files-found: error
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: TREM-Lite-macOS
+          path: |
+            dist/*.dmg
+          if-no-files-found: error
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: TREM-Lite-Linux
+          path: |
+            dist/*.AppImage
+            dist/*.deb
           if-no-files-found: error

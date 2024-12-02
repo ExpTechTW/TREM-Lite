@@ -1,0 +1,115 @@
+﻿.internet-error .title:before {
+  content: "網路異常";
+}
+
+.unstable .title:before {
+  content: "不穩定";
+}
+
+.unstable .warning-message-text span {
+  &:nth-child(1)::before {
+    content: "受地震活動的影響";
+  }
+  &:nth-child(2)::before {
+    content: "觀測點可能不穩定";
+  }
+}
+
+.internet-error .warning-message-text span {
+  &:nth-child(1)::before {
+    content: "網路連線異常";
+  }
+  &:nth-child(2)::before {
+    content: "請待稍後重試";
+  }
+}
+
+.warning-message-wrapper {
+  top: 2em;
+  right: 315px;
+  font-size: 15px;
+  position: absolute;
+  transition: transform 0.6s ease;
+  height: auto;
+  width: auto;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5;
+  flex-direction: column;
+}
+
+.warning-message-box {
+  border: 2px solid #000000ab;
+  background: #505050c7;
+  border-radius: 5px;
+  display: flex;
+  padding: 5;
+  margin-bottom: 5px;
+  min-width: 160px;
+}
+
+.report-wrapper.hidden ~ .warning-message-wrapper {
+  transform: translateX(315px);
+}
+
+.warning-message-contain {
+  display: flex;
+  border-radius: 5px;
+  background: #000000ab;
+  height: 100%;
+  width: 100%;
+  padding: 10px;
+  flex-direction: column;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}
+
+.text {
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.warning-message-icon {
+  height: 100%;
+  width: 100%;
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 3px;
+}
+
+.warning-message-text {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.icon {
+  display: flex;
+  width: 100%;
+  color: #fff;
+  align-items: center;
+}
+
+.icon svg {
+  width: 25px;
+  margin-right: 8px;
+}
+
+.internet-error .icon {
+  color: #ff0000;
+  font-weight: bold;
+}
+
+.unstable .icon {
+  color: #ffca00;
+  font-weight: bold;
+}
+
+.hide {
+  display: none;
+}

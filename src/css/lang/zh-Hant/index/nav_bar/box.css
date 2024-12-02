@@ -1,19 +1,17 @@
-html[lang="zh-Hant"] {
-  .intensity-report::before {
-    content: "震度速報";
-  }
-  .source-report::before {
-    content: "震源速報";
-  }
-  .earthquake-report::before {
-    content: "地震報告";
-  }
-  .tsunami-warning::before {
-    content: "海嘯警報";
-  }
-  .earthquake-warning::before {
-    content: "地震速報";
-  }
+.intensity-report::before {
+  content: "震度速報";
+}
+.source-report::before {
+  content: "震源速報";
+}
+.earthquake-report::before {
+  content: "地震報告";
+}
+.tsunami-warning::before {
+  content: "海嘯警報";
+}
+.earthquake-warning::before {
+  content: "地震速報";
 }
 
 .nav-bar {
@@ -159,6 +157,7 @@ html[lang="zh-Hant"] {
   flex-wrap: wrap;
   text-align: center;
   border-radius: 5px;
+  display: none;
 
   .option {
     width: 4px;

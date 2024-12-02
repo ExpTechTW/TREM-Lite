@@ -12,6 +12,12 @@ document.onkeydown = (e) => {
   }
 
   switch (e.code) {
+    case 'F1':
+      return ipcRenderer.send('openPluginFolder');
+
+    case 'F2':
+      return ipcRenderer.send('openConfigFolder');
+
     case 'F11':
       return ipcRenderer.send('toggleFullscreen');
 
@@ -30,17 +36,16 @@ document.querySelectorAll('.button').forEach((button) =>
   button.addEventListener('click', () => {
     document.querySelector('.setting-options-page.active')?.classList.remove('active');
     document.querySelector('.button.on')?.classList.remove('on');
-    document.querySelector(`.${button.getAttribute('for')}`).classList.add('active');
     button.classList.add('on');
+    document.querySelector(`.${button.getAttribute('for')}`)?.classList.add('active');
   }),
 );
 
-document.querySelector('.windows-wrapper').addEventListener('click', (event) => {
-  const targetClass = event.target.classList;
-  if (targetClass.contains('close')) {
+document.querySelector('.windows-wrapper').addEventListener('click', ({ target }) => {
+  if (target.classList.contains('close')) {
     window.close();
   }
-  else if (targetClass.contains('minimize')) {
+  else if (target.classList.contains('minimize')) {
     ipcRenderer.send('minimize-window');
   }
 });

@@ -1,7 +1,14 @@
-html[lang="zh-Hant"] {
-  .report-intensity-text::before {
-    content: "觀測最大震度";
-  }
+.report-intensity-text::before {
+  content: "觀測最大震度";
+}
+.web-detection::before {
+  content: "檢知";
+}
+.web-report::before {
+  content: "報告";
+}
+.report-replay::before {
+  content: "重播";
 }
 
 /**最外包**/
@@ -43,21 +50,32 @@ html[lang="zh-Hant"] {
     padding-top: 2px;
   }
 
+  .custom-scrollbar-wrapper {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 8px;
+    z-index: 1001;
+    opacity: 0;
+  }
+
   .custom-scrollbar {
     position: absolute;
     right: 0;
     top: 0;
-    width: 5px;
+    width: 7px;
     height: 50px;
-    background-color: rgb(255 255 255 / 50%);
-    border-radius: 4px;
+    background-color: rgb(255 255 255 / 60%);
+    border-radius: 3px;
     cursor: pointer;
     border: 1px solid #cfcfcf;
-    display: none;
   }
 
-  .report-box-items:hover + .custom-scrollbar {
-    display: block;
+  .report-box-items:hover + .custom-scrollbar-wrapper,
+  .custom-scrollbar-wrapper:hover,
+  .custom-scrollbar-wrapper:active {
+    opacity: 1;
   }
 
   .report-box-items {
@@ -126,6 +144,12 @@ html[lang="zh-Hant"] {
       display: none;
     }
 
+    .report-web,
+    .report-replay {
+      width: auto;
+      padding: 3px;
+    }
+
     &:hover:not(.survey) {
       background-color: #8a8a8ac7;
 
@@ -141,8 +165,7 @@ html[lang="zh-Hant"] {
 
         .report-web,
         .report-replay {
-          height: 30px;
-          width: 50px;
+          height: 22px;
           border-radius: 5px;
           display: flex;
           align-items: center;
@@ -283,6 +306,10 @@ html[lang="zh-Hant"] {
         }
       }
 
+      .isNum {
+        color: #ffe200;
+      }
+
       /**深度**/
       .report-depth {
         font-size: 28px;
@@ -326,10 +353,10 @@ html[lang="zh-Hant"] {
 
     /**觀測最大震度文字**/
     .report-intensity-text {
-      font-size: 13px;
       font-weight: bold;
       margin-top: 0.3em;
       display: block;
+      font-size: 13px;
     }
 
     /**觀測最大震度值**/

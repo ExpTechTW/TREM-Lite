@@ -1,3 +1,4 @@
+const logger = require('../core/utils/logger');
 const TREM = require('./constant');
 
 function generateColorCSS() {
@@ -90,13 +91,15 @@ async function initializeStyles() {
   const loadingIndicator = showLoadingIndicator();
 
   try {
+    logger.info('CSS inject');
     injectColorStyles();
     await loadCSS('../css/lang/zh-Hant/index/index.css');
+    logger.info('CSS loaded');
 
     hideLoadingIndicator(loadingIndicator);
   }
   catch (error) {
-    console.error('CSS 載入失敗:', error);
+    logger.error('CSS 載入失敗:', error);
     hideLoadingIndicator(loadingIndicator);
   }
 }

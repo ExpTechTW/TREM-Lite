@@ -1,19 +1,17 @@
-﻿html[lang="zh-Hant"] {
-  .rts-intenisty-list-text::before {
-    content: "各地震度排序";
-  }
+﻿.rts-intenisty-list-text::before {
+  content: "各地震度排序";
+}
 
-  .max-intensity-text::before {
-    content: "最大觀測震度";
-  }
+.max-intensity-text::before {
+  content: "最大觀測震度";
+}
 
-  .max-pga-text::before {
-    content: "最大加速度";
-  }
+.max-pga-text::before {
+  content: "最大加速度";
+}
 
-  .max-station-pga:empty::before {
-    content: "0.00 gal";
-  }
+.max-station-pga:empty::before {
+  content: "0.00 gal";
 }
 
 .max-intensity-pga-wrapper {
@@ -111,13 +109,13 @@
 
 /**即時震度列表外包**/
 .report-wrapper.hidden ~ .rts-intensity-list-wrapper {
-  transform: translateX(215%);
+  transform: translateX(216%);
 }
 
 .rts-intensity-list-wrapper {
   position: absolute;
   display: flex;
-  bottom: 5px;
+  bottom: 3px;
   max-height: 300px;
   width: 145px;
   margin-right: 8px;

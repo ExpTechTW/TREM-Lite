@@ -5,7 +5,7 @@
   --fade-duration: 0.5s;
 }
 
-body:not(.setting) {
+body {
   background-color: var(--loading-bg);
   border-radius: 15px;
 }
