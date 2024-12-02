@@ -1,4 +1,4 @@
-ver: 2
+ver: 3
 
 location-code: 711
 
@@ -9,10 +9,10 @@ alert-level:
   eew-intensity: 0 # EEW 所在地預估震度
 
 check-box:
-  window-eew: true
-  window-report: true
-  window-detect: true
-  window-rts-intensity: true
+  show-window-eew: false
+  show-window-report: false
+  show-window-detect: false
+  show-window-rts-intensity: false
   early-warning-trem-eew: true
   other-auto-start: true
   other-tts: true
