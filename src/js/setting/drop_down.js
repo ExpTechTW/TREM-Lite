@@ -298,6 +298,8 @@ class DropDown {
 
   renderCity(targetElement) {
     try {
+      this.processStation(this.station);
+
       this.log('Rendering city for element:', targetElement);
 
       if (!targetElement) {
