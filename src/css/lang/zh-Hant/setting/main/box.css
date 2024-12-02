@@ -205,6 +205,18 @@
 .current:empty:before {
   content: "未設定";
 }
+.unverified-badge::before {
+  content: "未驗證";
+}
+.verified-badge::before {
+  content: "已驗證";
+}
+.unloaded-badge::before {
+  content: "未載入";
+}
+.loaded-badge::before {
+  content: "已載入";
+}
 
 .eew-1::before {
   content: "EEW（收到地震預警時播放）";
@@ -455,8 +467,8 @@ body {
 .setting-content {
   background-color: rgb(49 49 49);
   flex: 1;
-  border-bottom-right-radius: 15px;
-  border-top-right-radius: 15px;
+  /* border-bottom-right-radius: 15px; */
+  /* border-top-right-radius: 15px; */
   border: 1px solid #ffffff42;
   border-left: none;
   -webkit-app-region: drag;
@@ -1079,8 +1091,8 @@ li {
 
 .setting-header {
   background-color: hsl(0deg 0% 32.55%);
-  border-bottom-left-radius: 15px;
-  border-top-left-radius: 15px;
+  /* border-bottom-left-radius: 15px; */
+  /* border-top-left-radius: 15px; */
   border: 1px solid #ffffff42;
   border-right: none;
   z-index: 2;
@@ -1248,4 +1260,14 @@ li {
   background: #0000008c;
   color: #ffffff70;
   pointer-events: none;
+}
+
+.wave-container:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.wave-container:last-child {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
 }

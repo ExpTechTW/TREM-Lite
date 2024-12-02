@@ -4,6 +4,15 @@
 .root:before {
   content: "新增根級欄位";
 }
+.json-title:before {
+  content: "JSON";
+}
+.yaml-title:before {
+  content: "YAML";
+}
+.visual-editor-title:before {
+  content: "視覺化編輯";
+}
 
 :root {
   --bg-color: #1a1a1a;
@@ -18,12 +27,35 @@
   --field-bg: #363636;
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-button {
+  background: transparent;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgb(0 0 0 / 40%);
+  border: 1px solid #727272;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: transparent;
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  padding: 20px;
   background-color: var(--bg-color);
   color: var(--text-color);
+  user-select: none;
 }
 
 .container {
@@ -68,6 +100,7 @@ body {
   tab-size: 2;
   flex: 1;
   overflow: auto;
+  outline: none;
 }
 
 .visual-editor {
@@ -86,19 +119,26 @@ body {
   padding: 10px 20px;
   border-radius: 4px;
   display: none;
+  opacity: 0;
   z-index: 1000;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(20px);
 }
 
 .success {
   background-color: var(--success-color);
   color: white;
-  display: block;
 }
 
 .error {
   background-color: var(--error-color);
   color: white;
+}
+
+.status.show {
   display: block;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .field {
@@ -178,11 +218,6 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(26px);
-}
-
-.array-item {
-  margin-left: 20px;
-  margin-bottom: 10px;
 }
 
 .btn {
