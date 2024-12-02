@@ -56,14 +56,17 @@ body {
   background-color: var(--bg-color);
   color: var(--text-color);
   user-select: none;
+  border: 1px solid #ffffff42;
+  border-radius: unset;
 }
 
 .container {
   margin: 0;
   background-color: var(--container-bg);
-  height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 99.7vh;
+  -webkit-app-region: drag;
 }
 
 .editor-container {
@@ -73,6 +76,7 @@ body {
   padding: 20px;
   flex: 1;
   overflow: hidden;
+  -webkit-app-region: no-drag;
 }
 
 .section {
@@ -105,7 +109,7 @@ body {
 
 .visual-editor {
   flex: 1;
-  padding: 10px;
+  padding: 5px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background-color: var(--input-bg);
@@ -264,10 +268,29 @@ select.input {
   display: flex;
   align-items: center;
   gap: 5px;
+  -webkit-app-region: no-drag;
 }
 
 .mode-checkbox input {
   margin: 0;
+}
+
+input[type="checkbox"] {
+  position: relative;
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  background: #fff;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="checkbox"]:checked {
+  border: none;
+  background-image: url("data:image/svg+xml;utf8,<svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='16' height='16'><rect fill='%23090' width='16' height='16'/><path fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M12.6,5.17l-5.66,5.66L3.4,7.29'/></svg>");
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .disabled {
@@ -284,9 +307,50 @@ select.input {
   position: fixed;
   bottom: 10px;
   left: 10px;
-  color: #666;
-  font-size: 12px;
+  color: #919090;
+  font-size: 13px;
   padding: 5px;
   background-color: var(--bg-color);
-  border-radius: 4px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.windows-wrapper {
+  position: absolute;
+  right: 0.8em;
+  display: flex;
+  justify-content: space-between;
+  width: 4rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  top: 0.6em;
+  font-weight: bold;
+  -webkit-app-region: no-drag;
+  z-index: 1002;
+}
+
+.minimize,
+.close {
+  margin-top: 2px;
+  color: #ffffff;
+  align-items: center;
+  justify-content: center;
+}
+
+.minimize:hover {
+  background: #868484;
+}
+
+.close:hover {
+  background: hsl(0 68% 52% / 1);
+}
+
+.windows-buttons {
+  border: 1px solid #616161;
+  width: 25px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
 }

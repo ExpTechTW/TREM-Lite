@@ -31,3 +31,12 @@ document.onkeydown = (e) => {
       return e.preventDefault();
   }
 };
+
+document.querySelector('.windows-wrapper').addEventListener('click', ({ target }) => {
+  if (target.classList.contains('close')) {
+    window.close();
+  }
+  else if (target.classList.contains('minimize')) {
+    ipcRenderer.send('minimize-window');
+  }
+});

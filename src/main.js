@@ -187,8 +187,9 @@ function createSettingWindow() {
     win.webContents.reload();
   });
   ipcMain.on('minimize-window', () => {
-    if (SettingWindow) {
-      SettingWindow.minimize();
+    const currentWindow = BrowserWindow.getFocusedWindow();
+    if (currentWindow) {
+      currentWindow.minimize();
     }
   });
 }
@@ -550,6 +551,7 @@ ipcMain.on('open-yaml-editor', (event, filePath) => {
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    frame: false,
     title: 'YAML 編輯器',
     webPreferences: {
       nodeIntegration: true,
