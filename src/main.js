@@ -8,8 +8,8 @@ const {
   Menu,
 } = require('electron');
 const path = require('path');
-const fs = require('fs');
-const ini = require('ini');
+const fs = require('fs-extra');
+const yaml = require('js-yaml');
 
 let win;
 let SettingWindow;
@@ -17,9 +17,8 @@ let pipWindow = null;
 let tray = null;
 let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
-const test = process.argv.includes('--raw') ? 0 : 1;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
-const configDir = path.join(app.getPath('userData'), 'config.ini');
+const configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
 const is_mac = process.platform === 'darwin';
 
@@ -163,7 +162,9 @@ function createSettingWindow() {
     height: 590,
     show: false,
     frame: false,
-    transparent: true,
+    transparent: is_mac ? false : true,
+    backgroundMaterial: 'acrylic',
+    vibrancy: 'sidebar',
     resizable: false,
     ...(is_mac && {
       vibrancy: 'ultra-dark',
@@ -183,6 +184,7 @@ function createSettingWindow() {
   SettingWindow.webContents.on('did-finish-load', () => SettingWindow.show());
   SettingWindow.on('close', () => {
     SettingWindow = null;
+    win.webContents.reload();
   });
   ipcMain.on('minimize-window', () => {
     if (SettingWindow) {
@@ -252,10 +254,6 @@ ipcMain.on('update-pip', (event, data) => {
 
 ipcMain.on('openSettingWindow', () => createSettingWindow());
 
-ipcMain.on('israw', () => {
-  win.webContents.send('israwok', test);
-});
-
 ipcMain.on('openUrl', (_, url) => {
   shell.openExternal(url);
 });
@@ -309,47 +307,11 @@ ipcMain.on('openPluginFolder', () => {
     });
 });
 
-const loadConfig = () => {
-  if (!fs.existsSync(configDir)) {
-    const defaultConfig = ini.stringify({
-      INFO: {
-        lang: 'zh-tw',
-        version: app.getVersion(),
-      },
+ipcMain.on('openConfigFolder', () => {
+  shell.openPath(path.dirname(configDir))
+    .catch((error) => {
+      console.error(error);
     });
-    fs.writeFileSync(configDir, defaultConfig, 'utf-8');
-  }
-  return ini.parse(fs.readFileSync(configDir, 'utf-8'));
-};
-
-const saveConfig = (data) => {
-  const existingConfig = loadConfig();
-  const mergeDeep = (target, source) =>
-    Object.entries(source).reduce((acc, [key, value]) => {
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        acc[key] = mergeDeep(acc[key] || {}, value);
-      }
-      else if (value === null) {
-        acc = Object.fromEntries(Object.entries(acc).filter(([k]) => k !== key));
-      }
-      else {
-        acc[key] = value;
-      }
-      return acc;
-    }, { ...target });
-
-  const updatedConfig = mergeDeep(existingConfig, data);
-  fs.writeFileSync(configDir, ini.stringify(updatedConfig), 'utf-8');
-
-  return { status: true };
-};
-
-ipcMain.on('get-config', (event) => {
-  event.reply('get-config-res', loadConfig());
-});
-
-ipcMain.on('write-config', (event, data) => {
-  event.reply('write-config-res', saveConfig(data));
 });
 
 function trayIcon() {
@@ -408,3 +370,195 @@ function restart() {
   forceQuit = true;
   app.quit();
 }
+
+const pluginWindows = new Map();
+
+function createPluginWindow(pluginId, htmlPath, options = {}) {
+  const defaultOptions = {
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      backgroundThrottling: false,
+    },
+  };
+
+  const windowOptions = { ...defaultOptions, ...options };
+  const pluginWindow = new BrowserWindow(windowOptions);
+
+  require('@electron/remote/main').enable(pluginWindow.webContents);
+
+  if (path.isAbsolute(htmlPath)) {
+    pluginWindow.loadFile(htmlPath);
+  }
+  else {
+    const absolutePath = path.join(pluginDir, htmlPath);
+    pluginWindow.loadFile(absolutePath);
+  }
+
+  pluginWindow.setMenu(null);
+
+  const windowInfo = {
+    window: pluginWindow,
+    pluginId,
+    htmlPath,
+    options,
+  };
+
+  pluginWindows.set(pluginWindow.id, windowInfo);
+
+  pluginWindow.on('closed', () => {
+    pluginWindows.delete(pluginWindow.id);
+    if (win) {
+      win.webContents.send('plugin-window-closed', {
+        windowId: pluginWindow.id,
+        pluginId,
+      });
+    }
+  });
+
+  return pluginWindow;
+}
+
+ipcMain.on('open-plugin-window', (event, data) => {
+  const { pluginId, htmlPath, options } = data;
+
+  for (const [windowId, windowInfo] of pluginWindows.entries()) {
+    if (windowInfo.pluginId === pluginId) {
+      if (!windowInfo.window.isDestroyed()) {
+        windowInfo.window.close();
+      }
+      pluginWindows.delete(windowId);
+    }
+  }
+
+  try {
+    const pluginWindow = createPluginWindow(pluginId, htmlPath, options);
+
+    event.reply('plugin-window-opened', {
+      success: true,
+      windowId: pluginWindow.id,
+      pluginId,
+    });
+  }
+  catch (error) {
+    console.error('Error opening plugin window:', error);
+    event.reply('plugin-window-opened', {
+      success: false,
+      error: error.message,
+      pluginId,
+    });
+  }
+});
+
+ipcMain.on('close-plugin-window', (event, windowId) => {
+  const windowInfo = pluginWindows.get(windowId);
+  if (windowInfo) {
+    windowInfo.window.close();
+    event.reply('plugin-window-closed', {
+      success: true,
+      windowId,
+      pluginId: windowInfo.pluginId,
+    });
+  }
+});
+
+ipcMain.on('close-plugin-windows', (event, pluginId) => {
+  for (const [windowId, windowInfo] of pluginWindows.entries()) {
+    if (windowInfo.pluginId === pluginId) {
+      windowInfo.window.close();
+    }
+  }
+  event.reply('plugin-windows-closed', {
+    success: true,
+    pluginId,
+  });
+});
+
+ipcMain.on('get-plugin-windows', (event, pluginId) => {
+  const windows = Array.from(pluginWindows.entries())
+    .filter(([_, info]) => info.pluginId === pluginId)
+    .map(([windowId, info]) => ({
+      windowId,
+      htmlPath: info.htmlPath,
+      options: info.options,
+    }));
+
+  event.reply('plugin-windows-list', {
+    pluginId,
+    windows,
+  });
+});
+
+ipcMain.on('send-to-plugin-window', (event, data) => {
+  const { windowId, channel, payload } = data;
+  const windowInfo = pluginWindows.get(windowId);
+  if (windowInfo) {
+    windowInfo.window.webContents.send(channel, payload);
+  }
+});
+
+ipcMain.on('broadcast-to-plugin-windows', (event, data) => {
+  const { pluginId, channel, payload } = data;
+  for (const windowInfo of pluginWindows.values()) {
+    if (windowInfo.pluginId === pluginId) {
+      windowInfo.window.webContents.send(channel, payload);
+    }
+  }
+});
+
+let yamlEditorWindow = null;
+
+ipcMain.handle('read-yaml', async (event, filePath) => {
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    return content;
+  }
+  catch (error) {
+    throw new Error(`無法讀取檔案: ${error.message}`);
+  }
+});
+
+ipcMain.handle('write-yaml', async (event, filePath, content) => {
+  try {
+    yaml.load(content);
+    await fs.writeFile(filePath, content, 'utf8');
+    return true;
+  }
+  catch (error) {
+    throw new Error(`無法寫入檔案: ${error.message}`);
+  }
+});
+
+ipcMain.on('open-yaml-editor', (event, filePath) => {
+  if (yamlEditorWindow instanceof BrowserWindow) {
+    yamlEditorWindow.focus();
+    yamlEditorWindow.webContents.send('load-path', filePath);
+    return;
+  }
+
+  yamlEditorWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    title: 'YAML 編輯器',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  require('@electron/remote/main').enable(yamlEditorWindow.webContents);
+  yamlEditorWindow.loadFile('./src/view/yaml.html');
+  yamlEditorWindow.setMenu(null);
+
+  yamlEditorWindow.webContents.on('did-finish-load', () => {
+    yamlEditorWindow.webContents.send('load-path', filePath);
+  });
+
+  yamlEditorWindow.on('close', () => {
+    yamlEditorWindow = null;
+  });
+});

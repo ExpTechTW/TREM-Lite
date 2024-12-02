@@ -1,21 +1,21 @@
 .button[for="general"]:before,
-.general .setting-page-title::before {
+.general .setting-page-header-title::before {
   content: "一般";
 }
 .button[for="graphics"]:before,
-.graphics-title:before {
+.graphics-header-title:before {
   content: "圖形";
 }
 .button[for="sound-effects"]:before,
-.sound-effects-title::before {
+.sound-effects-header-title::before {
   content: "音效";
 }
 .button[for="extended"]:before,
-.extended-title:before {
+.extended-header-title:before {
   content: "擴充";
 }
 .button[for="info"]:before,
-.info-title::before {
+.info-header-title::before {
   content: "關於";
 }
 .location-title::before {
@@ -79,7 +79,7 @@
   content: "近即時震度";
 }
 .get-trem-eew::before {
-  content: "接收TREM EEW";
+  content: "接收 TREM EEW";
 }
 .reset-button::before,
 .reset-setting-title::before {
@@ -87,12 +87,6 @@
 }
 .reset-setting::before {
   content: "重置所有設定";
-}
-.display-effect-title::before {
-  content: "地圖顯示效果";
-}
-.display-effect-description::before {
-  content: "設定在地圖上的顯示效果。";
 }
 .auto-zoom-title::before {
   content: "地圖自動縮放";
@@ -125,17 +119,18 @@
 .sound-effects-list-description::before {
   content: "開啟或關閉特定的音效";
 }
-.extended-list-title::before {
+.extended-list-title:empty::before {
   content: "擴充列表";
 }
-.extended-list-description::before {
-  content: "選擇啟用的擴充，擴充將在程式啟動時載入。";
-}
-.extended-info span::before {
+.extended-list-description:empty::before,
+.extended-info .extended-info-warning:empty::before {
   content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
 }
-.eew-1::before {
-  content: "EEW（收到地震預警時播放）";
+.extended-list-descriptions:empty::before {
+  content: "選擇啟用的擴充，擴充將在程式啟動時載入。";
+}
+.extended-setting-button::before {
+  content: "設定";
 }
 .p-alert::before {
   content: "P-Alert（收到近即時震度時播放）";
@@ -147,10 +142,10 @@
   content: "Update（地震預警更正時播放）";
 }
 .info-trem-lite::before {
-  content: "關於TREM Lite";
+  content: "關於 TREM Lite";
 }
 .info-trem-description::before {
-  content: "TREM-Lite是一款開源地震速報軟體，提供給您即時的地震資訊，利用自製的測站，顯示各地的即時震度，在地震發生的第一時間取得各管道發布的強震即時警報訊息。";
+  content: "TREM-Lite 是一款開源地震速報軟體，提供給您即時的地震資訊，利用自製的測站，顯示各地的即時震度，在地震發生的第一時間取得各管道發布的強震即時警報訊息。";
 }
 .app-version-title::before {
   content: "程式版本";
@@ -185,13 +180,22 @@
 .contributor-description::before {
   content: "感謝以下的貢獻者們，因為有了他們的貢獻， TREM Lite 才得以實現。";
 }
-.reset-confirm-title::before {
+.reset .confirm-title::before {
   content: "您確定要重置設定嗎？重設後將無法返回。";
 }
-.reset-sure::before {
+.extendedOpen .confirm-title::before {
+  content: "您確定要啟用 ";
+}
+.extendedOpen .confirm-title::after {
+  content: " 擴充嗎，若使用來源不明或無法信任的擴充可能危及您的個人資訊安全。";
+}
+.confirm-sure:empty::before {
   content: "確定";
 }
-.reset-cancel::before {
+.confirm-sure:not(:empty)::after {
+  content: "秒";
+}
+.confirm-cancel::before {
   content: "取消";
 }
 .intensity-0::after {
@@ -201,7 +205,22 @@
 .current:empty:before {
   content: "未設定";
 }
+.unverified-badge::before {
+  content: "未驗證";
+}
+.verified-badge::before {
+  content: "已驗證";
+}
+.unloaded-badge::before {
+  content: "未載入";
+}
+.loaded-badge::before {
+  content: "已載入";
+}
 
+.eew-1::before {
+  content: "EEW（收到地震預警時播放）";
+}
 .eew-2 {
   &::before {
     content: "EEW2（最大預估";
@@ -295,7 +314,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgb(12 16 22 / 20%);
+  background-color: rgb(73 73 73 / 90%);
   transition: 0.4s;
 }
 
@@ -327,7 +346,7 @@ body {
 }
 
 .switch input:checked + .slider {
-  background-color: #1bd337;
+  background-color: #1cb577;
   box-shadow: inset 0 0 3px rgb(0 0 0 /40%);
 
   &:before {
@@ -436,7 +455,7 @@ body {
   display: flex;
 }
 
-.setting-page-title {
+.setting-page-header-title {
   font-size: 25px;
   font-weight: bold;
   padding-top: 1vw;
@@ -446,10 +465,10 @@ body {
 }
 
 .setting-content {
-  background-color: rgb(49 49 49 / 97%);
+  background-color: rgb(49 49 49);
   flex: 1;
-  border-bottom-right-radius: 15px;
-  border-top-right-radius: 15px;
+  /* border-bottom-right-radius: 15px; */
+  /* border-top-right-radius: 15px; */
   border: 1px solid #ffffff42;
   border-left: none;
   -webkit-app-region: drag;
@@ -482,9 +501,10 @@ body {
   padding-left: 1vw;
 }
 
-.setting-option span {
+.setting-option .extended-info-warning {
   font-size: 15px;
   font-weight: bold;
+  justify-content: center;
 }
 
 .setting-item-title {
@@ -497,11 +517,17 @@ body {
   background-color: #1c1c1e;
   border-radius: 10px;
   margin-top: 3vh;
+  height: auto;
 }
 
 .extended .setting-option {
-  display: grid;
-  justify-content: center;
+  display: grid !important;
+  color: #fff;
+  padding: 2px !important;
+}
+
+.extended .setting-option:first-child {
+  margin-top: 0;
 }
 
 .info .setting-option div {
@@ -510,9 +536,8 @@ body {
 
 .setting-item-content
   div
-  div:not(.select-items, .select-wrapper, .condition-items) {
+  div:not(.select-items, .select-wrapper, .condition-items, .extended-info) {
   padding: 13px;
-  justify-content: unset;
   display: flex;
   align-items: center;
 
@@ -543,7 +568,7 @@ body {
 
 .extended-info {
   color: #ff5656;
-  align-items: center;
+  height: auto;
 }
 
 .extended-info .material-symbols-rounded {
@@ -603,6 +628,7 @@ body {
 .setting-info div div {
   flex-direction: column;
   padding: 10px;
+  width: 100%;
 }
 
 .contributor ul {
@@ -624,18 +650,18 @@ li {
   cursor: pointer;
 }
 
-.reset-confirm-wrapper {
+.confirm-wrapper {
   display: grid;
   position: fixed;
   width: 100%;
-  height: auto;
   bottom: -100%;
   transition: bottom 0.3s ease;
   z-index: 1001;
-  border-bottom-left-radius: 11px;
+  height: 100%;
+  align-items: end;
 }
 
-.reset-confirm-content {
+.confirm-content {
   display: flex;
   flex-direction: column;
   justify-items: center;
@@ -646,9 +672,14 @@ li {
   border-width: 1px 0px 0px 0px;
   border-color: #ffffff1c;
   border-style: solid;
+  border-bottom-left-radius: 13px;
+  border-bottom-right-radius: 13px;
+  border: 1px solid #ffffff42;
+  justify-content: flex-end;
+  height: auto;
 }
 
-.reset-confirm-content span {
+.confirm-content span {
   color: #fff;
 }
 
@@ -740,11 +771,13 @@ li {
 .SE-Net {
   color: #ffc756;
   margin-right: 10px;
+  font-size: 12px !important;
 }
 
 .MS-Net {
   color: #56deff;
   margin-right: 10px;
+  font-size: 12px !important;
 }
 
 .select-arrow-active {
@@ -1053,12 +1086,13 @@ li {
 .responsive-image {
   max-width: 100%;
   height: auto;
+  pointer-events: none;
 }
 
 .setting-header {
-  background-color: hsl(0deg 0% 32.55% / 97%);
-  border-bottom-left-radius: 15px;
-  border-top-left-radius: 15px;
+  background-color: hsl(0deg 0% 32.55%);
+  /* border-bottom-left-radius: 15px; */
+  /* border-top-left-radius: 15px; */
   border: 1px solid #ffffff42;
   border-right: none;
   z-index: 2;
@@ -1076,6 +1110,7 @@ li {
   top: 0.6em;
   font-weight: bold;
   -webkit-app-region: no-drag;
+  z-index: 1002;
 }
 
 .minimize,
@@ -1111,6 +1146,7 @@ li {
   height: 3px;
   cursor: pointer;
   color: #ff4a4a;
+  justify-content: center;
 }
 
 .reset-button:hover {
@@ -1119,4 +1155,119 @@ li {
 
 .reset-setting + .switch {
   width: 60px;
+}
+
+.extended-setting-button {
+  border-radius: 5px;
+  border: 1px solid #ffffff24;
+  width: auto;
+  height: 3px;
+  cursor: pointer;
+  color: #ffb84a;
+  margin-left: 5px;
+}
+
+.extended-setting-button:hover {
+  background: #48484d;
+}
+
+.extended-list {
+  justify-content: space-between;
+  padding: 0 !important;
+  width: 100%;
+}
+
+.extended-list-descriptions {
+  padding: 0;
+  color: lightgray;
+  font-size: 16;
+  font-weight: 400;
+}
+
+.extended-info {
+  .setting-option {
+    margin-top: 0;
+  }
+
+  .switch {
+    left: unset;
+  }
+}
+
+.extended-list-box {
+  width: 100%;
+  border-bottom: unset !important;
+  padding: 2 !important;
+  justify-content: space-between;
+}
+
+.extended-header-title-box,
+.extended-list-author-version {
+  width: 75%;
+  border-bottom: unset !important;
+  padding: 0px !important;
+  margin-top: 5;
+  color: grey;
+}
+
+.extended-list-author-version span:first-child {
+  border: 1px solid #ffffff29;
+  border-radius: 5px;
+  padding: 5;
+  font-size: 12px;
+}
+
+.author {
+  padding: 0 !important;
+  width: 150px;
+  display: flex !important;
+  justify-content: space-between;
+  max-width: 115px;
+}
+
+.extended-version {
+  border: 1px solid #ffffff29;
+  border-radius: 5px;
+  padding: 5;
+  font-size: 12px !important;
+  margin-left: 5;
+}
+
+.extended-list-left,
+.extended-list-description-box,
+.extended-list-title-box {
+  flex-direction: column;
+  padding: 3px !important;
+  border-bottom: unset !important;
+  width: auto;
+  align-items: unset !important;
+}
+
+.extended-list-buttons {
+  width: 25%;
+  flex-direction: row;
+  padding: 0 !important;
+  justify-content: space-around;
+  margin-right: 3px;
+  margin-left: 3px;
+}
+
+.disable .round {
+  background-color: rgb(159 15 15 / 90%);
+}
+
+.disabled {
+  background: #0000008c;
+  color: #ffffff70;
+  pointer-events: none;
+}
+
+.wave-container:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.wave-container:last-child {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
 }

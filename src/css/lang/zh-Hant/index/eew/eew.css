@@ -1,72 +1,70 @@
-html[lang="zh-Hant"] {
-  .info-number {
-    &:not(:empty)::before {
-      content: "第";
-    }
-
-    &:not(:empty)::after {
-      content: "報";
-    }
+.info-number {
+  &:not(:empty)::before {
+    content: "第";
   }
 
-  .cancel-title span::before {
-    content: "取　消";
+  &:not(:empty)::after {
+    content: "報";
   }
+}
 
-  .cancel-body span::before {
-    content: "此地震速報已取消";
-  }
+.cancel-title span::before {
+  content: "取　消";
+}
 
-  .no-eew.rts-trigger-low .info-unit::after {
-    content: "弱反應 " !important;
-  }
+.cancel-body span::before {
+  content: "此地震速報已取消";
+}
 
-  .no-eew.rts-trigger-middle .info-unit::after {
-    content: "震動檢測 " !important;
-  }
+.no-eew.rts-trigger-low .info-unit::after {
+  content: "弱反應 " !important;
+}
 
-  .no-eew.rts-trigger-high .info-unit::after {
-    content: "強震檢測 " !important;
-  }
+.no-eew.rts-trigger-middle .info-unit::after {
+  content: "震動檢測 " !important;
+}
 
-  .eew-warn .info-unit::before {
-    content: "地震速報 ";
-  }
+.no-eew.rts-trigger-high .info-unit::after {
+  content: "強震檢測 " !important;
+}
 
-  .eew-alert .info-unit::before {
-    content: "緊急地震速報 ";
-  }
+.eew-warn .info-unit::before {
+  content: "地震速報 ";
+}
 
-  .info-number-last::after {
-    content: "報(最終報)" !important;
-  }
+.eew-alert .info-unit::before {
+  content: "緊急地震速報 ";
+}
 
-  .no-eew .info-unit::after {
-    content: "暫無生效中的地震預警";
-  }
+.info-number-last::after {
+  content: "報(最終報)" !important;
+}
 
-  .info-intensity::after {
-    content: "預估最大震度";
-  }
+.no-eew .info-unit::after {
+  content: "暫無生效中的地震預警";
+}
 
-  .info-nsspe span::before {
-    content: "NSSPE 無震源參數推算";
-  }
+.info-intensity::after {
+  content: "預估最大震度";
+}
 
-  .info-time::after {
-    content: "發震";
-  }
+.info-nsspe span::before {
+  content: "NSSPE 無震源參數推算";
+}
 
-  .info-mag-text::after,
-  .report-box-item-wrapper:first-child .report-mag-text::after {
-    content: "規模";
-    width: 3.5rem;
-  }
+.info-time::after {
+  content: "發震";
+}
 
-  .info-depth-text::after,
-  .report-depth-text::after {
-    content: "深度";
-  }
+.info-mag-text::after,
+.report-box-item-wrapper:first-child .report-mag-text::after {
+  content: "規模";
+  width: 3.5rem;
+}
+
+.info-depth-text::after,
+.report-depth-text::after {
+  content: "深度";
 }
 
 /**最外包**/

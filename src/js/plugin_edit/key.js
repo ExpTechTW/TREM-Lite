@@ -1,5 +1,4 @@
 const { ipcRenderer } = require('electron');
-const { app } = require('@electron/remote');
 
 document.onkeydown = (e) => {
   if (e.ctrlKey) {
@@ -32,17 +31,3 @@ document.onkeydown = (e) => {
       return e.preventDefault();
   }
 };
-
-document.querySelector('.fab').addEventListener('click', function () {
-  this.classList.toggle('open');
-  document.querySelectorAll('.option').forEach((option) => {
-    option.classList.toggle('open');
-  });
-  document.querySelectorAll('.close').forEach((close) => {
-    close.classList.toggle('open');
-  });
-});
-
-document.getElementById('setting').addEventListener('click', () => ipcRenderer.send('openSettingWindow'));
-
-document.getElementById('current-version').textContent = app.getVersion();
