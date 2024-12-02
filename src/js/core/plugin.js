@@ -14,7 +14,9 @@ const crypto = require('crypto');
 const manager = require('./manager');
 
 class PluginLoader {
-  constructor() {
+  constructor(type) {
+    this.type = type;
+
     const keysDir = path.join(app.getPath('userData'), 'keys');
     fs.mkdirSync(keysDir, { recursive: true });
 
@@ -1006,6 +1008,10 @@ class PluginLoader {
       if (isValidPlugin) {
         manager.enable(pluginData.name);
       }
+      const loader = !pluginData.loader ? ['index'] : pluginData.loader;
+      if (!loader.includes(this.type)) {
+        continue;
+      }
       if (enabledPlugins.includes(name) || isValidPlugin) {
         if (!pluginData.verified) {
           logger.debug(`Loading unverified plugin ${name}: ${pluginData.verifyError}`);
@@ -1074,12 +1080,16 @@ class PluginLoader {
   }
 }
 
-const pluginLoader = new PluginLoader();
+function createPluginLoader(type = 'index') {
+  return new PluginLoader(type);
+}
 
-pluginLoader.loadPlugins();
-pluginLoader.cleanupOrphanedPlugins();
-
-module.exports = {
-  default: PluginLoader,
-  pluginLoader,
+module.exports = function (type) {
+  const pluginLoader = createPluginLoader(type);
+  pluginLoader.loadPlugins();
+  pluginLoader.cleanupOrphanedPlugins();
+  return {
+    default: PluginLoader,
+    pluginLoader,
+  };
 };

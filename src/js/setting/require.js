@@ -11,4 +11,4 @@ require('../js/setting/check_box');
 require('../js/setting/plugin_list');
 require('../js/setting/reset');
 require('../js/setting/main');
-require('../js/core/plugin');
+require('../js/core/plugin')('setting');

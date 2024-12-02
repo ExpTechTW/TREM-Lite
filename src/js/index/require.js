@@ -12,7 +12,7 @@ const logger = require('../js/core/utils/logger');
 logger.info('App start');
 
 // require('../js/core/config');
-require('../js/core/plugin');
+require('../js/core/plugin')('index');
 
 require('../js/index/nav');
 require('../js/index/lang');
