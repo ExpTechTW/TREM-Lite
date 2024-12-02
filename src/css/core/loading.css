@@ -7,7 +7,6 @@
 
 body {
   background-color: var(--loading-bg);
-  border-radius: 15px;
 }
 
 body {
@@ -36,7 +35,6 @@ body.content-loaded > *:not(#css-loading-indicator) {
   align-items: center;
   z-index: 9999;
   transition: opacity var(--fade-duration) ease-in-out;
-  border-radius: 15px;
 }
 
 .loading-animation {

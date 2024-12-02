@@ -476,7 +476,7 @@ body {
 
 .setting-item-wrapper {
   position: absolute;
-  top: 4rem;
+  top: 3.5rem;
   width: auto;
   display: flex;
   align-items: center;
@@ -1180,7 +1180,7 @@ li {
 .extended-list-descriptions {
   padding: 0;
   color: lightgray;
-  font-size: 16;
+  font-size: 15px;
   font-weight: 400;
 }
 
@@ -1244,7 +1244,7 @@ li {
 }
 
 .extended-list-buttons {
-  width: 25%;
+  width: auto;
   flex-direction: row;
   padding: 0 !important;
   justify-content: space-around;

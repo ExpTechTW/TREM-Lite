@@ -17,6 +17,7 @@ body {
   display: block !important;
   position: relative;
   overflow: hidden;
+  padding: 5px !important;
 }
 
 .wave-unverified::after {
@@ -143,7 +144,7 @@ input[data-loaded="false"]:checked + .slider {
 }
 
 .plugin-list-title {
-  font-size: 22px;
+  font-size: 17px;
   font-weight: 900;
 }
 
