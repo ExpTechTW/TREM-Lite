@@ -163,6 +163,8 @@ function createSettingWindow() {
     show: false,
     frame: false,
     transparent: is_mac ? false : true,
+    backgroundMaterial: 'acrylic',
+    vibrancy: 'sidebar',
     resizable: false,
     ...(is_mac && {
       vibrancy: 'ultra-dark',
