@@ -492,6 +492,7 @@ body {
   height: calc(100% - 85px);
   padding-bottom: 1.5rem;
   -webkit-app-region: no-drag;
+  outline: unset;
 
   &:hover {
     overflow-y: auto;
