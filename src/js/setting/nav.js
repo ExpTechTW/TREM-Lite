@@ -31,21 +31,3 @@ document.onkeydown = (e) => {
       return e.preventDefault();
   }
 };
-
-document.querySelectorAll('.button').forEach((button) =>
-  button.addEventListener('click', () => {
-    document.querySelector('.setting-options-page.active')?.classList.remove('active');
-    document.querySelector('.button.on')?.classList.remove('on');
-    button.classList.add('on');
-    document.querySelector(`.${button.getAttribute('for')}`)?.classList.add('active');
-  }),
-);
-
-document.querySelector('.windows-wrapper').addEventListener('click', ({ target }) => {
-  if (target.classList.contains('close')) {
-    window.close();
-  }
-  else if (target.classList.contains('minimize')) {
-    ipcRenderer.send('minimize-window');
-  }
-});

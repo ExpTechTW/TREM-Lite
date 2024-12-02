@@ -672,8 +672,8 @@ li {
   border-width: 1px 0px 0px 0px;
   border-color: #ffffff1c;
   border-style: solid;
-  border-bottom-left-radius: 13px;
-  border-bottom-right-radius: 13px;
+  /* border-bottom-left-radius: 13px; */
+  /* border-bottom-right-radius: 13px; */
   border: 1px solid #ffffff42;
   justify-content: flex-end;
   height: auto;

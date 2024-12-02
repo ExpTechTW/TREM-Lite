@@ -15,7 +15,6 @@ class Config {
 
     this.default_config = {};
     this.config = {};
-
     this.defaultDir = path.join(__dirname, '../../resource/config/default.yml');
     this.configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
