@@ -9,23 +9,23 @@ alert-level:
   eew-intensity: 0 # EEW 所在地預估震度
 
 check-box:
-  show-window-eew: false
-  show-window-report: false
-  show-window-detect: false
-  show-window-rts-intensity: false
+  show-window-eew: true
+  show-window-report: true
+  show-window-detect: true
+  show-window-rts-intensity: true
   early-warning-trem-eew: false
-  other-auto-start: false
-  other-tts: false
+  other-auto-start: true
+  other-tts: true
   graphics-block-auto-zoom: false
   graphics-show-fault: false
-  sound-effects-dong: false
-  sound-effects-EEW: false
-  sound-effects-EEW2: false
-  sound-effects-PAlert: false
-  sound-effects-PGA1: false
-  sound-effects-PGA2: false
-  sound-effects-Report: false
-  sound-effects-Shindo0: false
-  sound-effects-Shindo1: false
-  sound-effects-Shindo2: false
-  sound-effects-Update: false
+  sound-effects-dong: true
+  sound-effects-EEW: true
+  sound-effects-EEW2: true
+  sound-effects-PAlert: true
+  sound-effects-PGA1: true
+  sound-effects-PGA2: true
+  sound-effects-Report: true
+  sound-effects-Shindo0: true
+  sound-effects-Shindo1: true
+  sound-effects-Shindo2: true
+  sound-effects-Update: true
