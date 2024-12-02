@@ -71,9 +71,7 @@ class PluginList {
   renderStatusBadges(item, isEnabled, isLoaded) {
     const badges = [];
 
-    if (!item.verified) {
-      badges.push('<span class="unverified-badge">未驗證</span>');
-    }
+    badges.push(!item.verified ? '<span class="unverified-badge">未驗證</span>' : '<span class="verified-badge">已驗證</span>');
 
     if (isEnabled) {
       badges.push(isLoaded
@@ -100,8 +98,8 @@ class PluginList {
               <div class="extended-list-box">
                 <div class="extended-list-left">
                   <div class="extended-list-title-box">
-                    <span class="extended-list-title">${this.escapeHtml(item.name)}</span>
-                    ${statusBadges}
+                    <span class="plugin-list-title">${this.escapeHtml(item.name)}</span>
+                    <div class="status-box">${statusBadges}</div>
                   </div>
                   <div class="extended-list-author-version">
                     <div class="author">

@@ -1167,7 +1167,9 @@ li {
 
 .extended-list-descriptions {
   padding: 0;
-  color: #adadad;
+  color: lightgray;
+  font-size: 16;
+  font-weight: 400;
 }
 
 .extended-info {
@@ -1193,6 +1195,7 @@ li {
   border-bottom: unset !important;
   padding: 0px !important;
   margin-top: 5;
+  color: grey;
 }
 
 .extended-list-author-version span:first-child {
