@@ -680,6 +680,82 @@ class PluginLoader {
     return md5Map;
   }
 
+  async cleanupOrphanedPlugins() {
+    logger.info('Cleaning up orphaned plugin data...');
+
+    const pluginFiles = fs.readdirSync(this.pluginDir);
+
+    const validPluginNames = new Set();
+
+    for (const file of pluginFiles) {
+      const filePath = path.join(this.pluginDir, file);
+      const stats = fs.statSync(filePath);
+
+      if (stats.isDirectory()) {
+        const infoPath = path.join(filePath, 'info.json');
+        if (fs.existsSync(infoPath)) {
+          try {
+            const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+            if (info?.name) {
+              validPluginNames.add(info.name);
+            }
+          }
+          catch (error) {
+            logger.error(`Error parsing info.json in ${file}:`, error);
+          }
+        }
+      }
+      else if (file.endsWith('.trem')) {
+        try {
+          const tempExtractPath = path.join(this.tempDir, '_temp_extract');
+          if (fs.existsSync(tempExtractPath)) {
+            await fs.remove(tempExtractPath);
+          }
+
+          const zip = new AdmZip(filePath);
+          zip.extractAllTo(tempExtractPath, true);
+
+          const infoPath = path.join(tempExtractPath, 'info.json');
+          if (fs.existsSync(infoPath)) {
+            const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+            if (info?.name) {
+              validPluginNames.add(info.name);
+            }
+          }
+
+          await fs.remove(tempExtractPath);
+        }
+        catch (error) {
+          logger.error(`Error processing .trem file ${file}:`, error);
+        }
+      }
+    }
+
+    const tempFiles = fs.readdirSync(this.tempDir);
+
+    for (const file of tempFiles) {
+      if (file === '_temp_extract' || file.endsWith('_temp')) {
+        continue;
+      }
+
+      const tempPath = path.join(this.tempDir, file);
+      if (fs.statSync(tempPath).isDirectory()) {
+        if (!validPluginNames.has(file)) {
+          try {
+            logger.info(`Removing orphaned plugin directory: ${file}`);
+            await fs.remove(tempPath);
+            manager.disable(file);
+          }
+          catch (error) {
+            logger.error(`Error removing orphaned plugin directory ${file}:`, error);
+          }
+        }
+      }
+    }
+
+    logger.info('Orphaned plugin cleanup completed');
+  }
+
   async scanPlugins() {
     const files = fs.readdirSync(this.pluginDir);
     const pluginPaths = new Map();
@@ -896,6 +972,9 @@ class PluginLoader {
         }
         this.plugins.set(name, pluginData);
       }
+      else if (!enabledPlugins.includes(name)) {
+        logger.warn(`--- Plugin ${name} disable ---`);
+      }
     }
 
     for (const [pluginName, plugin] of this.plugins.entries()) {
@@ -958,6 +1037,7 @@ class PluginLoader {
 const pluginLoader = new PluginLoader();
 
 pluginLoader.loadPlugins();
+pluginLoader.cleanupOrphanedPlugins();
 
 module.exports = {
   default: PluginLoader,
