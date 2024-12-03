@@ -62,13 +62,12 @@ class Main {
     }
     this.messageContent.classList.add(message);
     this.messageBox.classList.add(message);
-    const bubble = setTimeout(() => {
+    setTimeout(() => {
       this.messageContent.classList.remove(message);
       setTimeout(() => {
         this.messageBox.classList.remove(message);
       }, 200);
     }, duration);
-    clearTimeout(bubble);
   }
 
   info() {
