@@ -77,14 +77,18 @@ class PluginList {
       if (!item.repository.releases.releases.length) {
         button = 'none';
       }
-      else if (!local_item) {
-        button = 'download';
-      }
-      else if (item.version != local_item.version && PluginLoader.getInstance().compareVersions(item.version, local_item.version)) {
-        button = 'update';
-      }
       else {
-        button = 'latest';
+        const new_version = item.repository.releases.releases[0].tag_name.replace('v', '');
+        item.version = new_version;
+        if (!local_item) {
+          button = 'download';
+        }
+        else if (new_version != local_item.version && PluginLoader.getInstance().compareVersions(new_version, local_item.version)) {
+          button = 'update';
+        }
+        else {
+          button = 'latest';
+        }
       }
       const newItem = this.renderPluginItem(item, true, button);
       this.pluginStoreList += newItem;
