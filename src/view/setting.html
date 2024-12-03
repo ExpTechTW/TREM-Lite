@@ -164,23 +164,6 @@
                 </div>
               </div>
               <div class="setting-item-content">
-                <span class="setting-item-title trem-eew-title"></span>
-                <span class="description trem-eew-description"> </span>
-                <div class="setting-option">
-                  <div>
-                    <span class="get-trem-eew"></span>
-                    <label class="switch">
-                      <input
-                        id="early-warning-trem-eew"
-                        type="checkbox"
-                        disabled
-                      />
-                      <div class="slider round disabled"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <div class="setting-item-content">
                 <span class="setting-item-title other-function-title"></span>
                 <span class="description other-function-description"> </span>
                 <div class="setting-option">
@@ -188,13 +171,6 @@
                     <span class="auto-start"></span>
                     <label class="switch">
                       <input id="other-auto-start" type="checkbox" disabled />
-                      <div class="slider round disabled"></div>
-                    </label>
-                  </div>
-                  <div>
-                    <span class="tts"> </span>
-                    <label class="switch">
-                      <input id="other-tts" type="checkbox" disabled />
                       <div class="slider round disabled"></div>
                     </label>
                   </div>
@@ -225,23 +201,6 @@
                     <label class="switch">
                       <input id="graphics-block-auto-zoom" type="checkbox" />
                       <div class="slider round"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <div class="setting-item-content">
-                <span class="setting-item-title show-fault-title"></span>
-                <span class="description show-fault-description"></span>
-                <div class="setting-option">
-                  <div>
-                    <span class="show-fault"></span>
-                    <label class="switch">
-                      <input
-                        id="graphics-show-fault"
-                        type="checkbox"
-                        disabled
-                      />
-                      <div class="slider round disabled"></div>
                     </label>
                   </div>
                 </div>
@@ -363,12 +322,22 @@
               <div class="setting-item-content">
                 <span class="setting-item-title extended-list-title"></span>
                 <span class="description extended-list-description"></span>
-                <a
-                  href="https://exptechtw.github.io/trem-plugins/"
-                  class="description extended-store"
-                  target="_blank"
-                ></a>
-                <div class="setting-option">
+                <div class="extended-top-buttons">
+                  <div
+                    class="extended-list-button active"
+                    for="extended-installed-list"
+                  ></div>
+                  <div
+                    class="extended-list-button"
+                    for="extended-store-list"
+                  ></div>
+                </div>
+                <div class="setting-option extended-installed-list show">
+                  <div class="extended-info">
+                    <div class="extended-info-warning"></div>
+                  </div>
+                </div>
+                <div class="setting-option extended-store-list">
                   <div class="extended-info">
                     <div class="extended-info-warning"></div>
                   </div>
