@@ -48,12 +48,6 @@
 .show-window-description::before {
   content: "程式自動跳窗時機。";
 }
-.trem-eew-title::before {
-  content: "TREM EEW";
-}
-.trem-eew-description::before {
-  content: "TREM-EEW是利用TREM-Net觀測網計算的地震預警訊息，即時資料為非公開，一般使用者在開啟後可在重播(震後5分鐘)中看到效果。";
-}
 .other-function-title::before {
   content: "其他功能";
 }
@@ -62,9 +56,6 @@
 }
 .auto-start::before {
   content: "開機自動啟動（Windows）";
-}
-.tts::before {
-  content: "語音播報（繁體中文）";
 }
 .earthquake-eew::before {
   content: "地震預警";
@@ -77,9 +68,6 @@
 }
 .rts-intensity::before {
   content: "震度速報";
-}
-.get-trem-eew::before {
-  content: "接收 TREM EEW";
 }
 .reset-button::before,
 .reset-setting-title::before {
@@ -96,13 +84,6 @@
 }
 .block-auto-zoom::before {
   content: "禁用地圖自動縮放";
-}
-.show-fault-title::before,
-.show-fault::before {
-  content: "顯示斷層";
-}
-.show-fault-description::before {
-  content: "在地圖上顯示臺灣本島斷層分布。";
 }
 .effects-dong-title::before {
   content: "預警播報";
