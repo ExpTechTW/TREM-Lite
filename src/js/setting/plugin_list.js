@@ -1,5 +1,6 @@
 const TREM = require('./constant');
 const manager = require('../core/manager');
+const PluginLoader = require('../core/plugin').default;
 const { ipcRenderer } = require('electron');
 const fs = require('fs-extra');
 const store = require('./main');
@@ -53,9 +54,9 @@ class PluginList {
       const res = await ans.json();
       res.forEach((item) => {
         const newItem = this.renderPluginItem(item, true);
+        console.log(item.name, PluginLoader.compareVersions(item.version, '1.0.0'));
         this.pluginStoreList += newItem;
       });
-
       pluginStore.innerHTML = this.pluginStoreList;
     }
   }
