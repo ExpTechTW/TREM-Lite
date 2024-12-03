@@ -21,13 +21,6 @@ win:
       arch:
         - x64
         - ia32
-    - target: msi
-      arch:
-        - x64
-        - ia32
-
-msi:
-  artifactName: ${productName}-${version}-${arch}.${ext}
 
 portable:
   artifactName: ${productName}-${version}-${arch}.${ext}
