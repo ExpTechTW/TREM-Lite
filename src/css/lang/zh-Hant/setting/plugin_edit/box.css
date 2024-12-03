@@ -1,3 +1,18 @@
+@import url("../../font.css");
+
+body {
+  user-select: none;
+  margin: 0;
+  font-family: Manrope, "Noto Sans TC", sans-serif;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+
+  --surface-hsl: 0deg 0% 25%;
+  --surface-variant-hsl: 0deg 0% 20%;
+  --background-hsl: 0deg 0% 13%;
+  --background-variant-hsl: 0deg 0% 16%;
+}
+
 .btn-add:before {
   content: "新增項目";
 }
@@ -69,7 +84,6 @@
 }
 
 body {
-  font-family: Arial, sans-serif;
   margin: 0;
   background-color: var(--bg-color);
   color: var(--text-color);
@@ -340,7 +354,7 @@ input[type="checkbox"]:checked {
   right: 0.8em;
   display: flex;
   justify-content: space-between;
-  width: 4rem;
+  width: auto;
   flex-direction: row;
   flex-wrap: wrap;
   top: 0.6em;
@@ -350,6 +364,7 @@ input[type="checkbox"]:checked {
 }
 
 .minimize,
+.maximize,
 .close {
   margin-top: 2px;
   color: #ffffff;
@@ -357,7 +372,8 @@ input[type="checkbox"]:checked {
   justify-content: center;
 }
 
-.minimize:hover {
+.minimize:hover,
+.maximize:hover {
   background: #868484;
 }
 
@@ -373,4 +389,6 @@ input[type="checkbox"]:checked {
   cursor: pointer;
   font-size: 15px;
   display: flex;
+  margin-right: 5px;
+  align-items: flex-start;
 }
