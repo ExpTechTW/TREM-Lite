@@ -420,8 +420,6 @@ function createPluginWindow(pluginId, htmlPath, options = {}) {
 
   pluginWindow.setMenu(null);
 
-  pluginWindow.webContents.openDevTools({ mode: 'detach' });
-
   const windowInfo = {
     window: pluginWindow,
     pluginId,
