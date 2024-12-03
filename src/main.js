@@ -415,13 +415,15 @@ function createPluginWindow(pluginId, htmlPath, options = {}) {
 
   require('@electron/remote/main').enable(pluginWindow.webContents);
 
-  if (path.isAbsolute(htmlPath)) {
-    pluginWindow.loadFile(htmlPath);
-  }
-  else {
-    const absolutePath = path.join(pluginDir, htmlPath);
-    pluginWindow.loadFile(absolutePath);
-  }
+  const loadPath = path.isAbsolute(htmlPath) ? htmlPath : path.join(pluginDir, htmlPath);
+  const navJsPath = path.join(__dirname, 'js', 'core', 'nav.js');
+  const navJsContent = fs.readFileSync(navJsPath, 'utf8');
+
+  pluginWindow.loadFile(loadPath);
+  pluginWindow.webContents.on('dom-ready', () => {
+    console.log(navJsContent);
+    pluginWindow.webContents.executeJavaScript(navJsContent);
+  });
 
   pluginWindow.setMenu(null);
 
@@ -446,7 +448,6 @@ function createPluginWindow(pluginId, htmlPath, options = {}) {
 
   return pluginWindow;
 }
-
 ipcMain.on('open-plugin-window', (event, data) => {
   const { pluginId, htmlPath, options } = data;
 
