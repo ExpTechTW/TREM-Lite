@@ -12,6 +12,7 @@ const walk = require('acorn-walk');
 const PluginVerifier = require('./verify');
 const crypto = require('crypto');
 const manager = require('./manager');
+const fetchData = require('./utils/fetch');
 
 class PluginLoader {
   constructor(type) {
@@ -1005,6 +1006,30 @@ class PluginLoader {
     if (info) {
       fs.removeSync(info.originalPath);
       fs.removeSync(info.path);
+    }
+  }
+
+  async downloadPlugin(name, url) {
+    try {
+      const res = await fetchData(url, 5000);
+      if (res && res.ok) {
+        const pluginPath = path.join(this.pluginDir, `${name}.trem`);
+
+        fs.removeSync(pluginPath);
+
+        const buffer = await res.arrayBuffer();
+        await fs.writeFile(pluginPath, Buffer.from(buffer));
+
+        logger.info(`Plugin downloaded successfully: ${name}`);
+        return pluginPath;
+      }
+      else {
+        logger.error(`Failed to download plugin ${name}: ${res?.status}`);
+      }
+    }
+    catch (error) {
+      logger.error(`Plugin download failed: ${error.message}`);
+      throw error;
     }
   }
 }
