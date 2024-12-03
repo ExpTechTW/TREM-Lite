@@ -285,7 +285,7 @@ class PluginLoader {
     }));
   }
 
-  getVersionPriority(version) {
+  static getVersionPriority(version) {
     if (!version) {
       return 0;
     }
@@ -332,7 +332,7 @@ class PluginLoader {
     return pre1[0] === pre2[0] && pre1[1] === pre2[1];
   }
 
-  compareVersions(v1, v2) {
+  static compareVersions(v1, v2) {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
