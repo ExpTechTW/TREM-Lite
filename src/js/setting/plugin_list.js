@@ -13,6 +13,8 @@ class PluginList {
     this.extendedConfirmWrapper = document.querySelector('.confirm-wrapper');
     this.ConfirmSure = this.extendedConfirmWrapper.querySelector('.confirm-sure');
     this.ConfirmTitle = this.extendedConfirmWrapper.querySelector('.confirm-title');
+    this.extendedTopButton = document.querySelectorAll('.extended-list-button');
+    this.extendedWrapper = document.querySelectorAll('.extended .setting-option');
     this.lastState = null;
     this.lastTarget = null;
     this.lastBox = null;
@@ -207,6 +209,23 @@ class PluginList {
       else {
         this.setExtendedState();
       }
+    });
+    this.extendedTopButton.forEach((item) => {
+      item.addEventListener('click', (event) => {
+        const targetClass = event.currentTarget.getAttribute('for');
+        const relatedElements = document.querySelector(`.${targetClass}`);
+
+        this.extendedTopButton.forEach((btn) => {
+          btn.classList.remove('active');
+        });
+
+        this.extendedWrapper.forEach((btn) => {
+          btn.classList.remove('show');
+        });
+
+        event.currentTarget.classList.add('active');
+        relatedElements.classList.add('show');
+      });
     });
   }
 
