@@ -230,7 +230,7 @@ class PluginList {
                 </label>
                 ${is_config_exist ? `<div id="extended-setting-button.${this.escapeHtml(item.name)}" class="extended-setting-button"></div>` : ''}
                 <div id="extended-remove.${this.escapeHtml(item.name)}" class="extended-remove">
-                  <svg fill="currentColor" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 27.965 27.965" xml:space="preserve" height="20px" width="20px">
+                  <svg fill="currentColor" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 27.965 27.965" xml:space="preserve" height="15px" width="15px">
                     <g>
                       <g id="c142_x">
                         <path d="M13.98,0C6.259,0,0,6.261,0,13.983c0,7.721,6.259,13.982,13.98,13.982c7.725,0,13.985-6.262,13.985-13.982
