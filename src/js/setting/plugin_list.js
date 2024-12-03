@@ -40,15 +40,16 @@ class PluginList {
   }
 
   hotKey() {
-    document.onkeydown = (e) => {
-      if (e.shiftKey) {
+    document.onmousedown = (e) => {
+      if (e.button === 2) {
         if (this.ConfirmSure) {
           this.ConfirmSure.classList.add('open');
         }
       }
     };
-    document.onkeyup = (e) => {
-      if (!e.shiftKey) {
+
+    document.onmouseup = (e) => {
+      if (e.button === 2) {
         if (this.ConfirmSure) {
           this.ConfirmSure.classList.remove('open');
         }
