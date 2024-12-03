@@ -20,6 +20,7 @@ class PluginList {
     this.ConfirmTitle = this.extendedConfirmWrapper.querySelector('.confirm-title');
     this.extendedTopButton = document.querySelectorAll('.extended-list-button');
     this.extendedWrapper = document.querySelectorAll('.extended .setting-option');
+    this.storeData = [];
     this.lastState = null;
     this.lastTarget = null;
     this.lastBox = null;
@@ -52,31 +53,31 @@ class PluginList {
   async getPluginInfo() {
     const last_time = localStorage.getItem('store-time') ?? 0;
 
-    let data = JSON.parse(localStorage.getItem('store-data') ?? '[]');
+    this.storeData = JSON.parse(localStorage.getItem('store-data') ?? '[]');
 
     if (Date.now() - last_time > 600000) {
       const ans = await fetchData('https://raw.githubusercontent.com/ExpTechTW/trem-plugins/refs/heads/main/data/repository_stats.json', TREM.constant.HTTP_TIMEOUT.PLUGIN_INFO);
       if (ans && ans.ok) {
         const res = await ans.json();
 
-        data = res;
+        this.storeData = res;
 
         localStorage.setItem('store-time', Date.now());
         localStorage.setItem('store-data', JSON.stringify(res));
       }
     }
 
-    this.createPluginStoreList(data);
+    this.createPluginStoreList();
   }
 
-  createPluginStoreList(list) {
-    list.forEach((item) => {
+  createPluginStoreList() {
+    this.storeData.forEach((item) => {
       const local_item = this.pluginList.find((_) => _.name == item.name);
       let button = '';
       if (!local_item) {
         button = 'download';
       }
-      else if (PluginLoader.compareVersions(item.version, local_item.version)) {
+      else if (item.version != local_item.version && PluginLoader.getInstance().compareVersions(item.version, local_item.version)) {
         button = 'update';
       }
       else {
@@ -85,6 +86,19 @@ class PluginList {
       const newItem = this.renderPluginItem(item, true, button);
       this.pluginStoreList += newItem;
     });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id?.startsWith('extended-download-button.')) {
+        const pluginName = e.target.id.split('.')[1];
+
+        const new_item = this.storeData.find((_) => _.name == pluginName);
+
+        if (new_item) {
+          PluginLoader.getInstance().downloadPlugin(pluginName, `https://github.com/${new_item.repository.full_name}/releases/download/${new_item.repository.releases.releases[0].tag_name}/${pluginName}.trem`);
+        }
+      }
+    });
+
     pluginStore.innerHTML = this.pluginStoreList;
   }
 
@@ -200,7 +214,7 @@ class PluginList {
                 ${is_config_exist ? `<div id="extended-setting-button.${this.escapeHtml(item.name)}" class="extended-setting-button"></div>` : ''}
               </div>`
                 : `<div class="extended-list-buttons">
-                  <div id="extended-download-button.${this.escapeHtml(item.name)}" class="extended-${btn}-button" onClick=""></div>
+                  <div id="extended-download-button.${this.escapeHtml(item.name)}" class="extended-${btn}-button"></div>
               </div>`}
             </div>
           </div>

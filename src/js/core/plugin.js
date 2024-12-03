@@ -15,7 +15,13 @@ const manager = require('./manager');
 const fetchData = require('./utils/fetch');
 
 class PluginLoader {
-  constructor(type) {
+  static instance = null;
+
+  constructor(type = 'index') {
+    if (PluginLoader.instance) {
+      return PluginLoader.instance;
+    }
+
     this.type = type;
 
     const keysDir = path.join(app.getPath('userData'), 'keys');
@@ -103,6 +109,16 @@ class PluginLoader {
 
     fs.mkdirSync(this.pluginDir, { recursive: true });
     fs.mkdirSync(this.tempDir, { recursive: true });
+
+    PluginLoader.instance = this;
+  }
+
+  static getInstance() {
+    if (!PluginLoader.instance) {
+      new PluginLoader();
+    }
+
+    return PluginLoader.instance;
   }
 
   analyzePluginCode(code) {
@@ -285,7 +301,7 @@ class PluginLoader {
     }));
   }
 
-  static getVersionPriority(version) {
+  getVersionPriority(version) {
     if (!version) {
       return 0;
     }
@@ -332,7 +348,7 @@ class PluginLoader {
     return pre1[0] === pre2[0] && pre1[1] === pre2[1];
   }
 
-  static compareVersions(v1, v2) {
+  compareVersions(v1, v2) {
     const parsed1 = semver.parse(v1);
     const parsed2 = semver.parse(v2);
 
@@ -374,11 +390,11 @@ class PluginLoader {
 
     switch (operator) {
       case '=': return this.isExactVersionMatch(current, reqVersion);
-      case '>=': return PluginLoader.compareVersions(current, reqVersion);
-      case '>': return PluginLoader.compareVersions(current, reqVersion) && !this.isExactVersionMatch(current, reqVersion);
-      case '<': return !PluginLoader.compareVersions(current, reqVersion);
-      case '<=': return !PluginLoader.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
-      default: return PluginLoader.compareVersions(current, reqVersion);
+      case '>=': return this.compareVersions(current, reqVersion);
+      case '>': return this.compareVersions(current, reqVersion) && !this.isExactVersionMatch(current, reqVersion);
+      case '<': return !this.compareVersions(current, reqVersion);
+      case '<=': return !this.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
+      default: return this.compareVersions(current, reqVersion);
     }
   }
 
@@ -1000,7 +1016,7 @@ class PluginLoader {
     }
   }
 
-  static async deletePlugin(name) {
+  async deletePlugin(name) {
     const info = this.scannedPlugins.get(name);
 
     if (info) {
@@ -1009,7 +1025,7 @@ class PluginLoader {
     }
   }
 
-  static async downloadPlugin(name, url) {
+  async downloadPlugin(name, url) {
     try {
       const res = await fetchData(url, 5000);
       if (res && res.ok) {
@@ -1034,7 +1050,7 @@ class PluginLoader {
   }
 }
 
-function createPluginLoader(type = 'index') {
+function createPluginLoader(type) {
   const pluginLoader = new PluginLoader(type);
   pluginLoader.loadPlugins();
 
