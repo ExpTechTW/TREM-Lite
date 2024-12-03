@@ -17,7 +17,7 @@ const copyMissingTremFiles = require('../js/index/plugin_init');
   await copyMissingTremFiles();
 
   // require('../js/core/config');
-  require('../js/core/plugin')('index');
+  require('../js/core/plugin').createPluginLoader('index');
 
   require('../js/index/nav');
   require('../js/index/lang');

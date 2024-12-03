@@ -2,7 +2,7 @@ const logger = require('../js/core/utils/logger');
 
 logger.info('Setting start');
 
-require('../js/core/plugin')('setting');
+require('../js/core/plugin').createPluginLoader('setting');
 
 require('../js/setting/constant');
 require('../js/core/config');

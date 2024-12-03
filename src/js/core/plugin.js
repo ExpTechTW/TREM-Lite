@@ -374,11 +374,11 @@ class PluginLoader {
 
     switch (operator) {
       case '=': return this.isExactVersionMatch(current, reqVersion);
-      case '>=': return this.compareVersions(current, reqVersion);
-      case '>': return this.compareVersions(current, reqVersion) && !this.isExactVersionMatch(current, reqVersion);
-      case '<': return !this.compareVersions(current, reqVersion);
-      case '<=': return !this.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
-      default: return this.compareVersions(current, reqVersion);
+      case '>=': return PluginLoader.compareVersions(current, reqVersion);
+      case '>': return PluginLoader.compareVersions(current, reqVersion) && !this.isExactVersionMatch(current, reqVersion);
+      case '<': return !PluginLoader.compareVersions(current, reqVersion);
+      case '<=': return !PluginLoader.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
+      default: return PluginLoader.compareVersions(current, reqVersion);
     }
   }
 
@@ -1035,15 +1035,13 @@ class PluginLoader {
 }
 
 function createPluginLoader(type = 'index') {
-  return new PluginLoader(type);
-}
-
-module.exports = function (type) {
-  const pluginLoader = createPluginLoader(type);
+  const pluginLoader = new PluginLoader(type);
   pluginLoader.loadPlugins();
 
-  return {
-    default: PluginLoader,
-    pluginLoader,
-  };
+  return pluginLoader;
+}
+
+module.exports = {
+  default: PluginLoader,
+  createPluginLoader,
 };
