@@ -263,7 +263,7 @@ class DropDown {
       TREM.variable.station = [];
 
       Object.entries(stationData).forEach(([stationId, stationInfo]) => {
-        const { info = [], net = '未知' } = stationInfo;
+        const { info = [], net = 'unknown' } = stationInfo;
         const latestInfo = info[info.length - 1];
 
         if (!latestInfo || latestInfo.code === 0) {
@@ -314,12 +314,12 @@ class DropDown {
       )];
 
       targetElement.innerHTML = uniqueCities.length > 0
-        ? uniqueCities.map((city) => `<div>${city || '未知'}</div>`).join('')
-        : '<div>無可用城市</div>';
+        ? uniqueCities.map((city) => `<div>${city || 'unknown'}</div>`).join('')
+        : '';
     }
     catch (error) {
       this.logError('renderCity error:', error);
-      targetElement.innerHTML = '<div>載入失敗</div>';
+      targetElement.innerHTML = '<div>Failed to load</div>';
     }
   }
 
@@ -358,7 +358,7 @@ class DropDown {
     }
     catch (error) {
       this.logError('renderTown error:', error);
-      container.innerHTML = '<div>載入失敗</div>';
+      container.innerHTML = '<div>Failed to load</div>';
     }
   }
 
@@ -373,12 +373,12 @@ class DropDown {
 
       const uniqueIntensity = [...new Set(intensityText)];
       targetElement.innerHTML = uniqueIntensity.map((int, index) =>
-        `<div data-id="${index}">${int || '未知'}</div>`,
+        `<div data-id="${index}">${int || 'unknown'}</div>`,
       ).join('');
     }
     catch (error) {
       this.logError('renderIntensity error:', error);
-      targetElement.innerHTML = '<div>載入失敗</div>';
+      targetElement.innerHTML = '<div>Failed to load</div>';
     }
   }
 
@@ -419,7 +419,7 @@ class DropDown {
           const location = this.codeToString(TREM.variable.region, current);
           currentElement.textContent = location
             ? `${location.city}${location.town}`
-            : '尚未選擇';
+            : '';
         }
         else if (type === 2) {
           const stationInfo = this.station[current];
@@ -428,10 +428,10 @@ class DropDown {
             const locationStr = this.codeToString(TREM.variable.region, location.code);
             currentElement.textContent = locationStr
               ? `${locationStr.city}${locationStr.town}-${current}`
-              : '尚未選擇';
+              : '';
           }
           else {
-            currentElement.textContent = '尚未選擇';
+            currentElement.textContent = '';
           }
         }
       }
