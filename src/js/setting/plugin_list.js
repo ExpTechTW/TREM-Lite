@@ -74,7 +74,10 @@ class PluginList {
     this.storeData.forEach((item) => {
       const local_item = this.pluginList.find((_) => _.name == item.name);
       let button = '';
-      if (!local_item) {
+      if (!item.repository.releases.releases.length) {
+        button = 'none';
+      }
+      else if (!local_item) {
         button = 'download';
       }
       else if (item.version != local_item.version && PluginLoader.getInstance().compareVersions(item.version, local_item.version)) {
