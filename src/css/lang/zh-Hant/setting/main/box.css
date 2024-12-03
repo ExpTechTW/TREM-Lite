@@ -1156,7 +1156,7 @@ li {
 .reset-button {
   border-radius: 5px;
   border: 1px solid #ffffff24;
-  width: 32px;
+  width: auto;
   height: 3px;
   cursor: pointer;
   color: #ff4a4a;
@@ -1168,7 +1168,7 @@ li {
 }
 
 .reset-setting + .switch {
-  width: 60px;
+  width: auto;
 }
 
 .extended-setting-button {

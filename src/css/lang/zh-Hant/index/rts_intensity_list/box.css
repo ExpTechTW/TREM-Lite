@@ -85,6 +85,9 @@
   border-radius: 5px;
   background: #505050c7;
   border: 1px solid #515151;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .max-station-pga {
