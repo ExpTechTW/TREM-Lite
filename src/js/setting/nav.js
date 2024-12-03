@@ -4,7 +4,7 @@ document.onkeydown = (e) => {
   if (e.ctrlKey) {
     switch (e.code) {
       case 'KeyR':
-        return ipcRenderer.send('reload');
+        return ipcRenderer.send('all-reload');
 
       default:
         return;
