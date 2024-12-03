@@ -72,14 +72,13 @@ class PluginList {
 
   createPluginStoreList() {
     this.storeData.forEach((item) => {
-      const local_item = this.pluginList.find((_) => _.name == item.name);
-      let button = '';
-      if (!item.repository.releases.releases.length) {
-        button = 'none';
-      }
-      else {
+      if (item.repository.releases.releases.length) {
+        let button = '';
+
         const new_version = item.repository.releases.releases[0].tag_name.replace('v', '');
         item.version = new_version;
+        const local_item = this.pluginList.find((_) => _.name == item.name);
+
         if (!local_item) {
           button = 'download';
         }
@@ -89,9 +88,10 @@ class PluginList {
         else {
           button = 'latest';
         }
+
+        const newItem = this.renderPluginItem(item, true, button);
+        this.pluginStoreList += newItem;
       }
-      const newItem = this.renderPluginItem(item, true, button);
-      this.pluginStoreList += newItem;
     });
 
     document.addEventListener('click', async (e) => {
