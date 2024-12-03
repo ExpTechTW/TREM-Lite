@@ -131,7 +131,7 @@ const TREM = {
 
     SHOW_REPORT: true,
 
-    GAME_MODE: true,
+    GAME_MODE: false,
 
     WINDOW_FOCUS_EVENTS: [
       'EewRelease',
