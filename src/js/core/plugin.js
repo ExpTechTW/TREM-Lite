@@ -983,7 +983,7 @@ class PluginLoader {
       }
     }
 
-    createPluginLoader(scannedPlugins);
+    this.cleanupOrphanedPlugins(scannedPlugins);
 
     localStorage.setItem('loaded-plugins', JSON.stringify(this.getLoadedPlugins()));
   }
