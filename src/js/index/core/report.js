@@ -37,7 +37,6 @@ class ReportManager {
 
   bindEvents() {
     this.closeButton.addEventListener('click', () => this.toggleReport());
-    window.addEventListener('resize', () => this.initReportToggle());
 
     this.reportBoxItems.addEventListener('scroll', () => this.updateScrollbar());
     this.reportBoxItems.addEventListener('wheel', (e) => this.onScroll(e));
@@ -122,12 +121,6 @@ class ReportManager {
     this.closeButton.classList.toggle('off');
     this.reportWrapper.classList.toggle('hidden');
     this.isClose = !this.isClose;
-  }
-
-  initReportToggle() {
-    if (!this.isClose && window.innerWidth < 1080) {
-      this.toggleReport();
-    }
   }
 
   updateScrollbar() {

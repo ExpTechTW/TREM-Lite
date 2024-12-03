@@ -13,8 +13,6 @@ class AudioQueue {
   constructor() {
     this.queue = [];
     this.isPlaying = false;
-
-    this.config = Config.getInstance().getConfig();
   }
 
   getAudioName(audio) {
@@ -90,6 +88,8 @@ class AudioManager {
     if (AudioManager.instance) {
       return AudioManager.instance;
     }
+
+    this.config = Config.getInstance().getConfig();
 
     this.ttsCache = {};
     this.ttsEewAlertLock = false;
