@@ -223,7 +223,9 @@
 .failed.message-box:before {
   content: "操作失敗！";
 }
-
+.extended-store:before {
+  content: "TREM 擴充商店";
+}
 .eew-1::before {
   content: "EEW（收到地震預警時播放）";
 }
@@ -571,6 +573,11 @@ body {
   font-size: 14px !important;
   display: flex;
   padding-left: 0.8vw;
+}
+
+.extended-store {
+  color: aqua;
+  text-decoration: none;
 }
 
 .extended-info {

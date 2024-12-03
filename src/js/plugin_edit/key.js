@@ -39,4 +39,7 @@ document.querySelector('.windows-wrapper').addEventListener('click', ({ target }
   else if (target.classList.contains('minimize')) {
     ipcRenderer.send('minimize-window');
   }
+  else if (target.classList.contains('maximize')) {
+    ipcRenderer.send('maximize-window');
+  }
 });

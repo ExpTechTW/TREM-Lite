@@ -186,12 +186,6 @@ function createSettingWindow() {
     SettingWindow = null;
     win.webContents.reload();
   });
-  ipcMain.on('minimize-window', () => {
-    const currentWindow = BrowserWindow.getFocusedWindow();
-    if (currentWindow) {
-      currentWindow.minimize();
-    }
-  });
 }
 
 const shouldQuit = app.requestSingleInstanceLock();
@@ -320,6 +314,33 @@ ipcMain.on('openConfigFolder', () => {
     .catch((error) => {
       console.error(error);
     });
+});
+
+ipcMain.on('minimize-window', () => {
+  const currentWindow = BrowserWindow.getFocusedWindow();
+  if (currentWindow) {
+    currentWindow.minimize();
+  }
+});
+
+ipcMain.on('maximize-window', () => {
+  const currentWindow = BrowserWindow.getFocusedWindow();
+  if (currentWindow) {
+    if (!currentWindow.isMaximized()) {
+      currentWindow.maximize();
+    }
+    currentWindow.setResizable(false);
+  }
+});
+
+ipcMain.on('restore-window', () => {
+  const currentWindow = BrowserWindow.getFocusedWindow();
+  if (currentWindow) {
+    if (currentWindow.isMaximized()) {
+      currentWindow.unmaximize();
+    }
+    currentWindow.setResizable(true);
+  }
 });
 
 function trayIcon() {

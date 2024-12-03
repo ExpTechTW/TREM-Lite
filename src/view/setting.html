@@ -1,405 +1,454 @@
 <html lang="zh-Hant">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../css/core/loading.css" />
+    <link rel="stylesheet" href="../css/core/intensity.css" />
+    <script src="../js/setting/require.js" defer></script>
+  </head>
 
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta charset="utf-8" />
-  <link rel="stylesheet" href="../css/core/loading.css" />
-  <link rel="stylesheet" href="../css/core/intensity.css" />
-  <script src="../js/setting/require.js" defer></script>
-</head>
-
-<body class="setting">
-  <div class="setting-wrapper">
-    <div class="setting-container">
-      <div class="setting-header">
-        <div class="setting-buttons">
-          <div class="button setting-general on" for="general"></div>
-          <div class="button setting-graphics" for="graphics"></div>
-          <div class="button setting-sound-effects" for="sound-effects"></div>
-          <div class="button setting-extended" for="extended"></div>
-          <div class="button setting-info" for="info"></div>
-        </div>
-      </div>
-      <div class="setting-content">
-        <div class="windows-wrapper">
-          <div class="windows-buttons minimize">━</div>
-          <div class="windows-buttons close">✖</div>
-        </div>
-        <div class="setting-options-page general active">
-          <div class="setting-page-header-title"></div>
-          <div class="setting-item-wrapper">
-            <div class="setting-item-content">
-              <span class="setting-item-title location-title"></span>
-              <span class="description location-description"> </span>
-              <div class="setting-option usr-location">
-                <div class="location">
-                  <span class="current"></span>
-                  <svg class="selected-btn" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24"
-                    width="24">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" fill="#ffffff"></path>
-                  </svg>
-                </div>
-                <div class="select-wrapper">
-                  <div class="select-items city"></div>
-                  <div class="select-items town"></div>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title rts-station-title"></span>
-              <span class="description rts-station-description"> </span>
-              <div id="realtime-station" class="setting-option realtime-station">
-                <div class="location">
-                  <span class="current"></span>
-                  <svg class="selected-btn" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24"
-                    width="24">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" fill="#ffffff"></path>
-                  </svg>
-                </div>
-                <div class="select-wrapper">
-                  <div class="select-items city"></div>
-                  <div class="select-items town"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="setting-item-content">
-              <span class="setting-item-title warning-title"></span>
-              <span class="description warning-description"> </span>
-              <div class="setting-option warning-realtime-station">
-                <div class="location">
-                  <span class="current-realtime-station current">
-                    <span class="warning-intensity intensity-0"></span>
-                  </span>
-                  <svg class="selected-btn" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24"
-                    width="24">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" fill="#ffffff"></path>
-                  </svg>
-                </div>
-                <div class="select-wrapper">
-                  <div class="select-items intensity"></div>
-                </div>
-              </div>
-              <div class="setting-option warning-estimate-intensity">
-                <div class="location">
-                  <span class="current-estimate-intensity current">
-                    <span class="warning-intensity intensity-0"></span>
-                  </span>
-                  <svg class="selected-btn" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24"
-                    width="24">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" fill="#ffffff"></path>
-                  </svg>
-                </div>
-                <div class="select-wrapper">
-                  <div class="select-items intensity"></div>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title show-window-title"></span>
-              <span class="description show-window-description"> </span>
-              <div class="setting-option">
-                <div>
-                  <span class="earthquake-eew"></span>
-                  <label class="switch">
-                    <input id="show-window-eew" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="earthquake-report"></span>
-                  <label class="switch">
-                    <input id="show-window-report" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="earthquake-detect"></span>
-                  <label class="switch">
-                    <input id="show-window-detect" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="rts-intensity"></span>
-                  <label class="switch">
-                    <input id="show-window-rts-intensity" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title trem-eew-title"></span>
-              <span class="description trem-eew-description"> </span>
-              <div class="setting-option">
-                <div>
-                  <span class="get-trem-eew"></span>
-                  <label class="switch">
-                    <input id="early-warning-trem-eew" type="checkbox" disabled />
-                    <div class="slider round disabled"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title other-function-title"></span>
-              <span class="description other-function-description"> </span>
-              <div class="setting-option">
-                <div>
-                  <span class="auto-start"></span>
-                  <label class="switch">
-                    <input id="other-auto-start" type="checkbox" disabled />
-                    <div class="slider round disabled"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="tts"> </span>
-                  <label class="switch">
-                    <input id="other-tts" type="checkbox" disabled />
-                    <div class="slider round disabled"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title reset-setting-title"></span>
-              <div class="setting-option">
-                <div>
-                  <span class="reset-setting"></span>
-                  <label class="switch">
-                    <div class="reset-button"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
+  <body class="setting">
+    <div class="setting-wrapper">
+      <div class="setting-container">
+        <div class="setting-header">
+          <div class="setting-buttons">
+            <div class="button setting-general on" for="general"></div>
+            <div class="button setting-graphics" for="graphics"></div>
+            <div class="button setting-sound-effects" for="sound-effects"></div>
+            <div class="button setting-extended" for="extended"></div>
+            <div class="button setting-info" for="info"></div>
           </div>
         </div>
-        <div class="setting-options-page graphics">
-          <div class="setting-page-header-title graphics-header-title"></div>
-          <div class="setting-item-wrapper">
-            <div class="setting-item-content">
-              <span class="setting-item-title auto-zoom-title"></span>
-              <span class="description auto-zoom-description"></span>
-              <div class="setting-option">
-                <div>
-                  <span class="block-auto-zoom"></span>
-                  <label class="switch">
-                    <input id="graphics-block-auto-zoom" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title show-fault-title"></span>
-              <span class="description show-fault-description"></span>
-              <div class="setting-option">
-                <div>
-                  <span class="show-fault"></span>
-                  <label class="switch">
-                    <input id="graphics-show-fault" type="checkbox" disabled />
-                    <div class="slider round disabled"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
+        <div class="setting-content">
+          <div class="windows-wrapper">
+            <div class="windows-buttons minimize">━</div>
+            <div class="windows-buttons close">✖</div>
           </div>
-        </div>
-        <div class="setting-options-page sound-effects">
-          <div class="setting-page-header-title sound-effects-header-title"></div>
-          <div class="setting-item-wrapper">
-            <div class="setting-item-content">
-              <span class="setting-item-title effects-dong-title"></span>
-              <span class="description effects-dong-description"></span>
-              <div class="setting-option">
-                <div class="CWA">
-                  <span class="dong-dong"></span>
-                  <label class="switch">
-                    <input id="sound-effects-dong" type="checkbox" disabled />
-                    <div class="slider round disabled"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title sound-effects-list-title">
-              </span>
-              <span class="description sound-effects-list-description"></span>
-              <div class="setting-option">
-                <div>
-                  <span class="eew-1"></span>
-                  <label class="switch">
-                    <input id="sound-effects-EEW" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="eew-2">
-                    <span class="special-text"></span>
-                  </span>
-                  <label class="switch">
-                    <input id="sound-effects-EEW2" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="p-alert"></span>
-                  <label class="switch">
-                    <input id="sound-effects-PAlert" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="pga-1">
-                    <span class="special-text"> </span>
-                  </span>
-                  <label class="switch">
-                    <input id="sound-effects-PGA1" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="pga-2">
-                    <span class="special-text"> </span>
-                  </span>
-                  <label class="switch">
-                    <input id="sound-effects-PGA2" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="report"></span>
-                  <label class="switch">
-                    <input id="sound-effects-Report" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="shindo-0">
-                    <span class="special-text"></span>
-                  </span>
-                  <label class="switch">
-                    <input id="sound-effects-Shindo0" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="shindo-1">
-                    <span class="special-text"></span>
-                  </span>
-                  <label class="switch">
-                    <input id="sound-effects-Shindo1" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="shindo-2">
-                    <span class="special-text"></span>
-                  </span>
-                  <label class="switch">
-                    <input id="sound-effects-Shindo2" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-                <div>
-                  <span class="update"></span>
-                  <label class="switch">
-                    <input id="sound-effects-Update" type="checkbox" />
-                    <div class="slider round"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="setting-options-page extended">
-          <div class="setting-page-header-title extended-header-title"></div>
-          <div class="setting-item-wrapper">
-            <div class="setting-item-content">
-              <span class="setting-item-title extended-list-title"></span>
-              <span class="description extended-list-description"></span>
-              <a href="https://exptechtw.github.io/trem-plugins/" class="description" target="_blank"
-                style="color: aqua;text-decoration: none;">TREM 擴充商店</a>
-              <div class="setting-option">
-                <div class="extended-info">
-                  <div class="extended-info-warning"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="setting-options-page info">
-          <div class="setting-page-header-title info-header-title"></div>
-          <div class="setting-item-wrapper">
-            <div class="setting-item-content">
-              <span class="setting-item-title info-trem-lite"></span>
-              <span class="description info-trem-description"></span>
-              <div class="setting-option">
-                <div class="setting-item">
-                  <span class="app-version-title"></span>
-                  <span class="app-version"></span>
-                </div>
-                <div class="setting-item">
-                  <span class="system-os-title"></span>
-                  <span class="system-os"></span>
-                </div>
-                <div class="setting-item">
-                  <span class="system-cpu-title"></span>
-                  <span class="system-cpu"></span>
-                </div>
-              </div>
-            </div>
-            <div class="setting-item-content setting-info">
-              <span class="setting-item-title source-title"></span>
-              <div class="setting-option">
-                <div>
-                  <div>
-                    <span class="source-eew"></span>
-                    <ul>
-                      <li class="source-cwa"></li>
-                    </ul>
+          <div class="setting-options-page general active">
+            <div class="setting-page-header-title"></div>
+            <div class="setting-item-wrapper">
+              <div class="setting-item-content">
+                <span class="setting-item-title location-title"></span>
+                <span class="description location-description"> </span>
+                <div class="setting-option usr-location">
+                  <div class="location">
+                    <span class="current"></span>
+                    <svg
+                      class="selected-btn"
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        fill="#ffffff"
+                      ></path>
+                    </svg>
                   </div>
-                  <div>
-                    <span class="source-shindo"></span>
-                    <ul>
-                      <li class="source-sinica"></li>
-                      <li class="source-trem"></li>
-                    </ul>
+                  <div class="select-wrapper">
+                    <div class="select-items city"></div>
+                    <div class="select-items town"></div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="setting-item-content">
-              <span class="setting-item-title contributor-title"></span>
-              <span class="description contributor-description"></span>
-              <div class="setting-option contributor">
-                <div>
+              <div class="setting-item-content">
+                <span class="setting-item-title rts-station-title"></span>
+                <span class="description rts-station-description"> </span>
+                <div
+                  id="realtime-station"
+                  class="setting-option realtime-station"
+                >
+                  <div class="location">
+                    <span class="current"></span>
+                    <svg
+                      class="selected-btn"
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        fill="#ffffff"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="select-wrapper">
+                    <div class="select-items city"></div>
+                    <div class="select-items town"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-item-content">
+                <span class="setting-item-title warning-title"></span>
+                <span class="description warning-description"> </span>
+                <div class="setting-option warning-realtime-station">
+                  <div class="location">
+                    <span class="current-realtime-station current">
+                      <span class="warning-intensity intensity-0"></span>
+                    </span>
+                    <svg
+                      class="selected-btn"
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        fill="#ffffff"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="select-wrapper">
+                    <div class="select-items intensity"></div>
+                  </div>
+                </div>
+                <div class="setting-option warning-estimate-intensity">
+                  <div class="location">
+                    <span class="current-estimate-intensity current">
+                      <span class="warning-intensity intensity-0"></span>
+                    </span>
+                    <svg
+                      class="selected-btn"
+                      xmlns="http://www.w3.org/2000/svg"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+                        fill="#ffffff"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="select-wrapper">
+                    <div class="select-items intensity"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content">
+                <span class="setting-item-title show-window-title"></span>
+                <span class="description show-window-description"> </span>
+                <div class="setting-option">
                   <div>
-                    <img src="https://contrib.rocks/image?repo=exptechtw/trem-lite" class="responsive-image" />
+                    <span class="earthquake-eew"></span>
+                    <label class="switch">
+                      <input id="show-window-eew" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="earthquake-report"></span>
+                    <label class="switch">
+                      <input id="show-window-report" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="earthquake-detect"></span>
+                    <label class="switch">
+                      <input id="show-window-detect" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="rts-intensity"></span>
+                    <label class="switch">
+                      <input id="show-window-rts-intensity" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content">
+                <span class="setting-item-title trem-eew-title"></span>
+                <span class="description trem-eew-description"> </span>
+                <div class="setting-option">
+                  <div>
+                    <span class="get-trem-eew"></span>
+                    <label class="switch">
+                      <input
+                        id="early-warning-trem-eew"
+                        type="checkbox"
+                        disabled
+                      />
+                      <div class="slider round disabled"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content">
+                <span class="setting-item-title other-function-title"></span>
+                <span class="description other-function-description"> </span>
+                <div class="setting-option">
+                  <div>
+                    <span class="auto-start"></span>
+                    <label class="switch">
+                      <input id="other-auto-start" type="checkbox" disabled />
+                      <div class="slider round disabled"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="tts"> </span>
+                    <label class="switch">
+                      <input id="other-tts" type="checkbox" disabled />
+                      <div class="slider round disabled"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content">
+                <span class="setting-item-title reset-setting-title"></span>
+                <div class="setting-option">
+                  <div>
+                    <span class="reset-setting"></span>
+                    <label class="switch">
+                      <div class="reset-button"></div>
+                    </label>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      <div class="confirm-wrapper">
-        <div class="confirm-content">
-          <span class="confirm-title"></span>
-          <div class="confirm-btn">
-            <div class="confirm-sure"></div>
-            <div class="confirm-cancel"></div>
+          <div class="setting-options-page graphics">
+            <div class="setting-page-header-title graphics-header-title"></div>
+            <div class="setting-item-wrapper">
+              <div class="setting-item-content">
+                <span class="setting-item-title auto-zoom-title"></span>
+                <span class="description auto-zoom-description"></span>
+                <div class="setting-option">
+                  <div>
+                    <span class="block-auto-zoom"></span>
+                    <label class="switch">
+                      <input id="graphics-block-auto-zoom" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content">
+                <span class="setting-item-title show-fault-title"></span>
+                <span class="description show-fault-description"></span>
+                <div class="setting-option">
+                  <div>
+                    <span class="show-fault"></span>
+                    <label class="switch">
+                      <input
+                        id="graphics-show-fault"
+                        type="checkbox"
+                        disabled
+                      />
+                      <div class="slider round disabled"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="setting-options-page sound-effects">
+            <div
+              class="setting-page-header-title sound-effects-header-title"
+            ></div>
+            <div class="setting-item-wrapper">
+              <div class="setting-item-content">
+                <span class="setting-item-title effects-dong-title"></span>
+                <span class="description effects-dong-description"></span>
+                <div class="setting-option">
+                  <div class="CWA">
+                    <span class="dong-dong"></span>
+                    <label class="switch">
+                      <input id="sound-effects-dong" type="checkbox" disabled />
+                      <div class="slider round disabled"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content">
+                <span class="setting-item-title sound-effects-list-title">
+                </span>
+                <span class="description sound-effects-list-description"></span>
+                <div class="setting-option">
+                  <div>
+                    <span class="eew-1"></span>
+                    <label class="switch">
+                      <input id="sound-effects-EEW" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="eew-2">
+                      <span class="special-text"></span>
+                    </span>
+                    <label class="switch">
+                      <input id="sound-effects-EEW2" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="p-alert"></span>
+                    <label class="switch">
+                      <input id="sound-effects-PAlert" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="pga-1">
+                      <span class="special-text"> </span>
+                    </span>
+                    <label class="switch">
+                      <input id="sound-effects-PGA1" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="pga-2">
+                      <span class="special-text"> </span>
+                    </span>
+                    <label class="switch">
+                      <input id="sound-effects-PGA2" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="report"></span>
+                    <label class="switch">
+                      <input id="sound-effects-Report" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="shindo-0">
+                      <span class="special-text"></span>
+                    </span>
+                    <label class="switch">
+                      <input id="sound-effects-Shindo0" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="shindo-1">
+                      <span class="special-text"></span>
+                    </span>
+                    <label class="switch">
+                      <input id="sound-effects-Shindo1" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="shindo-2">
+                      <span class="special-text"></span>
+                    </span>
+                    <label class="switch">
+                      <input id="sound-effects-Shindo2" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <span class="update"></span>
+                    <label class="switch">
+                      <input id="sound-effects-Update" type="checkbox" />
+                      <div class="slider round"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="setting-options-page extended">
+            <div class="setting-page-header-title extended-header-title"></div>
+            <div class="setting-item-wrapper">
+              <div class="setting-item-content">
+                <span class="setting-item-title extended-list-title"></span>
+                <span class="description extended-list-description"></span>
+                <a
+                  href="https://exptechtw.github.io/trem-plugins/"
+                  class="description extended-store"
+                  target="_blank"
+                ></a>
+                <div class="setting-option">
+                  <div class="extended-info">
+                    <div class="extended-info-warning"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="setting-options-page info">
+            <div class="setting-page-header-title info-header-title"></div>
+            <div class="setting-item-wrapper">
+              <div class="setting-item-content">
+                <span class="setting-item-title info-trem-lite"></span>
+                <span class="description info-trem-description"></span>
+                <div class="setting-option">
+                  <div class="setting-item">
+                    <span class="app-version-title"></span>
+                    <span class="app-version"></span>
+                  </div>
+                  <div class="setting-item">
+                    <span class="system-os-title"></span>
+                    <span class="system-os"></span>
+                  </div>
+                  <div class="setting-item">
+                    <span class="system-cpu-title"></span>
+                    <span class="system-cpu"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content setting-info">
+                <span class="setting-item-title source-title"></span>
+                <div class="setting-option">
+                  <div>
+                    <div>
+                      <span class="source-eew"></span>
+                      <ul>
+                        <li class="source-cwa"></li>
+                      </ul>
+                    </div>
+                    <div>
+                      <span class="source-shindo"></span>
+                      <ul>
+                        <li class="source-sinica"></li>
+                        <li class="source-trem"></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="setting-item-content">
+                <span class="setting-item-title contributor-title"></span>
+                <span class="description contributor-description"></span>
+                <div class="setting-option contributor">
+                  <div>
+                    <div>
+                      <img
+                        src="https://contrib.rocks/image?repo=exptechtw/trem-lite"
+                        class="responsive-image"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="message-wrapper">
-        <div class="message-content">
-          <div class="message-box"></div>
+        <div class="confirm-wrapper">
+          <div class="confirm-content">
+            <span class="confirm-title"></span>
+            <div class="confirm-btn">
+              <div class="confirm-sure"></div>
+              <div class="confirm-cancel"></div>
+            </div>
+          </div>
+        </div>
+        <div class="message-wrapper">
+          <div class="message-content">
+            <div class="message-box"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
-
+  </body>
 </html>
