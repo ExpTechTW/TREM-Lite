@@ -407,6 +407,7 @@ function createPluginWindow(pluginId, htmlPath, options = {}) {
       nodeIntegration: true,
       contextIsolation: false,
       backgroundThrottling: false,
+      enableRemoteModule: true,
     },
   };
 
@@ -415,17 +416,11 @@ function createPluginWindow(pluginId, htmlPath, options = {}) {
 
   require('@electron/remote/main').enable(pluginWindow.webContents);
 
-  const loadPath = path.isAbsolute(htmlPath) ? htmlPath : path.join(pluginDir, htmlPath);
-  const navJsPath = path.join(__dirname, 'js', 'core', 'nav.js');
-  const navJsContent = fs.readFileSync(navJsPath, 'utf8');
-
-  pluginWindow.loadFile(loadPath);
-  pluginWindow.webContents.on('dom-ready', () => {
-    console.log(navJsContent);
-    pluginWindow.webContents.executeJavaScript(navJsContent);
-  });
+  pluginWindow.loadFile(htmlPath);
 
   pluginWindow.setMenu(null);
+
+  pluginWindow.webContents.openDevTools({ mode: 'detach' });
 
   const windowInfo = {
     window: pluginWindow,
@@ -448,20 +443,27 @@ function createPluginWindow(pluginId, htmlPath, options = {}) {
 
   return pluginWindow;
 }
+
 ipcMain.on('open-plugin-window', (event, data) => {
   const { pluginId, htmlPath, options } = data;
 
-  for (const [windowId, windowInfo] of pluginWindows.entries()) {
-    if (windowInfo.pluginId === pluginId) {
-      if (!windowInfo.window.isDestroyed()) {
-        windowInfo.window.close();
-      }
-      pluginWindows.delete(windowId);
+  const existingWindowInfo = Array.from(pluginWindows.entries())
+    .find(([, info]) => info.pluginId === pluginId);
+
+  if (existingWindowInfo) {
+    const [windowId, info] = existingWindowInfo;
+    if (!info.window.isDestroyed()) {
+      info.window.close();
     }
+    pluginWindows.delete(windowId);
   }
 
   try {
     const pluginWindow = createPluginWindow(pluginId, htmlPath, options);
+    pluginWindows.set(pluginId, {
+      window: pluginWindow,
+      pluginId,
+    });
 
     event.reply('plugin-window-opened', {
       success: true,
