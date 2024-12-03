@@ -1409,6 +1409,7 @@ li {
   color: #bb4141;
   padding: 0 !important;
   cursor: pointer;
+  display: none !important;
 }
 
 .wave-container:hover .extended-remove {
