@@ -521,7 +521,7 @@ ipcMain.on('get-plugin-windows', (event, pluginId) => {
 ipcMain.on('send-to-plugin-window', (event, data) => {
   const { windowId, channel, payload } = data;
   const windowInfo = pluginWindows.get(windowId);
-  if (windowInfo) {
+  if (windowInfo && !windowInfo.window.isDestroyed()) {
     windowInfo.window.webContents.send(channel, payload);
   }
 });
