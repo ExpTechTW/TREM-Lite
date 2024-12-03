@@ -7,11 +7,11 @@ body {
   font-family: Manrope, "Noto Sans TC", sans-serif;
   text-rendering: optimizeLegibility;
   overflow: hidden;
-
   --surface-hsl: 0deg 0% 25%;
   --surface-variant-hsl: 0deg 0% 20%;
   --background-hsl: 0deg 0% 13%;
   --background-variant-hsl: 0deg 0% 16%;
+  font-weight: bold;
 }
 
 .wave-container {

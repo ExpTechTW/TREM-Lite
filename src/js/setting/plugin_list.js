@@ -71,17 +71,18 @@ class PluginList {
 
   createPluginStoreList(list) {
     list.forEach((item) => {
-      const newItem = this.renderPluginItem(item, true);
-
       const local_item = this.pluginList.find((_) => _.name == item.name);
-
+      let button = '';
       if (!local_item) {
-        // 下載
+        button = 'download';
       }
       else if (PluginLoader.compareVersions(item.version, local_item.version)) {
-        // 更新
+        button = 'update';
       }
-
+      else {
+        button = 'none';
+      }
+      const newItem = this.renderPluginItem(item, true, button);
       this.pluginStoreList += newItem;
     });
     pluginStore.innerHTML = this.pluginStoreList;
@@ -155,7 +156,7 @@ class PluginList {
     return badges.join('');
   }
 
-  renderPluginItem(item, type) {
+  renderPluginItem(item, type, btn) {
     const isEnabled = !type ? this.enablePluginList.includes(item.name) : '';
     const isLoaded = !type ? this.getPluginLoadStatus(item.name) : '';
     const waveClassName = !type ? this.getWaveClassName(item, isEnabled, isLoaded) : '';
@@ -199,7 +200,7 @@ class PluginList {
                 ${is_config_exist ? `<div id="extended-setting-button.${this.escapeHtml(item.name)}" class="extended-setting-button"></div>` : ''}
               </div>`
                 : `<div class="extended-list-buttons">
-                  <div id="extended-download-button.${this.escapeHtml(item.name)}" class="extended-download-button"></div>
+                  <div id="extended-download-button.${this.escapeHtml(item.name)}" class="extended-${btn}-button" onClick=""></div>
               </div>`}
             </div>
           </div>
