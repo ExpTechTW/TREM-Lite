@@ -806,29 +806,33 @@ class PluginLoader {
             await fs.ensureDir(targetPath);
 
             const copyFiles = async (dir, baseTarget, baseSource) => {
-              const items = await fs.readdir(dir, { withFileTypes: true });
               const ignoreFiles = ['.', 'package.json', 'package-lock.json', 'LICENSE'];
 
-              for (const item of items) {
-                if (item.name.startsWith('.') || ignoreFiles.includes(item.name)) {
-                  continue;
-                }
+              try {
+                const items = await fs.promises.readdir(dir, { withFileTypes: true });
 
-                const sourceFull = path.join(dir, item.name);
-                const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
+                await fs.promises.mkdir(baseTarget, { recursive: true });
 
-                try {
+                for (const item of items) {
+                  if (item.name.startsWith('.') || ignoreFiles.includes(item.name)) {
+                    continue;
+                  }
+
+                  const sourceFull = path.join(dir, item.name);
+                  const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
+
                   if (item.isDirectory()) {
-                    await fs.ensureDir(targetFull);
+                    await fs.promises.mkdir(targetFull, { recursive: true });
                     await copyFiles(sourceFull, baseTarget, baseSource);
                   }
                   else {
-                    await fs.copyFile(sourceFull, targetFull);
+                    await fs.promises.copyFile(sourceFull, targetFull);
                   }
                 }
-                catch (error) {
-                  console.error(`Error copying ${sourceFull}:`, error);
-                }
+              }
+              catch (error) {
+                console.error(`Error in directory ${dir}:`, error);
+                throw error;
               }
             };
 
