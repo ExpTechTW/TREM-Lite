@@ -920,7 +920,7 @@ class PluginLoader {
       if (isValidPlugin) {
         manager.enable(pluginData.name);
       }
-      const loader = !pluginData.loader ? ['index'] : pluginData.loader;
+      const loader = !pluginData.info.loader ? ['index'] : pluginData.info.loader;
       if (!loader.includes(this.type)) {
         continue;
       }
