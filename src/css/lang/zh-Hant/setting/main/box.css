@@ -100,9 +100,6 @@
 .sound-effects-list-description::before {
   content: "開啟或關閉特定的音效";
 }
-.extended-list-title:empty::before {
-  content: "擴充列表";
-}
 .extended-list-description:empty::before,
 .extended-info .extended-info-warning:empty::before {
   content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
@@ -112,6 +109,9 @@
 }
 .extended-setting-button::before {
   content: "設定";
+}
+.extended-download-button::before {
+  content: "下載";
 }
 .p-alert::before {
   content: "INTENSITY（收到震度速報時播放）";
@@ -210,6 +210,15 @@
 .eew-1::before {
   content: "EEW（收到地震預警時播放）";
 }
+
+.extended-list-button[for="extended-installed-list"]:before {
+  content: "擴充列表";
+}
+
+.extended-list-button[for="extended-store-list"]:before {
+  content: "擴充商店";
+}
+
 .eew-2 {
   &::before {
     content: "EEW2（最大預估";
@@ -1138,7 +1147,8 @@ li {
   width: auto;
 }
 
-.extended-setting-button {
+.extended-setting-button,
+.extended-download-button {
   border-radius: 5px;
   border: 1px solid #ffffff24;
   width: auto;
@@ -1148,7 +1158,8 @@ li {
   margin-left: 5px;
 }
 
-.extended-setting-button:hover {
+.extended-setting-button:hover,
+.extended-download-button:hover {
   background: #48484d;
 }
 
@@ -1332,12 +1343,35 @@ li {
   align-items: center;
   margin: 10px;
   cursor: pointer;
-  background: #00ffea24;
+  background: #00ffea00;
+  opacity: 0.5;
 }
 
 .extended-list-button:hover {
-  background: #00ffea61;
+  background: #7cc7f68a;
+  opacity: 0.7;
 }
 .extended-list-button.active {
-  background: #00ffea61;
+  background: #7cc7f6;
+  opacity: 1;
+  color: #000;
+}
+
+.extended-store-list .wave-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 35%,
+    rgb(0 149 255 / 8%) 50%,
+    transparent 65%,
+    transparent 100%
+  );
+  animation: slide 2s linear infinite, fadeIn 0.5s ease-in;
+  pointer-events: none;
 }

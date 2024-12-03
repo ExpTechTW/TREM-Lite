@@ -1,11 +1,13 @@
+const TREM = require('./constant');
 const manager = require('../core/manager');
 const { ipcRenderer } = require('electron');
 const fs = require('fs-extra');
+const store = require('./main');
+const bubble = new store();
+const fetchData = require('../core/utils/fetch');
 
 class PluginList {
   constructor() {
-    this.store = require('./main');
-    this.bubble = new this.store();
     this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins')) || [];
     this.pluginList = JSON.parse(localStorage.getItem('plugin-list')) || [];
     this.loadedPlugins = JSON.parse(localStorage.getItem('loaded-plugins')) || [];
@@ -20,6 +22,7 @@ class PluginList {
     this.lastBox = null;
     this.countdown = null;
     this.interval = null;
+    this.pluginStoreList = '';
     this.init();
     this.addToggleClick();
     this.renderElements();
@@ -39,6 +42,22 @@ class PluginList {
         this.checkExtendedState();
       }
     });
+
+    this.getPluginInfo();
+  }
+
+  async getPluginInfo() {
+    const pluginStore = document.querySelector('.extended-store-list .extended-info');
+    const ans = await fetchData('https://raw.githubusercontent.com/ExpTechTW/trem-plugins/refs/heads/main/data/repository_stats.json', TREM.constant.HTTP_TIMEOUT.PLUGIN_INFO);
+    if (ans && ans.ok) {
+      const res = await ans.json();
+      res.forEach((item) => {
+        const newItem = this.renderPluginItem(item, true);
+        this.pluginStoreList += newItem;
+      });
+
+      pluginStore.innerHTML = this.pluginStoreList;
+    }
   }
 
   hotKey() {
@@ -74,7 +93,7 @@ class PluginList {
 
     const elements = this.pluginList
       .filter((item) => item)
-      .map((item) => this.renderPluginItem(item))
+      .map((item) => this.renderPluginItem(item, false))
       .join('');
 
     this.extendedInfo.innerHTML = elements;
@@ -109,11 +128,11 @@ class PluginList {
     return badges.join('');
   }
 
-  renderPluginItem(item) {
-    const isEnabled = this.enablePluginList.includes(item.name);
-    const isLoaded = this.getPluginLoadStatus(item.name);
-    const waveClassName = this.getWaveClassName(item, isEnabled, isLoaded);
-    const statusBadges = this.renderStatusBadges(item, isEnabled, isLoaded);
+  renderPluginItem(item, type) {
+    const isEnabled = !type ? this.enablePluginList.includes(item.name) : '';
+    const isLoaded = !type ? this.getPluginLoadStatus(item.name) : '';
+    const waveClassName = !type ? this.getWaveClassName(item, isEnabled, isLoaded) : '';
+    const statusBadges = !type ? this.renderStatusBadges(item, isEnabled, isLoaded) : '';
 
     const is_config_exist = fs.existsSync(`${item.path}/config.yml`);
 
@@ -138,7 +157,8 @@ class PluginList {
                   <span class="extended-list-descriptions">${this.escapeHtml(item.description?.zh_tw || '')}</span>
                 </div>
               </div>
-              <div class="extended-list-buttons">
+              ${!type
+                ? `<div class="extended-list-buttons">
                 <label class="switch">
                   <input type="checkbox" 
                     data-name="${this.escapeHtml(item.name)}" 
@@ -150,7 +170,10 @@ class PluginList {
                   <div class="slider round"></div>
                 </label>
                 ${is_config_exist ? `<div id="extended-setting-button.${this.escapeHtml(item.name)}" class="extended-setting-button"></div>` : ''}
-              </div>
+              </div>`
+                : `<div class="extended-list-buttons">
+                  <div id="extended-download-button.${this.escapeHtml(item.name)}" class="extended-download-button"></div>
+              </div>`}
             </div>
           </div>
         </div>
@@ -275,7 +298,7 @@ class PluginList {
     }
     localStorage.setItem('enabled-plugins', JSON.stringify(this.enablePluginList));
     this.hideConfirmWrapper();
-    this.bubble.showBubble('success', 3000);
+    bubble.showBubble('success', 3000);
   }
 
   hideConfirmWrapper() {
