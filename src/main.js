@@ -274,15 +274,10 @@ ipcMain.on('all-reload', () => {
   });
 });
 
-ipcMain.on('minimize', () => {
-  if (win) {
-    win.minimize();
-  }
-});
-
 ipcMain.on('hide', () => {
-  if (win) {
-    win.hide();
+  const currentWindow = BrowserWindow.getFocusedWindow();
+  if (currentWindow) {
+    currentWindow.hide();
   }
 });
 
