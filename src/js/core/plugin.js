@@ -29,6 +29,7 @@ class PluginLoader {
     this.tempDir = path.join(app.getPath('temp'), 'trem-plugins');
     this.plugins = new Map();
     this.loadOrder = [];
+    this.scannedPlugins = new Map();
     this.tremVersion = app.getVersion();
     this.eventHandlers = new Map();
 
@@ -682,7 +683,7 @@ class PluginLoader {
     return md5Map;
   }
 
-  async cleanupOrphanedPlugins(scannedPlugins) {
+  async cleanupOrphanedPlugins() {
     logger.debug('Cleaning up orphaned plugin data...');
 
     const tempFiles = fs.readdirSync(this.tempDir);
@@ -694,7 +695,7 @@ class PluginLoader {
 
       const tempPath = path.join(this.tempDir, file);
       if (fs.statSync(tempPath).isDirectory()) {
-        if (!scannedPlugins.has(file)) {
+        if (!this.scannedPlugins.has(file)) {
           try {
             logger.debug(`Removing orphaned plugin directory: ${file}`);
             await fs.remove(tempPath);
@@ -917,9 +918,9 @@ class PluginLoader {
     this.loadOrder = [];
 
     const enabledPlugins = JSON.parse(localStorage.getItem('enabled-plugins') || '[]');
-    const scannedPlugins = await this.scanPlugins();
+    this.scannedPlugins = await this.scanPlugins();
 
-    for (const [name, pluginData] of scannedPlugins.entries()) {
+    for (const [name, pluginData] of this.scannedPlugins.entries()) {
       const isValidPlugin
       = pluginData.info?.['auto-enable'] == true
       && pluginData.info?.author.includes('ExpTechTW')
@@ -983,7 +984,7 @@ class PluginLoader {
       }
     }
 
-    this.cleanupOrphanedPlugins(scannedPlugins);
+    this.cleanupOrphanedPlugins(this.scannedPlugins);
 
     localStorage.setItem('loaded-plugins', JSON.stringify(this.getLoadedPlugins()));
   }
@@ -995,6 +996,15 @@ class PluginLoader {
         await plugin.instance.onUnload();
       }
       this.plugins.delete(pluginName);
+    }
+  }
+
+  async deletePlugin(name) {
+    const info = this.scannedPlugins.get(name);
+
+    if (info) {
+      fs.removeSync(info.originalPath);
+      fs.removeSync(info.path);
     }
   }
 }
