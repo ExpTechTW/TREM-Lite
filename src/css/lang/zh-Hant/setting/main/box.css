@@ -546,7 +546,8 @@ body {
     .select-wrapper,
     .condition-items,
     .extended-info,
-    .extended-list-button
+    .extended-list-button,
+    .extended-latest-button
   ) {
   padding: 13px;
   display: flex;
