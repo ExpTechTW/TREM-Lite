@@ -1410,3 +1410,7 @@ li {
   padding: 0 !important;
   cursor: pointer;
 }
+
+.wave-container:hover .extended-remove {
+  display: flex !important;
+}
