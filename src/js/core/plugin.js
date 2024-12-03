@@ -806,13 +806,17 @@ class PluginLoader {
             await fs.ensureDir(targetPath);
 
             const copyFiles = async (dir, baseTarget, baseSource) => {
-              const items = await fs.readdir(dir);
-              for (const item of items) {
-                const sourceFull = path.join(dir, item);
-                const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
-                const stat = await fs.stat(sourceFull);
+              const items = await fs.readdir(dir, { withFileTypes: true });
 
-                if (stat.isDirectory()) {
+              for (const item of items) {
+                if (item.name.startsWith('.')) {
+                  continue;
+                }
+
+                const sourceFull = path.join(dir, item.name);
+                const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
+
+                if (item.isDirectory()) {
                   await fs.ensureDir(targetFull);
                   await copyFiles(sourceFull, baseTarget, baseSource);
                 }
