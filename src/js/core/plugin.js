@@ -776,55 +776,15 @@ class PluginLoader {
               pluginPaths.set(info.name, {
                 path: filePath,
                 type: 'directory',
-                info,
               });
             }
           }
         }
         else if (file.endsWith('.trem')) {
-          const uniqueTempDir = path.join(
-            this.tempDir,
-            `_temp_extract_${file}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          );
-
-          try {
-            if (fs.existsSync(uniqueTempDir)) {
-              await fs.remove(uniqueTempDir);
-            }
-
-            await fs.ensureDir(uniqueTempDir);
-
-            const zip = new AdmZip(filePath);
-            zip.extractAllTo(uniqueTempDir, true);
-
-            const infoPath = path.join(uniqueTempDir, 'info.json');
-            if (fs.existsSync(infoPath)) {
-              const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-              if (info?.name && !pluginPaths.has(info.name)) {
-                pluginPaths.set(info.name, {
-                  path: filePath,
-                  type: 'trem',
-                  info,
-                });
-              }
-            }
-          }
-          catch (error) {
-            logger.error(`Error processing ${file} in temp dir ${uniqueTempDir}:`, error);
-          }
-          finally {
-            try {
-              if (fs.existsSync(uniqueTempDir)) {
-                await fs.remove(uniqueTempDir);
-                if (fs.existsSync(uniqueTempDir)) {
-                  logger.warn(`Failed to remove temp directory: ${uniqueTempDir}`);
-                }
-              }
-            }
-            catch (cleanupError) {
-              logger.error(`Error cleaning up temp directory ${uniqueTempDir}:`, cleanupError);
-            }
-          }
+          pluginPaths.set(file.replace('.trem', ''), {
+            path: filePath,
+            type: 'trem',
+          });
         }
       }
       catch (error) {
@@ -858,7 +818,7 @@ class PluginLoader {
       }
 
       try {
-        const { path: sourcePath, type, info } = pathInfo;
+        const { path: sourcePath, type } = pathInfo;
         const targetPath = path.join(this.tempDir, pluginName);
         let needUpdate = false;
         let fileMD5s = new Map();
@@ -946,9 +906,9 @@ class PluginLoader {
         if (fs.existsSync(targetPath) && tremInfo) {
           const pluginData = {
             name: pluginName,
-            version: info.version,
-            description: info.description,
-            author: info.author,
+            version: tremInfo.pluginInfo.version,
+            description: tremInfo.pluginInfo.description,
+            author: tremInfo.pluginInfo.author,
             verified,
             verifyError: tremInfo.verification?.error || null,
             keyId: tremInfo.verification?.keyId || null,
@@ -956,8 +916,8 @@ class PluginLoader {
             sensitivity: tremInfo.pluginInfo?.sensitivity || { level: 0, description: '未分析' },
             path: targetPath,
             originalPath: sourcePath,
-            info: tremInfo.pluginInfo || info,
-            dependencies: info.dependencies || {},
+            info: tremInfo.pluginInfo || {},
+            dependencies: tremInfo.pluginInfo.dependencies || {},
             type,
             lastUpdated: tremInfo.lastUpdated || Date.now(),
           };
