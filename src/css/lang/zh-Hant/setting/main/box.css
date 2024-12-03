@@ -100,6 +100,9 @@
 .sound-effects-list-description::before {
   content: "開啟或關閉特定的音效";
 }
+.extended-list-title:before {
+  content: "擴充功能";
+}
 .extended-list-description:empty::before,
 .extended-info .extended-info-warning:empty::before {
   content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
