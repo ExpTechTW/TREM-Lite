@@ -52,10 +52,6 @@ linux:
       arch:
         - x64
         - arm64
-    - target: AppImage
-      arch:
-        - x64
-        - arm64
   category: Development
   artifactName: ${productName}-${version}-${arch}.${ext}
 

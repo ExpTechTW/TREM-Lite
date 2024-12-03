@@ -773,51 +773,59 @@ class PluginLoader {
         const { path: sourcePath, type } = pathInfo;
         const targetPath = path.join(this.tempDir, pluginName);
         let needUpdate = false;
-        let fileMD5s = new Map();
 
         if (type === 'directory') {
           const signaturePath = path.join(sourcePath, 'signature.json');
           const sourceFileMD5s = this.getFileMD5s(sourcePath);
+          let fileMD5s;
+          let fileNeedsUpdate = new Map();
 
           if (fs.existsSync(signaturePath)) {
             const signatures = JSON.parse(fs.readFileSync(signaturePath, 'utf8'));
-            needUpdate = Object.entries(signatures).some(([file, md5]) =>
-              sourceFileMD5s.get(file) !== md5,
-            );
             fileMD5s = new Map(Object.entries(signatures));
+            sourceFileMD5s.forEach((md5, file) => {
+              fileNeedsUpdate.set(file, signatures[file] !== md5);
+            });
           }
           else {
             if (fs.existsSync(targetPath)) {
-              const tempFileMD5s = this.getFileMD5s(targetPath);
-              needUpdate = Array.from(sourceFileMD5s.entries()).some(([file, md5]) =>
-                tempFileMD5s.get(file) !== md5,
-              );
+              const targetFileMD5s = this.getFileMD5s(targetPath);
+              sourceFileMD5s.forEach((md5, file) => {
+                fileNeedsUpdate.set(file, targetFileMD5s.get(file) !== md5);
+              });
             }
             else {
-              needUpdate = true;
+              sourceFileMD5s.forEach((_, file) => {
+                fileNeedsUpdate.set(file, true);
+              });
             }
             fileMD5s = sourceFileMD5s;
           }
 
-          if (needUpdate) {
-            if (fs.existsSync(targetPath)) {
-              await fs.remove(targetPath);
-            }
+          if (Array.from(fileNeedsUpdate.values()).some(Boolean)) {
             await fs.ensureDir(targetPath);
 
             const copyFiles = async (dir, baseTarget, baseSource) => {
-              const items = await fs.readdir(dir);
-              for (const item of items) {
-                const sourceFull = path.join(dir, item);
-                const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
-                const stat = await fs.stat(sourceFull);
+              const ignoreFiles = ['.', 'package.json', 'package-lock.json', 'LICENSE'];
 
-                if (stat.isDirectory()) {
-                  await fs.ensureDir(targetFull);
+              const items = await fs.promises.readdir(dir, { withFileTypes: true });
+              await fs.promises.mkdir(baseTarget, { recursive: true });
+
+              for (const item of items) {
+                if (item.name.startsWith('.') || ignoreFiles.includes(item.name)) {
+                  continue;
+                }
+
+                const sourceFull = path.join(dir, item.name);
+                const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
+                const relativePath = path.relative(baseSource, sourceFull);
+
+                if (item.isDirectory()) {
+                  await fs.promises.mkdir(targetFull, { recursive: true });
                   await copyFiles(sourceFull, baseTarget, baseSource);
                 }
-                else {
-                  await fs.copyFile(sourceFull, targetFull);
+                else if (fileNeedsUpdate.get(relativePath)) {
+                  await fs.promises.copyFile(sourceFull, targetFull);
                 }
               }
             };
@@ -825,7 +833,6 @@ class PluginLoader {
             await copyFiles(sourcePath, targetPath, sourcePath);
 
             const verification = this.verifier.verify(targetPath);
-
             const pluginInfo = this.readPluginInfo(targetPath);
 
             this.createTremInfoFile(targetPath, {
