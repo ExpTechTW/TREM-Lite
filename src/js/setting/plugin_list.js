@@ -116,7 +116,7 @@ class PluginList {
     const is_config_exist = fs.existsSync(`${item.path}/config.yml`);
 
     return `
-        <div class="wave-container ${waveClassName}">
+        <div class="wave-container ${waveClassName}" id="plugin-${this.escapeHtml(item.name)}">
           <div class="setting-option">
             <div class="extended-list">
               <div class="extended-list-box">
