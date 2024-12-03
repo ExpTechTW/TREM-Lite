@@ -1329,3 +1329,7 @@ li {
   transform: translateY(0);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
+.open {
+  pointer-events: auto;
+}

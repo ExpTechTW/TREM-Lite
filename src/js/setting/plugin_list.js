@@ -21,6 +21,7 @@ class PluginList {
     this.init();
     this.addToggleClick();
     this.renderElements();
+    this.hotKey();
   }
 
   init() {
@@ -36,6 +37,23 @@ class PluginList {
         this.checkExtendedState();
       }
     });
+  }
+
+  hotKey() {
+    document.onkeydown = (e) => {
+      if (e.shiftKey) {
+        if (this.ConfirmSure) {
+          this.ConfirmSure.classList.add('open');
+        }
+      }
+    };
+    document.onkeyup = (e) => {
+      if (!e.shiftKey) {
+        if (this.ConfirmSure) {
+          this.ConfirmSure.classList.remove('open');
+        }
+      }
+    };
   }
 
   getPluginLoadStatus(pluginName) {
@@ -238,9 +256,6 @@ class PluginList {
     localStorage.setItem('enabled-plugins', JSON.stringify(this.enablePluginList));
     this.hideConfirmWrapper();
     this.bubble.showBubble('success', 3000);
-    setTimeout(() => {
-      ipcRenderer.send('all-reload');
-    }, 4000);
   }
 
   hideConfirmWrapper() {
