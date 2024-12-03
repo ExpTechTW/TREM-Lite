@@ -7,6 +7,8 @@ const store = require('./main');
 const bubble = new store();
 const fetchData = require('../core/utils/fetch');
 
+const pluginStore = document.querySelector('.extended-store-list .extended-info');
+
 class PluginList {
   constructor() {
     this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins')) || [];
@@ -48,17 +50,41 @@ class PluginList {
   }
 
   async getPluginInfo() {
-    const pluginStore = document.querySelector('.extended-store-list .extended-info');
-    const ans = await fetchData('https://raw.githubusercontent.com/ExpTechTW/trem-plugins/refs/heads/main/data/repository_stats.json', TREM.constant.HTTP_TIMEOUT.PLUGIN_INFO);
-    if (ans && ans.ok) {
-      const res = await ans.json();
-      res.forEach((item) => {
-        const newItem = this.renderPluginItem(item, true);
-        console.log(item.name, PluginLoader.compareVersions(item.version, '1.0.0'));
-        this.pluginStoreList += newItem;
-      });
-      pluginStore.innerHTML = this.pluginStoreList;
+    const last_time = localStorage.getItem('store-time') ?? 0;
+
+    let data = JSON.parse(localStorage.getItem('store-data') ?? '[]');
+
+    if (Date.now() - last_time > 600000) {
+      const ans = await fetchData('https://raw.githubusercontent.com/ExpTechTW/trem-plugins/refs/heads/main/data/repository_stats.json', TREM.constant.HTTP_TIMEOUT.PLUGIN_INFO);
+      if (ans && ans.ok) {
+        const res = await ans.json();
+
+        data = res;
+
+        localStorage.setItem('store-time', Date.now());
+        localStorage.setItem('store-data', JSON.stringify(res));
+      }
     }
+
+    this.createPluginStoreList(data);
+  }
+
+  createPluginStoreList(list) {
+    list.forEach((item) => {
+      const newItem = this.renderPluginItem(item, true);
+
+      const local_item = this.pluginList.find((_) => _.name == item.name);
+
+      if (!local_item) {
+        // 下載
+      }
+      else if (PluginLoader.compareVersions(item.version, local_item.version)) {
+        // 更新
+      }
+
+      this.pluginStoreList += newItem;
+    });
+    pluginStore.innerHTML = this.pluginStoreList;
   }
 
   hotKey() {
