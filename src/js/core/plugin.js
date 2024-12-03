@@ -35,7 +35,8 @@ class PluginLoader {
     this.verifier.loadKeysFromDirectory(keysDir);
     this.pluginDir = path.join(app.getPath('userData'), 'plugins');
     this.tempDir = path.join(app.getPath('temp'), 'trem-plugins');
-    this.plugins = new Map();
+    this.plugins = {};
+    this.plugins[this.type] = new Map();
     this.loadOrder = [];
     this.scannedPlugins = new Map();
     this.tremVersion = app.getVersion();
@@ -239,7 +240,7 @@ class PluginLoader {
     }
 
     for (const [dep, version] of Object.entries(pluginDependencies)) {
-      const dependencyPlugin = this.plugins.get(dep);
+      const dependencyPlugin = this.plugins[this.type].get(dep);
       if (!dependencyPlugin) {
         logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name}`);
         return false;
@@ -292,7 +293,7 @@ class PluginLoader {
   }
 
   getLoadedPlugins() {
-    return Array.from(this.plugins.entries()).map(([name, plugin]) => ({
+    return Array.from(this.plugins[this.type].entries()).map(([name, plugin]) => ({
       name,
       version: plugin.info.version,
       description: plugin.info.description,
@@ -413,11 +414,11 @@ class PluginLoader {
       }
 
       tempMark.add(pluginName);
-      const plugin = this.plugins.get(pluginName);
+      const plugin = this.plugins[this.type].get(pluginName);
 
       if (plugin.dependencies) {
         for (const dep of Object.keys(plugin.dependencies)) {
-          if (dep !== 'trem' && this.plugins.has(dep)) {
+          if (dep !== 'trem' && this.plugins[this.type].has(dep)) {
             visit(dep);
           }
         }
@@ -428,7 +429,7 @@ class PluginLoader {
       this.loadOrder.unshift(pluginName);
     };
 
-    for (const pluginName of this.plugins.keys()) {
+    for (const pluginName of this.plugins[this.type].keys()) {
       if (!visited.has(pluginName)) {
         visit(pluginName);
       }
@@ -932,7 +933,7 @@ class PluginLoader {
 
   async loadPlugins() {
     logger.info(`Loading plugins (TREM version: ${this.tremVersion})`);
-    this.plugins.clear();
+    this.plugins[this.type].clear();
     this.loadOrder = [];
 
     const enabledPlugins = JSON.parse(localStorage.getItem('enabled-plugins') || '[]');
@@ -954,16 +955,16 @@ class PluginLoader {
         if (!pluginData.verified) {
           logger.debug(`Loading unverified plugin ${name}: ${pluginData.verifyError}`);
         }
-        this.plugins.set(name, pluginData);
+        this.plugins[this.type].set(name, pluginData);
       }
       else if (!enabledPlugins.includes(name)) {
         logger.warn(`--- Plugin ${name} disable ---`);
       }
     }
 
-    for (const [pluginName, plugin] of this.plugins.entries()) {
+    for (const [pluginName, plugin] of this.plugins[this.type].entries()) {
       if (!this.validateDependencies(plugin.info)) {
-        this.plugins.delete(pluginName);
+        this.plugins[this.type].delete(pluginName);
         logger.warn(`Skipping plugin ${pluginName} due to dependency issues`);
       }
     }
@@ -977,7 +978,7 @@ class PluginLoader {
     }
 
     for (const pluginName of this.loadOrder) {
-      const plugin = this.plugins.get(pluginName);
+      const plugin = this.plugins[this.type].get(pluginName);
       const indexPath = path.join(plugin.path, 'index.js');
 
       try {
@@ -987,34 +988,33 @@ class PluginLoader {
           if (this.isValidPluginClass(PluginClass)) {
             const success = await this.initializePlugin(pluginName, plugin, PluginClass);
             if (!success) {
-              this.plugins.delete(pluginName);
+              this.plugins[this.type].delete(pluginName);
             }
           }
           else {
             logger.error(`Plugin ${pluginName} does not export a valid plugin class`);
-            this.plugins.delete(pluginName);
+            this.plugins[this.type].delete(pluginName);
           }
         }
       }
       catch (error) {
         logger.error(`Failed to load plugin ${pluginName}:`, error);
-        this.plugins.delete(pluginName);
+        this.plugins[this.type].delete(pluginName);
       }
     }
 
     this.cleanupOrphanedPlugins(this.scannedPlugins);
 
-    localStorage.setItem('loaded-plugins', JSON.stringify(this.getLoadedPlugins()));
-  }
+    const previousList = JSON.parse(localStorage.getItem('loaded-plugins')) || [];
 
-  async unloadPlugin(pluginName) {
-    const plugin = this.plugins.get(pluginName);
-    if (plugin?.instance) {
-      if (typeof plugin.instance.onUnload === 'function') {
-        await plugin.instance.onUnload();
-      }
-      this.plugins.delete(pluginName);
-    }
+    const currentLoadedPlugins = this.getLoadedPlugins();
+
+    const updatedList = [
+      ...previousList.filter((plugin) => !currentLoadedPlugins.some((current) => current.name === plugin.name)),
+      ...currentLoadedPlugins,
+    ];
+
+    localStorage.setItem('loaded-plugins', JSON.stringify(updatedList));
   }
 
   async deletePlugin(name) {

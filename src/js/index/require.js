@@ -16,6 +16,8 @@ const copyMissingTremFiles = require('../js/index/plugin_init');
 (async () => {
   await copyMissingTremFiles();
 
+  localStorage.setItem('loaded-plugins', JSON.stringify([]));
+
   // require('../js/core/config');
   require('../js/core/plugin').createPluginLoader('index');
 
