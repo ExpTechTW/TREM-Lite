@@ -84,7 +84,7 @@ class PluginList {
         button = 'update';
       }
       else {
-        button = 'none';
+        button = 'latest';
       }
       const newItem = this.renderPluginItem(item, true, button);
       this.pluginStoreList += newItem;

@@ -119,8 +119,8 @@
 .extended-update-button::before {
   content: "更新";
 }
-.extended-none-button::before {
-  content: "無";
+.extended-latest-button::before {
+  content: "已是最新版本";
 }
 .p-alert::before {
   content: "INTENSITY（收到震度速報時播放）";
@@ -1159,8 +1159,7 @@ li {
 
 .extended-setting-button,
 .extended-download-button,
-.extended-update-button,
-.extended-none-button {
+.extended-update-button {
   border-radius: 5px;
   border: 1px solid #ffffff24;
   width: auto;
@@ -1172,8 +1171,7 @@ li {
 
 .extended-setting-button:hover,
 .extended-download-button:hover,
-.extended-update-button:hover,
-.extended-none-button:hover {
+.extended-update-button:hover {
   background: #48484d;
 }
 
