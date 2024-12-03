@@ -326,10 +326,10 @@ TREM.variable.events.on('DataRts', (ans) => {
       }
     }
     else {
-      data_list = [];
-      data_alert_0_list = [];
-      data_alert_list = [];
       if (TREM.constant.SHOW_REPORT && !TREM.class.FocusManager?.getInstance().getLock()) {
+        data_list = [];
+        data_alert_0_list = [];
+        data_alert_list = [];
         show_report_point(TREM.variable.cache.last_report);
       }
     }
