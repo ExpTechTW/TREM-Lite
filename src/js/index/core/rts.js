@@ -362,7 +362,7 @@ TREM.variable.events.on('DataRts', (ans) => {
   rts_intensity_list.replaceChildren(...box_list);
 
   max_pga.textContent = `${pga.toFixed(2)} gal`;
-  max_pga.className = `max-station-pga ${(!alert) ? 'intensity-0' : `intensity-${calculator.pgaToIntensity(pga)}`}`;
+  max_pga.className = `max-station-pga ${(!alert) ? 'intensity-0' : `intensity-${pga < 5 ? '0' : calculator.pgaToIntensity(pga)}`}`;
   max_intensity.className = `max-station-intensity intensity-${int_list[0]?.i ?? 0}`;
 
   for (const id of Object.keys(level_list)) {
