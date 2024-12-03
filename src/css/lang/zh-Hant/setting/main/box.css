@@ -116,6 +116,12 @@
 .extended-download-button::before {
   content: "下載";
 }
+.extended-download-button.downloading::before {
+  content: "下載中...";
+}
+.extended-download-button.downloaded::before {
+  content: "下載完成";
+}
 .extended-update-button::before {
   content: "更新";
 }
@@ -208,10 +214,13 @@
   content: "已載入";
 }
 .success.message-box:before {
-  content: "操作成功！";
+  content: "操作成功，關閉設定視窗後套用！";
 }
 .failed.message-box:before {
   content: "操作失敗！";
+}
+.success-download.message-box:before {
+  content: "下載完成，關閉設定視窗後套用！";
 }
 .extended-store:before {
   content: "TREM 擴充商店";
@@ -219,11 +228,9 @@
 .eew-1::before {
   content: "EEW（收到地震預警時播放）";
 }
-
 .extended-list-button[for="extended-installed-list"]:before {
   content: "擴充列表";
 }
-
 .extended-list-button[for="extended-store-list"]:before {
   content: "擴充商店";
 }
@@ -1315,7 +1322,8 @@ li {
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.message-content.success {
+.message-content.success,
+.message-content.success-download {
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.3s ease, transform 0.3s ease;

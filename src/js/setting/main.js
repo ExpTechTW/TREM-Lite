@@ -60,11 +60,15 @@ class Main {
       console.error('Message elements not found');
       return;
     }
-    this.messageBox.classList.add(message);
     this.messageContent.classList.add(message);
-    setTimeout(() => {
+    this.messageBox.classList.add(message);
+    const bubble = setTimeout(() => {
       this.messageContent.classList.remove(message);
+      setTimeout(() => {
+        this.messageBox.classList.remove(message);
+      }, 200);
     }, duration);
+    clearTimeout(bubble);
   }
 
   info() {

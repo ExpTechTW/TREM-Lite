@@ -90,15 +90,19 @@ class PluginList {
       this.pluginStoreList += newItem;
     });
 
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => {
       if (e.target.id?.startsWith('extended-download-button.')) {
         const pluginName = e.target.id.split('.')[1];
 
         const new_item = this.storeData.find((_) => _.name == pluginName);
 
+        e.target.classList.add('disabled');
+        e.target.classList.add('downloading');
         if (new_item) {
-          PluginLoader.getInstance().downloadPlugin(pluginName, `https://github.com/${new_item.repository.full_name}/releases/download/${new_item.repository.releases.releases[0].tag_name}/${pluginName}.trem`);
+          await PluginLoader.getInstance().downloadPlugin(pluginName, `https://github.com/${new_item.repository.full_name}/releases/download/${new_item.repository.releases.releases[0].tag_name}/${pluginName}.trem`);
         }
+        e.target.classList.add('downloaded');
+        bubble.showBubble('success-download', 3000);
       }
     });
 
