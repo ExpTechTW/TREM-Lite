@@ -120,7 +120,7 @@
   content: "更新";
 }
 .extended-latest-button::before {
-  content: "已是最新版本";
+  content: "最新版本";
 }
 .p-alert::before {
   content: "INTENSITY（收到震度速報時播放）";
