@@ -184,7 +184,9 @@ function createSettingWindow() {
   SettingWindow.webContents.on('did-finish-load', () => SettingWindow.show());
   SettingWindow.on('close', () => {
     SettingWindow = null;
-    win.webContents.reload();
+    if (!forceQuit) {
+      win.webContents.reload();
+    }
   });
 }
 
