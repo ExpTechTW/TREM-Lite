@@ -807,21 +807,27 @@ class PluginLoader {
 
             const copyFiles = async (dir, baseTarget, baseSource) => {
               const items = await fs.readdir(dir, { withFileTypes: true });
+              const ignoreFiles = ['.', 'package.json', 'package-lock.json', 'LICENSE'];
 
               for (const item of items) {
-                if (item.name.startsWith('.')) {
+                if (item.name.startsWith('.') || ignoreFiles.includes(item.name)) {
                   continue;
                 }
 
                 const sourceFull = path.join(dir, item.name);
                 const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
 
-                if (item.isDirectory()) {
-                  await fs.ensureDir(targetFull);
-                  await copyFiles(sourceFull, baseTarget, baseSource);
+                try {
+                  if (item.isDirectory()) {
+                    await fs.ensureDir(targetFull);
+                    await copyFiles(sourceFull, baseTarget, baseSource);
+                  }
+                  else {
+                    await fs.copyFile(sourceFull, targetFull);
+                  }
                 }
-                else {
-                  await fs.copyFile(sourceFull, targetFull);
+                catch (error) {
+                  console.error(`Error copying ${sourceFull}:`, error);
                 }
               }
             };
