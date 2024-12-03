@@ -126,7 +126,7 @@
   content: "更新";
 }
 .extended-latest-button::before {
-  content: "最新版本";
+  content: "已是最新版本";
 }
 .p-alert::before {
   content: "INTENSITY（收到震度速報時播放）";
@@ -564,6 +564,11 @@ body {
     border-bottom: 1px solid black;
     border-color: rgb(255 255 255 / 2%);
   }
+}
+
+.extended-latest-button {
+  font-size: 12px;
+  color: grey;
 }
 
 .select-option-selected {
