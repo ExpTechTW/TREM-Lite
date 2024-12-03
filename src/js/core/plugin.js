@@ -682,56 +682,8 @@ class PluginLoader {
     return md5Map;
   }
 
-  async cleanupOrphanedPlugins() {
+  async cleanupOrphanedPlugins(scannedPlugins) {
     logger.debug('Cleaning up orphaned plugin data...');
-
-    const pluginFiles = fs.readdirSync(this.pluginDir);
-
-    const validPluginNames = new Set();
-
-    for (const file of pluginFiles) {
-      const filePath = path.join(this.pluginDir, file);
-      const stats = fs.statSync(filePath);
-
-      if (stats.isDirectory()) {
-        const infoPath = path.join(filePath, 'info.json');
-        if (fs.existsSync(infoPath)) {
-          try {
-            const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-            if (info?.name) {
-              validPluginNames.add(info.name);
-            }
-          }
-          catch (error) {
-            logger.error(`Error parsing info.json in ${file}:`, error);
-          }
-        }
-      }
-      else if (file.endsWith('.trem')) {
-        try {
-          const tempExtractPath = path.join(this.tempDir, '_temp_extract');
-          if (fs.existsSync(tempExtractPath)) {
-            await fs.remove(tempExtractPath);
-          }
-
-          const zip = new AdmZip(filePath);
-          zip.extractAllTo(tempExtractPath, true);
-
-          const infoPath = path.join(tempExtractPath, 'info.json');
-          if (fs.existsSync(infoPath)) {
-            const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-            if (info?.name) {
-              validPluginNames.add(info.name);
-            }
-          }
-
-          await fs.remove(tempExtractPath);
-        }
-        catch (error) {
-          logger.error(`Error processing .trem file ${file}:`, error);
-        }
-      }
-    }
 
     const tempFiles = fs.readdirSync(this.tempDir);
 
@@ -742,7 +694,7 @@ class PluginLoader {
 
       const tempPath = path.join(this.tempDir, file);
       if (fs.statSync(tempPath).isDirectory()) {
-        if (!validPluginNames.has(file)) {
+        if (!scannedPlugins.has(file)) {
           try {
             logger.debug(`Removing orphaned plugin directory: ${file}`);
             await fs.remove(tempPath);
@@ -1026,6 +978,8 @@ class PluginLoader {
       }
     }
 
+    createPluginLoader(scannedPlugins);
+
     localStorage.setItem('loaded-plugins', JSON.stringify(this.getLoadedPlugins()));
   }
 
@@ -1047,7 +1001,7 @@ function createPluginLoader(type = 'index') {
 module.exports = function (type) {
   const pluginLoader = createPluginLoader(type);
   pluginLoader.loadPlugins();
-  pluginLoader.cleanupOrphanedPlugins();
+
   return {
     default: PluginLoader,
     pluginLoader,
