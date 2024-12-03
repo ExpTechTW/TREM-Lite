@@ -13,7 +13,6 @@ const PluginVerifier = require('./verify');
 const crypto = require('crypto');
 const manager = require('./manager');
 const fetchData = require('./utils/fetch');
-const { ipcRenderer } = require('electron');
 
 class PluginLoader {
   static instance = null;
@@ -1038,7 +1037,6 @@ class PluginLoader {
         await fs.writeFile(pluginPath, Buffer.from(buffer));
 
         logger.info(`Plugin downloaded successfully: ${name}`);
-        setTimeout(() => ipcRenderer.send('all-reload'), 1000);
       }
       else {
         logger.error(`Failed to download plugin ${name}: ${res?.status}`);
