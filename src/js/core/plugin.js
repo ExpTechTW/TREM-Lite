@@ -963,8 +963,6 @@ class PluginLoader {
 
       try {
         if (fs.existsSync(indexPath)) {
-          this.ctx.info.pluginDir = path.join(this.tempDir, pluginName);
-
           const PluginClass = require(indexPath);
 
           if (this.isValidPluginClass(PluginClass)) {
