@@ -502,19 +502,19 @@ body {
   margin-top: 3vw;
 }
 
-.setting-item-title {
-  padding-left: 1vw;
-}
-
 .setting-option .extended-info-warning {
   font-size: 15px;
-  font-weight: bold;
   justify-content: center;
 }
 
 .setting-item-title {
-  font-size: 17px;
-  font-weight: bold;
+  font-size: 18px;
+  margin-right: 15;
+}
+
+.description {
+  font-size: 14px;
+  font-weight: unset;
 }
 
 .setting-option {
