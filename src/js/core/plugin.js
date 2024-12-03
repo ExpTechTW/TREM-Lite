@@ -1000,7 +1000,7 @@ class PluginLoader {
     }
   }
 
-  async deletePlugin(name) {
+  static async deletePlugin(name) {
     const info = this.scannedPlugins.get(name);
 
     if (info) {
@@ -1009,7 +1009,7 @@ class PluginLoader {
     }
   }
 
-  async downloadPlugin(name, url) {
+  static async downloadPlugin(name, url) {
     try {
       const res = await fetchData(url, 5000);
       if (res && res.ok) {
