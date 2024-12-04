@@ -106,7 +106,7 @@ class PluginList {
           await PluginLoader.getInstance().downloadPlugin(pluginName, `https://github.com/${new_item.repository.full_name}/releases/download/${new_item.repository.releases.releases[0].tag_name}/${pluginName}.trem`);
         }
         e.target.classList.add('downloaded');
-        bubble.showBubble('success-download', 3000);
+        bubble.showBubble('success-download', 1500);
       }
     });
 
@@ -155,7 +155,7 @@ class PluginList {
       if (targetElement) {
         const pluginName = targetElement.id.split('.')[1];
         await PluginLoader.getInstance().deletePlugin(pluginName);
-        bubble.showBubble('success', 3000);
+        bubble.showBubble('success', 1500);
       }
     });
 
@@ -375,7 +375,7 @@ class PluginList {
     }
     localStorage.setItem('enabled-plugins', JSON.stringify(this.enablePluginList));
     this.hideConfirmWrapper();
-    bubble.showBubble('success', 3000);
+    bubble.showBubble('success', 1500);
   }
 
   hideConfirmWrapper() {

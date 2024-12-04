@@ -28,7 +28,7 @@ class Reset {
       const { classList } = event.target;
       if (classList[0] == 'confirm-sure') {
         this.resetConfirmWrapper.style.bottom = '-100%';
-        this.bubble.showBubble('success', 3000);
+        this.bubble.showBubble('success', 1500);
         Config.getInstance().resetConfig();
         setTimeout(() => {
           ipcRenderer.send('all-reload');

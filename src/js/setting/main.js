@@ -56,8 +56,7 @@ class Main {
   }
 
   showBubble(message, duration = 3000) {
-    if (!this.messageContent || !this.messageBox) {
-      console.error('Message elements not found');
+    if (!this.messageContent || !this.messageBox || this.messageContent.classList.contains(message) || this.messageBox.classList.contains(message)) {
       return;
     }
     this.messageContent.classList.add(message);
