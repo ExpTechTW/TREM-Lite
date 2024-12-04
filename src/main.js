@@ -207,7 +207,7 @@ app.on('second-instance', (event, commandLine) => {
   if (url) {
     try {
       const urlObj = new URL(url);
-      if (urlObj.protocol === 'trem-lite:' && urlObj.pathname.startsWith('/install:')) {
+      if (urlObj.protocol == 'trem-lite:' && urlObj.pathname.startsWith('/install:')) {
         if (win) {
           win.webContents.executeJavaScript(`
             localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');

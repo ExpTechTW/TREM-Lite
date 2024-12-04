@@ -1033,7 +1033,7 @@ class PluginLoader {
   }
 
   async autoDownload(args) {
-    console.log('args', args);
+    logger.warn('Auto download: ', args);
     const params = args.split('@');
     await this.downloadPlugin(params[0], params[1]);
     ipcRenderer.send('all-reload');
