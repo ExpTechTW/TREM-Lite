@@ -12,6 +12,10 @@ directories:
 
 win:
   icon: ./src/TREM.ico
+  protocols:
+    - name: TREM Lite Protocol
+      schemes:
+        - trem-lite
   target:
     - target: nsis
       arch:
@@ -21,6 +25,10 @@ win:
 
 mac:
   icon: ./src/TREM.png
+  protocols:
+    - name: TREM Lite Protocol
+      schemes:
+        - trem-lite
   identity: null
   hardenedRuntime: false
   gatekeeperAssess: false
@@ -38,6 +46,10 @@ mac:
 
 linux:
   icon: ./src/TREM.png
+  protocols:
+    - name: TREM Lite Protocol
+      schemes:
+        - trem-lite
   target:
     - target: deb
       arch:

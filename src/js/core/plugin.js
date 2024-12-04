@@ -13,6 +13,7 @@ const PluginVerifier = require('./verify');
 const crypto = require('crypto');
 const manager = require('./manager');
 const fetchData = require('./utils/fetch');
+const { ipcRenderer } = require('electron');
 
 class PluginLoader {
   static instance = null;
@@ -1014,6 +1015,12 @@ class PluginLoader {
     ];
 
     localStorage.setItem('loaded-plugins', JSON.stringify(updatedList));
+
+    const auto_download = localStorage.getItem('pendingInstallPlugin') ?? '';
+    if (auto_download) {
+      localStorage.removeItem('pendingInstallPlugin');
+      this.autoDownload(localStorage.getItem('pendingInstallPlugin'));
+    }
   }
 
   async deletePlugin(name) {
@@ -1023,6 +1030,12 @@ class PluginLoader {
       fs.removeSync(info.originalPath);
       fs.removeSync(info.path);
     }
+  }
+
+  async autoDownload(args) {
+    const params = args.split('@');
+    await this.downloadPlugin(params[0], params[1]);
+    ipcRenderer.send('all-reload');
   }
 
   async downloadPlugin(name, url) {

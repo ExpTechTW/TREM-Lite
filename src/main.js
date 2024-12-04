@@ -192,6 +192,62 @@ function createSettingWindow() {
 
 const shouldQuit = app.requestSingleInstanceLock();
 
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('trem-lite', process.execPath, [path.resolve(process.argv[1])]);
+  }
+}
+else {
+  app.setAsDefaultProtocolClient('trem-lite');
+}
+
+app.on('second-instance', (event, commandLine) => {
+  const url = commandLine.find((arg) => arg.startsWith('trem-lite://'));
+
+  if (url) {
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.protocol === 'trem-lite:' && urlObj.pathname.startsWith('/install:')) {
+        if (win) {
+          win.webContents.executeJavaScript(`
+            localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
+          `);
+          win.webContents.reload();
+        }
+      }
+    }
+    catch (error) {
+      console.error('Error processing URL:', error);
+    }
+  }
+
+  if (win) {
+    if (win.isMinimized()) {
+      win.restore();
+    }
+    win.show();
+    win.focus();
+  }
+});
+
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.protocol == 'trem-lite:' && urlObj.pathname.startsWith('/install:')) {
+      if (win) {
+        win.webContents.executeJavaScript(`
+          localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
+        `);
+        win.webContents.reload();
+      }
+    }
+  }
+  catch (error) {
+    console.error('Error processing URL:', error);
+  }
+});
+
 if (!shouldQuit) {
   app.quit();
 }
