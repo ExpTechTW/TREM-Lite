@@ -1019,7 +1019,7 @@ class PluginLoader {
     const auto_download = localStorage.getItem('pendingInstallPlugin') ?? '';
     if (auto_download) {
       localStorage.removeItem('pendingInstallPlugin');
-      this.autoDownload(localStorage.getItem('pendingInstallPlugin'));
+      this.autoDownload(auto_download);
     }
   }
 
@@ -1033,6 +1033,7 @@ class PluginLoader {
   }
 
   async autoDownload(args) {
+    console.log('args', args);
     const params = args.split('@');
     await this.downloadPlugin(params[0], params[1]);
     ipcRenderer.send('all-reload');
