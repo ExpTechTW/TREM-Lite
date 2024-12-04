@@ -244,6 +244,9 @@
   content: "目前沒有啟用中的擴充";
   color: red;
 }
+.copy-debug-log:before {
+  content: "複製debug log";
+}
 
 .eew-2 {
   &::before {
@@ -424,12 +427,11 @@ body {
 }
 
 .setting-buttons {
-  -webkit-app-region: no-drag;
   align-items: center;
   display: flex;
   flex-direction: column;
   height: 100%;
-  margin-top: 8rem;
+  justify-content: center;
 }
 
 .button {
@@ -444,6 +446,7 @@ body {
   align-items: center;
   display: flex;
   justify-content: center;
+  -webkit-app-region: no-drag;
 }
 
 .button:hover {
@@ -459,10 +462,6 @@ body {
   font-weight: bold;
   opacity: 1;
   color: #fff;
-}
-
-.copy-debug-log:before {
-  content: "複製log";
 }
 
 .setting-title span {
