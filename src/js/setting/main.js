@@ -12,6 +12,7 @@ class Main {
     this.windowsWrapper = document.querySelector('.windows-wrapper');
     this.messageContent = document.querySelector('.message-content');
     this.messageBox = document.querySelector('.message-box');
+    this.copyDebugLog = document.querySelector('.copy-debug-log');
     this.settingTab = localStorage.getItem('setting-tab') || null;
     this.init();
     this.info();
@@ -39,6 +40,8 @@ class Main {
         ipcRenderer.send('minimize-window');
       }
     });
+
+    this.copyDebugLog.addEventListener('click', () => this.copySettingInfo());
   }
 
   renderLastPage() {
@@ -73,6 +76,43 @@ class Main {
     this.version.textContent = app.getVersion();
     this.os.textContent = `${os.version()} (${os.release()})`;
     this.cpu.textContent = os.cpus()[0].model;
+  }
+
+  copySettingInfo() {
+    let loadedList = [];
+    let pluginList = '';
+    const loaded = JSON.parse(localStorage.getItem('loaded-plugins'));
+    const list = JSON.parse(localStorage.getItem('plugin-list'));
+
+    loaded.forEach((item) => {
+      loadedList += `${item.name} # ${item.version}\n      `;
+    });
+
+    list.forEach((item) => {
+      pluginList += `${item.name} # ${item.version}\n      `;
+    });
+
+    const message = '```'
+      + `
+      - - - System Info - - -
+      system: ${this.os.textContent}
+      cpu: ${this.cpu.textContent}
+
+      - - - TREM Info - - -
+      version: ${this.version.textContent}
+
+      - - - Plugin Info - - -
+      ${pluginList}
+      - - - Loaded Plugin Info - - -
+      ${loadedList}
+      `
+      + '```';
+    navigator.clipboard.writeText(message).then(() => {
+      this.showBubble('success-copy', 1500);
+    }).catch((e) => {
+      this.showBubble('error-copy', 1500);
+      console.error('error:', e);
+    });
   }
 }
 new Main();

@@ -222,6 +222,12 @@
 .success-download.message-box:before {
   content: "下載完成，關閉設定視窗後套用！";
 }
+.success-copy.message-box:before {
+  content: "複製成功！";
+}
+.success-failed.message-box:before {
+  content: "複製失敗！";
+}
 .extended-store:before {
   content: "TREM 擴充商店";
 }
@@ -453,6 +459,10 @@ body {
   font-weight: bold;
   opacity: 1;
   color: #fff;
+}
+
+.copy-debug-log:before {
+  content: "複製log";
 }
 
 .setting-title span {
@@ -1312,7 +1322,6 @@ li {
   flex-direction: column;
   justify-items: center;
   align-items: center;
-  background-color: hsl(121.85deg 100% 57.58% / 44%);
   backdrop-filter: blur(12px);
   padding: 10px;
   border-style: solid;
@@ -1332,10 +1341,12 @@ li {
 }
 
 .message-content.success,
-.message-content.success-download {
+.message-content.success-download,
+.message-content.success-copy {
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.3s ease, transform 0.3s ease;
+  background-color: hsl(121.85deg 100% 57.58% / 44%);
 }
 
 .open {
