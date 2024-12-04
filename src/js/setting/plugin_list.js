@@ -151,9 +151,15 @@ class PluginList {
 
     document.addEventListener('click', async (e) => {
       const targetElement = e.target.closest('[id^="extended-remove."]');
-
       if (targetElement) {
         const pluginName = targetElement.id.split('.')[1];
+        const waveContainer = targetElement.closest('.wave-container');
+        if (waveContainer) {
+          waveContainer.classList.add('removing');
+          setTimeout(() => {
+            waveContainer.remove();
+          }, 300);
+        }
         await PluginLoader.getInstance().deletePlugin(pluginName);
         bubble.showBubble('success', 1500);
       }

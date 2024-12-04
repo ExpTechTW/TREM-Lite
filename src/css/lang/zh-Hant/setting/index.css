@@ -19,6 +19,12 @@ body {
   position: relative;
   overflow: hidden;
   padding: 5px !important;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.wave-container.removing {
+  transform: translateX(100%);
+  opacity: 0;
 }
 
 .wave-unverified::after {
