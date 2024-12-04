@@ -25,6 +25,10 @@ class PluginLoader {
 
     this.type = type;
 
+    if (this.type == 'index') {
+      ipcRenderer.on('auto-download', () => this.checkAutoDownload());
+    }
+
     const keysDir = path.join(app.getPath('userData'), 'keys');
     fs.mkdirSync(keysDir, { recursive: true });
 
@@ -1016,6 +1020,10 @@ class PluginLoader {
 
     localStorage.setItem('loaded-plugins', JSON.stringify(updatedList));
 
+    this.checkAutoDownload();
+  }
+
+  checkAutoDownload() {
     const auto_download = localStorage.getItem('pendingInstallPlugin') ?? '';
     if (auto_download) {
       localStorage.removeItem('pendingInstallPlugin');

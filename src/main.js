@@ -212,7 +212,7 @@ app.on('second-instance', (event, commandLine) => {
           win.webContents.executeJavaScript(`
             localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
           `);
-          win.webContents.reload();
+          win.webContents.send('auto-download');
         }
       }
     }
@@ -239,7 +239,7 @@ app.on('open-url', (event, url) => {
         win.webContents.executeJavaScript(`
           localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
         `);
-        win.webContents.reload();
+        win.webContents.send('auto-download');
       }
     }
   }
