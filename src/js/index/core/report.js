@@ -254,13 +254,11 @@ class ReportManager {
   }
 
   clickEvent() {
-    const self = this;
-
     function stopFlashing() {
       document.querySelectorAll('.flashing').forEach((el) => {
         el.classList.remove('flashing');
       });
-      self.currentFlashingId = null;
+      this.currentFlashingId = null;
     }
 
     this.reportWebButtons = document.querySelectorAll('.report-web');
@@ -296,7 +294,7 @@ class ReportManager {
 
         stopFlashing();
         wrapper.classList.add('flashing');
-        self.currentFlashingId = itemId;
+        this.currentFlashingId = itemId;
       });
     });
   }

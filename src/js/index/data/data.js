@@ -289,7 +289,7 @@ class DataManager {
     Object.keys(TREM.variable.cache[cacheKey]).forEach((id) => {
       const item = TREM.variable.cache[cacheKey][id];
       if (currentTime - item.last_time > 600000) {
-        delete TREM.variable.cache[cacheKey][id];
+        Reflect.deleteProperty(TREM.variable.cache[cacheKey], id);
       }
     });
   }

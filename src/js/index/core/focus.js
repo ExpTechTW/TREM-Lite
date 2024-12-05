@@ -41,7 +41,7 @@ class FocusManager {
     TREM.variable.events.on('EewRelease', () => this.focus());
     TREM.variable.events.on('EewUpdate', () => this.focus());
     TREM.variable.events.on('EewEnd', () => this.focus());
-    TREM.variable.events.on('MapLoad', (map) => this.onMapLoad(map));
+    TREM.variable.events.on('MapLoad', () => this.onMapLoad());
   }
 
   onMapLoad() {

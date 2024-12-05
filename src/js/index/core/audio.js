@@ -208,7 +208,7 @@ class AudioManager {
   }
 
   handleEewEnd(ans) {
-    delete this.ttsCache[ans.data.id];
+    Reflect.deleteProperty(this.ttsCache, ans.data.id);
   }
 
   handleRtsPga2() {

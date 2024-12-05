@@ -70,7 +70,7 @@ class MixinManager {
     return removed;
   }
 
-  static getMixins(methodName) {
+  getMixins(methodName) {
     const mixins = this.mixins.get(methodName);
     if (!mixins) {
       return [];
@@ -78,13 +78,13 @@ class MixinManager {
     return mixins.map(({ id }) => ({ id, methodName }));
   }
 
-  static clear(methodName) {
+  clear(methodName) {
     this.mixins.delete(methodName);
     this.lineInjections.delete(methodName);
     this.cache.delete(methodName);
   }
 
-  static _initializeMethod(targetClass, methodName) {
+  _initializeMethod(targetClass, methodName) {
     if (!this.mixins.has(methodName)) {
       this.mixins.set(methodName, []);
       this._rebuildMethod(targetClass, methodName);
