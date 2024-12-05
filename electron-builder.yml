@@ -4,7 +4,6 @@ directories:
   output: dist
   buildResources: resources
 
-electronLanguages: ["zh_TW"]
 asar: true
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
