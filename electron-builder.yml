@@ -4,10 +4,11 @@ directories:
   output: dist
   buildResources: resources
 
-asar: true
+asar: false
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 win:
+  compression: "maximum"
   protocols:
     - name: TREM Lite Protocol
       schemes:
@@ -21,6 +22,7 @@ win:
   publish: null
 
 mac:
+  compression: "maximum"
   protocols:
     - name: TREM Lite Protocol
       schemes:
@@ -39,6 +41,7 @@ mac:
   entitlementsInherit: entitlements.mac.plist
 
 linux:
+  compression: "maximum"
   protocols:
     - name: TREM Lite Protocol
       schemes:
