@@ -153,6 +153,7 @@ function createPiPWindow() {
 
 function createSettingWindow() {
   if (SettingWindow instanceof BrowserWindow) {
+    SettingWindow.show();
     return SettingWindow.focus();
   }
 
