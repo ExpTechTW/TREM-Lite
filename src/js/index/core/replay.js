@@ -40,6 +40,7 @@ class ReplayControler {
 
   stopReplay() {
     TREM.variable.data.eew.forEach((data) => data.EewEnd = 1);
+    TREM.variable.data.intensity.forEach((data) => data.IntensityEnd = 1);
     this.clear();
     TREM.variable.cache.int_cache_list = {};
     TREM.variable.play_mode = 0;
@@ -50,6 +51,10 @@ class ReplayControler {
       },
       data: null,
     });
+    TREM.variable.cache.intensity = {
+      time: 0,
+      max: 0,
+    };
     TREM.variable.cache.last_rts_alert = 0;
     if (!TREM.class.FocusManager?.getInstance().getLock()) {
       setTimeout(() => {

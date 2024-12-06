@@ -254,14 +254,12 @@ class ReportManager {
   }
 
   clickEvent() {
-    const self = this;
-
-    function stopFlashing() {
+    const stopFlashing = () => {
       document.querySelectorAll('.flashing').forEach((el) => {
         el.classList.remove('flashing');
       });
-      self.currentFlashingId = null;
-    }
+      this.currentFlashingId = null;
+    };
 
     this.reportWebButtons = document.querySelectorAll('.report-web');
     this.reportWebButtons.forEach((button) => {
@@ -276,6 +274,7 @@ class ReportManager {
         }
       });
     });
+
     this.reportReplyButtons = document.querySelectorAll('.report-replay');
     this.reportReplyButtons.forEach((button) => {
       button.addEventListener('click', async (event) => {
@@ -296,7 +295,7 @@ class ReportManager {
 
         stopFlashing();
         wrapper.classList.add('flashing');
-        self.currentFlashingId = itemId;
+        this.currentFlashingId = itemId;
       });
     });
   }
@@ -313,6 +312,11 @@ class ReportManager {
     if (!container) {
       return;
     }
+
+    const currentFlashingElement = document.querySelector('.flashing');
+    const currentFlashingTime = currentFlashingElement
+      ? Number(currentFlashingElement.getAttribute('data-time'))
+      : null;
 
     container.innerHTML = '';
 
@@ -336,8 +340,16 @@ class ReportManager {
 
     if (this.currentFlashingId && last_replay_time !== 0) {
       const itemToFlash = container.querySelector(`[data-id="${this.currentFlashingId}"]`);
-      if (itemToFlash) {
-        itemToFlash.classList.add('flashing');
+
+      if (itemToFlash && currentFlashingTime) {
+        const itemTime = Number(itemToFlash.getAttribute('data-time'));
+        if (itemTime === currentFlashingTime) {
+          itemToFlash.classList.add('flashing');
+        }
+        else {
+          this.currentFlashingId = null;
+          last_replay_time = 0;
+        }
       }
     }
 
