@@ -330,7 +330,7 @@ TREM.variable.events.on('DataRts', (ans) => {
         data_list = [];
         data_alert_0_list = [];
         data_alert_list = [];
-        if (!TREM.class.FocusManager?.getInstance().getLock()) {
+        if (!TREM.variable.cache.bounds.report.length || !TREM.class.FocusManager?.getInstance().getLock()) {
           show_report_point(TREM.variable.cache.last_report);
         }
       }
