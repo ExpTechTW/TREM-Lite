@@ -5,6 +5,9 @@ class CheckBox {
     this.instance = Config.getInstance();
     this.config = this.instance.getConfig();
 
+    this.store = require('./main');
+    this.bubble = new this.store();
+
     if (!this.config['check-box']) {
       this.config['check-box'] = {};
     }
@@ -30,6 +33,7 @@ class CheckBox {
         this.config['check-box'][id] = checked;
 
         try {
+          this.bubble.showBubble('success', 1500);
           this.instance.writeConfig(this.config);
         }
         catch (error) {

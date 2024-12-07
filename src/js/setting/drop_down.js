@@ -15,6 +15,9 @@ class DropDown {
       this.config = this.configInstance.getConfig(true);
       this.log('Config loaded:', this.config);
 
+      this.store = require('./main');
+      this.bubble = new this.store();
+
       const stationCache = localStorage.getItem('cache.station');
       this.station = stationCache ? JSON.parse(stationCache) : {};
       this.log('Station cache loaded:', this.station);
@@ -180,6 +183,7 @@ class DropDown {
       container.querySelectorAll('.select-option-selected')
         .forEach((item) => item.classList.remove('select-option-selected'));
       target.classList.add('select-option-selected');
+      this.bubble.showBubble('success', 1500);
 
       if (type === 1) {
         const cityElement = this.userCity.querySelector('.select-option-selected');
@@ -249,6 +253,7 @@ class DropDown {
         });
       }
 
+      this.bubble.showBubble('success', 1500);
       this.renderCurrent(target, type, 'intensity');
     }
     catch (error) {
