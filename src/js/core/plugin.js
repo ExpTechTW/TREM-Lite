@@ -861,35 +861,55 @@ class PluginLoader {
   }
 
   async processDirectoryPlugin(pluginName, sourcePath, targetPath) {
-    const signaturePath = path.join(sourcePath, 'signature.json');
-    if (!fs.existsSync(signaturePath)) {
-      logger.info(`[Plugin: ${pluginName}] No signature.json found`);
-      return;
-    }
-
     try {
-      const signatureData = JSON.parse(fs.readFileSync(signaturePath, 'utf8'));
-      const expectedFiles = signatureData.fileHashes || {};
+      const expectedFiles = new Map();
 
+      const ignoreDirs = [];
+      const ignoreFiles = [
+        'package.json',
+        'package-lock.json',
+        'LICENSE',
+        'README.md',
+      ];
+
+      const readDirRecursive = (dir, base = '') => {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.name.startsWith('.')) {
+            continue;
+          }
+
+          const fullPath = path.join(dir, entry.name);
+          const relativePath = path.join(base, entry.name);
+
+          if (entry.isDirectory()) {
+            if (entry.name.startsWith('.') || ignoreDirs.includes(entry.name)) {
+              continue;
+            }
+            readDirRecursive(fullPath, relativePath);
+          }
+          else {
+            if (entry.name.startsWith('.') || ignoreFiles.includes(entry.name)) {
+              continue;
+            }
+            expectedFiles.set(relativePath, fullPath);
+          }
+        }
+      };
+
+      readDirRecursive(sourcePath);
       await fs.ensureDir(targetPath);
 
       const filesToUpdate = [];
-      for (const [filePath] of Object.entries(expectedFiles)) {
-        const targetFilePath = path.join(targetPath, filePath);
-        const sourceFilePath = path.join(sourcePath, filePath);
-        const normalizedPath = filePath.replace(/\\/g, '/');
+      for (const [relativePath, sourceFilePath] of expectedFiles) {
+        const targetFilePath = path.join(targetPath, relativePath);
+        const normalizedPath = relativePath.replace(/\\/g, '/');
 
         let needUpdate = false;
 
         if (!fs.existsSync(targetFilePath)) {
-          if (fs.existsSync(sourceFilePath)) {
-            logger.warn(`[Plugin: ${pluginName}] Missing file: ${normalizedPath}`);
-            needUpdate = true;
-          }
-          else {
-            logger.error(`[Plugin: ${pluginName}] Source file missing: ${normalizedPath}`);
-            continue;
-          }
+          logger.warn(`[Plugin: ${pluginName}] Missing file: ${normalizedPath}`);
+          needUpdate = true;
         }
         else {
           const currentHash = this.calculateFileContentMD5(targetFilePath);
@@ -915,6 +935,7 @@ class PluginLoader {
       }
 
       if (filesToUpdate.length > 0) {
+        logger.info(`[Plugin: ${pluginName}] Updating ${filesToUpdate.length} files`);
         for (const file of filesToUpdate) {
           try {
             await fs.ensureDir(path.dirname(file.target));
@@ -928,11 +949,11 @@ class PluginLoader {
         const verification = this.verifier.verify(targetPath);
         const pluginInfo = this.readPluginInfo(targetPath);
         this.createTremInfoFile(targetPath, {
-          md5s: expectedFiles,
           lastUpdated: Date.now(),
           verification,
           pluginInfo,
         });
+        logger.info(`[Plugin: ${pluginName}] Plugin info updated`);
       }
     }
     catch (error) {
