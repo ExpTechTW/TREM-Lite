@@ -683,29 +683,6 @@ class PluginLoader {
     return crypto.createHash('md5').update(content).digest('hex');
   }
 
-  getFileMD5s(dirPath) {
-    const md5Map = new Map();
-
-    const processDirectory = (currentPath, relativePath = '') => {
-      const files = fs.readdirSync(currentPath);
-
-      for (const file of files) {
-        const fullPath = path.join(currentPath, file);
-        const relativeFilePath = relativePath ? path.join(relativePath, file) : file;
-
-        if (fs.statSync(fullPath).isDirectory()) {
-          processDirectory(fullPath, relativeFilePath);
-        }
-        else {
-          md5Map.set(relativeFilePath, this.calculateMD5(fullPath));
-        }
-      }
-    };
-
-    processDirectory(dirPath);
-    return md5Map;
-  }
-
   async cleanupOrphanedPlugins() {
     logger.debug('Cleaning up orphaned plugin data...');
 
@@ -738,6 +715,7 @@ class PluginLoader {
     const files = fs.readdirSync(this.pluginDir);
     const pluginPaths = new Map();
     const processedPlugins = new Set();
+    const allPlugins = new Map();
 
     for (const file of files) {
       try {
@@ -749,6 +727,7 @@ class PluginLoader {
           if (fs.existsSync(infoPath)) {
             const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
             if (info?.name) {
+              logger.debug(`[Plugin: ${info.name}] Found directory plugin`);
               pluginPaths.set(info.name, {
                 path: filePath,
                 type: 'directory',
@@ -756,15 +735,30 @@ class PluginLoader {
             }
           }
         }
-        else if (file.endsWith('.trem')) {
-          pluginPaths.set(file.replace('.trem', ''), {
+      }
+      catch (error) {
+        logger.error(`Error processing directory ${file}:`, error);
+      }
+    }
+
+    for (const file of files) {
+      try {
+        if (file.endsWith('.trem')) {
+          const pluginName = file.replace('.trem', '');
+          if (pluginPaths.has(pluginName)) {
+            logger.info(`[Plugin: ${pluginName}] Directory version exists, skipping TREM package`);
+            continue;
+          }
+          const filePath = path.join(this.pluginDir, file);
+          pluginPaths.set(pluginName, {
             path: filePath,
             type: 'trem',
           });
+          logger.debug(`[Plugin: ${pluginName}] Found TREM package`);
         }
       }
       catch (error) {
-        logger.error(`Error processing ${file}:`, error);
+        logger.error(`Error processing file ${file}:`, error);
       }
     }
 
@@ -777,115 +771,41 @@ class PluginLoader {
             await fs.remove(tempPath);
           }
           catch (error) {
-            logger.error(`Error removing leftover temp directory ${tempPath}:`, error);
+            logger.error(`Error removing temp directory ${tempPath}:`, error);
           }
         }
       }
     }
     catch (error) {
-      logger.error('Error cleaning up temp directories:', error);
+      logger.error('Error cleaning temp directories:', error);
     }
-
-    const allPlugins = new Map();
 
     for (const [pluginName, pathInfo] of pluginPaths) {
       if (processedPlugins.has(pluginName)) {
+        logger.debug(`[Plugin: ${pluginName}] Already processed, skipping`);
         continue;
       }
 
       try {
         const { path: sourcePath, type } = pathInfo;
         const targetPath = path.join(this.tempDir, pluginName);
-        let needUpdate = false;
+        logger.info(`[Plugin: ${pluginName}] Processing plugin type: ${type}`);
 
         if (type === 'directory') {
-          const signaturePath = path.join(sourcePath, 'signature.json');
-          const sourceFileMD5s = this.getFileMD5s(sourcePath);
-          let fileMD5s;
-          let fileNeedsUpdate = new Map();
-
-          if (fs.existsSync(signaturePath)) {
-            const signatures = JSON.parse(fs.readFileSync(signaturePath, 'utf8'));
-            fileMD5s = new Map(Object.entries(signatures));
-            sourceFileMD5s.forEach((md5, file) => {
-              fileNeedsUpdate.set(file, signatures[file] !== md5);
-            });
-          }
-          else {
-            if (fs.existsSync(targetPath)) {
-              const targetFileMD5s = this.getFileMD5s(targetPath);
-              sourceFileMD5s.forEach((md5, file) => {
-                fileNeedsUpdate.set(file, targetFileMD5s.get(file) !== md5);
-              });
-            }
-            else {
-              sourceFileMD5s.forEach((_, file) => {
-                fileNeedsUpdate.set(file, true);
-              });
-            }
-            fileMD5s = sourceFileMD5s;
-          }
-
-          if (Array.from(fileNeedsUpdate.values()).some(Boolean)) {
-            await fs.ensureDir(targetPath);
-
-            const copyFiles = async (dir, baseTarget, baseSource) => {
-              const ignoreFiles = ['.', 'package.json', 'package-lock.json', 'LICENSE'];
-
-              const items = await fs.promises.readdir(dir, { withFileTypes: true });
-              await fs.promises.mkdir(baseTarget, { recursive: true });
-
-              for (const item of items) {
-                if (item.name.startsWith('.') || ignoreFiles.includes(item.name)) {
-                  continue;
-                }
-
-                const sourceFull = path.join(dir, item.name);
-                const targetFull = path.join(baseTarget, path.relative(baseSource, sourceFull));
-                const relativePath = path.relative(baseSource, sourceFull);
-
-                if (item.isDirectory()) {
-                  await fs.promises.mkdir(targetFull, { recursive: true });
-                  await copyFiles(sourceFull, baseTarget, baseSource);
-                }
-                else if (fileNeedsUpdate.get(relativePath)) {
-                  await fs.promises.copyFile(sourceFull, targetFull);
-                }
-              }
-            };
-
-            await copyFiles(sourcePath, targetPath, sourcePath);
-
-            const verification = this.verifier.verify(targetPath);
-            const pluginInfo = this.readPluginInfo(targetPath);
-
-            this.createTremInfoFile(targetPath, {
-              md5s: Object.fromEntries(fileMD5s),
-              lastUpdated: Date.now(),
-              verification,
-              pluginInfo,
-            });
-          }
+          await this.processDirectoryPlugin(pluginName, sourcePath, targetPath);
         }
         else if (type === 'trem') {
-          const tremInfo = this.readTremInfoFile(targetPath);
-          const currentMD5 = this.calculateMD5(sourcePath);
-
-          needUpdate = !tremInfo || !tremInfo.tremMD5
-          || tremInfo.tremMD5 !== currentMD5
-          || !fs.existsSync(targetPath);
-
-          if (needUpdate) {
-            await this.extractTremPlugin(sourcePath);
-          }
+          await this.processTremPlugin(pluginName, sourcePath, targetPath);
         }
 
         const tremInfo = this.readTremInfoFile(targetPath);
-        const verified = tremInfo.verification?.valid || false;
+        const verified = tremInfo?.verification?.valid || false;
+
         if (!verified) {
-          logger.warn('【!!!嚴重警告!!!】未發現有效簽名，除非信任擴充來源否則應立即停用 ->', pluginName);
-          logger.warn('【!!!WARNING!!!】No valid signature found, disable immediately unless plugin source is trusted ->', pluginName);
+          logger.warn(`[Plugin: ${pluginName}] 【!!!嚴重警告!!!】未發現有效簽名，除非信任擴充來源否則應立即停用`);
+          logger.warn(`[Plugin: ${pluginName}] 【!!!WARNING!!!】No valid signature found, disable immediately unless plugin source is trusted`);
         }
+
         if (fs.existsSync(targetPath) && tremInfo) {
           const pluginData = {
             name: pluginName,
@@ -906,7 +826,7 @@ class PluginLoader {
           };
 
           if (!tremInfo.pluginInfo) {
-            logger.error(`Plugin ${pluginName} fails to load, please contact the plugin developer!`);
+            logger.error(`[Plugin: ${pluginName}] Plugin fails to load, please contact the plugin developer!`);
             fs.removeSync(targetPath);
           }
           else {
@@ -917,12 +837,169 @@ class PluginLoader {
         }
       }
       catch (error) {
-        logger.error(`Error processing plugin ${pluginName}:`, error);
+        logger.error(`[Plugin: ${pluginName}] Error:`, error);
       }
     }
 
     localStorage.setItem('plugin-list', JSON.stringify(Array.from(allPlugins.values())));
     return allPlugins;
+  }
+
+  normalizeContent(content) {
+    return content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  }
+
+  calculateFileContentMD5(filePath) {
+    try {
+      const content = fs.readFileSync(filePath).toString();
+      return crypto.createHash('sha256').update(this.normalizeContent(content)).digest('hex');
+    }
+    catch (error) {
+      logger.error(`Error calculating content MD5 for ${filePath}:`, error);
+      return null;
+    }
+  }
+
+  async processDirectoryPlugin(pluginName, sourcePath, targetPath) {
+    const signaturePath = path.join(sourcePath, 'signature.json');
+    if (!fs.existsSync(signaturePath)) {
+      logger.info(`[Plugin: ${pluginName}] No signature.json found`);
+      return;
+    }
+
+    try {
+      const signatureData = JSON.parse(fs.readFileSync(signaturePath, 'utf8'));
+      const expectedFiles = signatureData.fileHashes || {};
+      logger.info(`[Plugin: ${pluginName}] Total files in signature: ${Object.keys(expectedFiles).length}`);
+
+      await fs.ensureDir(targetPath);
+
+      const filesToUpdate = [];
+      for (const [filePath, expectedHash] of Object.entries(expectedFiles)) {
+        const targetFilePath = path.join(targetPath, filePath);
+        const sourceFilePath = path.join(sourcePath, filePath);
+        const normalizedPath = filePath.replace(/\\/g, '/');
+
+        let needUpdate = false;
+
+        if (!fs.existsSync(targetFilePath)) {
+          if (fs.existsSync(sourceFilePath)) {
+            logger.warn(`[Plugin: ${pluginName}] Missing file: ${normalizedPath}`);
+            needUpdate = true;
+          }
+          else {
+            logger.error(`[Plugin: ${pluginName}] Source file missing: ${normalizedPath}`);
+            continue;
+          }
+        }
+        else {
+          const currentHash = this.calculateFileContentMD5(targetFilePath);
+          if (!currentHash) {
+            logger.error(`[Plugin: ${pluginName}] Failed to calculate hash for: ${normalizedPath}`);
+            continue;
+          }
+
+          if (currentHash !== expectedHash) {
+            logger.info(`[Plugin: ${pluginName}] Content hash mismatch for ${normalizedPath}`);
+            needUpdate = true;
+          }
+        }
+
+        if (needUpdate) {
+          filesToUpdate.push({
+            source: sourceFilePath,
+            target: targetFilePath,
+            path: normalizedPath,
+          });
+        }
+      }
+
+      if (filesToUpdate.length > 0) {
+        for (const file of filesToUpdate) {
+          try {
+            await fs.ensureDir(path.dirname(file.target));
+            await fs.copyFile(file.source, file.target);
+          }
+          catch (error) {
+            logger.error(`[Plugin: ${pluginName}] Error updating ${file.path}:`, error);
+          }
+        }
+
+        const verification = this.verifier.verify(targetPath);
+        const pluginInfo = this.readPluginInfo(targetPath);
+        this.createTremInfoFile(targetPath, {
+          md5s: expectedFiles,
+          lastUpdated: Date.now(),
+          verification,
+          pluginInfo,
+        });
+      }
+      else {
+        logger.info(`[Plugin: ${pluginName}] All files are up to date`);
+      }
+    }
+    catch (error) {
+      logger.error(`[Plugin: ${pluginName}] Error processing directory:`, error);
+    }
+  }
+
+  async processTremPlugin(pluginName, sourcePath, targetPath) {
+    try {
+      const tremInfo = this.readTremInfoFile(targetPath);
+      const currentMD5 = this.calculateMD5(sourcePath);
+      let needUpdate = false;
+
+      const signaturePath = path.join(targetPath, 'signature.json');
+      let expectedFiles = {};
+      if (fs.existsSync(signaturePath)) {
+        try {
+          const signatureData = JSON.parse(fs.readFileSync(signaturePath, 'utf8'));
+          expectedFiles = signatureData.fileHashes || {};
+
+          if (fs.existsSync(targetPath)) {
+            const existingFiles = new Set();
+            const processDirectory = (dir) => {
+              const items = fs.readdirSync(dir);
+              for (const item of items) {
+                const fullPath = path.join(dir, item);
+                const relativePath = path.relative(targetPath, fullPath).replace(/\\/g, '/');
+                if (fs.statSync(fullPath).isDirectory()) {
+                  processDirectory(fullPath);
+                }
+                else {
+                  existingFiles.add(relativePath);
+                }
+              }
+            };
+            processDirectory(targetPath);
+
+            for (const file of Object.keys(expectedFiles)) {
+              const normalizedPath = file.replace(/\\/g, '/');
+              if (!existingFiles.has(normalizedPath)) {
+                logger.info(`[Plugin: ${pluginName}] Missing file: ${normalizedPath}`);
+                needUpdate = true;
+              }
+            }
+          }
+        }
+        catch (error) {
+          logger.error(`[Plugin: ${pluginName}] Error reading signature:`, error);
+          needUpdate = true;
+        }
+      }
+
+      if (!tremInfo || !tremInfo.tremMD5 || tremInfo.tremMD5 !== currentMD5) {
+        needUpdate = true;
+      }
+
+      if (needUpdate) {
+        logger.info(`[Plugin: ${pluginName}] Extracting package`);
+        await this.extractTremPlugin(sourcePath);
+      }
+    }
+    catch (error) {
+      logger.error(`[Plugin: ${pluginName}] Error processing TREM package:`, error);
+    }
   }
 
   getSensitivityDescription(level) {
