@@ -870,12 +870,11 @@ class PluginLoader {
     try {
       const signatureData = JSON.parse(fs.readFileSync(signaturePath, 'utf8'));
       const expectedFiles = signatureData.fileHashes || {};
-      logger.info(`[Plugin: ${pluginName}] Total files in signature: ${Object.keys(expectedFiles).length}`);
 
       await fs.ensureDir(targetPath);
 
       const filesToUpdate = [];
-      for (const [filePath, expectedHash] of Object.entries(expectedFiles)) {
+      for (const [filePath] of Object.entries(expectedFiles)) {
         const targetFilePath = path.join(targetPath, filePath);
         const sourceFilePath = path.join(sourcePath, filePath);
         const normalizedPath = filePath.replace(/\\/g, '/');
@@ -894,13 +893,14 @@ class PluginLoader {
         }
         else {
           const currentHash = this.calculateFileContentMD5(targetFilePath);
-          if (!currentHash) {
+          const sourceHash = this.calculateFileContentMD5(sourceFilePath);
+          if (!currentHash || !sourceHash) {
             logger.error(`[Plugin: ${pluginName}] Failed to calculate hash for: ${normalizedPath}`);
             continue;
           }
 
-          if (currentHash !== expectedHash) {
-            logger.info(`[Plugin: ${pluginName}] Content hash mismatch for ${normalizedPath}`);
+          if (sourceHash !== currentHash) {
+            logger.warn(`[Plugin: ${pluginName}] Content hash mismatch for ${normalizedPath}`);
             needUpdate = true;
           }
         }
@@ -933,9 +933,6 @@ class PluginLoader {
           verification,
           pluginInfo,
         });
-      }
-      else {
-        logger.info(`[Plugin: ${pluginName}] All files are up to date`);
       }
     }
     catch (error) {
