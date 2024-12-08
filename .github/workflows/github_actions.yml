@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18]
+        arch: [arm64]
 
     steps:
       - uses: actions/checkout@v3
