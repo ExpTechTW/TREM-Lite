@@ -8,7 +8,6 @@ asar: false
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 win:
-  compression: "maximum"
   protocols:
     - name: TREM Lite Protocol
       schemes:
