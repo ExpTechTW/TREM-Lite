@@ -1,6 +1,7 @@
 const TREM = require('../constant');
 const now = require('../utils/ntp');
 const http = require('./http');
+
 class DataManager {
   static instance = null;
 
@@ -245,8 +246,8 @@ class DataManager {
 
     TREM.variable.data.lpgm
       .filter((item) =>
-        item.id
-        && (currentTime - item.id > EXPIRY_TIME || item.LpgmEnd),
+        item.time
+        && (currentTime - item.time > EXPIRY_TIME || item.LpgmEnd),
       )
       .forEach((data) => {
         TREM.variable.events.emit('LpgmEnd', {
@@ -256,13 +257,13 @@ class DataManager {
       });
 
     TREM.variable.data.lpgm = TREM.variable.data.lpgm.filter((item) =>
-      item.id
-      && currentTime - item.id <= EXPIRY_TIME
+      item.time
+      && currentTime - item.time <= EXPIRY_TIME
       && !item.LpgmEnd,
     );
 
     newData.forEach((data) => {
-      if (!data.id || currentTime - data.id > EXPIRY_TIME || data.LpgmEnd) {
+      if (!data.id || data.LpgmEnd) {
         return;
       }
 
@@ -273,6 +274,8 @@ class DataManager {
       };
 
       if (existingIndex == -1) {
+        data.id = Number(data.id);
+        data.time = now();
         TREM.variable.data.lpgm.push(data);
         TREM.variable.events.emit('LpgmRelease', eventData);
       }

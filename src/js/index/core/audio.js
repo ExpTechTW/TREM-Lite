@@ -426,7 +426,7 @@ class AudioManager {
     };
 
     let ttsText = [
-      '長週期地震動觀測資訊',
+      '長週期第震動觀測資訊',
       formatToChineseTime(ans.data.id),
       `${maxCity}觀測到最大長週期地震動階級${maxIntensity}`,
     ].join('，');
@@ -440,13 +440,13 @@ class AudioManager {
       const stationText = intensityStations[intensity].join('，');
 
       if (count === 0) {
-        ttsText += `，這次地震，最大長週期地震動階級 ${intensity} 地區 ${stationText}`;
+        ttsText += `，這次地震，最大長週期第震動階級 ${intensity} 地區 ${stationText}`;
       }
       else if (count === 1) {
-        ttsText += `，此外，長週期地震動階級 ${intensity} 地區 ${stationText}`;
+        ttsText += `，此外，長週期第震動階級 ${intensity} 地區 ${stationText}`;
       }
       else {
-        ttsText += `，長週期地震動階級 ${intensity} 地區 ${stationText}`;
+        ttsText += `，長週期第震動階級 ${intensity} 地區 ${stationText}`;
         break;
       }
       count++;
