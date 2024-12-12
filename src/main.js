@@ -609,7 +609,6 @@ ipcMain.on('open-new-window', (event, path, setting) => {
   newWindow.on('close', () => {
     newWindow = null;
   });
-  newWindow.webContents.openDevTools();
 });
 
 let yamlEditorWindow = null;
