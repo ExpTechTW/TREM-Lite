@@ -435,7 +435,6 @@ body {
 }
 
 .button {
-  margin-bottom: 1.5rem;
   border-radius: 10px;
   border: 1px solid #ffffff24;
   padding: 5px;
@@ -447,6 +446,7 @@ body {
   display: flex;
   justify-content: center;
   -webkit-app-region: no-drag;
+  margin: 10px;
 }
 
 .button:hover {
