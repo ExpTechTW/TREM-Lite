@@ -592,7 +592,27 @@ ipcMain.on('broadcast-to-plugin-windows', (event, data) => {
   }
 });
 
-let NewWindow = null;
+let newWindow = null;
+
+ipcMain.on('open-new-window', (event, path, setting) => {
+  if (newWindow instanceof BrowserWindow) {
+    newWindow.focus();
+    return;
+  }
+
+  newWindow = new BrowserWindow(setting);
+
+  require('@electron/remote/main').enable(newWindow.webContents);
+  newWindow.loadFile(path);
+  newWindow.setMenu(null);
+
+  newWindow.on('close', () => {
+    newWindow = null;
+  });
+  newWindow.webContents.openDevTools();
+});
+
+let yamlEditorWindow = null;
 
 ipcMain.handle('read-yaml', async (event, filePath) => {
   try {
@@ -615,34 +635,35 @@ ipcMain.handle('write-yaml', async (event, filePath, content) => {
   }
 });
 
-ipcMain.on('open-new-window', (event, filePath) => {
-  if (NewWindow instanceof BrowserWindow) {
-    NewWindow.focus();
-    NewWindow.webContents.send('load-path', filePath);
+ipcMain.on('open-yaml-editor', (event, filePath) => {
+  if (yamlEditorWindow instanceof BrowserWindow) {
+    yamlEditorWindow.focus();
+    yamlEditorWindow.webContents.send('load-path', filePath);
     return;
   }
 
-  NewWindow = new BrowserWindow({
+  yamlEditorWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     frame: false,
+    title: 'YAML 編輯器',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
 
-  require('@electron/remote/main').enable(NewWindow.webContents);
-  NewWindow.loadFile('./src/view/yaml.html');
-  NewWindow.setMenu(null);
+  require('@electron/remote/main').enable(yamlEditorWindow.webContents);
+  yamlEditorWindow.loadFile('./src/view/yaml.html');
+  yamlEditorWindow.setMenu(null);
 
-  NewWindow.webContents.on('did-finish-load', () => {
-    NewWindow.webContents.send('load-path', filePath);
+  yamlEditorWindow.webContents.on('did-finish-load', () => {
+    yamlEditorWindow.webContents.send('load-path', filePath);
   });
 
-  NewWindow.on('close', () => {
-    NewWindow = null;
+  yamlEditorWindow.on('close', () => {
+    yamlEditorWindow = null;
   });
 });
