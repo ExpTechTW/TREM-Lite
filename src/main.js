@@ -592,7 +592,7 @@ ipcMain.on('broadcast-to-plugin-windows', (event, data) => {
   }
 });
 
-let yamlEditorWindow = null;
+let NewWindow = null;
 
 ipcMain.handle('read-yaml', async (event, filePath) => {
   try {
@@ -615,35 +615,34 @@ ipcMain.handle('write-yaml', async (event, filePath, content) => {
   }
 });
 
-ipcMain.on('open-yaml-editor', (event, filePath) => {
-  if (yamlEditorWindow instanceof BrowserWindow) {
-    yamlEditorWindow.focus();
-    yamlEditorWindow.webContents.send('load-path', filePath);
+ipcMain.on('open-new-window', (event, filePath) => {
+  if (NewWindow instanceof BrowserWindow) {
+    NewWindow.focus();
+    NewWindow.webContents.send('load-path', filePath);
     return;
   }
 
-  yamlEditorWindow = new BrowserWindow({
+  NewWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     frame: false,
-    title: 'YAML 編輯器',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
 
-  require('@electron/remote/main').enable(yamlEditorWindow.webContents);
-  yamlEditorWindow.loadFile('./src/view/yaml.html');
-  yamlEditorWindow.setMenu(null);
+  require('@electron/remote/main').enable(NewWindow.webContents);
+  NewWindow.loadFile('./src/view/yaml.html');
+  NewWindow.setMenu(null);
 
-  yamlEditorWindow.webContents.on('did-finish-load', () => {
-    yamlEditorWindow.webContents.send('load-path', filePath);
+  NewWindow.webContents.on('did-finish-load', () => {
+    NewWindow.webContents.send('load-path', filePath);
   });
 
-  yamlEditorWindow.on('close', () => {
-    yamlEditorWindow = null;
+  NewWindow.on('close', () => {
+    NewWindow = null;
   });
 });

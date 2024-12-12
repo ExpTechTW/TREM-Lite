@@ -284,7 +284,7 @@ class PluginList {
 
         document.getElementById(`extended-setting-button.${item.name}`)
           .addEventListener('click', () => {
-            ipcRenderer.send('open-yaml-editor', `${item.path}/config.yml`);
+            ipcRenderer.send('open-new-window', `${item.path}/config.yml`);
           });
       }
     });
