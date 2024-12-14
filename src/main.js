@@ -592,25 +592,6 @@ ipcMain.on('broadcast-to-plugin-windows', (event, data) => {
   }
 });
 
-let newWindow = null;
-
-ipcMain.on('open-new-window', (event, path, setting) => {
-  if (newWindow instanceof BrowserWindow) {
-    newWindow.focus();
-    return;
-  }
-
-  newWindow = new BrowserWindow(setting);
-
-  require('@electron/remote/main').enable(newWindow.webContents);
-  newWindow.loadFile(path);
-  newWindow.setMenu(null);
-
-  newWindow.on('close', () => {
-    newWindow = null;
-  });
-});
-
 let yamlEditorWindow = null;
 
 ipcMain.handle('read-yaml', async (event, filePath) => {
