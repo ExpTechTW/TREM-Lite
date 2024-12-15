@@ -45,6 +45,7 @@ class ReplayControler {
     TREM.variable.cache.int_cache_list = {};
     TREM.variable.play_mode = 0;
     TREM.variable.cache.unstable = 0;
+    TREM.variable.cache.intensity_last = {};
     TREM.variable.events.emit('DataRts', {
       info: {
         type: TREM.variable.play_mode,
