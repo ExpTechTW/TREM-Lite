@@ -1005,6 +1005,9 @@ class PluginLoader {
           needUpdate = true;
         }
       }
+      else {
+        needUpdate = true;
+      }
 
       if (!tremInfo || !tremInfo.tremMD5 || tremInfo.tremMD5 !== currentMD5) {
         needUpdate = true;
