@@ -11,6 +11,7 @@ function abortAll() {
 let requestCounter = 0;
 
 async function getData(time) {
+  time = Math.round(time / 1000);
   requestCounter++;
   const shouldFetchLPGM = requestCounter % 10 === 0;
   const shouldFetchIntensity = requestCounter % 5 === 0;
@@ -20,11 +21,11 @@ async function getData(time) {
     : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
 
   const rts_req = fetchData.withController(
-    `https://${url}/api/v1/trem/rts${(time) ? `/${time}` : ''}`,
+    `https://${url}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
     TREM.constant.HTTP_TIMEOUT.RTS,
   );
   const eew_req = fetchData.withController(
-    `https://${url}/api/v1/eq/eew${(time) ? `/${time}` : ''}`,
+    `https://${url}/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
     TREM.constant.HTTP_TIMEOUT.EEW,
   );
 
@@ -33,7 +34,7 @@ async function getData(time) {
 
   if (shouldFetchIntensity) {
     intensity_req = fetchData.withController(
-      `https://${TREM.constant.URL.API[1]}/api/v1/trem/intensity${(time) ? `/${time}` : ''}`,
+      `https://${TREM.constant.URL.API[1]}/api/v2/trem/intensity${(time) ? `/${time}` : ''}`,
       TREM.constant.HTTP_TIMEOUT.INTENSITY,
     );
     activeReqs.push(intensity_req);
@@ -41,7 +42,7 @@ async function getData(time) {
 
   if (shouldFetchLPGM) {
     lpgm_req = fetchData.withController(
-      `https://${TREM.constant.URL.API[1]}/api/v1/trem/lpgm${(time) ? `/${time}` : ''}`,
+      `https://${TREM.constant.URL.API[1]}/api/v2/trem/lpgm${(time) ? `/${time}` : ''}`,
       TREM.constant.HTTP_TIMEOUT.LPGM,
     );
     activeReqs.push(lpgm_req);
