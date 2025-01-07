@@ -1,12 +1,12 @@
 name: TREM-Lite
 on:
   push:
-    branches: ["main","fix_github_actions"]
+    branches: ["main", "fix_github_actions"]
   pull_request:
     branches: ["main"]
 
 jobs:
-  build:
+  build-macos:
     runs-on: macos-latest
 
     strategy:
@@ -26,10 +26,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build All Platforms
+      - name: Build macOS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run build
+        run: npm run build:mac
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: TREM-Lite-macOS
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        node-version: [18]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v3
@@ -40,13 +71,34 @@ jobs:
             dist/*.msi
           if-no-files-found: error
 
-      - name: Upload macOS Artifacts
-        uses: actions/upload-artifact@v3
+  build-linux:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          name: TREM-Lite-macOS
-          path: |
-            dist/*.dmg
-          if-no-files-found: error
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Build Linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:linux
 
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v3
