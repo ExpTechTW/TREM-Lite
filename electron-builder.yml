@@ -47,7 +47,7 @@ linux:
   category: Development
   icon: ./src/TREM.png
   target:
-    - target: deb
+    - target: AppImage
       arch:
         - x64
         - arm64

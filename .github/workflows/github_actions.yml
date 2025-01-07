@@ -1,7 +1,7 @@
 name: TREM-Lite
 on:
   push:
-    branches: ["main"]
+    branches: ["main","fix_github_actions"]
   pull_request:
     branches: ["main"]
 
