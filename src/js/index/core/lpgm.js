@@ -11,7 +11,14 @@ TREM.variable.events.on('MapLoad', (map) => {
     type: 'symbol',
     source: 'lpgm-markers-geojson',
     layout: {
-      'symbol-sort-key': ['get', 'i'],
+      'symbol-sort-key': [
+        'match',
+        ['get', 'i'],
+        4, -4,
+        3, -3,
+        2, -2,
+        -1,
+      ],
       'symbol-z-order': 'source',
       'icon-image': [
         'match',
@@ -73,7 +80,13 @@ function show_lpgm(ans) {
       max_city.push(loc.city);
     }
 
-    code_intensity[station_location.code] = station.lpgm;
+    if (!code_intensity[station_location.code]) {
+      code_intensity[station_location.code] = 0;
+    }
+
+    if (code_intensity[station_location.code] < station.lpgm) {
+      code_intensity[station_location.code] = station.lpgm;
+    }
 
     bounds.push({ lon: station_location.lon, lat: station_location.lat });
     data_list.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [station_location.lon, station_location.lat] }, properties: { i: station.lpgm } });

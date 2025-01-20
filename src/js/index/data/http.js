@@ -34,7 +34,7 @@ async function getData(time) {
 
   if (shouldFetchIntensity) {
     intensity_req = fetchData.withController(
-      `https://${TREM.constant.URL.API[1]}/api/v2/trem/intensity${(time) ? `/${time}` : ''}`,
+      `https://${TREM.constant.URL.API[0]}/api/v2/trem/intensity${(time) ? `/${time}` : ''}`,
       TREM.constant.HTTP_TIMEOUT.INTENSITY,
     );
     activeReqs.push(intensity_req);
@@ -42,7 +42,7 @@ async function getData(time) {
 
   if (shouldFetchLPGM) {
     lpgm_req = fetchData.withController(
-      `https://${TREM.constant.URL.API[1]}/api/v2/trem/lpgm${(time) ? `/${time}` : ''}`,
+      `https://${TREM.constant.URL.API[0]}/api/v2/trem/lpgm${(time) ? `/${time}` : ''}`,
       TREM.constant.HTTP_TIMEOUT.LPGM,
     );
     activeReqs.push(lpgm_req);
