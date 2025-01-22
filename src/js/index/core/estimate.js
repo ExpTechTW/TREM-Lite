@@ -117,7 +117,7 @@ class EewAreaManager {
     Object.entries(eqArea).forEach(([intensity, codes]) => {
       const intensityFloat = parseFloat(intensity);
       codes.forEach((code) => {
-        if (mergedArea[code].I < intensityFloat) {
+        if (mergedArea[code] && mergedArea[code].I < intensityFloat) {
           mergedArea[code].I = intensityFloat;
         }
       });

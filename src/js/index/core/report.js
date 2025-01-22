@@ -380,9 +380,16 @@ class ReportManager {
 
   async refresh() {
     const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
-    const reportList = await this.getReport(url);
+    let reportList = await this.getReport(url);
     if (!reportList) {
       return;
+    }
+
+    if (TREM.variable.replay.start_time) {
+      reportList = reportList.filter((item) => {
+        const itemTimeInMillis = new Date(item.time).getTime();
+        return itemTimeInMillis < TREM.variable.replay.start_time;
+      });
     }
 
     if (!TREM.variable.data.report.length) {
@@ -489,7 +496,7 @@ class ReportManager {
     const data = this.simplifyEarthquakeData(ans.data);
     TREM.variable.data.report.unshift(data);
 
-    if (data.trem && Math.abs(data.trem - TREM.variable.cache.intensity.time) < 5000) {
+    if (data.trem && Math.abs(data.trem - TREM.variable.cache.intensity.time) < 15000) {
       TREM.variable.cache.intensity.time = 0;
       TREM.variable.cache.intensity.max = 0;
     }

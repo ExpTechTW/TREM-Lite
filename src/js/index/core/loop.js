@@ -13,7 +13,12 @@ let flash = false;
 
 setInterval(() => {
   if (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3) {
-    time.className = 'time-replay';
+    if (!TREM.variable.replay.dev) {
+      time.className = 'time-replay';
+    }
+    else {
+      time.className = 'time-normal';
+    }
     time.textContent = formatTime(now());
 
     if (!warning_box_internet.classList.contains('hide')) {
