@@ -57,7 +57,7 @@ async function get_ntp() {
 
   if (ans && ans.ok) {
     TREM.variable.cache.time.syncedTime = await ans.json();
-    TREM.variable.cache.time.lastSync = Date.now() - (Date.now() - t);
+    TREM.variable.cache.time.lastSync = Date.now() - (Date.now() - t) - 1000;
   }
   else {
     setTimeout(get_ntp, 3000);
