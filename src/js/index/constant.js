@@ -231,6 +231,7 @@ const TREM = {
     },
   },
   class: {
+    DataManager: null,
     ReportManager: null,
     FocusManager: null,
     EewAreaManager: null,

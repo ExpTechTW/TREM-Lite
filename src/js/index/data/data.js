@@ -298,6 +298,8 @@ class DataManager {
   }
 }
 
+TREM.class.DataManager = DataManager;
+
 const dataManager = DataManager.getInstance();
 
 module.exports = {
