@@ -7,12 +7,28 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
-
     strategy:
       matrix:
+        config:
+          - os: macos-latest
+            platform: mac
+            artifact_name: TREM-Lite-macOS
+            artifact_path: dist/*.dmg
+          - os: windows-latest
+            platform: win
+            artifact_name: TREM-Lite-Windows
+            artifact_path: |
+              dist/*.exe
+              dist/*.msi
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: TREM-Lite-Linux
+            artifact_path: |
+              dist/*.AppImage
+              dist/*.deb
         node-version: [18]
-        arch: [arm64]
+
+    runs-on: ${{ matrix.config.os }}
 
     steps:
       - uses: actions/checkout@v3
@@ -26,33 +42,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build All Platforms
+      - name: Install Linux dependencies
+        if: matrix.config.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run build
+        run: npm run build:${{ matrix.config.platform }}
 
-      - name: Upload Windows Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: TREM-Lite-Windows
-          path: |
-            dist/*.exe
-            dist/*.msi
-          if-no-files-found: error
-
-      - name: Upload macOS Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: TREM-Lite-macOS
-          path: |
-            dist/*.dmg
-          if-no-files-found: error
-
-      - name: Upload Linux Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: TREM-Lite-Linux
-          path: |
-            dist/*.AppImage
-            dist/*.deb
+          name: ${{ matrix.config.artifact_name }}
+          path: ${{ matrix.config.artifact_path }}
           if-no-files-found: error
