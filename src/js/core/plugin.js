@@ -801,7 +801,12 @@ class PluginLoader {
         const tremInfo = this.readTremInfoFile(targetPath);
         const verified = tremInfo?.verification?.valid || false;
 
-        if (!verified) {
+        if (!verified && tremInfo?.verification?.error == 'Missing signature.json') {
+          logger.error(`[Plugin: ${pluginName}] 【!!!嚴重警告!!!】遺失簽名, Skipping plugin`);
+          logger.error(`[Plugin: ${pluginName}] 【!!!WARNING!!!】Missing signature, Skipping plugin`);
+          continue;
+        }
+        else if (!verified) {
           logger.warn(`[Plugin: ${pluginName}] 【!!!嚴重警告!!!】未發現有效簽名，除非信任擴充來源否則應立即停用`);
           logger.warn(`[Plugin: ${pluginName}] 【!!!WARNING!!!】No valid signature found, disable immediately unless plugin source is trusted`);
         }
