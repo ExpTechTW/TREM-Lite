@@ -16,6 +16,9 @@ document.onkeydown = (e) => {
       return ipcRenderer.send('openPluginFolder');
 
     case 'F2':
+      return ipcRenderer.send('openTempFolder');
+
+    case 'F3':
       return ipcRenderer.send('openConfigFolder');
 
     case 'F11':

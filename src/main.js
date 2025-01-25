@@ -18,6 +18,7 @@ let tray = null;
 let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
+const tempDir = path.join(app.getPath('temp'), 'trem-plugins');
 const configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
 const is_mac = process.platform === 'darwin';
@@ -358,6 +359,17 @@ ipcMain.on('openPluginFolder', () => {
   }
 
   shell.openPath(pluginDir)
+    .catch((error) => {
+      console.error(error);
+    });
+});
+
+ipcMain.on('openTempFolder', () => {
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+
+  shell.openPath(tempDir)
     .catch((error) => {
       console.error(error);
     });
