@@ -1,7 +1,7 @@
 /**RWD**/
 @media (max-width: 980px) {
   .info-wrapper {
-    width: auto;
+    width: 270px;
     max-width: 290px;
   }
 
