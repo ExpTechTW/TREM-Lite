@@ -97,7 +97,7 @@ class PluginVerifier {
       }
 
       let publicKey;
-      if (!keyId) {
+      if (!keyId || keyId == 'official') {
         publicKey = this.officialKey;
       }
       else {
