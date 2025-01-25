@@ -1,7 +1,8 @@
 /**RWD**/
 @media (max-width: 980px) {
   .info-wrapper {
-    width: 17em;
+    width: auto;
+    max-width: 290px;
   }
 
   .info-nsspe {
@@ -82,7 +83,7 @@
   }
 
   .info-loc {
-    font-size: 20px !important;
+    font-size: 18px !important;
   }
 
   .station-pga-wrapper {
