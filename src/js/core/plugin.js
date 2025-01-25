@@ -742,6 +742,8 @@ class PluginLoader {
               logger.debug(`[Plugin: ${cjs.name}] Found cjs plugin`);
               pluginPaths.set(cjs.name, {
                 path: filePath,
+                cjsPath,
+                cjs,
                 type: 'directory-cjs',
               });
             }
@@ -799,7 +801,7 @@ class PluginLoader {
       }
 
       try {
-        const { path: sourcePath, type } = pathInfo;
+        const { path: sourcePath, type, cjs, cjsPath } = pathInfo;
         const targetPath = path.join(this.tempDir, pluginName);
         logger.info(`[Plugin: ${pluginName}] Processing plugin type: ${type}`);
 
@@ -810,7 +812,7 @@ class PluginLoader {
           await this.processTremPlugin(pluginName, sourcePath, targetPath);
         }
 
-        const tremInfo = this.readTremInfoFile(targetPath);
+        const tremInfo = (type == 'directory-cjs') ? cjs : this.readTremInfoFile(targetPath);
         const verified = tremInfo?.verification?.valid || false;
 
         if (!verified && tremInfo?.verification?.error == 'Missing signature.json') {
@@ -823,12 +825,45 @@ class PluginLoader {
           logger.warn(`[Plugin: ${pluginName}] 【!!!WARNING!!!】No valid signature found, disable immediately unless plugin source is trusted`);
         }
 
-        if (fs.existsSync(targetPath) && tremInfo) {
+        if (type == 'directory-cjs') {
+          if (!tremInfo) {
+            logger.error(`[Plugin: ${pluginName}] Plugin fails to load, please contact the plugin developer!`);
+            fs.removeSync(targetPath);
+          }
+
+          const pluginData = {
+            name: pluginName,
+            version: tremInfo.version,
+            description: {
+              'zh-Hant': tremInfo.description,
+            },
+            author: !tremInfo.author.length ? ['Unknown'] : tremInfo.author,
+            // verified,
+            // verifyError: tremInfo.verification?.error || null,
+            // keyId: tremInfo.verification?.keyId || null,
+            ctxDependencies: tremInfo.pluginInfo?.ctxDependencies || [],
+            sensitivity: tremInfo.pluginInfo?.sensitivity || { level: 0, description: '未分析' },
+            path: targetPath,
+            originalPath: sourcePath,
+            info: tremInfo.pluginInfo || {},
+            dependencies: tremInfo.dependencies || {},
+            cjsPath,
+            type,
+            lastUpdated: tremInfo.lastUpdated || Date.now(),
+          };
+
+          console.log(pluginData);
+
+          allPlugins.set(pluginName, pluginData);
+
+          processedPlugins.add(pluginName);
+        }
+        else if (fs.existsSync(targetPath) && tremInfo) {
           const pluginData = {
             name: pluginName,
             version: tremInfo.pluginInfo.version,
             description: tremInfo.pluginInfo.description,
-            author: tremInfo.pluginInfo.author,
+            author: !tremInfo.pluginInfo.author.length ? ['Unknown'] : tremInfo.pluginInfo.author,
             verified,
             verifyError: tremInfo.verification?.error || null,
             keyId: tremInfo.verification?.keyId || null,
@@ -964,7 +999,6 @@ class PluginLoader {
         }
 
         const verification = this.verifier.verify(targetPath);
-        console.log(targetPath);
         const pluginInfo = this.readPluginInfo(targetPath);
         this.createTremInfoFile(targetPath, {
           lastUpdated: Date.now(),
@@ -1102,7 +1136,20 @@ class PluginLoader {
       const indexPath = path.join(plugin.path, 'index.js');
 
       try {
-        if (fs.existsSync(indexPath)) {
+        if (plugin.type == 'directory-cjs') {
+          const cjs = require(plugin.cjsPath);
+          cjs.setup({
+            config: {},
+            logger,
+            on: (event, callback) => {
+              TREM.variable.events.on(event, callback);
+            },
+            once: (event, callback) => {
+              TREM.variable.events.once(event, callback);
+            },
+          });
+        }
+        else if (fs.existsSync(indexPath)) {
           const PluginClass = require(indexPath);
 
           if (this.isValidPluginClass(PluginClass)) {
