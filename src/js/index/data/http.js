@@ -20,14 +20,18 @@ async function getData(time) {
     ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)]
     : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
 
-  const rts_req = fetchData.withController(
-    `https://${url}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
-    TREM.constant.HTTP_TIMEOUT.RTS,
-  );
-  const eew_req = fetchData.withController(
-    `https://${url}/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
-    TREM.constant.HTTP_TIMEOUT.EEW,
-  );
+  const rts_req = (TREM.variable.play_mode == 1)
+    ? null
+    : fetchData.withController(
+      `https://${url}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
+      TREM.constant.HTTP_TIMEOUT.RTS,
+    );
+  const eew_req = (TREM.variable.play_mode == 1)
+    ? null
+    : fetchData.withController(
+      `https://${url}/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
+      TREM.constant.HTTP_TIMEOUT.EEW,
+    );
 
   const activeReqs = [rts_req, eew_req];
   let intensity_req, lpgm_req;
@@ -51,7 +55,7 @@ async function getData(time) {
   activeRequests.push(...activeReqs);
 
   try {
-    const responses = await Promise.all(activeReqs.map((req) => req.execute()));
+    const responses = await Promise.all(activeReqs.map((req) => !req ? null : req.execute()));
 
     let rts = null, eew = null, intensity = null, lpgm = null;
 

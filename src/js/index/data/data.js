@@ -36,10 +36,6 @@ class DataManager {
       // replay (file)
       return null;
     }
-    else if (TREM.variable.play_mode === 1) {
-      // realtime (websocket)
-      return null;
-    }
 
     // http (realtime/replay)
     if (localNow - this.lastFetchTime < 1000) {
@@ -47,23 +43,25 @@ class DataManager {
     }
     this.lastFetchTime = localNow;
 
-    const data = await http((TREM.variable.play_mode === 0) ? null : now());
+    const data = await http((TREM.variable.play_mode == 0 || TREM.variable.play_mode == 1) ? null : now());
 
-    if (!TREM.variable.data.rts
-      || (!data.rts && ((localNow - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR))
-      || TREM.variable.data.rts.time < (data.rts?.time ?? 0)) {
-      TREM.variable.data.rts = data.rts;
-      TREM.variable.events.emit('DataRts', {
-        info: { type: TREM.variable.play_mode },
-        data: data.rts,
-      });
-    }
+    if (TREM.variable.play_mode == 0 || TREM.variable.play_mode == 2) {
+      if (!TREM.variable.data.rts
+        || (!data.rts && ((localNow - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR))
+        || TREM.variable.data.rts.time < (data.rts?.time ?? 0)) {
+        TREM.variable.data.rts = data.rts;
+        TREM.variable.events.emit('DataRts', {
+          info: { type: TREM.variable.play_mode },
+          data: data.rts,
+        });
+      }
 
-    if (data.eew) {
-      this.processEEWData(data.eew);
-    }
-    else {
-      this.processEEWData();
+      if (data.eew) {
+        this.processEEWData(data.eew);
+      }
+      else {
+        this.processEEWData();
+      }
     }
 
     if (data.intensity) {
