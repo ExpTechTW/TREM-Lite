@@ -724,6 +724,7 @@ class PluginLoader {
 
         if (stats.isDirectory()) {
           const infoPath = path.join(filePath, 'info.json');
+          const cjsPath = path.join(filePath, 'index.cjs');
           if (fs.existsSync(infoPath)) {
             const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
             if (info?.name) {
@@ -731,6 +732,17 @@ class PluginLoader {
               pluginPaths.set(info.name, {
                 path: filePath,
                 type: 'directory',
+              });
+            }
+          }
+          else if (fs.existsSync(cjsPath)) {
+            const cjs = require(cjsPath);
+
+            if (cjs?.name) {
+              logger.debug(`[Plugin: ${cjs.name}] Found cjs plugin`);
+              pluginPaths.set(cjs.name, {
+                path: filePath,
+                type: 'directory-cjs',
               });
             }
           }
@@ -952,6 +964,7 @@ class PluginLoader {
         }
 
         const verification = this.verifier.verify(targetPath);
+        console.log(targetPath);
         const pluginInfo = this.readPluginInfo(targetPath);
         this.createTremInfoFile(targetPath, {
           lastUpdated: Date.now(),
