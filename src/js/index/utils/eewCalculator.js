@@ -54,6 +54,13 @@ class EEWCalculator {
       prevTable = table;
     }
 
+    if (pDist < 0) {
+      pDist = 0;
+    }
+    if (sDist < 0) {
+      sDist = 0;
+    }
+
     return { p_dist: pDist, s_dist: sDist, s_t: sT };
   }
 

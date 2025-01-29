@@ -146,7 +146,7 @@ class AudioManager {
   }
 
   handleEewRelease(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') {
+    if (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) {
       return;
     }
 
@@ -177,7 +177,7 @@ class AudioManager {
   }
 
   handleEewAlert(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') {
+    if (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) {
       return;
     }
     if (this.config['check-box']['sound-effects-EEW2']) {
@@ -186,7 +186,7 @@ class AudioManager {
   }
 
   handleEewUpdate(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') {
+    if (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) {
       return;
     }
     this.audioQueues.update.clear();

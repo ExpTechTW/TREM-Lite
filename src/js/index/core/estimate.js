@@ -32,7 +32,7 @@ class EewAreaManager {
   }
 
   updateEewArea(ans) {
-    if (!TREM.constant.SHOW_TREM_EEW && ans.data.author === 'trem') {
+    if (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author === 'trem')) {
       return;
     }
 

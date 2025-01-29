@@ -5,6 +5,8 @@ const crypto = require('crypto');
 const { updateMapBounds } = require('./focus');
 const { ipcRenderer } = require('electron');
 const { stopReplay, startReplay } = require('./replay');
+const { processEEWData } = require('../data/data');
+const now = require('../utils/ntp');
 
 let last_replay_time = 0;
 
@@ -235,6 +237,7 @@ class ReportManager {
     wrapper.setAttribute('data-id', item.id);
     wrapper.setAttribute('trem-url', (item.trem) ? `https://${url}/file/trem_info.html?id=${item.trem}` : '');
     wrapper.setAttribute('data-time', item.time);
+    wrapper.setAttribute('data', JSON.stringify(item));
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';
     const buttons = document.createElement('div');
@@ -293,18 +296,32 @@ class ReportManager {
         last_replay_time = time;
         startReplay(time);
 
+        // const data = JSON.parse(wrapper.getAttribute('data'));
+
+        // processEEWData([{
+        //   author: 'trem',
+        //   id: data.id,
+        //   serial: 1,
+        //   status: 0,
+        //   final: 0,
+        //   replay: true,
+        //   eq: {
+        //     time: data.time,
+        //     lon: data.lon,
+        //     lat: data.lat,
+        //     depth: data.depth,
+        //     mag: data.mag,
+        //     loc: data.loc,
+        //     max: data.int,
+        //   },
+        //   time: now(),
+        // }]);
+
         stopFlashing();
         wrapper.classList.add('flashing');
         this.currentFlashingId = itemId;
       });
     });
-  }
-
-  now(time) {
-    if (!TREM.variable.replay.local_time) {
-      TREM.variable.replay.local_time = Date.now();
-    }
-    return Number(time) + (Date.now() - TREM.variable.replay.local_time);
   }
 
   generateReportBoxItems(list, survey = null, url = '') {

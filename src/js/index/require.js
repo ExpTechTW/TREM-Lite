@@ -39,4 +39,27 @@ const copyMissingTremFiles = require('../js/index/plugin_init');
   require('../js/index/core/intensity');
   require('../js/index/core/lpgm');
   require('../js/index/core/window');
+
+  const { processEEWData } = require('../js/index/data/data');
+
+  TREM.test = () => {
+    processEEWData([{
+      author: 'trem',
+      id: '1',
+      serial: 1,
+      status: 1,
+      final: 0,
+      replay: true,
+      eq: {
+        time: Date.now(),
+        lon: 120.53,
+        lat: 23.17,
+        depth: 10,
+        mag: 5.8,
+        loc: '臺南市楠西區',
+        max: 5,
+      },
+      time: Date.now(),
+    }]);
+  };
 })();

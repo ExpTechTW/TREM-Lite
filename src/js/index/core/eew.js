@@ -36,11 +36,11 @@ TREM.variable.events.on('EewRelease', (ans) => {
     source: `${ans.data.id}-p-wave`,
     paint: {
       'line-color': TREM.constant.COLOR.EEW.P,
-      'line-width': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.2 : 1,
+      'line-width': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? 0.2 : 1,
     },
   });
 
-  const color = (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')
+  const color = (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem'))
     ? TREM.constant.COLOR.TREM.S
     : ans.data.status == 1
       ? TREM.constant.COLOR.EEW.S.ALERT
@@ -52,7 +52,7 @@ TREM.variable.events.on('EewRelease', (ans) => {
     source: `${ans.data.id}-s-wave`,
     paint: {
       'line-color': color,
-      'line-width': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.6 : 2,
+      'line-width': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? 0.6 : 2,
     },
   });
 
@@ -62,8 +62,8 @@ TREM.variable.events.on('EewRelease', (ans) => {
       type: 'fill',
       source: `${ans.data.id}-s-wave-bg`,
       paint: {
-        'fill-color': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? TREM.constant.COLOR.TREM.P : color,
-        'fill-opacity': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0 : 0.25,
+        'fill-color': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? TREM.constant.COLOR.TREM.P : color,
+        'fill-opacity': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? 0 : 0.25,
       },
     },
     'county',
@@ -78,7 +78,7 @@ TREM.variable.events.on('EewAlert', (ans) => {
     TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
   }
 
-  const color = (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')
+  const color = (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem'))
     ? TREM.constant.COLOR.TREM.S
     : TREM.constant.COLOR.EEW.S.ALERT;
 
@@ -88,7 +88,7 @@ TREM.variable.events.on('EewAlert', (ans) => {
     source: `${ans.data.id}-s-wave`,
     paint: {
       'line-color': color,
-      'line-width': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.6 : 2,
+      'line-width': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? 0.6 : 2,
     },
   });
 
@@ -99,7 +99,7 @@ TREM.variable.events.on('EewAlert', (ans) => {
       source: `${ans.data.id}-s-wave-bg`,
       paint: {
         'fill-color': color,
-        'fill-opacity': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0 : 0.25,
+        'fill-opacity': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? 0 : 0.25,
       },
     },
     'county',
@@ -175,7 +175,7 @@ function show_eew(rotation = true) {
   const eew_list = Object.keys(eew_cache);
 
   for (const eew of TREM.variable.data.eew) {
-    if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') {
+    if (eew.replay || (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem')) {
       continue;
     }
     count++;
@@ -186,7 +186,7 @@ function show_eew(rotation = true) {
   if (count && eew_list.length) {
     TREM.variable.cache.show_eew_box = true;
     if (eew_cache[eew_list[eew_rotation]]) {
-      if (!TREM.constant.SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == 'trem') {
+      if (eew_cache[eew_list[eew_rotation]].replay || (!TREM.constant.SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == 'trem')) {
         eew_rotation++;
         if (eew_rotation >= eew_list.length) {
           eew_rotation = 0;

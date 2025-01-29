@@ -52,7 +52,7 @@ function refresh_cross(show) {
   clean = true;
 
   for (const eew of TREM.variable.data.eew) {
-    if (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem') {
+    if (eew.replay || (!TREM.constant.SHOW_TREM_EEW && eew.author == 'trem')) {
       continue;
     }
     const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
