@@ -296,26 +296,28 @@ class ReportManager {
         last_replay_time = time;
         startReplay(time);
 
-        // const data = JSON.parse(wrapper.getAttribute('data'));
+        const data = JSON.parse(wrapper.getAttribute('data'));
 
-        // processEEWData([{
-        //   author: 'trem',
-        //   id: data.id,
-        //   serial: 1,
-        //   status: 0,
-        //   final: 0,
-        //   replay: true,
-        //   eq: {
-        //     time: data.time,
-        //     lon: data.lon,
-        //     lat: data.lat,
-        //     depth: data.depth,
-        //     mag: data.mag,
-        //     loc: data.loc,
-        //     max: data.int,
-        //   },
-        //   time: now(),
-        // }]);
+        if (TREM.constant.SHOW_REPLAY) {
+          processEEWData([{
+            author: 'trem',
+            id: data.id,
+            serial: 1,
+            status: 0,
+            final: 0,
+            replay: true,
+            eq: {
+              time: data.time,
+              lon: data.lon,
+              lat: data.lat,
+              depth: data.depth,
+              mag: data.mag,
+              loc: data.loc,
+              max: data.int,
+            },
+            time: now(),
+          }]);
+        }
 
         stopFlashing();
         wrapper.classList.add('flashing');

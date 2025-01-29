@@ -74,6 +74,10 @@ const TREM = {
         S: '#beff0c',
         P: '#beff0c',
       },
+      REPLAY: {
+        S: '#FF77FF',
+        P: '#FF77FF',
+      },
       BOX: {
         0: '#00DB00',
         1: '#EAC100',
@@ -82,6 +86,8 @@ const TREM = {
     },
 
     SHOW_TREM_EEW: false,
+
+    SHOW_REPLAY: true,
 
     URL: {
       API: ['api-1.exptech.dev', 'api-2.exptech.dev'],
@@ -122,7 +128,7 @@ const TREM = {
 
     EEW_AUTHOR: ['trem', 'cwa'],
 
-    REPORT_LIMIT: 75,
+    REPORT_LIMIT: 175,
 
     MAP: {
       BOUNDS: [[118.0, 21.2], [124.0, 25.8]],

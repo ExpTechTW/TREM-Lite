@@ -40,11 +40,13 @@ TREM.variable.events.on('EewRelease', (ans) => {
     },
   });
 
-  const color = (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem'))
-    ? TREM.constant.COLOR.TREM.S
-    : ans.data.status == 1
-      ? TREM.constant.COLOR.EEW.S.ALERT
-      : TREM.constant.COLOR.EEW.S.WARN;
+  const color = ans.data.replay
+    ? TREM.constant.COLOR.REPLAY.S
+    : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')
+        ? TREM.constant.COLOR.TREM.S
+        : ans.data.status == 1
+          ? TREM.constant.COLOR.EEW.S.ALERT
+          : TREM.constant.COLOR.EEW.S.WARN;
 
   TREM.variable.map.addLayer({
     id: `${ans.data.id}-s-wave-outline`,
@@ -52,7 +54,7 @@ TREM.variable.events.on('EewRelease', (ans) => {
     source: `${ans.data.id}-s-wave`,
     paint: {
       'line-color': color,
-      'line-width': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? 0.6 : 2,
+      'line-width': ans.data.replay ? 4 : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.6 : 2,
     },
   });
 
@@ -78,9 +80,11 @@ TREM.variable.events.on('EewAlert', (ans) => {
     TREM.variable.map.removeLayer(`${ans.data.id}-s-wave-background`);
   }
 
-  const color = (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem'))
-    ? TREM.constant.COLOR.TREM.S
-    : TREM.constant.COLOR.EEW.S.ALERT;
+  const color = ans.data.replay
+    ? TREM.constant.COLOR.REPLAY.S
+    : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')
+        ? TREM.constant.COLOR.TREM.S
+        : TREM.constant.COLOR.EEW.S.ALERT;
 
   TREM.variable.map.addLayer({
     id: `${ans.data.id}-s-wave-outline`,
@@ -88,7 +92,7 @@ TREM.variable.events.on('EewAlert', (ans) => {
     source: `${ans.data.id}-s-wave`,
     paint: {
       'line-color': color,
-      'line-width': (ans.data.replay || (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')) ? 0.6 : 2,
+      'line-width': ans.data.replay ? 4 : (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.6 : 2,
     },
   });
 
