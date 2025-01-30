@@ -271,7 +271,7 @@ class PluginLoader {
         return null;
       }
 
-      const isValidName = /^[a-zA-Z-_]+$/.test(info.name);
+      const isValidName = /^[a-z0-9-]+$/.test(info.name);
 
       if (!isValidName) {
         logger.error(`Plugin name "${info.name}" is invalid. Only English letters, hyphens and underscores are allowed`);
