@@ -54,7 +54,7 @@ jobs:
         run: npm run build:${{ matrix.config.platform }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.config.artifact_name }}
           path: ${{ matrix.config.artifact_path }}
