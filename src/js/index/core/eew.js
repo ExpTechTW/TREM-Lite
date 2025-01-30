@@ -114,6 +114,10 @@ TREM.variable.events.on('EewUpdate', (ans) => {
   eew_cache[ans.data.id] = ans.data;
   show_eew(false);
   refresh_cross(false);
+
+  if (eew_cache[ans.data.id].status == 3) {
+    removeEewLayersAndSources(ans.data.id);
+  }
 });
 TREM.variable.events.on('EewEnd', (ans) => {
   removeEewLayersAndSources(ans.data.id);

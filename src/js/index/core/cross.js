@@ -34,6 +34,9 @@ TREM.variable.events.on('MapLoad', (map) => {
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
     },
+    paint: {
+      'icon-opacity': ['get', 'opacity'],
+    },
   });
 });
 
@@ -57,7 +60,7 @@ function refresh_cross(show) {
     }
     const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
     const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
-    if (sWaveSource && pWaveSource) {
+    if (eew.status == 3 || (sWaveSource && pWaveSource)) {
       eew_list.push(eew);
     }
   }
@@ -66,7 +69,7 @@ function refresh_cross(show) {
     const sWaveSource = TREM.variable.map.getSource(`${eew.id}-s-wave`);
     const pWaveSource = TREM.variable.map.getSource(`${eew.id}-p-wave`);
 
-    if (sWaveSource && pWaveSource) {
+    if (eew.status == 3 || (sWaveSource && pWaveSource)) {
       const existingIndex = eew_list.findIndex((item) => item.id === eew.id);
       let no = existingIndex;
       if (eew_list.length > 1) {
@@ -75,7 +78,7 @@ function refresh_cross(show) {
 
       if (no < 5) {
         if (show || eew.status == 3) {
-          const opacity = eew.status == 3 ? 0.5 : 1;
+          const opacity = eew.status == 3 ? 0.6 : 1;
           markerFeatures.push({
             type: 'Feature',
             geometry: {
