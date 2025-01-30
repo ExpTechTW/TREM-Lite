@@ -87,7 +87,7 @@ class EewAreaManager {
       newHighIntensityCities.forEach((city) => this.alertedCities.add(city));
     }
 
-    const mapStyle = generateMapStyle(eewArea, end);
+    const mapStyle = generateMapStyle(eewArea, !TREM.variable.data.eew.length && end);
     TREM.variable.map.setPaintProperty('town', 'fill-color', mapStyle);
 
     if (end) {
