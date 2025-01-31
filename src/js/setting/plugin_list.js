@@ -85,8 +85,6 @@ class PluginList {
   getPluginState() {
     let a = '';
     JSON.parse(localStorage.getItem('plugin-status')).forEach((item) => {
-      const info = this.pluginList.filter((e) => e.name == item.plugin);
-      console.log(info);
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
