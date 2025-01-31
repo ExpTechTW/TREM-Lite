@@ -104,12 +104,12 @@ class PluginList {
                   <div class="extended-list-title-box">
                     <span class="plugin-list-title">${item.plugin}</span>
                     <div class="status-box">
-                      ${info[0].verified ? '<span class="verified-badge"></span>' : ''}
+                      ${info[0]?.verified ? '<span class="verified-badge"></span>' : ''}
                     </div>
                     <div class="extended-list-author-version">
                       <div class="author">
-                        <span class="author-name">${info[0].author && info[0].author[0] ? info[0].author[0] : info[0].author}</span>
-                        <span class="extended-version">${info[0].version}</span>
+                      ${info[0]?.author ? `<span class="author-name">${info[0]?.author && info[0]?.author[0] ? info[0]?.author[0] : info[0]?.author}</span>` : ''}
+                      ${info[0]?.version ? `<span class="extended-version">${info[0]?.version}</span>` : ''}
                       </div>
                     </div>
                   </div> 
