@@ -1103,6 +1103,12 @@ class PluginLoader {
         this.plugins[this.type].set(name, pluginData);
       }
       else if (!enabledPlugins.includes(name)) {
+        this.pluginStatus.push({
+          type: 'warn',
+          time: now(),
+          plugin: name,
+          msg: `擴充 ${name} 未啟用。`,
+        });
         logger.warn(`--- Plugin ${name} disable ---`);
       }
     }
@@ -1159,7 +1165,9 @@ class PluginLoader {
       ...currentLoadedPlugins,
     ];
 
-    localStorage.setItem('plugin-status', JSON.stringify(this.pluginStatus));
+    if (this.type == 'index') {
+      localStorage.setItem('plugin-status', JSON.stringify(this.pluginStatus));
+    }
     localStorage.setItem('loaded-plugins', JSON.stringify(updatedList));
 
     this.checkAutoDownload();
