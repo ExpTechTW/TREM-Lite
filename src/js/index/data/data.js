@@ -2,6 +2,15 @@ const TREM = require('../constant');
 const now = require('../utils/ntp');
 const http = require('./http');
 
+const fs = require('fs-extra');
+const path = require('path');
+const { app } = require('@electron/remote');
+
+const replayDir = path.join(app.getPath('userData'), 'replay');
+
+let file_list = [];
+let file_index = 0;
+
 class DataManager {
   static instance = null;
 
@@ -27,21 +36,45 @@ class DataManager {
         await this.fetchData();
       }, 0);
     });
+
+    fs.readdir(replayDir, (err, list) => {
+      if (list.length) {
+        TREM.variable.play_mode = 3;
+        TREM.variable.replay.start_time = Number(list[0].replace('.json', ''));
+        file_list = list;
+      }
+    });
   }
 
   async fetchData() {
     const localNow = Date.now();
 
-    if (TREM.variable.play_mode === 3) {
-      // replay (file)
-      return null;
-    }
-
-    // http (realtime/replay)
     if (localNow - this.lastFetchTime < 1000) {
       return;
     }
     this.lastFetchTime = localNow;
+
+    if (TREM.variable.play_mode === 3) {
+      // replay (file)
+      if (file_index >= file_list.length - 1) {
+        TREM.variable.play_mode = 0;
+        return;
+      }
+      file_index++;
+      fs.readFile(path.join(replayDir, file_list[file_index]), (err, data) => {
+        const json = JSON.parse(data.toString());
+        // console.log(json);
+
+        TREM.variable.data.rts = json.rts;
+        TREM.variable.events.emit('DataRts', {
+          info: { type: TREM.variable.play_mode },
+          data: json.rts,
+        });
+        this.processEEWData(json.eew);
+        this.processIntensityData(json.intensity);
+      });
+      return null;
+    }
 
     const data = await http((TREM.variable.play_mode == 0 || TREM.variable.play_mode == 1) ? null : now());
 

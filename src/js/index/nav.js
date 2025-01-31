@@ -22,6 +22,9 @@ document.onkeydown = (e) => {
     case 'F3':
       return ipcRenderer.send('openConfigFolder');
 
+    case 'F4':
+      return ipcRenderer.send('openReplayFolder');
+
     case 'F11':
       return ipcRenderer.send('toggleFullscreen');
 

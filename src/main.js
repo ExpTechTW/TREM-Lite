@@ -18,6 +18,7 @@ let tray = null;
 let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
+const replayDir = path.join(app.getPath('userData'), 'replay');
 const tempDir = path.join(app.getPath('temp'), 'trem-plugins');
 const configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
@@ -351,6 +352,17 @@ ipcMain.on('toggle-pip', () => {
   if (pipWindow) {
     pipWindow.show();
   }
+});
+
+ipcMain.on('openReplayFolder', () => {
+  if (!fs.existsSync(replayDir)) {
+    fs.mkdirSync(replayDir, { recursive: true });
+  }
+
+  shell.openPath(replayDir)
+    .catch((error) => {
+      console.error(error);
+    });
 });
 
 ipcMain.on('openPluginFolder', () => {
