@@ -7,19 +7,27 @@ const store = require('./main');
 const bubble = new store();
 const fetchData = require('../core/utils/fetch');
 
-const pluginStore = document.querySelector('.extended-store-list .extended-info');
+const pluginStore = document.querySelector(
+  '.extended-store-list .extended-info',
+);
 
 class PluginList {
   constructor() {
-    this.enablePluginList = JSON.parse(localStorage.getItem('enabled-plugins')) || [];
+    this.enablePluginList
+      = JSON.parse(localStorage.getItem('enabled-plugins')) || [];
     this.pluginList = JSON.parse(localStorage.getItem('plugin-list')) || [];
-    this.loadedPlugins = JSON.parse(localStorage.getItem('loaded-plugins')) || [];
+    this.loadedPlugins
+      = JSON.parse(localStorage.getItem('loaded-plugins')) || [];
     this.extendedInfo = document.querySelector('.extended-info');
     this.extendedConfirmWrapper = document.querySelector('.confirm-wrapper');
-    this.ConfirmSure = this.extendedConfirmWrapper.querySelector('.confirm-sure');
-    this.ConfirmTitle = this.extendedConfirmWrapper.querySelector('.confirm-title');
+    this.ConfirmSure
+      = this.extendedConfirmWrapper.querySelector('.confirm-sure');
+    this.ConfirmTitle
+      = this.extendedConfirmWrapper.querySelector('.confirm-title');
     this.extendedTopButton = document.querySelectorAll('.extended-list-button');
-    this.extendedWrapper = document.querySelectorAll('.extended .setting-option');
+    this.extendedWrapper = document.querySelectorAll(
+      '.extended .setting-option',
+    );
     this.storeData = [];
     this.lastState = null;
     this.lastTarget = null;
@@ -56,7 +64,10 @@ class PluginList {
     this.storeData = JSON.parse(localStorage.getItem('store-data') ?? '[]');
 
     if (Date.now() - last_time > 600000) {
-      const ans = await fetchData('https://raw.githubusercontent.com/ExpTechTW/trem-plugins/refs/heads/main/data/repository_stats.json', TREM.constant.HTTP_TIMEOUT.PLUGIN_INFO);
+      const ans = await fetchData(
+        'https://raw.githubusercontent.com/ExpTechTW/trem-plugins/refs/heads/main/data/repository_stats.json',
+        TREM.constant.HTTP_TIMEOUT.PLUGIN_INFO,
+      );
       if (ans && ans.ok) {
         const res = await ans.json();
 
@@ -68,6 +79,52 @@ class PluginList {
     }
 
     this.createPluginStoreList();
+    this.getPluginState();
+  }
+
+  getPluginState() {
+    let a = '';
+    const list = [
+      {
+        type: 'error',
+        plugin: 'websocket',
+        msg: '缺少 logger 依賴',
+      },
+      {
+        type: 'info',
+        plugin: 'config',
+        msg: '缺少 logger 依賴',
+      },
+      {
+        type: 'warn',
+        plugin: 'websocket',
+        msg: '缺少 logger 依賴',
+      },
+      {
+        type: 'debug',
+        plugin: 'websocket',
+        msg: '缺少 logger 依賴',
+      },
+    ];
+    list.forEach((item) => {
+      a += `<div class="wave-container wave-unloaded">
+          <div class="setting-option">
+            <div class="extended-list" style="justify-content: space-between;">
+              <div class="extended-list-box" style="width:95%">
+                <div class="extended-list-left">
+                  <div class="extended-list-title-box">
+                    <span class="plugin-list-title">${item.plugin}</span>
+                  </div> 
+                </div>
+                <div class="extended-list-description-box">
+                  <span class="extended-list-descriptions">${item.msg}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+    document.querySelector('.extended-state-list .extended-info').innerHTML = a;
   }
 
   createPluginStoreList() {
@@ -75,14 +132,21 @@ class PluginList {
       if (item.repository.releases.releases.length) {
         let button = '';
 
-        const new_version = item.repository.releases.releases[0].tag_name.replace('v', '');
+        const new_version
+          = item.repository.releases.releases[0].tag_name.replace('v', '');
         item.version = new_version;
         const local_item = this.pluginList.find((_) => _.name == item.name);
 
         if (!local_item) {
           button = 'download';
         }
-        else if (new_version != local_item.version && PluginLoader.getInstance().compareVersions(new_version, local_item.version)) {
+        else if (
+          new_version != local_item.version
+          && PluginLoader.getInstance().compareVersions(
+            new_version,
+            local_item.version,
+          )
+        ) {
           button = 'update';
         }
         else {
@@ -103,7 +167,10 @@ class PluginList {
         e.target.classList.add('disabled');
         e.target.classList.add('downloading');
         if (new_item) {
-          await PluginLoader.getInstance().downloadPlugin(pluginName, `https://github.com/${new_item.repository.full_name}/releases/download/${new_item.repository.releases.releases[0].tag_name}/${pluginName}.trem`);
+          await PluginLoader.getInstance().downloadPlugin(
+            pluginName,
+            `https://github.com/${new_item.repository.full_name}/releases/download/${new_item.repository.releases.releases[0].tag_name}/${pluginName}.trem`,
+          );
         }
         e.target.classList.add('downloaded');
         bubble.showBubble('success-download', 1500);
@@ -185,12 +252,17 @@ class PluginList {
   renderStatusBadges(item, isEnabled, isLoaded) {
     const badges = [];
 
-    badges.push(!item.verified ? '<span class="unverified-badge"></span>' : '<span class="verified-badge"></span>');
+    badges.push(
+      !item.verified
+        ? '<span class="unverified-badge"></span>'
+        : '<span class="verified-badge"></span>',
+    );
 
     if (isEnabled) {
-      badges.push(isLoaded
-        ? '<span class="loaded-badge"></span>'
-        : '<span class="unloaded-badge"></span>',
+      badges.push(
+        isLoaded
+          ? '<span class="loaded-badge"></span>'
+          : '<span class="unloaded-badge"></span>',
       );
     }
 
@@ -200,34 +272,49 @@ class PluginList {
   renderPluginItem(item, type, btn) {
     const isEnabled = !type ? this.enablePluginList.includes(item.name) : '';
     const isLoaded = !type ? this.getPluginLoadStatus(item.name) : '';
-    const waveClassName = !type ? this.getWaveClassName(item, isEnabled, isLoaded) : '';
-    const statusBadges = !type ? this.renderStatusBadges(item, isEnabled, isLoaded) : '';
+    const waveClassName = !type
+      ? this.getWaveClassName(item, isEnabled, isLoaded)
+      : '';
+    const statusBadges = !type
+      ? this.renderStatusBadges(item, isEnabled, isLoaded)
+      : '';
 
     const is_config_exist = fs.existsSync(`${item.path}/config.yml`);
 
     return `
-        <div class="wave-container ${waveClassName}" id="plugin-${this.escapeHtml(item.name)}">
+        <div class="wave-container ${waveClassName}" id="plugin-${this.escapeHtml(
+          item.name,
+        )}">
           <div class="setting-option">
             <div class="extended-list">
               <div class="extended-list-box">
                 <div class="extended-list-left">
                   <div class="extended-list-title-box">
-                    <span class="plugin-list-title">${this.escapeHtml(item.name)}</span>
+                    <span class="plugin-list-title">${this.escapeHtml(
+                      item.name,
+                    )}</span>
                     <div class="status-box">${statusBadges}</div>
                   </div>
                   <div class="extended-list-author-version">
                     <div class="author">
-                      <span class="author-name">${this.escapeHtml(item.author[0])}</span>
-                      <span class="extended-version">${this.escapeHtml(item.version)}</span>
+                      <span class="author-name">${this.escapeHtml(
+                        item.author[0],
+                      )}</span>
+                      <span class="extended-version">${this.escapeHtml(
+                        item.version,
+                      )}</span>
                     </div>
                   </div>  
                 </div>
                 <div class="extended-list-description-box">
-                  <span class="extended-list-descriptions">${this.escapeHtml(item.description?.zh_tw || '')}</span>
+                  <span class="extended-list-descriptions">${this.escapeHtml(
+                    item.description?.zh_tw || '',
+                  )}</span>
                 </div>
               </div>
-              ${!type
-                ? `<div class="extended-list-buttons">
+              ${
+                !type
+                  ? `<div class="extended-list-buttons">
                 <label class="switch">
                   <input type="checkbox" 
                     data-name="${this.escapeHtml(item.name)}" 
@@ -238,8 +325,16 @@ class PluginList {
                     ${isEnabled ? 'checked' : ''}>
                   <div class="slider round"></div>
                 </label>
-                ${is_config_exist ? `<div id="extended-setting-button.${this.escapeHtml(item.name)}" class="extended-setting-button"></div>` : ''}
-                <div id="extended-remove.${this.escapeHtml(item.name)}" class="extended-remove">
+                ${
+                  is_config_exist
+                    ? `<div id="extended-setting-button.${this.escapeHtml(
+                      item.name,
+                    )}" class="extended-setting-button"></div>`
+                    : ''
+                }
+                <div id="extended-remove.${this.escapeHtml(
+                  item.name,
+                )}" class="extended-remove">
                   <svg fill="currentColor" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 27.965 27.965" xml:space="preserve" height="15px" width="15px">
                     <g>
                       <g id="c142_x">
@@ -254,9 +349,12 @@ class PluginList {
                   </svg>
                 </div>
               </div>`
-                : `<div class="extended-list-buttons">
-                  <div id="extended-download-button.${this.escapeHtml(item.name)}" class="extended-${btn}-button"></div>
-              </div>`}
+                  : `<div class="extended-list-buttons">
+                  <div id="extended-download-button.${this.escapeHtml(
+                    item.name,
+                  )}" class="extended-${btn}-button"></div>
+              </div>`
+              }
             </div>
           </div>
         </div>
@@ -278,11 +376,14 @@ class PluginList {
         return;
       }
 
-      const settingButton = document.getElementById(`extended-setting-button.${item.name}`);
+      const settingButton = document.getElementById(
+        `extended-setting-button.${item.name}`,
+      );
       if (settingButton) {
         settingButton.replaceWith(settingButton.cloneNode(true));
 
-        document.getElementById(`extended-setting-button.${item.name}`)
+        document
+          .getElementById(`extended-setting-button.${item.name}`)
           .addEventListener('click', () => {
             ipcRenderer.send('open-yaml-editor', `${item.path}/config.yml`);
           });
@@ -371,7 +472,9 @@ class PluginList {
 
     if (isEnabled) {
       manager.disable(pluginName);
-      this.enablePluginList = this.enablePluginList.filter((name) => name !== pluginName);
+      this.enablePluginList = this.enablePluginList.filter(
+        (name) => name !== pluginName,
+      );
     }
     else {
       manager.enable(pluginName);
@@ -379,7 +482,10 @@ class PluginList {
         this.enablePluginList.push(pluginName);
       }
     }
-    localStorage.setItem('enabled-plugins', JSON.stringify(this.enablePluginList));
+    localStorage.setItem(
+      'enabled-plugins',
+      JSON.stringify(this.enablePluginList),
+    );
     this.hideConfirmWrapper();
     bubble.showBubble('success', 1500);
   }

@@ -234,15 +234,14 @@
 .eew-1::before {
   content: "EEW（收到地震預警時播放）";
 }
+.extended-list-button[for="extended-state-list"]:before {
+  content: "擴充狀態";
+}
 .extended-list-button[for="extended-installed-list"]:before {
   content: "擴充列表";
 }
 .extended-list-button[for="extended-store-list"]:before {
   content: "擴充商店";
-}
-.extended-info:not(:has(.wave-container))::before {
-  content: "目前沒有啟用中的擴充";
-  color: red;
 }
 .copy-debug-log:before {
   content: "複製debug log";
