@@ -100,7 +100,7 @@ class PluginList {
       a += `<div class="wave-container wave-unloaded">
           <div class="setting-option">
             <div class="extended-list" style="justify-content: space-between;">
-              <div class="extended-list-box" style="width:95%">
+              <div class="extended-list-box" style="width:98%">
                 <div class="extended-list-left">
                   <div class="extended-list-title-box">
                     <span class="plugin-list-title">${item.plugin}</span>
