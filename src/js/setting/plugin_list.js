@@ -97,7 +97,7 @@ class PluginList {
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const seconds = String(now.getSeconds()).padStart(2, '0');
-      a += `<div class="wave-container wave-unloaded">
+      a += `<div class="wave-container ${item.type === 'error' ? 'wave-unverified' : (item.type === 'warn' ? 'wave-unloaded' : '')}">
           <div class="setting-option">
             <div class="extended-list" style="justify-content: space-between;">
               <div class="extended-list-box" style="width:98%">
