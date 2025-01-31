@@ -91,6 +91,7 @@ class PluginList {
       { type: 'debug', plugin: 'websocket', msg: '缺少 logger 依賴' },
     ];
     list.forEach((item) => {
+      const info = this.pluginList.filter((e) => e.name == item.plugin);
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -101,15 +102,25 @@ class PluginList {
               <div class="extended-list-box" style="width:95%">
                 <div class="extended-list-left">
                   <div class="extended-list-title-box">
-                    <span class="plugin-list-title">
-                      [${hours}:${minutes}:${seconds}][
-                      <span style="color:${item.type === 'info' ? '#00aa00' : item.type === 'error' ? '#b62323' : item.type === 'warn' ? '#aa5500' : ''}">
-                        ${item.type.toUpperCase()}
-                      </span>]:  [Plugin: ${item.plugin}]
-                    </span>
+                    <span class="plugin-list-title">${item.plugin}</span>
+                    <div class="status-box">
+                      ${info[0].verified ? '<span class="verified-badge"></span>' : ''}
+                    </div>
+                    <div class="extended-list-author-version">
+                      <div class="author">
+                        <span class="author-name">${info[0].author && info[0].author[0] ? info[0].author[0] : info[0].author}</span>
+                        <span class="extended-version">${info[0].version}</span>
+                      </div>
+                    </div>
                   </div> 
                 </div>
-                <div class="extended-list-description-box">
+                <div class="extended-list-description-box" style="text-align: end;">
+                  <span class="extended-list-descriptions">
+                    [${hours}:${minutes}:${seconds}][
+                    <span style="color:${item.type === 'info' ? '#00aa00' : item.type === 'error' ? '#b62323' : item.type === 'warn' ? '#aa5500' : ''}">
+                      ${item.type.toUpperCase()}
+                    </span>]
+                  </span>
                   <span class="extended-list-descriptions">${item.msg}</span>
                 </div>
               </div>
