@@ -244,7 +244,7 @@ class PluginLoader {
           type: 'error',
           time: now(),
           plugin: pluginInfo.name,
-          msg: `擴充 ${pluginInfo.name} 需要至少 TREM-Lite 的版本為 ${trem} 以上，但目前安裝的版本為 ${this.tremVersion}。`,
+          msg: `需要至少 TREM-Lite 的版本為 ${trem} 以上，但目前安裝的版本為 ${this.tremVersion}。`,
         });
         logger.error(`Plugin ${pluginInfo.name} requires TREM version ${trem}, but ${this.tremVersion} is installed`);
         return false;
@@ -258,7 +258,7 @@ class PluginLoader {
           type: 'error',
           time: now(),
           plugin: pluginInfo.name,
-          msg: `擴充 ${pluginInfo.name} 缺少 ${dep} 依賴。`,
+          msg: `缺少 ${dep} 依賴。`,
         });
         logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name}`);
         return false;
@@ -269,7 +269,7 @@ class PluginLoader {
           type: 'error',
           time: now(),
           plugin: pluginInfo.name,
-          msg: `擴充 ${pluginInfo.name} 需要至少 ${dep} 的版本為 ${version} 以上，但目前安裝的版本為 ${dependencyPlugin.info.version}。`,
+          msg: `需要至少 ${dep} 的版本為 ${version} 以上，但目前安裝的版本為 ${dependencyPlugin.info.version}。`,
         });
         logger.error(`Plugin ${pluginInfo.name} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
         return false;
@@ -501,7 +501,7 @@ class PluginLoader {
         type: 'error',
         time: now(),
         plugin: pluginName,
-        msg: `擴充 ${pluginName} 初始化失敗，請聯繫擴充作者。`,
+        msg: `初始化失敗，請聯繫擴充作者。`,
       });
       logger.error(`Failed to initialize plugin ${pluginName}:`, error);
       return false;
@@ -832,7 +832,7 @@ class PluginLoader {
             type: 'error',
             time: now(),
             plugin: pluginName,
-            msg: `【!!!嚴重警告!!!】擴充 ${pluginName} 遺失簽名。`,
+            msg: `【!!!嚴重警告!!!】遺失簽名。`,
           });
           logger.error(`[Plugin: ${pluginName}] 【!!!嚴重警告!!!】遺失簽名, Skipping plugin`);
           logger.error(`[Plugin: ${pluginName}] 【!!!WARNING!!!】Missing signature, Skipping plugin`);
@@ -843,7 +843,7 @@ class PluginLoader {
             type: 'warn',
             time: now(),
             plugin: pluginName,
-            msg: `【!!!嚴重警告!!!】擴充 ${pluginName} 未發現有效簽名，除非信任擴充來源否則應立即停用。`,
+            msg: `【!!!嚴重警告!!!】未發現有效簽名，除非信任擴充來源否則應立即停用。`,
           });
           logger.warn(`[Plugin: ${pluginName}] 【!!!嚴重警告!!!】未發現有效簽名，除非信任擴充來源否則應立即停用`);
           logger.warn(`[Plugin: ${pluginName}] 【!!!WARNING!!!】No valid signature found, disable immediately unless plugin source is trusted`);
@@ -1107,7 +1107,7 @@ class PluginLoader {
           type: 'warn',
           time: now(),
           plugin: name,
-          msg: `擴充 ${name} 未啟用。`,
+          msg: `未啟用。`,
         });
         logger.warn(`--- Plugin ${name} disable ---`);
       }
