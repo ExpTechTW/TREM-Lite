@@ -198,7 +198,7 @@ class PluginLoader {
       }
       return {
         usedDependencies: [],
-        sensitivity: { level: 0, description: '分析失败' },
+        sensitivity: { level: 0, description: '分析失敗' },
       };
     }
   }

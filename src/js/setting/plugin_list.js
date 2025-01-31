@@ -85,35 +85,28 @@ class PluginList {
   getPluginState() {
     let a = '';
     const list = [
-      {
-        type: 'error',
-        plugin: 'websocket',
-        msg: '缺少 logger 依賴',
-      },
-      {
-        type: 'info',
-        plugin: 'config',
-        msg: '缺少 logger 依賴',
-      },
-      {
-        type: 'warn',
-        plugin: 'websocket',
-        msg: '缺少 logger 依賴',
-      },
-      {
-        type: 'debug',
-        plugin: 'websocket',
-        msg: '缺少 logger 依賴',
-      },
+      { type: 'error', plugin: 'websocket', msg: '缺少 logger 依賴' },
+      { type: 'info', plugin: 'config', msg: '缺少 logger 依賴' },
+      { type: 'warn', plugin: 'websocket', msg: '缺少 logger 依賴' },
+      { type: 'debug', plugin: 'websocket', msg: '缺少 logger 依賴' },
     ];
     list.forEach((item) => {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
       a += `<div class="wave-container wave-unloaded">
           <div class="setting-option">
             <div class="extended-list" style="justify-content: space-between;">
               <div class="extended-list-box" style="width:95%">
                 <div class="extended-list-left">
                   <div class="extended-list-title-box">
-                    <span class="plugin-list-title">${item.plugin}</span>
+                    <span class="plugin-list-title">
+                      [${hours}:${minutes}:${seconds}][
+                      <span style="color:${item.type === 'info' ? '#00aa00' : item.type === 'error' ? '#b62323' : item.type === 'warn' ? '#aa5500' : ''}">
+                        ${item.type.toUpperCase()}
+                      </span>]:  [Plugin: ${item.plugin}]
+                    </span>
                   </div> 
                 </div>
                 <div class="extended-list-description-box">
