@@ -12,6 +12,7 @@ body {
   user-select: none;
   margin: 0;
   font-family: Manrope, "Noto Sans TC", sans-serif;
+  font-variant-numeric: tabular-nums;
   text-rendering: optimizeLegibility;
   overflow: hidden;
 
