@@ -30,14 +30,10 @@
   },
   "dependencies": {
     "@electron/remote": "^2.1.2",
-    "acorn": "^8.14.0",
-    "acorn-walk": "^8.3.4",
     "adm-zip": "^0.5.16",
-    "colors": "^1.4.0",
     "fs-extra": "^11.3.0",
     "js-yaml": "^4.1.0",
     "maplibre-gl": "^5.1.0",
-    "semver": "^7.6.3",
     "speak-tts": "^2.0.8",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"

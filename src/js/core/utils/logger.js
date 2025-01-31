@@ -2,7 +2,6 @@ const winston = require('winston');
 const path = require('path');
 const { app } = require('@electron/remote');
 require('winston-daily-rotate-file');
-const colors = require('colors/safe');
 const util = require('util');
 
 class Logger {
@@ -35,21 +34,28 @@ class Logger {
       maxFiles: '14d',
     });
 
+    const ansiColors = {
+      reset: '\x1b[0m',
+      red: '\x1b[31m',
+      yellow: '\x1b[33m',
+      green: '\x1b[32m',
+      blue: '\x1b[34m',
+      grey: '\x1b[90m',
+    };
+
     const levelColors = {
-      error: colors.red,
-      warn: colors.yellow,
-      info: colors.green,
-      debug: colors.blue,
+      error: (text) => `${ansiColors.red}${text}${ansiColors.reset}`,
+      warn: (text) => `${ansiColors.yellow}${text}${ansiColors.reset}`,
+      info: (text) => `${ansiColors.green}${text}${ansiColors.reset}`,
+      debug: (text) => `${ansiColors.blue}${text}${ansiColors.reset}`,
     };
 
     const consoleFormat = winston.format.printf((info) => {
       const date = new Date();
-      const timestamp = `${this.#formatTwoDigits(date.getHours())}:${this.#formatTwoDigits(
-        date.getMinutes(),
-      )}:${this.#formatTwoDigits(date.getSeconds())}`;
+      const timestamp = `${this.#formatTwoDigits(date.getHours())}:${this.#formatTwoDigits(date.getMinutes())}:${this.#formatTwoDigits(date.getSeconds())}`;
       const level = info.level.toUpperCase();
-      const coloredLevel = levelColors[info.level](level);
-      return `[${colors.grey(timestamp)}][${coloredLevel}]: ${info.message}`;
+      const coloredLevel = levelColors[info.level] ? levelColors[info.level](level) : level;
+      return `[${ansiColors.grey}${timestamp}${ansiColors.reset}][${coloredLevel}]: ${info.message}`;
     });
 
     const fileFormat = winston.format.printf((info) => {

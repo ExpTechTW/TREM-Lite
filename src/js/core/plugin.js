@@ -2,13 +2,10 @@ const TREM = require('../index/constant');
 const logger = require('./utils/logger');
 const { Logger } = require('./utils/logger');
 const { app } = require('@electron/remote');
-const semver = require('semver');
 const path = require('path');
 const fs = require('fs-extra');
 const AdmZip = require('adm-zip');
 const MixinManager = require('./mixin');
-const acorn = require('acorn');
-const walk = require('acorn-walk');
 const PluginVerifier = require('./verify');
 const crypto = require('crypto');
 const manager = require('./manager');
@@ -58,7 +55,6 @@ class PluginLoader {
       utils: {
         path: 'filesystem',
         fs: 'filesystem',
-        semver: 'version',
       },
       on: 'events',
     };
@@ -86,7 +82,6 @@ class PluginLoader {
       utils: {
         path,
         fs,
-        semver,
       },
       on: (event, handler) => {
         const handlers = this.eventHandlers.get(this.currentLoadingPlugin) || new Map();
@@ -127,82 +122,6 @@ class PluginLoader {
     }
 
     return PluginLoader.instance;
-  }
-
-  analyzePluginCode(code) {
-    const usedDependencies = new Set();
-    try {
-      const ast = acorn.parse(code, {
-        sourceType: 'module',
-        ecmaVersion: 'latest',
-      });
-
-      walk.simple(ast, {
-        VariableDeclarator: (node) => {
-          if (node.init?.type === 'MemberExpression' && node.init.object?.name === 'ctx') {
-            if (node.id.type === 'ObjectPattern') {
-              node.id.properties.forEach((prop) => {
-                const key = prop.key.name;
-                this.addDependency(key, usedDependencies);
-              });
-            }
-          }
-        },
-        MemberExpression: (node) => {
-          if (node.object?.name === 'ctx') {
-            const prop = node.property?.name;
-            if (prop) {
-              this.addDependency(prop, usedDependencies);
-            }
-          }
-          if (node.object?.type === 'MemberExpression'
-            && node.object.object?.name === 'ctx'
-            && node.object.property?.name === 'utils') {
-            const prop = node.property?.name;
-            if (prop) {
-              usedDependencies.add(`utils.${prop} (${this.availableCtxItems.utils[prop]})`);
-            }
-          }
-        },
-        FunctionDeclaration: (node) => {
-          const ctxParam = node.params.find((p) => p.name === 'ctx');
-          if (ctxParam) {
-            usedDependencies.add('ctx (system)');
-          }
-        },
-        ClassDeclaration: (node) => {
-          const constructor = node.body.body.find((m) => m.kind === 'constructor');
-          if (constructor) {
-            const ctxParam = constructor.value.params.find((p) => p.name === 'ctx');
-            if (ctxParam) {
-              usedDependencies.add('ctx (system)');
-            }
-          }
-        },
-      });
-
-      if (usedDependencies.size === 0 && code.includes('ctx')) {
-        usedDependencies.add('ctx (system)');
-      }
-
-      return {
-        usedDependencies: Array.from(usedDependencies),
-        sensitivity: this.calculateSensitivity(usedDependencies),
-      };
-    }
-    catch (error) {
-      logger.error('Failed to analyze plugin code:', error);
-      if (code) {
-        return {
-          usedDependencies: ['ctx (system)'],
-          sensitivity: { level: 1, description: this.getSensitivityDescription(1) },
-        };
-      }
-      return {
-        usedDependencies: [],
-        sensitivity: { level: 0, description: '分析失敗' },
-      };
-    }
   }
 
   addDependency(key, dependencies) {
@@ -281,7 +200,6 @@ class PluginLoader {
 
   readPluginInfo(pluginPath) {
     const infoPath = path.join(pluginPath, 'info.json');
-    const indexPath = path.join(pluginPath, 'index.js');
 
     try {
       const info = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
@@ -299,14 +217,6 @@ class PluginLoader {
       }
 
       info.dependencies = info.dependencies || {};
-
-      if (fs.existsSync(indexPath)) {
-        const pluginCode = fs.readFileSync(indexPath, 'utf8');
-        const analysis = this.analyzePluginCode(pluginCode);
-
-        info.ctxDependencies = analysis.usedDependencies;
-        info.sensitivity = analysis.sensitivity;
-      }
 
       return info;
     }
@@ -331,7 +241,7 @@ class PluginLoader {
     if (!version) {
       return 0;
     }
-    const parsed = semver.parse(version);
+    const parsed = this.parseVersion(version);
     if (!parsed) {
       return 0;
     }
@@ -350,8 +260,8 @@ class PluginLoader {
   }
 
   isExactVersionMatch(v1, v2) {
-    const parsed1 = semver.parse(v1);
-    const parsed2 = semver.parse(v2);
+    const parsed1 = this.parseVersion(v1);
+    const parsed2 = this.parseVersion(v2);
 
     if (!parsed1 || !parsed2) {
       return false;
@@ -375,8 +285,8 @@ class PluginLoader {
   }
 
   compareVersions(v1, v2) {
-    const parsed1 = semver.parse(v1);
-    const parsed2 = semver.parse(v2);
+    const parsed1 = this.parseVersion(v1);
+    const parsed2 = this.parseVersion(v2);
 
     if (!parsed1 || !parsed2) {
       return false;
@@ -1217,6 +1127,24 @@ class PluginLoader {
     catch (error) {
       logger.error(`Plugin download failed: ${error.message}`);
     }
+  }
+
+  parseVersion(version) {
+    const regex = /^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?(?:\+([\w.-]+))?$/;
+    const match = version.match(regex);
+
+    if (!match) {
+      return null;
+    }
+
+    return {
+      major: parseInt(match[1], 10),
+      minor: parseInt(match[2], 10),
+      patch: parseInt(match[3], 10),
+      prerelease: match[4] ? match[4].split('.') : [],
+      build: match[5] ? match[5].split('.') : [],
+      version,
+    };
   }
 }
 
