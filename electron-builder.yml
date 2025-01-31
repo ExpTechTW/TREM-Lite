@@ -4,7 +4,7 @@ directories:
   output: dist
   buildResources: resources
 
-asar: false
+asar: true
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 win:
