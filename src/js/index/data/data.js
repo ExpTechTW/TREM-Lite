@@ -38,6 +38,8 @@ class DataManager {
     });
 
     fs.readdir(replayDir, (err, list) => {
+      list = list.filter((file) => file !== '.DS_Store' && file.endsWith('.json'));
+
       if (list.length) {
         TREM.variable.play_mode = 3;
         TREM.variable.replay.start_time = Number(list[0].replace('.json', ''));
