@@ -246,6 +246,9 @@
 .copy-debug-log:before {
   content: "複製debug log";
 }
+.extended-state-list .extended-info:empty:before {
+  content: "未有異常擴充";
+}
 
 .eew-2 {
   &::before {
