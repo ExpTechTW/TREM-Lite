@@ -84,13 +84,7 @@ class PluginList {
 
   getPluginState() {
     let a = '';
-    const list = [
-      { type: 'error', plugin: 'websocket', msg: '缺少 logger 依賴' },
-      { type: 'info', plugin: 'config', msg: '缺少 logger 依賴' },
-      { type: 'warn', plugin: 'websocket', msg: '缺少 logger 依賴' },
-      { type: 'debug', plugin: 'websocket', msg: '缺少 logger 依賴' },
-    ];
-    list.forEach((item) => {
+    JSON.parse(localStorage.getItem('plugin-status')).forEach((item) => {
       const info = this.pluginList.filter((e) => e.name == item.plugin);
       console.log(info);
       const now = new Date();
