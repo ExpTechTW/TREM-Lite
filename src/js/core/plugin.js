@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const manager = require('./manager');
 const fetchData = require('./utils/fetch');
 const { ipcRenderer } = require('electron');
+const now = require('../index/utils/ntp');
 
 class PluginLoader {
   static instance = null;
@@ -45,6 +46,7 @@ class PluginLoader {
     this.scannedPlugins = new Map();
     this.tremVersion = app.getVersion();
     this.eventHandlers = new Map();
+    this.pluginStatus = [];
 
     this.availableCtxItems = {
       TREM: 'system',
@@ -238,6 +240,12 @@ class PluginLoader {
 
     if (trem) {
       if (!this.validateVersionRequirement(this.tremVersion, trem)) {
+        this.pluginStatus.push({
+          type: 'error',
+          time: now(),
+          plugin: pluginInfo.name,
+          msg: `擴充 ${pluginInfo.name} 需要至少 TREM-Lite 的版本為 ${trem} 以上，但目前安裝的版本為 ${this.tremVersion}。`,
+        });
         logger.error(`Plugin ${pluginInfo.name} requires TREM version ${trem}, but ${this.tremVersion} is installed`);
         return false;
       }
@@ -246,11 +254,23 @@ class PluginLoader {
     for (const [dep, version] of Object.entries(pluginDependencies)) {
       const dependencyPlugin = this.plugins[this.type].get(dep);
       if (!dependencyPlugin) {
+        this.pluginStatus.push({
+          type: 'error',
+          time: now(),
+          plugin: pluginInfo.name,
+          msg: `擴充 ${pluginInfo.name} 缺少 ${dep} 依賴。`,
+        });
         logger.error(`Missing dependency: ${dep} for plugin ${pluginInfo.name}`);
         return false;
       }
 
       if (!this.validateVersionRequirement(dependencyPlugin.info.version, version)) {
+        this.pluginStatus.push({
+          type: 'error',
+          time: now(),
+          plugin: pluginInfo.name,
+          msg: `擴充 ${pluginInfo.name} 需要至少 ${dep} 的版本為 ${version} 以上，但目前安裝的版本為 ${dependencyPlugin.info.version}。`,
+        });
         logger.error(`Plugin ${pluginInfo.name} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
         return false;
       }
@@ -477,6 +497,12 @@ class PluginLoader {
       return true;
     }
     catch (error) {
+      this.pluginStatus.push({
+        type: 'error',
+        time: now(),
+        plugin: pluginName,
+        msg: `擴充 ${pluginName} 初始化失敗，請聯繫擴充作者。`,
+      });
       logger.error(`Failed to initialize plugin ${pluginName}:`, error);
       return false;
     }
@@ -802,11 +828,23 @@ class PluginLoader {
         const verified = tremInfo?.verification?.valid || false;
 
         if (!verified && tremInfo?.verification?.error == 'Missing signature.json') {
+          this.pluginStatus.push({
+            type: 'error',
+            time: now(),
+            plugin: pluginName,
+            msg: `【!!!嚴重警告!!!】擴充 ${pluginName} 遺失簽名。`,
+          });
           logger.error(`[Plugin: ${pluginName}] 【!!!嚴重警告!!!】遺失簽名, Skipping plugin`);
           logger.error(`[Plugin: ${pluginName}] 【!!!WARNING!!!】Missing signature, Skipping plugin`);
           continue;
         }
         else if (!verified) {
+          this.pluginStatus.push({
+            type: 'warn',
+            time: now(),
+            plugin: pluginName,
+            msg: `【!!!嚴重警告!!!】擴充 ${pluginName} 未發現有效簽名，除非信任擴充來源否則應立即停用。`,
+          });
           logger.warn(`[Plugin: ${pluginName}] 【!!!嚴重警告!!!】未發現有效簽名，除非信任擴充來源否則應立即停用`);
           logger.warn(`[Plugin: ${pluginName}] 【!!!WARNING!!!】No valid signature found, disable immediately unless plugin source is trusted`);
         }
@@ -1121,6 +1159,7 @@ class PluginLoader {
       ...currentLoadedPlugins,
     ];
 
+    localStorage.setItem('plugin-status', JSON.stringify(this.pluginStatus));
     localStorage.setItem('loaded-plugins', JSON.stringify(updatedList));
 
     this.checkAutoDownload();
