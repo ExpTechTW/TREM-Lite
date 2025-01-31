@@ -2,29 +2,13 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <title>YAML Editor</title>
     <link rel="stylesheet" href="../css/core/loading.css" />
   </head>
   <body>
     <div class="container">
       <div class="windows-wrapper">
         <div class="windows-buttons minimize">━</div>
-        <!-- <div class="windows-buttons maximize">🗖</div> -->
         <div class="windows-buttons close">✖</div>
-      </div>
-      <div class="mode-selector">
-        <div class="mode-checkbox">
-          <input type="checkbox" id="yamlMode" checked />
-          <label for="yamlMode" class="yaml-title"></label>
-        </div>
-        <div class="mode-checkbox">
-          <input type="checkbox" id="visualMode" checked />
-          <label for="visualMode" class="visual-editor-title"></label>
-        </div>
-        <div class="mode-checkbox">
-          <input type="checkbox" id="jsonMode" checked />
-          <label for="jsonMode" class="json-title"></label>
-        </div>
       </div>
       <div class="editor-container" id="editorContainer">
         <div class="section" id="yamlSection">
@@ -36,25 +20,10 @@
             spellcheck="false"
           ></textarea>
         </div>
-        <div class="section" id="visualSection">
-          <h3 class="section-title visual-editor-title"></h3>
-          <div id="visualEditor" class="visual-editor"></div>
-        </div>
-        <div class="section" id="jsonSection">
-          <h3 class="section-title json-title"></h3>
-          <textarea
-            id="jsonEditor"
-            class="editor"
-            placeholder="JSON 內容..."
-            spellcheck="false"
-          ></textarea>
-        </div>
       </div>
       <div id="status" class="status"></div>
-      <div class="version">v1.0.0</div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script src="../js/plugin_edit/require.js" defer></script>
   </body>
 </html>

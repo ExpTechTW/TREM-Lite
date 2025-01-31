@@ -23,10 +23,7 @@ body {
   content: "JSON";
 }
 .yaml-title:before {
-  content: "YAML";
-}
-.visual-editor-title:before {
-  content: "視覺化編輯";
+  content: "YAML Editor";
 }
 .json-error:before {
   content: "JSON 格式錯誤";
@@ -103,12 +100,10 @@ body {
 
 .editor-container {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
   gap: 20px;
   padding: 20px;
   flex: 1;
   overflow: hidden;
-  padding-top: 0;
 }
 
 .section {
@@ -138,15 +133,6 @@ body {
   flex: 1;
   overflow: auto;
   outline: none;
-}
-
-.visual-editor {
-  flex: 1;
-  padding: 5px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--input-bg);
-  overflow-y: auto;
 }
 
 .status {
