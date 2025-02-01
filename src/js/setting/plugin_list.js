@@ -90,6 +90,7 @@ class PluginList {
       'version-low-greater': /需要至少 TREM-Lite 的版本為 >=.*以上，但目前安裝的版本為 .*\./,
       'version-low-equal': /需要至少 TREM-Lite 的版本為 =.*以上，但目前安裝的版本為 .*\./,
       'missing-dependencies': /缺少.*依賴/,
+      'init-error': /初始化失敗/,
     };
     let cssRules = '';
     data.forEach((item) => {
