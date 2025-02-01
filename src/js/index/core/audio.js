@@ -131,6 +131,7 @@ class AudioManager {
     TREM.variable.events.on('EewRelease', this.handleEewRelease.bind(this));
     TREM.variable.events.on('EewAlert', this.handleEewAlert.bind(this));
     TREM.variable.events.on('EewUpdate', this.handleEewUpdate.bind(this));
+    TREM.variable.events.on('EewCancel', this.handleEewCancel.bind(this));
     TREM.variable.events.on('EewEnd', this.handleEewEnd.bind(this));
     TREM.variable.events.on('RtsPga2', this.handleRtsPga2.bind(this));
     TREM.variable.events.on('RtsPga1', this.handleRtsPga1.bind(this));
@@ -205,6 +206,22 @@ class AudioManager {
     notification.onclick = () => {
       win.show();
     };
+  }
+
+  handleEewCancel(ans) {
+    const notification = new Notification(`⚠️ 地震速報 ${ans.data.serial}報 (取消)`, {
+      body: `${formatTimestamp(ans.data.eq.time)} 最大預估不明\n${ans.data.eq.loc} M0.0 0km`,
+      icon: '../TREM.ico',
+    });
+
+    notification.onclick = () => {
+      win.show();
+    };
+
+    TREM.variable.speech.speak({
+      text: `剛才的地震速報被取消了`,
+      queue: true,
+    });
   }
 
   handleEewEnd(ans) {
