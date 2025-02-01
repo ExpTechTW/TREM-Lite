@@ -129,7 +129,21 @@ TREM.variable.events.on('DataRts', (ans) => {
   const eew_alert = (TREM.variable.data.eew.length && TREM.constant.SHOW_TREM_EEW) ? true : TREM.variable.data.eew.some((item) => item.author != 'trem');
 
   if (ans.data) {
-    const alert = Object.keys(ans.data.box).length;
+    let alert = Object.keys(ans.data.box).length;
+
+    let maxPgaKey = null;
+    let maxPgaValue = -Infinity;
+    let maxPgaStationData = null;
+
+    for (const [key, data] of Object.entries(ans.data.station)) {
+      if (data.pga > maxPgaValue) {
+        maxPgaValue = data.pga;
+        maxPgaKey = key;
+        maxPgaStationData = data;
+      }
+    }
+
+    alert = alert ? true : (maxPgaStationData.pga > TREM.constant.DEV_NSSPE.PGA_LEVEL && (TREM.constant.DEV_NSSPE.STATION.includes('all') || TREM.constant.DEV_NSSPE.STATION.includes(maxPgaKey))) ? true : false;
 
     if (!alert) {
       TREM.variable.cache.rts_alert = false;
@@ -161,6 +175,9 @@ TREM.variable.events.on('DataRts', (ans) => {
       if (!station_info) {
         continue;
       }
+
+      ans.data.station[id].alert = ans.data.station[id].alert ? true : (ans.data.station[id].pga > TREM.constant.DEV_NSSPE.PGA_LEVEL && (TREM.constant.DEV_NSSPE.STATION.includes('all') || TREM.constant.DEV_NSSPE.STATION.includes(id))) ? true : false;
+
       const station_location = station_info.info.at(-1);
 
       if (ans.data.station[id].pga > pga) {

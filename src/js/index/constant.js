@@ -157,6 +157,11 @@ const TREM = {
       'TsunamiRelease',
       'EewNewAreaAlert',
     ],
+
+    DEV_NSSPE: {
+      STATION: [],
+      PGA_LEVEL: 8,
+    },
   },
 
   variable: {
