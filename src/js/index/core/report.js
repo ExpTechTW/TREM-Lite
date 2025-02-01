@@ -379,7 +379,7 @@ class ReportManager {
   }
 
   async refresh() {
-    const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+    const url = TREM.constant.URL.API[0];
     let reportList = await this.getReport(url);
     if (!reportList) {
       return;
