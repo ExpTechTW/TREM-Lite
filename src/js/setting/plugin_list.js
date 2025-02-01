@@ -85,35 +85,56 @@ class PluginList {
   getPluginState() {
     let a = '';
     const data = JSON.parse(localStorage.getItem('plugin-status'));
+    const msgClassMap = {
+      'no-certificate': /未發現有效簽名/,
+      'version-low-greater': /需要至少 TREM-Lite 的版本為 >=.*以上，但目前安裝的版本為 .*\./,
+      'version-low-equal': /需要至少 TREM-Lite 的版本為 =.*以上，但目前安裝的版本為 .*\./,
+      'missing-dependencies': /缺少.*依賴/,
+    };
+    let cssRules = '';
     data.forEach((item) => {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const seconds = String(now.getSeconds()).padStart(2, '0');
+      let msgClass = '';
+      for (const [className, regex] of Object.entries(msgClassMap)) {
+        if (regex.test(item.msg)) {
+          msgClass = className;
+          cssRules += `.${className}:before {
+            content: "${item.msg.replace(/"/g, '\\"')}"!important;
+            font-weight: bold;
+          }\n`;
+          break;
+        }
+      }
       a += `<div class="wave-container ${item.type === 'error' ? 'wave-unverified' : (item.type === 'warn' ? 'wave-unloaded' : '')}">
-          <div class="setting-option">
-            <div class="extended-list" style="justify-content: space-between;">
-              <div class="extended-list-box" style="width:98%">
-                <div class="extended-list-left">
-                  <div class="extended-list-title-box">
-                    <span class="plugin-list-title">${item.plugin}</span>
-                  </div> 
-                </div>
-                <div class="extended-list-description-box" style="text-align: end;">
-                  <span class="extended-list-descriptions">
-                    [${hours}:${minutes}:${seconds}][
-                    <span style="color:${item.type === 'info' ? '#00aa00' : item.type === 'error' ? '#b62323' : item.type === 'warn' ? '#aa5500' : ''}">
-                      ${item.type.toUpperCase()}
-                    </span>]
-                  </span>
-                  <span class="extended-list-descriptions">${item.msg}</span>
+              <div class="setting-option">
+                <div class="extended-list" style="justify-content: space-between;">
+                  <div class="extended-list-box" style="width:98%">
+                    <div class="extended-list-left">
+                      <div class="extended-list-title-box">
+                        <span class="plugin-list-title">${item.plugin}</span>
+                      </div> 
+                    </div>
+                    <div class="extended-list-description-box" style="text-align: end;">
+                      <span class="extended-list-descriptions">
+                        [${hours}:${minutes}:${seconds}][
+                        <span style="color:${item.type === 'info' ? '#00aa00' : item.type === 'error' ? '#b62323' : item.type === 'warn' ? '#aa5500' : ''}">
+                          ${item.type.toUpperCase()}
+                        </span>]
+                      </span>
+                      <span class="extended-list-descriptions ${msgClass}" style="text-align: justify;"></span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>`;
+            </div>`;
     });
     document.querySelector('.extended-state-list .extended-info').innerHTML = a;
+    const styleElement = document.createElement('style');
+    styleElement.textContent = cssRules;
+    document.head.appendChild(styleElement);
   }
 
   createPluginStoreList() {

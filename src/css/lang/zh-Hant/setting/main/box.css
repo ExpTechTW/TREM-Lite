@@ -1273,6 +1273,7 @@ li {
   border-bottom: unset !important;
   width: auto;
   align-items: unset !important;
+  min-width: 20%;
 }
 
 .extended-list-buttons {
