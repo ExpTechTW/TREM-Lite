@@ -125,7 +125,13 @@ setInterval(() => {
   flash = !flash;
 }, 500);
 
+let draw_lock = false;
+
 setInterval(() => {
+  if (draw_lock) {
+    return;
+  }
+  draw_lock = true;
   const alert = TREM.variable.data.eew.some((eew) => eew.author != 'trem');
 
   const isMouseDown = TREM.class.FocusManager?.getInstance().mouseDown();
@@ -170,6 +176,7 @@ setInterval(() => {
       pWaveSource.setData({ type: 'FeatureCollection', features: [createCircleFeature(center, dist.p_dist)] });
     }
   }
+  draw_lock = false;
 }, 100);
 
 setInterval(show_eew, 5000);

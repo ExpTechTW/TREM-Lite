@@ -104,7 +104,7 @@ class DataManager {
     TREM.variable.events.on('MapLoad', () => {
       setInterval(async () => {
         await this.fetchData();
-      }, 0);
+      }, 100);
     });
 
     fs.readdir(replayDir, (err, list) => {
