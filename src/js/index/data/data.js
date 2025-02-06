@@ -38,6 +38,10 @@ class DataManager {
     });
 
     fs.readdir(replayDir, (err, list) => {
+      if (!list) {
+        return;
+      }
+
       list = list.filter((file) => file !== '.DS_Store' && file.endsWith('.json'));
 
       if (list.length) {
