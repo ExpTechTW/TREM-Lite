@@ -36,7 +36,7 @@ class PluginLoader {
 
     this.verifier.loadKeysFromDirectory(keysDir);
     this.pluginDir = path.join(app.getPath('userData'), 'plugins');
-    this.tempDir = path.join(app.getPath('temp'), 'trem-plugins');
+    this.tempDir = path.join(app.getPath('userData'), 'plugins-temp');
     this.plugins = {};
     this.plugins[this.type] = new Map();
     this.loadOrder = [];

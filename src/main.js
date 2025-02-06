@@ -19,7 +19,7 @@ let forceQuit = false;
 const hide = process.argv.includes('--start') ? true : false;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
 const replayDir = path.join(app.getPath('userData'), 'replay');
-const tempDir = path.join(app.getPath('temp'), 'trem-plugins');
+const tempDir = path.join(app.getPath('userData'), 'plugins-temp');
 const configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
 const is_mac = process.platform === 'darwin';
