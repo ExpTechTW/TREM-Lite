@@ -13,7 +13,7 @@ let requestCounter = 0;
 async function getData(time) {
   time = Math.round(time / 1000);
   requestCounter++;
-  const shouldFetchLPGM = requestCounter % 10 === 0;
+  const shouldFetchLPGM = requestCounter % 7 === 0;
   const shouldFetchIntensity = requestCounter % 5 === 0;
 
   const url = (time)

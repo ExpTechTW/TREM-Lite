@@ -109,13 +109,14 @@ const TREM = {
     },
 
     HTTP_TIMEOUT: {
+      LOOP: 1000,
       RESOURCE: 3500,
-      RTS: 1500,
-      EEW: 1500,
+      RTS: 1000,
+      EEW: 1000,
       REPORT: 5000,
-      INTENSITY: 1500,
-      LPGM: 1500,
-      NTP: 1500,
+      INTENSITY: 1000,
+      LPGM: 1000,
+      NTP: 1000,
     },
 
     LAST_DATA_TIMEOUT_ERROR: 3000,

@@ -11,6 +11,76 @@ const replayDir = path.join(app.getPath('userData'), 'replay');
 let file_list = [];
 let file_index = 0;
 
+class TimeoutManager {
+  constructor() {
+    this.originalTimeouts = {
+      LOOP: TREM.constant.HTTP_TIMEOUT.LOOP,
+      RTS: TREM.constant.HTTP_TIMEOUT.RTS,
+      EEW: TREM.constant.HTTP_TIMEOUT.EEW,
+    };
+
+    this.MIN_TIMEOUT = 1000;
+    this.MAX_TIMEOUT = 10000;
+
+    this.failureCount = 0;
+    this.maxFailures = 5;
+  }
+
+  adjustTimeouts(data) {
+    if (!data.eew && !data.rts) {
+      this.failureCount = Math.min(this.failureCount + 1, this.maxFailures);
+
+      const increaseAmount = Math.min(
+        1000 * (1 + this.failureCount * 0.5),
+        this.MAX_TIMEOUT - TREM.constant.HTTP_TIMEOUT.LOOP,
+      );
+
+      if (TREM.constant.HTTP_TIMEOUT.LOOP < this.MAX_TIMEOUT) {
+        ['LOOP', 'RTS', 'EEW'].forEach((type) => {
+          TREM.constant.HTTP_TIMEOUT[type] = Math.min(
+            TREM.constant.HTTP_TIMEOUT[type] + increaseAmount,
+            this.MAX_TIMEOUT,
+          );
+        });
+      }
+
+      console.log(`Increased timeouts by ${increaseAmount}ms (Failure count: ${this.failureCount})`);
+      return false;
+    }
+    else {
+      this.failureCount = Math.max(0, this.failureCount - 1);
+
+      const decreaseAmount = Math.min(
+        500 * (1 + (5 - this.failureCount) * 0.3),
+        TREM.constant.HTTP_TIMEOUT.LOOP - this.MIN_TIMEOUT,
+      );
+
+      if (TREM.constant.HTTP_TIMEOUT.LOOP > this.MIN_TIMEOUT) {
+        ['LOOP', 'RTS', 'EEW'].forEach((type) => {
+          TREM.constant.HTTP_TIMEOUT[type] = Math.max(
+            TREM.constant.HTTP_TIMEOUT[type] - decreaseAmount,
+            this.originalTimeouts[type],
+          );
+        });
+      }
+
+      if (decreaseAmount > 0) {
+        console.log(`Decreased timeouts by ${decreaseAmount}ms (Stability count: ${5 - this.failureCount})`);
+      }
+      return true;
+    }
+  }
+
+  reset() {
+    Object.keys(this.originalTimeouts).forEach((type) => {
+      TREM.constant.HTTP_TIMEOUT[type] = this.originalTimeouts[type];
+    });
+    this.failureCount = 0;
+  }
+}
+
+const timeoutManager = new TimeoutManager();
+
 class DataManager {
   static instance = null;
 
@@ -55,7 +125,7 @@ class DataManager {
   async fetchData() {
     const localNow = Date.now();
 
-    if (localNow - this.lastFetchTime < 1000) {
+    if (localNow - this.lastFetchTime < TREM.constant.HTTP_TIMEOUT.LOOP) {
       return;
     }
     this.lastFetchTime = localNow;
@@ -83,6 +153,10 @@ class DataManager {
     }
 
     const data = await http((TREM.variable.play_mode == 0 || TREM.variable.play_mode == 1) ? null : now());
+
+    if (!timeoutManager.adjustTimeouts(data)) {
+      return;
+    }
 
     if (TREM.variable.play_mode == 0 || TREM.variable.play_mode == 2) {
       if (!TREM.variable.data.rts
