@@ -209,7 +209,7 @@ function show_eew(rotation = true) {
 
         info_wrapper.className = `info-wrapper ${statusClass}`;
         info_number.textContent = eew.serial;
-        info_number.className = `info-number${eew.final ? ' info-number-last' : ''}`;
+        info_number.className = `info-number${eew.status == 3 ? ' info-cancel-last' : eew.final ? ' info-number-last' : ''}`;
 
         const unitText = `${eew.author.toUpperCase()}${count == 1 ? '' : ` ${eew_rotation + 1}/${count}`}`;
         info_unit.textContent = unitText;

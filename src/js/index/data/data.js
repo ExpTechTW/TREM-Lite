@@ -193,7 +193,7 @@ class DataManager {
   processEEWData(newData = []) {
     const currentTime = now();
     const EXPIRY_TIME = 240 * 1000;
-    const STATUS_3_TIMEOUT = 30 * 1000;
+    const STATUS_3_TIMEOUT = 60 * 1000;
 
     TREM.variable.data.eew
       .filter((item) =>
