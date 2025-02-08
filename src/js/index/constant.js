@@ -106,6 +106,7 @@ const TREM = {
       SHINDO2: new Audio('../audio/SHINDO2.wav'),
       TSUNAMI: new Audio('../audio/TSUNAMI.wav'),
       UPDATE: new Audio('../audio/UPDATE.wav'),
+      CANCEL: new Audio('../audio/CANCEL.wav'),
     },
 
     HTTP_TIMEOUT: {

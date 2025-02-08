@@ -218,10 +218,11 @@ class AudioManager {
       win.show();
     };
 
-    TREM.variable.speech.speak({
-      text: `剛才的地震速報被取消了`,
-      queue: true,
-    });
+    this.audioQueues.eew.add(TREM.constant.AUDIO.CANCEL, this.priorityRules.eew);
+    // TREM.variable.speech.speak({
+    //   text: `剛才的地震速報被取消了`,
+    //   queue: true,
+    // });
   }
 
   handleEewEnd(ans) {
