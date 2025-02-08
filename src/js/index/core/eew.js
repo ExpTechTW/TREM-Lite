@@ -205,7 +205,7 @@ function show_eew(rotation = true) {
       }
       else {
         const eew = eew_cache[eew_list[eew_rotation]];
-        const statusClass = eew.status == 3 ? 'eew-cancel' : eew.status == 1 ? 'eew-alert' : 'eew-warn';
+        const statusClass = eew.status == 3 ? 'eew-cancel' : eew.status == 1 ? 'eew-alert' : eew.author == 'trem' && !eew.rts ? 'eew-rts' : 'eew-warn';
 
         info_wrapper.className = `info-wrapper ${statusClass}`;
         info_number.textContent = eew.serial;

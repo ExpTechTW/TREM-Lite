@@ -62,6 +62,7 @@ const TREM = {
           WARN: '#ffaa00',
           ALERT: '#ff0000',
           CANCEL: '#000',
+          RTS: '#0005d0',
         },
         TRIGGER: {
           LOW: '#1e9632',

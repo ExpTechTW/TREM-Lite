@@ -24,6 +24,7 @@ function generateColorCSS() {
       --eew-s-warn: ${TREM.constant.COLOR.EEW.S.WARN};
       --eew-s-alert: ${TREM.constant.COLOR.EEW.S.ALERT};
       --eew-s-cancel: ${TREM.constant.COLOR.EEW.S.CANCEL};
+      --eew-s-rts: ${TREM.constant.COLOR.EEW.S.RTS};
       --eew-p: ${TREM.constant.COLOR.EEW.P};
     }
   </style>

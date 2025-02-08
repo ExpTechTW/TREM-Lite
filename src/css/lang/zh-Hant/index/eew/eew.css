@@ -36,6 +36,14 @@
   content: "緊急地震速報 ";
 }
 
+.eew-cancel .info-unit::before {
+  content: "地震速報 ";
+}
+
+.eew-rts .info-unit::before {
+  content: "單點地震檢知 ";
+}
+
 .info-number-last::after {
   content: "報(最終報)" !important;
 }
@@ -108,6 +116,11 @@
 .eew-cancel {
   background-color: var(--eew-s-cancel) !important;
   border: 1px solid var(--eew-s-cancel) !important;
+}
+
+.eew-rts {
+  background-color: var(--eew-s-rts) !important;
+  border: 1px solid var(--eew-s-rts) !important;
 }
 
 .info-wrapper {
