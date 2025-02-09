@@ -88,7 +88,7 @@
 }
 
 .survey .report-mag-dep {
-  display: none;
+  display: none !important;
 }
 
 .survey .report-loc:before {
