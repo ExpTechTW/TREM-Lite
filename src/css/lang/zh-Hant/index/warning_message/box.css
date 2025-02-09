@@ -1,7 +1,4 @@
-﻿@import url("../../root/index.css");
-@import url("../../text/index.css");
-
-.warning-message-wrapper {
+﻿.warning-message-wrapper {
   top: 2em;
   right: 315px;
   font-size: 15px;

@@ -1,6 +1,7 @@
 @import url("../font.css");
 @import url("./main/box.css");
 @import url("../root/index.css");
+@import url("../text/index.css");
 
 body {
   user-select: none;

@@ -1,5 +1,3 @@
-@import url("../../root/index.css");
-@import url("../../text/index.css");
 
 .rts-trigger-low {
   background-color: var(--rts-trigger-low) !important;

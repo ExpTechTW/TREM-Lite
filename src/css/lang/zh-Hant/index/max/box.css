@@ -1,7 +1,4 @@
-﻿@import url("../../root/index.css");
-@import url("../../text/index.css");
-
-.station-pga-wrapper {
+﻿.station-pga-wrapper {
   position: absolute;
   left: 6.9rem;
   top: 10rem;
