@@ -1,4 +1,6 @@
-﻿.intensity-color-list-wrapper {
+﻿@import url("../../root/index.css");
+
+.intensity-color-list-wrapper {
   display: flex;
   height: auto;
   position: absolute;

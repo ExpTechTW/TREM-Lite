@@ -7,6 +7,8 @@
 @import url("./nav_bar/box.css");
 @import url("./eew/rwd.css");
 @import url("./warning_message/box.css");
+@import url("../root/index.css");
+@import url("../text/index.css");
 
 body {
   user-select: none;
@@ -15,11 +17,6 @@ body {
   font-variant-numeric: tabular-nums;
   text-rendering: optimizeLegibility;
   overflow: hidden;
-
-  --surface-hsl: 0deg 0% 25%;
-  --surface-variant-hsl: 0deg 0% 20%;
-  --background-hsl: 0deg 0% 13%;
-  --background-variant-hsl: 0deg 0% 16%;
 }
 
 ::-webkit-scrollbar {
@@ -31,8 +28,9 @@ body {
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-track-piece {
-  background: transparent;
+::-webkit-scrollbar-track-piece,
+::-webkit-scrollbar-track {
+  box-shadow: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -41,20 +39,13 @@ body {
   border: 1px solid #393939;
 }
 
-::-webkit-scrollbar-track {
-  box-shadow: transparent;
-}
-
 .map {
   height: 100%;
   width: 100%;
   outline: none;
 }
 
-.maplibregl-canvas:focus {
-  outline: none !important;
-}
-
+.maplibregl-canvas:focus,
 .maplibregl-canvas-container:focus {
   outline: none !important;
 }
@@ -71,26 +62,22 @@ body {
   min-width: 145px;
   justify-content: space-around;
 
+  #time {
+    font-weight: bold;
+  }
+
   .time-error {
-    color: red;
+    color: var(--danger);
   }
 
   .time-normal {
-    color: white;
+    color: var(--light);
   }
 
   .time-replay {
-    color: yellow;
+    color: var(--warning);
   }
 }
-
-/**版本號**/
-html[lang="zh-Hant"] {
-  .version-check-text::before {
-    content: "新版本";
-  }
-}
-
 .current-version-view {
   top: 0.3em;
   right: 350px;
@@ -112,7 +99,7 @@ html[lang="zh-Hant"] {
   position: absolute;
   background-color: #505050c7;
   width: auto;
-  color: white;
+  color: var(--light);
   border: 2px solid #00000008;
   padding: 3px;
   border-radius: 5px;
@@ -153,17 +140,17 @@ html[lang="zh-Hant"] {
 .version-check.new {
   border: 2px solid transparent;
   transition: border-color 0.3s ease-in-out;
-  animation: new_version 3s infinite;
+  animation: new-version 3s infinite;
   display: flex;
 }
 
-@keyframes new_version {
+@keyframes new-version {
   0% {
     border-color: transparent;
   }
 
   50% {
-    border-color: #fff900;
+    border-color: var(--warning);
   }
 
   100% {

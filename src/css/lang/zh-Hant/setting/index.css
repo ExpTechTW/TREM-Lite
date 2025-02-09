@@ -1,5 +1,6 @@
 @import url("../font.css");
 @import url("./main/box.css");
+@import url("../root/index.css");
 
 body {
   user-select: none;
@@ -8,10 +9,6 @@ body {
   font-variant-numeric: tabular-nums;
   text-rendering: optimizeLegibility;
   overflow: hidden;
-  --surface-hsl: 0deg 0% 25%;
-  --surface-variant-hsl: 0deg 0% 20%;
-  --background-hsl: 0deg 0% 13%;
-  --background-variant-hsl: 0deg 0% 16%;
   font-weight: bold;
 }
 
@@ -22,19 +19,22 @@ body {
   padding: 5px !important;
   transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
-
 .wave-container.removing {
   transform: translateX(100%);
   opacity: 0;
 }
 
-.wave-unverified::after {
+.wave::after {
   content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 200%;
   height: 100%;
+  animation: slide 2s linear infinite, fadeIn 0.5s ease-in;
+  pointer-events: none;
+}
+.wave-unverified::after {
   background: repeating-linear-gradient(
     90deg,
     transparent 0%,
@@ -43,17 +43,8 @@ body {
     transparent 65%,
     transparent 100%
   );
-  animation: slide 2s linear infinite, fadeIn 0.5s ease-in;
-  pointer-events: none;
 }
-
 .wave-unloaded::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 200%;
-  height: 100%;
   background: repeating-linear-gradient(
     90deg,
     transparent 0%,
@@ -62,8 +53,6 @@ body {
     transparent 65%,
     transparent 100%
   );
-  animation: slide 2s linear infinite, fadeIn 0.5s ease-in;
-  pointer-events: none;
 }
 
 @keyframes slide {
@@ -78,13 +67,11 @@ body {
 .switch {
   display: inline-block;
 }
-
 .switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
-
 .slider {
   position: absolute;
   cursor: pointer;
@@ -95,7 +82,6 @@ body {
   background-color: #ccc;
   transition: 0.4s ease-in-out;
 }
-
 .slider:before {
   position: absolute;
   content: "";
@@ -103,41 +89,26 @@ body {
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: white;
+  background-color: var(--light);
   transition: 0.4s ease-in-out;
 }
-
 .slider.round {
   border-radius: 24px;
 }
-
 .slider.round:before {
   border-radius: 50%;
 }
-
+input:checked + .slider {
+  background-color: var(--primary);
+}
 input:checked + .slider:before {
   transform: translateX(26px);
 }
-
-input:checked + .slider {
-  background-color: #2196f3;
-}
-
 input[data-verified="false"]:checked + .slider {
-  background-color: #ff4444;
+  background-color: var(--danger);
 }
-
 input[data-loaded="false"]:checked + .slider {
-  background-color: #ffd700;
-}
-
-@keyframes slide {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(66.66%);
-  }
+  background-color: var(--warning);
 }
 
 .verified-badge,
@@ -150,39 +121,33 @@ input[data-loaded="false"]:checked + .slider {
   margin: 2px;
   width: max-content;
 }
+.verified-badge {
+  background-color: var(--primary);
+  color: var(--light);
+}
+.unverified-badge {
+  background-color: var(--danger);
+  color: var(--light);
+}
+.loaded-badge {
+  background-color: var(--success);
+  color: var(--light);
+}
+.unloaded-badge {
+  background-color: var(--warning);
+  color: var(--dark);
+}
 
 .plugin-list-title {
   font-size: 17px;
   font-weight: 900;
 }
-
 .status-box {
   padding: 6px !important;
   padding-left: 0 !important;
 }
-
-.verified-badge {
-  background-color: #2196f3;
-  color: white;
-}
-
-.unverified-badge {
-  background-color: #ff4444;
-  color: white;
-}
-
-.loaded-badge {
-  background-color: #4caf50;
-  color: white;
-}
-
-.unloaded-badge {
-  background-color: #ffd700;
-  color: black;
-}
-
 .disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: black !important;
+  background-color: var(--dark) !important;
 }

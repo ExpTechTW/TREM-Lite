@@ -1,26 +1,28 @@
-/**RWD**/
 @media (max-width: 980px) {
   .info-wrapper {
-    width: 275px;
-    max-width: 290px;
+    min-width: 17rem;
+    max-width: 320px;
   }
 
   .info-nsspe {
-    font-size: 12px !important;
+    font-size: 14px !important;
   }
 
   .info-depth {
-    width: 90px !important;
+    width: auto !important;
+    min-width: 50px;
   }
 
   .info-mag-val,
   .info-depth-val {
     font-size: 20px !important;
-    margin-top: 3px !important;
+    margin-top: 14px !important;
+    min-width: 70px;
+    width: auto;
   }
 
   .info-mag-val {
-    width: 85px !important;
+    width: auto !important;
   }
 
   .report-depth-val {
@@ -28,23 +30,17 @@
     margin-top: -2px !important;
   }
 
-  .report-depth-val {
-    &:after {
-      font-size: 16px !important;
-    }
+  .report-depth-val:after {
+    font-size: 16px !important;
   }
 
-  .report-mag-val,
-  .info-mag-val {
-    &:before {
-      font-size: 20px !important;
-    }
+  .report-mag-val:before,
+  .info-mag-val:before {
+    font-size: 20px !important;
   }
 
-  .info-depth-val {
-    &:after {
-      font-size: 17px !important;
-    }
+  .info-depth-val:after {
+    font-size: 17px !important;
   }
 
   .info-mag-text,
@@ -52,6 +48,7 @@
   .report-mag-text,
   .report-depth-text {
     font-size: 24px !important;
+    margin-top: 5px;
   }
 
   .info-title-box {
@@ -79,7 +76,9 @@
 
   .info-body-wrapper {
     min-height: 85px !important;
-    max-height: 85px;
+    /* max-height: 85px; */
+    min-width: auto;
+    gap: 0;
   }
 
   .info-loc {
@@ -118,6 +117,10 @@
 
   #max-pga {
     margin-top: 0px;
+  }
+
+  .info-more {
+    gap: 7px;
   }
 
   .info-footer {
@@ -176,21 +179,20 @@
     margin-top: -10px;
   }
 
-  .intensity-0 {
-    &:not(
-        #max-intensity,
-        #max-pga,
-        #current-station-intensity,
-        .rts-intensity
-      )::after {
-      content: "不明";
-      font-size: 20px !important;
-    }
+  .intensity-0:not(
+      #max-intensity,
+      #max-pga,
+      #current-station-intensity,
+      .rts-intensity
+    )::after {
+    content: "不明";
+    font-size: 20px !important;
   }
 
   .info-unit,
   .info-number {
     font-size: 14px !important;
+    margin-right: 5px;
   }
 
   .current-station-loc {
@@ -235,10 +237,9 @@
     .report-mag-val {
       font-size: 20px !important;
       margin-top: 4px !important;
-
-      &:before {
-        font-size: 20px !important;
-      }
+    }
+    .report-mag-val:before {
+      font-size: 20px !important;
     }
     .report-loc {
       font-size: 21px !important;
@@ -257,10 +258,10 @@
     .report-depth-val {
       font-size: 20px !important;
       margin-top: 0px !important;
+    }
 
-      &:after {
-        font-size: 15px !important;
-      }
+    .report-depth-val :after {
+      font-size: 15px !important;
     }
   }
 
@@ -304,7 +305,6 @@
   }
 }
 
-/**RWD**/
 @media (max-height: 660px) {
   .intensity-color-list {
     height: 185px !important;

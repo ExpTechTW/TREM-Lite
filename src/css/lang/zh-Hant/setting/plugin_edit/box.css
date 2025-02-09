@@ -1,4 +1,6 @@
 @import url("../../font.css");
+@import url("../../root/index.css");
+@import url("../../text/index.css");
 
 body {
   user-select: none;
@@ -6,87 +8,26 @@ body {
   font-family: Manrope, "Noto Sans TC", sans-serif;
   text-rendering: optimizeLegibility;
   overflow: hidden;
-
-  --surface-hsl: 0deg 0% 25%;
-  --surface-variant-hsl: 0deg 0% 20%;
-  --background-hsl: 0deg 0% 13%;
-  --background-variant-hsl: 0deg 0% 16%;
-}
-
-.btn-add:before {
-  content: "新增項目";
-}
-.root:before {
-  content: "新增根級欄位";
-}
-.json-title:before {
-  content: "JSON";
-}
-.yaml-title:before {
-  content: "YAML Editor";
-}
-.json-error:before {
-  content: "JSON 格式錯誤";
-}
-.yaml-transfer-error:before {
-  content: "YAML 轉換錯誤";
-}
-.yaml-extract-error:before {
-  content: "YAML 解析錯誤";
-}
-.auto-save-success:before {
-  content: "已自動儲存";
-}
-.auto-save-error:before {
-  content: "儲存錯誤";
-}
-.load-error:before {
-  content: "讀取錯誤";
-}
-
-:root {
-  --bg-color: #1a1a1a;
-  --container-bg: #2d2d2d;
-  --text-color: #ffffff;
-  --border-color: #404040;
-  --input-bg: #3d3d3d;
-  --hover-color: #404040;
-  --primary-color: #64b5f6;
-  --error-color: #ff6b6b;
-  --success-color: #81c784;
-  --field-bg: #363636;
+  background-color: var(--bg-color);
+  color: var(--light);
+  border: 1px solid #ffffff42;
 }
 
 ::-webkit-scrollbar {
   width: 10px;
 }
-
-::-webkit-scrollbar-button {
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-track-piece {
   background: transparent;
   border-radius: 4px;
 }
-
-::-webkit-scrollbar-track-piece {
-  background: transparent;
-}
-
 ::-webkit-scrollbar-thumb {
   border-radius: 4px;
   background-color: rgb(0 0 0 / 40%);
   border: 1px solid #727272;
 }
-
 ::-webkit-scrollbar-track {
   box-shadow: transparent;
-}
-
-body {
-  margin: 0;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  user-select: none;
-  border: 1px solid #ffffff42;
-  border-radius: unset;
 }
 
 .container {
@@ -97,7 +38,6 @@ body {
   height: 99.7vh;
   -webkit-app-region: drag;
 }
-
 .editor-container {
   display: grid;
   gap: 20px;
@@ -113,7 +53,6 @@ body {
   overflow: hidden;
   -webkit-app-region: no-drag;
 }
-
 .section-title {
   margin: 0 0 10px 0;
   padding: 0;
@@ -126,7 +65,7 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background-color: var(--input-bg);
-  color: var(--text-color);
+  color: var(--light);
   resize: none;
   white-space: pre;
   tab-size: 2;
@@ -147,21 +86,18 @@ body {
   transition: opacity 0.5s ease, transform 0.5s ease;
   transform: translateY(20px);
 }
-
-.success {
-  background-color: var(--success-color);
-  color: white;
+.success,
+.error {
+  color: var(--light);
   display: block;
   opacity: 1;
   transform: translateY(0);
 }
-
+.success {
+  background-color: var(--success);
+}
 .error {
-  background-color: var(--error-color);
-  color: white;
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
+  background-color: var(--danger);
 }
 
 .field {
@@ -171,32 +107,29 @@ body {
   border-radius: 4px;
   border: 1px solid var(--border-color);
 }
-
 .field-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
 }
-
 .field-label {
   font-weight: bold;
-  color: var(--primary-color);
-}
-
-.field-value {
-  margin-top: 5px;
+  color: var(--primary);
 }
 
 .input {
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
-  color: var(--text-color);
+  color: var(--light);
   padding: 8px;
   border-radius: 4px;
   width: calc(100% - 18px);
   margin: 2px 0;
   outline: none;
+}
+select.input {
+  width: 100%;
 }
 
 .toggle {
@@ -205,13 +138,11 @@ body {
   width: 60px;
   height: 34px;
 }
-
 .toggle input {
   opacity: 0;
   width: 0;
   height: 0;
 }
-
 .slider {
   position: absolute;
   cursor: pointer;
@@ -223,7 +154,6 @@ body {
   transition: 0.4s;
   border-radius: 34px;
 }
-
 .slider:before {
   position: absolute;
   content: "";
@@ -231,15 +161,13 @@ body {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
+  background-color: var(--light);
   transition: 0.4s;
   border-radius: 50%;
 }
-
 input:checked + .slider {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
 }
-
 input:checked + .slider:before {
   transform: translateX(26px);
 }
@@ -249,76 +177,31 @@ input:checked + .slider:before {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  color: white;
+  color: var(--light);
   margin: 5px;
 }
-
 .btn-add {
-  background-color: var(--success-color);
+  background-color: var(--success);
 }
-
 .btn-remove {
-  background-color: var(--error-color);
+  background-color: var(--danger);
 }
 
 .nested {
   margin-left: 20px;
   padding-left: 10px;
-  border-left: 2px solid var(--primary-color);
+  border-left: 2px solid var(--primary);
 }
-
-select.input {
-  width: 100%;
-}
-
 .type-indicator {
   font-size: 0.8em;
   color: #888;
   margin-left: 10px;
 }
-
-.mode-selector {
-  padding: 20px;
-  display: flex;
-  gap: 10px;
-  background-color: var(--container-bg);
-}
-
-.mode-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  -webkit-app-region: no-drag;
-}
-
-.mode-checkbox input {
-  margin: 0;
-}
-
-input[type="checkbox"] {
-  position: relative;
-  height: 20px;
-  width: 20px;
-  display: inline-block;
-  border-radius: 8px;
-  border: 2px solid #ccc;
-  background: #fff;
-  -webkit-appearance: none;
-  appearance: none;
-}
-input[type="checkbox"]:checked {
-  border: none;
-  background-image: url("data:image/svg+xml;utf8,<svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='16' height='16'><rect fill='%23090' width='16' height='16'/><path fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M12.6,5.17l-5.66,5.66L3.4,7.29'/></svg>");
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
 .disabled {
   opacity: 0.5;
   pointer-events: none;
   user-select: none;
 }
-
 .hidden {
   display: none;
 }
@@ -348,25 +231,21 @@ input[type="checkbox"]:checked {
   -webkit-app-region: no-drag;
   z-index: 1002;
 }
-
 .minimize,
 .maximize,
 .close {
   margin-top: 2px;
-  color: #ffffff;
+  color: var(--light);
   align-items: center;
   justify-content: center;
 }
-
 .minimize:hover,
 .maximize:hover {
   background: #868484;
 }
-
 .close:hover {
-  background: hsl(0 68% 52% / 1);
+  background: var(--danger);
 }
-
 .windows-buttons {
   border: 1px solid #616161;
   width: 25px;

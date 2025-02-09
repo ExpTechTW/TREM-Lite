@@ -118,7 +118,7 @@ class PluginList {
           break;
         }
       }
-      a += `<div class="wave-container ${item.type === 'error' ? 'wave-unverified' : (item.type === 'warn' ? 'wave-unloaded' : '')}">
+      a += `<div class="wave-container ${item.type === 'error' ? 'wave wave-unverified' : (item.type === 'warn' ? 'wave wave-unloaded' : '')}">
                   <div class="setting-option">
                     <div class="extended-list" style="justify-content: space-between;">
                       <div class="extended-list-box" style="width:98%">

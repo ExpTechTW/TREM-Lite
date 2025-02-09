@@ -1,320 +1,13 @@
-.button[for="general"]:before,
-.general .setting-page-header-title::before {
-  content: "一般";
-}
-.button[for="graphics"]:before,
-.graphics-header-title:before {
-  content: "圖形";
-}
-.button[for="sound-effects"]:before,
-.sound-effects-header-title::before {
-  content: "音效";
-}
-.button[for="extended"]:before,
-.extended-header-title:before {
-  content: "擴充";
-}
-.button[for="info"]:before,
-.info-header-title::before {
-  content: "關於";
-}
-.location-title::before {
-  content: "所在地";
-}
-.location-description::before {
-  content: "設定所在地可以在地震發生時預估你所在區域的地震震度。";
-}
-.rts-station-title::before {
-  content: "即時測站";
-}
-.rts-station-description::before {
-  content: "顯示於主畫面左上方的即時測站。";
-}
-.warning-title::before {
-  content: "預警條件";
-}
-.warning-description::before {
-  content: "即時測站(任一站)為觸發時任一站震度門檻，預估震度(所在地)為地震預警時所在地震度門檻，達到下方任一條件後軟體將會發出音效及彈出視窗。";
-}
-.current-realtime-station::before {
-  content: "即時測站（任一站）";
-}
-.current-estimate-intensity::before {
-  content: "預估震度（所在地）";
-}
-.show-window-title::before {
-  content: "顯示視窗";
-}
-.show-window-description::before {
-  content: "程式自動跳窗時機。";
-}
-.other-function-title::before {
-  content: "其他功能";
-}
-.other-function-description::before {
-  content: "TREM Lite不常用的小功能都在這裡。";
-}
-.auto-start::before {
-  content: "開機自動啟動（Windows）";
-}
-.earthquake-eew::before {
-  content: "地震預警";
-}
-.earthquake-report::before {
-  content: "地震報告";
-}
-.earthquake-detect::before {
-  content: "地震檢知";
-}
-.rts-intensity::before {
-  content: "震度速報";
-}
-.reset-button::before,
-.reset-setting-title::before {
-  content: "重設";
-}
-.reset-setting::before {
-  content: "重置所有設定";
-}
-.auto-zoom-title::before {
-  content: "地圖自動縮放";
-}
-.auto-zoom-description::before {
-  content: "預設地圖自動縮放為禁用狀態。";
-}
-.block-auto-zoom::before {
-  content: "禁用地圖自動縮放";
-}
-.effects-dong-title::before {
-  content: "預警播報";
-}
-.effects-dong-description::before {
-  content: "地震發生時播報所在地預估震度以及地震波抵達剩餘秒數。";
-}
-.dong-dong::before {
-  content: "咚咚咚音效(僅在有倒數情況下生效)";
-}
-.sound-effects-list-title::before {
-  content: "音效列表";
-}
-.sound-effects-list-description::before {
-  content: "開啟或關閉特定的音效";
-}
-.extended-list-title:before {
-  content: "擴充功能";
-}
-.extended-list-description:empty::before,
-.extended-info .extended-info-warning:empty::before {
-  content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
-}
-.extended-list-descriptions:empty::before {
-  content: "選擇啟用的擴充，擴充將在程式啟動時載入。";
-}
-.extended-setting-button::before {
-  content: "設定";
-}
-.extended-download-button::before {
-  content: "下載";
-}
-.extended-download-button.downloading::before {
-  content: "下載中...";
-}
-.extended-download-button.downloaded::before {
-  content: "下載完成";
-}
-.extended-update-button::before {
-  content: "更新";
-}
-.extended-latest-button::before {
-  content: "已是最新版本";
-}
-.p-alert::before {
-  content: "INTENSITY（收到震度速報時播放）";
-}
-.report::after {
-  content: "REPORT（收到地震報告時播放）";
-}
-.update::before {
-  content: "UPDATE（地震預警更正時播放）";
-}
-.info-trem-lite::before {
-  content: "關於 TREM Lite";
-}
-.info-trem-description::before {
-  content: "TREM-Lite 是一款開源地震速報軟體，提供給您即時的地震資訊，利用自製的測站，顯示各地的即時震度，在地震發生的第一時間取得各管道發布的強震即時警報訊息。";
-}
-.app-version-title::before {
-  content: "程式版本";
-}
-.system-os-title::before {
-  content: "系統版本";
-}
-.system-cpu-title::before {
-  content: "CPU";
-}
-.source-title::before {
-  content: "資料來源";
-}
-.source-eew::before {
-  content: "地震預警";
-}
-.source-cwa::before {
-  content: "交通部中央氣象署 (CWA)";
-}
-.source-shindo::before {
-  content: "震度";
-}
-.source-sinica::before {
-  content: "中央研究院 (SINICA)";
-}
-.source-trem::before {
-  content: "臺灣即時地震監測 (TREM)";
-}
-.contributor-title::before {
-  content: "貢獻者";
-}
-.contributor-description::before {
-  content: "感謝以下的貢獻者們，因為有了他們的貢獻， TREM Lite 才得以實現。";
-}
-.reset .confirm-title::before {
-  content: "您確定要重置設定嗎？重設後將無法返回。";
-}
-.extendedOpen .confirm-title::before {
-  content: "您確定要啟用 ";
-}
-.extendedOpen .confirm-title::after {
-  content: " 擴充嗎，若使用來源不明或無法信任的擴充可能危及您的個人資訊安全。";
-}
-.confirm-sure:empty::before {
-  content: "確定";
-}
-.confirm-sure:not(:empty)::after {
-  content: "秒";
-}
-.confirm-cancel::before {
-  content: "取消";
-}
-.intensity-0::after {
-  content: "0" !important;
-  font-size: unset !important;
-}
-.current:empty:before {
-  content: "未設定";
-}
-.unverified-badge::before {
-  content: "未驗證";
-}
-.verified-badge::before {
-  content: "已驗證";
-}
-.unloaded-badge::before {
-  content: "未載入";
-}
-.loaded-badge::before {
-  content: "已載入";
-}
-.success.message-box:before {
-  content: "操作成功，關閉設定視窗後套用！";
-}
-.failed.message-box:before {
-  content: "操作失敗！";
-}
-.success-download.message-box:before {
-  content: "下載完成，關閉設定視窗後套用！";
-}
-.success-copy.message-box:before {
-  content: "複製成功！";
-}
-.success-failed.message-box:before {
-  content: "複製失敗！";
-}
-.extended-store:before {
-  content: "TREM 擴充商店";
-}
-.eew-1::before {
-  content: "EEW（收到地震預警時播放）";
-}
-.extended-list-button[for="extended-state-list"]:before {
-  content: "擴充狀態";
-}
-.extended-list-button[for="extended-installed-list"]:before {
-  content: "擴充列表";
-}
-.extended-list-button[for="extended-store-list"]:before {
-  content: "擴充商店";
-}
-.copy-debug-log:before {
-  content: "複製debug log";
-}
-.extended-state-list .extended-info:empty:before {
-  content: "未有異常擴充";
+@import url("../../text/index.css");
+@import url("../../root/index.css");
+
+::-webkit-scrollbar {
+  width: 0px;
 }
 
-.eew-2 {
-  &::before {
-    content: "EEW2（最大預估";
-  }
-  .special-text:before {
-    content: "震度5弱";
-  }
-  &::after {
-    content: "以上播放）";
-  }
-}
-.pga-1 {
-  &::before {
-    content: "PGA1（PGA >";
-  }
-  .special-text:before {
-    content: "8gal";
-  }
-  &::after {
-    content: "時播放）";
-  }
-}
-.pga-2 {
-  &::before {
-    content: "PGA2（PGA >";
-  }
-  .special-text:before {
-    content: "200gal";
-  }
-  &::after {
-    content: "時播放）";
-  }
-}
-.shindo-0 {
-  &::before {
-    content: "SHINDO0（地震檢知";
-  }
-  .special-text:before {
-    content: "震度0級";
-  }
-  &::after {
-    content: "以上播放）";
-  }
-}
-.shindo-1 {
-  &::before {
-    content: "SHINDO1（地震檢知";
-  }
-  .special-text:before {
-    content: "震度2級";
-  }
-  &::after {
-    content: "以上播放）";
-  }
-}
-.shindo-2 {
-  &::before {
-    content: "SHINDO2（地震檢知";
-  }
-  .special-text:before {
-    content: "震度4級";
-  }
-  &::after {
-    content: "以上播放）";
-  }
+::-webkit-scrollbar-thumb {
+  background: #ffffff00;
+  border-radius: 4px;
 }
 
 html,
@@ -327,15 +20,23 @@ body {
   border-radius: unset;
 }
 
-::-webkit-scrollbar {
-  width: 0px;
+/* === 通用 display === */
+.block {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.show {
+  display: block !important;
+}
+.flex {
+  display: flex;
+}
+.hide,
+.none {
+  display: none !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #ffffff00;
-  border-radius: 4px;
-}
-
+/* === 通用 UI === */
 .slider {
   position: absolute;
   cursor: pointer;
@@ -346,22 +47,19 @@ body {
   background-color: rgb(73 73 73 / 90%);
   transition: 0.4s;
 }
-
 .slider.round {
   border-radius: 20px;
-
-  &:before {
-    position: absolute;
-    content: "";
-    height: 20px;
-    width: 20px;
-    left: 0.2rem;
-    background-color: white;
-    transition: 0.4s;
-    border-radius: 15px;
-  }
 }
-
+.slider.round:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 0.2rem;
+  background-color: var(--light);
+  transition: 0.4s;
+  border-radius: 15px;
+}
 .switch {
   display: inline-block;
   width: 45px;
@@ -369,41 +67,16 @@ body {
   position: sticky;
   left: 84vw;
 }
-
 .switch input {
   display: none;
 }
-
 .switch input:checked + .slider {
-  background-color: #1cb577;
+  background-color: var(--success);
   box-shadow: inset 0 0 3px rgb(0 0 0 /40%);
-
-  &:before {
-    transform: translateX(18px);
-  }
 }
-
-.block {
-  opacity: 0.5;
-  pointer-events: none;
+.switch input:checked + .slider:before {
+  transform: translateX(18px);
 }
-
-.show {
-  display: block !important;
-}
-
-.hide {
-  display: none;
-}
-
-.flex {
-  display: flex;
-}
-
-.none {
-  display: none !important;
-}
-
 .setting-wrapper {
   left: 0vw;
   height: 100%;
@@ -414,20 +87,17 @@ body {
   z-index: 9999;
   transition: opacity 0.3s ease;
 }
-
 .setting-container {
   display: flex;
   flex-direction: inherit;
   height: 100%;
   min-height: 0;
 }
-
 .setting-header,
 .setting-content {
   width: 21vw;
-  color: #fff;
+  color: var(--light);
 }
-
 .setting-buttons {
   align-items: center;
   display: flex;
@@ -435,7 +105,6 @@ body {
   height: 100%;
   justify-content: center;
 }
-
 .button {
   border-radius: 10px;
   border: 1px solid #ffffff24;
@@ -450,27 +119,22 @@ body {
   -webkit-app-region: no-drag;
   margin: 10px;
 }
-
 .button:hover {
   background: #1c1c1e78;
 }
-
 .button.on {
   background: #1c1c1e;
 }
-
 .button span {
   font-size: 16px;
   font-weight: bold;
   opacity: 1;
-  color: #fff;
+  color: var(--light);
 }
-
 .setting-title span {
   font-size: 24px;
   font-weight: 500;
 }
-
 .setting-options-page {
   align-items: center;
   display: none;
@@ -479,11 +143,9 @@ body {
   min-height: 0;
   padding: 12px 12px 12px 12px;
 }
-
 .setting-options-page.active {
   display: flex;
 }
-
 .setting-page-header-title {
   font-size: 25px;
   font-weight: bold;
@@ -492,17 +154,13 @@ body {
   bottom: 0.5rem;
   z-index: 1;
 }
-
 .setting-content {
   background-color: rgb(49 49 49);
   flex: 1;
-  /* border-bottom-right-radius: 15px; */
-  /* border-top-right-radius: 15px; */
   border: 1px solid #ffffff42;
   border-left: none;
   -webkit-app-region: drag;
 }
-
 .setting-item-wrapper {
   position: absolute;
   top: 3.5rem;
@@ -521,28 +179,19 @@ body {
     overflow-y: auto;
   }
 }
-
 .setting-item-content {
   width: 76vw;
   margin-top: 3vw;
 }
-
-.setting-option .extended-info-warning {
-  font-size: 15px;
-  justify-content: center;
-}
-
 .setting-item-title {
   font-size: 18px;
   margin-right: 15;
 }
-
 .description {
   font-size: 14px;
   font-weight: unset;
   color: #ababab;
 }
-
 .setting-option {
   display: grid;
   background-color: #1c1c1e;
@@ -550,17 +199,6 @@ body {
   margin-top: 3vh;
   height: auto;
 }
-
-.extended .setting-option {
-  color: #fff;
-  padding: 2px !important;
-  display: none;
-}
-
-.info .setting-option div {
-  align-items: flex-start !important;
-}
-
 .setting-item-content
   div
   div:not(
@@ -576,39 +214,36 @@ body {
   align-items: center;
 
   &:not(:last-child) {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--dark);
     border-color: rgb(255 255 255 / 2%);
   }
 }
-
-.extended-latest-button {
-  font-size: 12px;
-  color: grey;
-}
-
 .select-option-selected {
   background-color: rgb(255 255 255 / 6%);
 }
+.setting-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  flex-direction: row;
+}
+.setting-info div div {
+  flex-direction: column;
+  padding: 10px;
+  width: 100%;
+}
+.select-wrapper {
+  padding-top: 0px !important;
+}
 
+/* === 一般 === */
 .realtime-station .town div {
   justify-content: flex-start !important;
 }
-
-.extended-info {
-  color: #ff5656;
-  height: auto;
-}
-
-.extended-info .material-symbols-rounded {
-  border-bottom: unset !important;
+.location {
+  cursor: pointer;
+  border: unset !important;
   border-color: unset !important;
-  padding: 5px 5px 5px 5px;
 }
-
-.special-text {
-  color: #ffc756;
-}
-
 .graphics .setting-option .selected-btn,
 .general .setting-option .selected-btn {
   font-size: 25px;
@@ -621,29 +256,149 @@ body {
   justify-content: center;
   display: flex;
 }
+.select-items {
+  position: relative;
+  color: var(--light);
+  width: 100%;
+  overflow-y: auto;
+  padding: 13px;
+  display: grid;
+  scroll-snap-type: y mandatory;
+  scroll-padding: 0.5em;
+  overscroll-behavior: contain;
+  align-items: center;
+  border-right: 1px solid var(--dark);
+  border-color: rgb(255 255 255 / 2%);
+}
+.local div,
+.city div,
+.town div,
+.station div,
+.intensity div,
+.effect div {
+  color: var(--light);
+  cursor: pointer;
+  user-select: none;
+  justify-content: center !important;
+  scroll-snap-align: start;
+  align-items: center;
+  text-align: center;
+}
+.local div:hover,
+.city div:hover,
+.town div:hover,
+.station div:hover,
+.intensity div:hover,
+.effect div:hover,
+.select-option-selected {
+  background-color: rgb(255 255 255 / 6%);
+}
+.station span:first-child {
+  width: auto !important;
+  margin-right: 4px;
+}
+.SE-Net {
+  color: #ffc756;
+  margin-right: 10px;
+  font-size: 12px !important;
+}
+.MS-Net {
+  color: #56deff;
+  margin-right: 10px;
+  font-size: 12px !important;
+}
+.select-arrow-active {
+  border-color: var(--dark) transparent transparent transparent;
+}
+.select-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+  display: flex;
+  justify-content: space-around;
+}
+.select-wrapper.select-show-big {
+  height: 1000px;
+  max-height: 14rem;
+  border-top: 1px solid var(--dark);
+  border-color: rgb(255 255 255 / 2%);
+}
+.select-items.station {
+  max-height: 14.4em;
+  width: 100%;
+}
+.warning-intensity,
+.estimate-intensity {
+  border: 1px solid #ffffff36;
+  width: 35px;
+  display: inline-flex;
+  text-align: center;
+  border-radius: 5px;
+  height: 24px;
+  justify-content: center;
+}
+.warning-realtime-station .select-items,
+.warning-estimate-intensity .select-items,
+.map-display-effect .select-items {
+  width: 100%;
+  justify-content: center;
+  display: block;
+}
+.intensity div {
+  justify-content: center !important;
+  font-weight: 100;
+  font-family: auto;
+}
+.setting-header {
+  background-color: hsl(0deg 0% 32.55%);
+  border: 1px solid #ffffff42;
+  border-right: none;
+  z-index: 2;
+  -webkit-app-region: drag;
+}
+.windows-wrapper {
+  position: absolute;
+  right: 0.8em;
+  display: flex;
+  justify-content: space-between;
+  width: 4rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  top: 0.6em;
+  font-weight: bold;
+  -webkit-app-region: no-drag;
+  z-index: 1002;
+}
+.reset-button {
+  border-radius: 5px;
+  border: 1px solid #ffffff24;
+  width: auto;
+  height: 3px;
+  cursor: pointer;
+  color: var(--danger);
+  justify-content: center;
+}
+.reset-button:hover {
+  background: #48484d;
+}
+.reset-setting + .switch {
+  width: auto;
+}
+.disabled {
+  background: #0000008c;
+  color: #ffffff70;
+  pointer-events: none;
+}
 
+/* === 音效 === */
+.special-text {
+  color: var(--warning);
+}
 .selected-btn.on {
   transform: rotate(180deg);
 }
 
-.current-city,
-.current-town,
-.separate {
-  width: auto !important;
-}
-
-.location {
-  cursor: pointer;
-  border: unset !important;
-  border-color: unset !important;
-}
-
-.setting-item {
-  display: flex !important;
-  justify-content: space-between !important;
-  flex-direction: row;
-}
-
+/* === 關於 === */
 .app-version,
 .system-os,
 .system-cpu {
@@ -652,32 +407,220 @@ body {
   font-weight: bold;
   font-size: 15px;
 }
-
-.setting-info div div {
-  flex-direction: column;
-  padding: 10px;
-  width: 100%;
+.responsive-image {
+  max-width: 100%;
+  height: auto;
+  pointer-events: none;
 }
 
-.contributor ul {
-  margin: 0;
+/* === 關於 === */
+.info .setting-option div {
+  align-items: flex-start !important;
 }
-
-li {
+.setting-option li {
   list-style-type: square;
 }
 
-.back_to_home {
-  border-radius: 30px;
-  border: 1px solid #424a5b0d;
-  height: 30px;
-  width: 30px;
-  background: #424a5b0d;
-  margin-right: 0.6rem;
-  backdrop-filter: blur(8px);
+/* === 擴充 === */
+.extended .setting-option {
+  color: var(--light);
+  padding: 2px !important;
+  display: none;
+}
+.extended-latest-button {
+  font-size: 12px;
+  color: grey;
+}
+.extended-info {
+  color: var(--danger);
+  height: auto;
+}
+.extended-info .material-symbols-rounded {
+  border-bottom: unset !important;
+  border-color: unset !important;
+  padding: 5px 5px 5px 5px;
+}
+.setting-option .extended-info-warning {
+  font-size: 15px;
+  justify-content: center;
+}
+.extended-setting-button,
+.extended-download-button,
+.extended-update-button {
+  border-radius: 5px;
+  border: 1px solid #ffffff24;
+  width: auto;
+  height: 3px;
   cursor: pointer;
+  color: var(--warning);
+  margin-left: 5px;
+}
+.extended-setting-button:hover,
+.extended-download-button:hover,
+.extended-update-button:hover {
+  background: #48484d;
+}
+.extended-list {
+  justify-content: space-between;
+  padding: 0 !important;
+  width: 100%;
+}
+.extended-list-descriptions {
+  padding: 0;
+  color: lightgray;
+  font-size: 15px;
+  font-weight: 400;
+}
+.extended-info {
+  .setting-option {
+    margin-top: 0;
+  }
+
+  .switch {
+    left: unset;
+  }
+}
+.extended-list-box {
+  width: 80%;
+  border-bottom: unset !important;
+  padding: 2 !important;
+  justify-content: space-between;
+}
+.extended-header-title-box,
+.extended-list-author-version {
+  width: 75%;
+  border-bottom: unset !important;
+  padding: 0px !important;
+  margin-top: 5;
+  color: grey;
+}
+.extended-list-author-version span:first-child {
+  border: 1px solid #ffffff29;
+  border-radius: 5px;
+  padding: 5;
+  font-size: 12px;
+}
+.author {
+  padding: 0 !important;
+  width: 150px;
+  display: flex !important;
+  justify-content: space-between;
+  max-width: 115px;
+}
+.extended-version {
+  border: 1px solid #ffffff29;
+  border-radius: 5px;
+  padding: 5;
+  font-size: 12px !important;
+  margin-left: 5;
+}
+.extended-list-left,
+.extended-list-description-box,
+.extended-list-title-box {
+  flex-direction: column;
+  padding: 3px !important;
+  border-bottom: unset !important;
+  width: auto;
+  align-items: unset !important;
+  min-width: 20%;
+}
+.extended-list-buttons {
+  width: auto;
+  flex-direction: row;
+  padding: 0 !important;
+  justify-content: space-around;
+  margin-right: 3px;
+  margin-left: 3px;
+}
+.wave-container:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.wave-container:last-child {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+.extended .open {
+  pointer-events: auto;
+}
+.extended-store-info {
+  color: var(--danger);
+  height: auto;
+}
+.store-container {
+  display: block !important;
+  position: relative;
+  overflow: hidden;
+  padding: 5px !important;
+  width: 100%;
+}
+.store .switch {
+  width: auto;
+}
+.extended-top-buttons {
+  display: flex;
+  margin-top: 5px;
+  justify-content: center;
+}
+.extended-list-button {
+  border: 1px solid var(--light);
+  border-radius: 5px;
+  padding: 7px;
+  display: flex;
+  align-items: center;
+  margin: 10px;
+  cursor: pointer;
+  background: #00ffea00;
+  opacity: 0.5;
+}
+.extended-list-button:hover {
+  background: #7cc7f68a;
+  opacity: 0.7;
+}
+.extended-list-button.active {
+  background: #7cc7f6;
+  opacity: 1;
+  color: var(--dark);
+}
+.extended-store-list .wave-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 35%,
+    rgb(0 149 255 / 8%) 50%,
+    transparent 65%,
+    transparent 100%
+  );
+  animation: slide 2s linear infinite, fadeIn 0.5s ease-in;
+  pointer-events: none;
+}
+.extended-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  color: var(--danger);
+  padding: 0 !important;
+  cursor: pointer;
+  display: none !important;
+}
+.wave-container:hover .extended-remove {
+  display: flex !important;
+}
+.extended-info:not(:has(.wave-container)) {
+  text-align: center;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+/* === 確認彈窗 === */
 .confirm-wrapper {
   display: grid;
   position: fixed;
@@ -688,7 +631,6 @@ li {
   height: 100%;
   align-items: end;
 }
-
 .confirm-content {
   display: flex;
   flex-direction: column;
@@ -700,17 +642,13 @@ li {
   border-width: 1px 0px 0px 0px;
   border-color: #ffffff1c;
   border-style: solid;
-  /* border-bottom-left-radius: 13px; */
-  /* border-bottom-right-radius: 13px; */
   border: 1px solid #ffffff42;
   justify-content: flex-end;
   height: auto;
 }
-
 .confirm-content span {
-  color: #fff;
+  color: var(--light);
 }
-
 .confirm-btn div {
   border-radius: 5px;
   border: 1px solid #ffffff24;
@@ -725,438 +663,32 @@ li {
   display: flex;
   justify-content: center;
 }
-
 .confirm-btn div:hover {
   background: #48484d;
 }
-
 .confirm-btn {
   display: flex;
   margin-top: 1vw;
-  color: #fff;
+  color: var(--light);
 }
-
 .confirm-btn span {
   font-size: 15px;
 }
 
-.setting-range-content {
-  width: 12vw;
-  position: relative;
-  left: 0vw;
-  padding: 0 !important;
-}
-
-.select-wrapper {
-  padding-top: 0px !important;
-}
-
-.select-items {
-  position: relative;
-  color: white;
-  width: 100%;
-  overflow-y: auto;
-  padding: 13px;
-  display: grid;
-  scroll-snap-type: y mandatory;
-  scroll-padding: 0.5em;
-  overscroll-behavior: contain;
-  align-items: center;
-  border-right: 1px solid black;
-  border-color: rgb(255 255 255 / 2%);
-}
-
-.local div,
-.city div,
-.town div,
-.station div,
-.intensity div,
-.effect div {
-  color: white;
-  cursor: pointer;
-  user-select: none;
-  justify-content: center !important;
-  scroll-snap-align: start;
-  align-items: center;
-  text-align: center;
-}
-
-.local div:hover,
-.city div:hover,
-.town div:hover,
-.station div:hover,
-.intensity div:hover,
-.effect div:hover,
-.select-option-selected {
-  background-color: rgb(255 255 255 / 6%);
-}
-
-.station span:first-child {
-  width: auto !important;
-  margin-right: 4px;
-}
-
-.SE-Net {
-  color: #ffc756;
-  margin-right: 10px;
-  font-size: 12px !important;
-}
-
-.MS-Net {
-  color: #56deff;
-  margin-right: 10px;
-  font-size: 12px !important;
-}
-
-.select-arrow-active {
-  border-color: #000 transparent transparent transparent;
-}
-
-.select-wrapper {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.5s ease;
-  display: flex;
-  justify-content: space-around;
-}
-
-.select-wrapper.select-show-big {
-  height: 1000px;
-  max-height: 14rem;
-  border-top: 1px solid black;
-  border-color: rgb(255 255 255 / 2%);
-}
-
-.select-items.station {
-  max-height: 14.4em;
-  width: 100%;
-}
-
-.slider-container {
-  position: relative;
-  width: 10vw;
-  height: 0.3em;
-  background-color: #d3d3d3;
-  border-radius: 5px;
-  margin: 20px 0;
-  padding: 0 !important;
-}
-
-.slider-track {
-  height: 100%;
-  background-color: #0073fc;
-  border-radius: 5px;
-  padding: 0 !important;
-  border-color: unset !important;
-  border-bottom: unset !important;
-  height: 0.3rem;
-  position: relative;
-  top: 0em;
-  right: 0.1em;
-}
-
-.slider-thumb {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  background-color: white;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  cursor: pointer;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-  padding: 10px !important;
-  height: 2px;
-  width: 2px;
-}
-
-.slider-wrapper {
-  padding: 0 !important;
-  right: 0;
-  width: 6vw;
-  height: 26px;
-  position: sticky;
-  left: 69vw;
-  transform: translate(-7%, 0%);
-  align-items: center;
-}
-
-.account-info-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 4vw;
-  -webkit-app-region: no-drag;
-}
-
-.account-info-content {
-  text-align: center;
-}
-
-.login-forms-content input {
-  background: #fff0;
-  height: 1.5vw;
-  margin: 5px;
-}
-
-.account-info-container {
-  width: 21vw;
-  justify-content: center;
-  border-radius: 15px;
-  display: flex;
-  flex-direction: row;
-  justify-items: center;
-  align-items: center;
-  background-color: #2d2d31;
-  backdrop-filter: blur(1px);
-  padding: 15px;
-  border-width: 1px 1px 1px 1px;
-  border-color: #ffffff14;
-  border-style: solid;
-  overflow: hidden;
-}
-
-.account-info-content {
-  transform: translateX(-175%);
-  opacity: 1;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.login-forms-content {
-  width: 100%;
-  height: auto;
-  position: static;
-  top: 0;
-  left: 0;
-  display: none;
-  transform: translateX(100%);
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.show-login-form {
-  display: grid;
-  transform: translateX(0);
-  opacity: 1;
-}
-
-.show-account-info {
-  display: flex;
-  transform: translateX(0%);
-  opacity: 1;
-  flex-direction: column;
-  align-items: center;
-}
-
-.login-form-input {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.login-msg {
-  font-weight: bold;
-}
-
-@keyframes shake {
-  0% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-10px);
-  }
-
-  50% {
-    transform: translateX(10px);
-  }
-
-  75% {
-    transform: translateX(-10px);
-  }
-
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.login-form-input {
-  .shake {
-    animation: shake 0.2s ease;
-  }
-
-  .error {
-    color: #ff7373;
-  }
-
-  .success {
-    color: #73ff96;
-  }
-}
-
-::-webkit-input-placeholder {
-  color: #fff;
-}
-
-.login-forms-content input {
-  background-color: #f9f9f900;
-  border: 1px solid #ffffff1f;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: 40px;
-  padding: 0 15px;
-  font-size: 15px;
-  color: #fff;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  font-family: "Noto Sans TC", sans-serif;
-  width: 100%;
-
-  &:focus {
-    border-color: #aad7fc80;
-    outline: none;
-  }
-}
-
-.login-back {
-  display: flex;
-  font-size: 15px;
-  align-items: flex-end;
-  color: #377aff;
-  font-weight: bold;
-  margin-bottom: 10px;
-  cursor: pointer;
-  width: 100%;
-
-  &:hover {
-    color: #4e89ff;
-  }
-}
-
-.login-back div {
-  font-size: 18px;
-}
-
-.vip-time {
-  margin-top: 1vh;
-}
-
-.buy-vip {
-  color: #ffd63a;
-  cursor: pointer;
-}
-
-.login-btn {
-  border-radius: 5px;
-  border: 1px solid #ffffff24;
-  padding: 5px;
-  width: 5rem;
-  height: 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  align-items: center;
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.login-btn:hover {
-  background: #ffffff24;
-}
-
-.logout-btn {
-  border-radius: 5px;
-  border: 1px solid #ffffff24;
-  padding: 5px;
-  width: 5rem;
-  height: 1.5rem;
-  text-align: center;
-  margin-right: 0.5vw;
-  margin-left: 0.5vw;
-  cursor: pointer;
-  align-items: center;
-  display: none;
-  justify-content: center;
-  margin-top: 2vh;
-}
-
-.forget {
-  margin-top: 10px;
-  cursor: pointer;
-  color: #ff6060;
-  text-decoration: none;
-  border-bottom: 0px dotted;
-}
-
-.warning-intensity,
-.estimate-intensity {
-  border: 1px solid #ffffff36;
-  width: 35px;
-  display: inline-flex;
-  text-align: center;
-  border-radius: 5px;
-  height: 24px;
-  justify-content: center;
-}
-
-.warning-realtime-station .select-items,
-.warning-estimate-intensity .select-items,
-.map-display-effect .select-items {
-  width: 100%;
-  justify-content: center;
-  display: block;
-}
-
-.intensity div {
-  justify-content: center !important;
-  font-weight: 100;
-  font-family: auto;
-}
-
-.responsive-image {
-  max-width: 100%;
-  height: auto;
-  pointer-events: none;
-}
-
-.setting-header {
-  background-color: hsl(0deg 0% 32.55%);
-  /* border-bottom-left-radius: 15px; */
-  /* border-top-left-radius: 15px; */
-  border: 1px solid #ffffff42;
-  border-right: none;
-  z-index: 2;
-  -webkit-app-region: drag;
-}
-
-.windows-wrapper {
-  position: absolute;
-  right: 0.8em;
-  display: flex;
-  justify-content: space-between;
-  width: 4rem;
-  flex-direction: row;
-  flex-wrap: wrap;
-  top: 0.6em;
-  font-weight: bold;
-  -webkit-app-region: no-drag;
-  z-index: 1002;
-}
-
+/* === 視窗按鈕 === */
 .minimize,
 .close {
   margin-top: 2px;
-  color: #ffffff;
+  color: var(--light);
   align-items: center;
   justify-content: center;
 }
-
 .minimize:hover {
   background: #868484;
 }
-
 .close:hover {
-  background: hsl(0 68% 52% / 1);
+  background: var(--danger);
 }
-
 .windows-buttons {
   border: 1px solid #616161;
   width: 25px;
@@ -1167,144 +699,7 @@ li {
   display: flex;
 }
 
-.reset-button {
-  border-radius: 5px;
-  border: 1px solid #ffffff24;
-  width: auto;
-  height: 3px;
-  cursor: pointer;
-  color: #ff4a4a;
-  justify-content: center;
-}
-
-.reset-button:hover {
-  background: #48484d;
-}
-
-.reset-setting + .switch {
-  width: auto;
-}
-
-.extended-setting-button,
-.extended-download-button,
-.extended-update-button {
-  border-radius: 5px;
-  border: 1px solid #ffffff24;
-  width: auto;
-  height: 3px;
-  cursor: pointer;
-  color: #ffb84a;
-  margin-left: 5px;
-}
-
-.extended-setting-button:hover,
-.extended-download-button:hover,
-.extended-update-button:hover {
-  background: #48484d;
-}
-
-.extended-list {
-  justify-content: space-between;
-  padding: 0 !important;
-  width: 100%;
-}
-
-.extended-list-descriptions {
-  padding: 0;
-  color: lightgray;
-  font-size: 15px;
-  font-weight: 400;
-}
-
-.extended-info {
-  .setting-option {
-    margin-top: 0;
-  }
-
-  .switch {
-    left: unset;
-  }
-}
-
-.extended-list-box {
-  width: 80%;
-  border-bottom: unset !important;
-  padding: 2 !important;
-  justify-content: space-between;
-}
-
-.extended-header-title-box,
-.extended-list-author-version {
-  width: 75%;
-  border-bottom: unset !important;
-  padding: 0px !important;
-  margin-top: 5;
-  color: grey;
-}
-
-.extended-list-author-version span:first-child {
-  border: 1px solid #ffffff29;
-  border-radius: 5px;
-  padding: 5;
-  font-size: 12px;
-}
-
-.author {
-  padding: 0 !important;
-  width: 150px;
-  display: flex !important;
-  justify-content: space-between;
-  max-width: 115px;
-}
-
-.extended-version {
-  border: 1px solid #ffffff29;
-  border-radius: 5px;
-  padding: 5;
-  font-size: 12px !important;
-  margin-left: 5;
-}
-
-.extended-list-left,
-.extended-list-description-box,
-.extended-list-title-box {
-  flex-direction: column;
-  padding: 3px !important;
-  border-bottom: unset !important;
-  width: auto;
-  align-items: unset !important;
-  min-width: 20%;
-}
-
-.extended-list-buttons {
-  width: auto;
-  flex-direction: row;
-  padding: 0 !important;
-  justify-content: space-around;
-  margin-right: 3px;
-  margin-left: 3px;
-}
-
-.disable .round {
-  background-color: rgb(159 15 15 / 90%);
-}
-
-.disabled {
-  background: #0000008c;
-  color: #ffffff70;
-  pointer-events: none;
-}
-
-.wave-container:first-child {
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-}
-
-.wave-container:last-child {
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
-}
-
+/* === 訊息 === */
 .message-wrapper {
   display: flex;
   position: fixed;
@@ -1317,9 +712,8 @@ li {
   align-items: flex-end;
   pointer-events: none;
 }
-
 .message-content {
-  color: #fff;
+  color: var(--light);
   display: flex;
   flex-direction: column;
   justify-items: center;
@@ -1342,101 +736,10 @@ li {
   transition: opacity 0.3s ease, transform 0.3s ease;
   background-color: hsl(121.85deg 100% 57.58% / 44%);
 }
-
 .message-content.success,
 .message-content.success-download,
 .message-content.success-copy {
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.open {
-  pointer-events: auto;
-}
-
-.extended-store-info {
-  color: #ff5656;
-  height: auto;
-}
-
-.store-container {
-  display: block !important;
-  position: relative;
-  overflow: hidden;
-  padding: 5px !important;
-  width: 100%;
-}
-
-.store .switch {
-  width: auto;
-}
-
-.extended-top-buttons {
-  display: flex;
-  margin-top: 5px;
-  justify-content: center;
-}
-
-.extended-list-button {
-  border: 1px solid #fff;
-  border-radius: 5px;
-  padding: 7px;
-  display: flex;
-  align-items: center;
-  margin: 10px;
-  cursor: pointer;
-  background: #00ffea00;
-  opacity: 0.5;
-}
-
-.extended-list-button:hover {
-  background: #7cc7f68a;
-  opacity: 0.7;
-}
-.extended-list-button.active {
-  background: #7cc7f6;
-  opacity: 1;
-  color: #000;
-}
-
-.extended-store-list .wave-container::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 200%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0%,
-    transparent 35%,
-    rgb(0 149 255 / 8%) 50%,
-    transparent 65%,
-    transparent 100%
-  );
-  animation: slide 2s linear infinite, fadeIn 0.5s ease-in;
-  pointer-events: none;
-}
-
-.extended-remove {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  color: #bb4141;
-  padding: 0 !important;
-  cursor: pointer;
-  display: none !important;
-}
-
-.wave-container:hover .extended-remove {
-  display: flex !important;
-}
-
-.extended-info:not(:has(.wave-container)) {
-  text-align: center;
-  height: 70px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }

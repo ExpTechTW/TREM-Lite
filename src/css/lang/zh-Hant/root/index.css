@@ -1,0 +1,18 @@
+:root {
+  --dark: #000;
+  --light: #fff;
+  --primary: #2196f3;
+  --success: #4caf50;
+  --danger: #ce3333;
+  --warning: #ffca00;
+
+  --bg-color: #1a1a1a;
+  --container-bg: #2d2d2d;
+  --border-color: #404040;
+  --input-bg: #3d3d3d;
+  --hover-color: #404040;
+  --field-bg: #363636;
+
+  --x: 50%;
+  --y: 50%;
+}

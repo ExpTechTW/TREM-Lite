@@ -1,119 +1,103 @@
-﻿.current-station-intensity-text::before {
-  content: "震度";
-}
-
-.current-station-pga-text::before {
-  content: "加速度";
-}
-
-.current-station-intensity-val:empty::before,
-.current-station-pga-val:empty::before,
-.current-station-loc:empty::before {
-  content: "---";
-}
-
-.rts-info-level:empty::before,
-.rts-info-trigger:empty::before {
-  content: "0";
-}
+﻿@import url("../../root/index.css");
+@import url("../../text/index.css");
 
 .station-pga-wrapper {
   position: absolute;
   left: 6.9rem;
   top: 10rem;
-  color: white;
+  color: var(--light);
   font-size: 11px;
   font-weight: 500;
   display: flex;
   flex-direction: column;
   pointer-events: none;
   transition: 0.3s cubic-bezier(0.41, -0.86, 0.76, 1.89);
+}
 
-  .current-station-pga {
-    margin-top: 5px;
-    padding: 2px;
-    background-color: #505050c7;
-    color: white;
-    font-size: 11px;
-    border-radius: 5px;
-    z-index: 1000;
-    text-align: center;
-    font-weight: 500;
-    pointer-events: none;
-    display: flex;
-    flex-direction: row-reverse;
-    width: 224px;
-    justify-content: space-between;
-    border: 1px solid #515151;
-  }
+.current-station-pga {
+  margin-top: 5px;
+  padding: 2px;
+  background-color: #505050c7;
+  color: var(--light);
+  font-size: 11px;
+  border-radius: 5px;
+  z-index: 1000;
+  text-align: center;
+  font-weight: 500;
+  pointer-events: none;
+  display: flex;
+  flex-direction: row-reverse;
+  width: 224px;
+  justify-content: space-between;
+  border: 1px solid #515151;
+}
 
-  .current-station-intensity {
-    height: 45px;
-    width: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 25px;
-    font-weight: bold;
-    border-radius: 5px;
-  }
+.current-station-intensity {
+  height: 45px;
+  width: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
+  font-weight: bold;
+  border-radius: 5px;
+}
 
-  .current-station-info {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    width: 160px;
-    margin-right: 3;
-  }
+.current-station-info {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  width: 160px;
+  margin-right: 3;
+}
 
-  .current-station-intensity-pga {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-top: 2;
-    font-weight: bold;
-    margin-right: 5;
-  }
+.current-station-intensity-pga {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-top: 2;
+  font-weight: bold;
+  margin-right: 5;
+}
 
-  .current-station-intensity-box {
-    display: flex;
-  }
+.current-station-intensity-box {
+  display: flex;
+}
 
-  .current-station-loc {
-    font-size: 17px;
-    font-weight: bold;
-    text-align: start;
-  }
+.current-station-loc {
+  font-size: 17px;
+  font-weight: bold;
+  text-align: start;
+}
 
-  .current-station-intensity-text {
-    margin-right: 3;
-  }
+.current-station-intensity-text {
+  margin-right: 3;
+}
 
-  .current-station-pga-text {
-    margin-right: 3;
-  }
+.current-station-pga-text {
+  margin-right: 3;
+}
 
-  .rts-info-box {
-    background-color: #505050c7;
-    color: white;
-    font-size: 11px;
-    border: 2px solid #00000008;
-    border-radius: 5px;
-    z-index: 1000;
-    text-align: center;
-    font-weight: 500;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    width: 65px;
-    margin-top: 3px;
-    border: 1px solid #515151;
-  }
+.rts-info-box {
+  background-color: #505050c7;
+  color: var(--light);
+  font-size: 11px;
+  border: 2px solid #00000008;
+  border-radius: 5px;
+  z-index: 1000;
+  text-align: center;
+  font-weight: 500;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  width: 65px;
+  margin-top: 3px;
+  border: 1px solid #515151;
+}
 
-  .rts-info-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 4 0 4;
-  }
+.rts-info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4 0 4;
 }

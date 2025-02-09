@@ -1,28 +1,5 @@
-﻿.internet-error .title:before {
-  content: "網路異常";
-}
-
-.unstable .title:before {
-  content: "不穩定";
-}
-
-.unstable .warning-message-text span {
-  &:nth-child(1)::before {
-    content: "受地震活動的影響";
-  }
-  &:nth-child(2)::before {
-    content: "觀測點可能不穩定";
-  }
-}
-
-.internet-error .warning-message-text span {
-  &:nth-child(1)::before {
-    content: "網路連線異常";
-  }
-  &:nth-child(2)::before {
-    content: "請待稍後重試";
-  }
-}
+﻿@import url("../../root/index.css");
+@import url("../../text/index.css");
 
 .warning-message-wrapper {
   top: 2em;
@@ -67,7 +44,7 @@
 }
 
 .text {
-  color: #fff;
+  color: var(--light);
   display: flex;
   flex-direction: column;
   font-size: 14px;
@@ -91,7 +68,7 @@
 .icon {
   display: flex;
   width: 100%;
-  color: #fff;
+  color: var(--light);
   align-items: center;
 }
 
@@ -101,12 +78,12 @@
 }
 
 .internet-error .icon {
-  color: #ff0000;
+  color: var(--danger);
   font-weight: bold;
 }
 
 .unstable .icon {
-  color: #ffca00;
+  color: var(--warning);
   font-weight: bold;
 }
 

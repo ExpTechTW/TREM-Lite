@@ -1,92 +1,5 @@
-.info-number {
-  &:not(:empty)::before {
-    content: "第";
-  }
-
-  &:not(:empty)::after {
-    content: "報";
-  }
-}
-
-/* .cancel-title span::before {
-  content: "取　消";
-}
-
-.cancel-body span::before {
-  content: "此地震速報已取消";
-} */
-
-.no-eew.rts-trigger-low .info-unit::after {
-  content: "弱反應 " !important;
-}
-
-.no-eew.rts-trigger-middle .info-unit::after {
-  content: "震動檢測 " !important;
-}
-
-.no-eew.rts-trigger-high .info-unit::after {
-  content: "強震檢測 " !important;
-}
-
-.eew-warn .info-unit::before {
-  content: "地震速報 ";
-}
-
-.eew-alert .info-unit::before {
-  content: "緊急地震速報 ";
-}
-
-.eew-cancel .info-unit::before {
-  content: "地震速報 ";
-}
-
-.eew-rts .info-unit::before {
-  content: "單點地震檢知 ";
-}
-
-.info-number-last::after {
-  content: "報(最終報)" !important;
-}
-
-.info-cancel-last::after {
-  content: "報(取消)" !important;
-}
-
-.no-eew .info-unit::after {
-  content: "暫無生效中的地震預警";
-}
-
-.info-intensity::after {
-  content: "預估最大震度";
-}
-
-.info-nsspe span::before {
-  content: "NSSPE 無震源參數推算";
-}
-
-.info-time::after {
-  content: "發震";
-}
-
-.info-mag-text::after,
-.report-box-item-wrapper:first-child .report-mag-text::after {
-  content: "規模";
-  width: 3.5rem;
-}
-
-.info-depth-text::after,
-.report-depth-text::after {
-  content: "深度";
-}
-
-/**最外包**/
-/**沒有速報時隱藏**/
-.no-eew {
-  .info-box,
-  .info-footer {
-    display: none !important;
-  }
-}
+@import url("../../root/index.css");
+@import url("../../text/index.css");
 
 .rts-trigger-low {
   background-color: var(--rts-trigger-low) !important;
@@ -123,256 +36,6 @@
   border: 1px solid var(--eew-s-rts) !important;
 }
 
-.info-wrapper {
-  position: absolute;
-  top: 0;
-  display: flex;
-  gap: 8px;
-  margin: 4px;
-  padding: 8px;
-  background-color: #505050c7;
-  color: white;
-  z-index: 1001;
-  width: 20rem;
-  border-radius: 5px;
-  pointer-events: none;
-  border: 1px solid #515151;
-  flex-direction: column;
-
-  /**發報標題**/
-  .info-title {
-    display: flex;
-    padding: 0 8px;
-    font-size: 14px;
-    font-weight: bold;
-
-    /**發報單位**/
-    .info-unit {
-      flex: 1;
-      font-size: 15px;
-    }
-
-    /**發報報數**/
-    .info-number {
-      font-size: 15px;
-    }
-  }
-
-  /**發震時間**/
-  .info-time {
-    gap: 5px;
-    display: flex;
-    font-size: 13px;
-    font-weight: bold;
-    align-items: center;
-  }
-
-  /**標題外包**/
-  .info-title-wrapper {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: center;
-    margin-top: 10px;
-
-    /**預估最大震度文字**/
-    .info-intensity {
-      opacity: 0.75;
-      font-size: 12px;
-      margin-top: 5px;
-    }
-  }
-
-  /**body主體**/
-  .info-body-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    border-radius: 10px;
-    background-color: #383838;
-    padding: 8px;
-    min-height: 93px;
-    position: relative;
-
-    /**body內包**/
-    .info-box {
-      display: flex;
-      height: 72px;
-      gap: 8px;
-      opacity: 1;
-    }
-
-    /**預估最大震度**/
-    .info-title-box {
-      width: 75px;
-      height: 75px;
-      line-height: 60px;
-      font-size: 45px;
-      font-weight: bold;
-      text-align: center;
-      align-items: center;
-      display: grid;
-    }
-
-    /**標題盒、更多資訊**/
-    .info-title-box {
-      padding: 5px;
-      border-radius: 12px;
-    }
-
-    /**更多資訊**/
-    .info-more {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-
-      /**震央**/
-      .info-loc {
-        font-size: 24px;
-        font-weight: bold;
-      }
-
-      /**規模、深度**/
-      .info-mag-dep {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 3px;
-
-        .info-mag,
-        .info-depth {
-          position: relative;
-          display: flex;
-          gap: 4px;
-          height: 28px;
-          isolation: isolate;
-
-          .info-mag-text,
-          .info-depth-text {
-            position: absolute;
-            line-height: 28px;
-            font-size: 30px;
-            font-weight: bold;
-            opacity: 0.1;
-          }
-
-          .info-mag .info-mag-val::before,
-          .info-depth .info-depth-val::after {
-            opacity: 0.75;
-            line-height: 28px;
-          }
-        }
-
-        /**規模**/
-        .info-mag {
-          font-size: 28px;
-
-          .info-mag-val {
-            margin-top: -6px;
-            font-size: 28px;
-            font-weight: bold;
-
-            &:before {
-              content: "𝖬";
-              font-size: 30px;
-              margin-right: 4px;
-            }
-          }
-        }
-
-        /**深度**/
-        .info-depth {
-          font-size: 28px;
-          width: 110px;
-          display: flex;
-          justify-content: flex-end;
-
-          .info-depth-val {
-            margin-top: -2px;
-            font-size: 26px;
-            font-weight: bold;
-
-            &:after {
-              margin-left: 4px;
-              content: "㎞";
-              font-size: 22px;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-/**底部**/
-.info-footer {
-  display: flex;
-  font-size: 12px;
-  justify-content: space-evenly;
-  flex-direction: column;
-
-  .info-nsspe-title {
-    margin-right: 0.3em;
-  }
-
-  .info-nsspe {
-    font-weight: 700;
-    line-height: 20px;
-    font-size: 15px;
-    display: none;
-  }
-}
-
-.nsspe {
-  .info-nsspe {
-    display: block;
-    margin-top: 6px;
-  }
-
-  .info-mag-dep {
-    display: none !important;
-  }
-}
-
-/**取消報**/
-.cancel-box {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  justify-content: space-evenly;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  background-color: rgb(0 0 0 / 10%);
-  /* text-shadow: 2px 2px black, -2px -2px black, -2px 2px black, 2px -2px black; */
-  /* backdrop-filter: blur(3px); */
-  opacity: 0;
-  flex-direction: column;
-  align-items: center;
-
-  .cancel-title {
-    display: flex;
-    justify-content: space-around;
-    line-height: 36px;
-    font-weight: 900;
-    font-size: 36px;
-  }
-
-  .cancel-body {
-    line-height: 14px;
-    font-weight: 500;
-    font-size: 14px;
-  }
-}
-
-.eew-cancel .cancel-box {
-  opacity: 1;
-}
-
-/**震動檢測**/
 .trigger-box {
   display: flex;
   justify-content: flex-start;
@@ -385,4 +48,208 @@
 
 .area-name {
   font-size: 15.5px;
+}
+
+.info-wrapper {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px;
+  padding: 8px;
+  width: auto;
+  z-index: 1001;
+  border-radius: 5px;
+  border: 1px solid #515151;
+  background-color: #505050c7;
+  color: var(--light);
+  pointer-events: none;
+}
+
+.info-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.info-title {
+  display: flex;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: bold;
+  justify-content: space-between;
+}
+
+.info-title .info-unit,
+.info-title .info-number {
+  font-size: 15px;
+}
+
+.info-time {
+  display: flex;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: bold;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.info-intensity {
+  opacity: 0.75;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.info-body-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  min-height: 93px;
+  position: relative;
+  border-radius: 10px;
+  background-color: #383838;
+  min-width: 18.9rem;
+}
+
+.no-eew .info-box,
+.no-eew .info-footer {
+  display: none !important;
+}
+
+.info-box {
+  display: flex;
+  height: 72px;
+  gap: 8px;
+  opacity: 1;
+}
+
+.info-title-box {
+  width: 75px;
+  height: 75px;
+  display: grid;
+  text-align: center;
+  line-height: 60px;
+  font-size: 45px;
+  font-weight: bold;
+  padding: 5px;
+  border-radius: 12px;
+}
+
+.info-more {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.info-more .info-loc {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.info-mag-dep {
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-mag,
+.info-depth {
+  display: flex;
+  gap: 4px;
+  position: relative;
+  isolation: isolate;
+}
+
+.info-mag-text,
+.info-depth-text {
+  position: absolute;
+  font-size: 30px;
+  font-weight: bold;
+  opacity: 0.1;
+}
+
+.info-mag-val,
+.info-depth-val {
+  font-size: 26px;
+  font-weight: bold;
+  width: 60px;
+  margin-top: 8px;
+}
+
+.info-mag-val:before {
+  content: "𝖬";
+  font-size: 22px;
+  margin-right: 4px;
+}
+
+.info-depth-val:after {
+  content: "㎞";
+  font-size: 22px;
+  margin-left: 4px;
+}
+
+.info-footer {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  justify-content: space-evenly;
+}
+
+.info-nsspe-title {
+  margin-right: 0.3em;
+}
+
+.info-nsspe {
+  display: none;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.nsspe .info-nsspe {
+  display: block;
+  margin-top: 6px;
+}
+
+.nsspe .info-mag-dep {
+  display: none !important;
+}
+
+.cancel-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background-color: rgb(0 0 0 / 10%);
+  opacity: 0;
+  flex-direction: column;
+}
+
+.cancel-title {
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 36px;
+}
+
+.cancel-body {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 14px;
+}
+
+.eew-cancel .cancel-box {
+  opacity: 1;
+}
+
+.eew-cancel .info-box {
+  opacity: 0;
 }

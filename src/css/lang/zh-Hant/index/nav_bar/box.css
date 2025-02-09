@@ -1,19 +1,5 @@
-.intensity-report::before {
-  content: "震度速報";
-}
-.source-report::before {
-  content: "震源速報";
-}
-.earthquake-report::before {
-  content: "地震報告";
-}
-.tsunami-warning::before {
-  content: "海嘯警報";
-}
-.earthquake-warning::before {
-  content: "地震速報";
-}
-
+@import url("../../root/index.css");
+@import url("../../text/index.css");
 .nav-bar {
   display: flex;
   flex-direction: column;
@@ -55,7 +41,7 @@
     padding: 8px;
     padding-right: 16px;
     border-radius: 32px;
-    background-color: #fff;
+    background-color: var(--light);
     font-size: 16px;
     line-height: 20px;
     overflow: hidden;
@@ -106,7 +92,7 @@
   bottom: 5px;
   font-size: 15px;
   position: absolute;
-  color: #fff;
+  color: var(--light);
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -172,11 +158,11 @@
     align-items: center;
     justify-content: center;
     font-size: 15px;
-    color: #fff;
+    color: var(--light);
 
     svg {
       font-size: 20px;
-      color: #fff;
+      color: var(--light);
       transform: scale(0);
       transition: 0.5s cubic-bezier(0.41, -2, 0.76, 2);
     }
@@ -194,7 +180,7 @@
     border: 1px solid #505050c7;
 
     span {
-      color: #fff;
+      color: var(--light);
     }
   }
 
@@ -243,7 +229,7 @@
 
     .close-icon,
     .open-icon {
-      color: #fff;
+      color: var(--light);
       font-size: 20px;
       transform: scale(0);
     }

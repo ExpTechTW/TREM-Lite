@@ -1,0 +1,549 @@
+/*****************FAB小菜單*****************/
+.intensity-report::before {
+  content: "震度速報";
+}
+.source-report::before {
+  content: "震源速報";
+}
+.earthquake-report::before {
+  content: "地震報告";
+}
+.tsunami-warning::before {
+  content: "海嘯警報";
+}
+.earthquake-warning::before {
+  content: "地震速報";
+}
+
+/*****************震度速報小盒子*****************/
+.info-number {
+  &:not(:empty)::before {
+    content: "第";
+  }
+
+  &:not(:empty)::after {
+    content: "報";
+  }
+}
+
+.cancel-title span::before {
+  content: "取　消";
+}
+
+.cancel-body span::before {
+  content: "此地震速報已取消";
+}
+
+.no-eew.rts-trigger-low .info-unit::after {
+  content: "弱反應 " !important;
+}
+
+.no-eew.rts-trigger-middle .info-unit::after {
+  content: "震動檢測 " !important;
+}
+
+.no-eew.rts-trigger-high .info-unit::after {
+  content: "強震檢測 " !important;
+}
+
+.eew-warn .info-unit::before {
+  content: "地震速報 ";
+}
+
+.eew-alert .info-unit::before {
+  content: "緊急地震速報 ";
+}
+
+.eew-cancel .info-unit::before {
+  content: "取消報 ";
+}
+
+.eew-rts .info-unit::before {
+  content: "單點地震檢知 ";
+}
+
+.info-number-last::after {
+  content: "報(最終報)" !important;
+}
+
+.info-cancel-last::after {
+  content: "報(取消)" !important;
+}
+
+.no-eew .info-unit::after {
+  content: "暫無生效中的地震預警";
+}
+
+.info-intensity::after {
+  content: "預估最大震度";
+}
+
+.info-nsspe span::before {
+  content: "NSSPE 無震源參數推算";
+}
+
+.info-time::after {
+  content: "發震";
+}
+
+.info-mag-text::after,
+.report-box-item-wrapper:first-child .report-mag-text::after {
+  content: "規模";
+}
+
+.info-depth-text::after,
+.report-depth-text::after {
+  content: "深度";
+}
+
+/*****************使用者所在地測站資訊*****************/
+.current-station-intensity-text::before {
+  content: "震度";
+}
+
+.current-station-pga-text::before {
+  content: "加速度";
+}
+
+.current-station-intensity-val:empty::before,
+.current-station-pga-val:empty::before,
+.current-station-loc:empty::before {
+  content: "---";
+}
+
+.rts-info-level:empty::before,
+.rts-info-trigger:empty::before {
+  content: "0";
+}
+
+.max-pga-text::before {
+  content: "最大加速度";
+}
+
+.max-station-pga:empty::before {
+  content: "0.00 gal";
+}
+
+/*****************報告列表*****************/
+.report-intensity-text::before {
+  content: "觀測最大震度";
+}
+.web-detection::before {
+  content: "檢知";
+}
+.web-report::before {
+  content: "報告";
+}
+.report-replay::before {
+  content: "重播";
+}
+
+/*****************EEW各地震度*****************/
+.rts-intenisty-list-text::before {
+  content: "各地震度排序";
+}
+
+.max-intensity-text::before {
+  content: "最大觀測震度";
+}
+
+/*****************首頁*****************/
+.version-check-text::before {
+  content: "新版本";
+}
+
+#time:empty:after {
+  content: "0000-00-00 00:00:00";
+}
+
+/*****************警告通知*****************/
+.internet-error .title:before {
+  content: "網路異常";
+}
+
+.unstable .title:before {
+  content: "不穩定";
+}
+
+.unstable .warning-message-text span {
+  &:nth-child(1)::before {
+    content: "受地震活動的影響";
+  }
+  &:nth-child(2)::before {
+    content: "觀測點可能不穩定";
+  }
+}
+
+.internet-error .warning-message-text span {
+  &:nth-child(1)::before {
+    content: "網路連線異常";
+  }
+  &:nth-child(2)::before {
+    content: "請待稍後重試";
+  }
+}
+
+/*****************設定*****************/
+
+/* === 按鈕 & 標題 === */
+.button[for="general"]:before,
+.general .setting-page-header-title::before {
+  content: "一般";
+}
+.button[for="graphics"]:before,
+.graphics-header-title:before {
+  content: "圖形";
+}
+.button[for="sound-effects"]:before,
+.sound-effects-header-title::before {
+  content: "音效";
+}
+.button[for="extended"]:before,
+.extended-header-title:before {
+  content: "擴充";
+}
+.button[for="info"]:before,
+.info-header-title::before {
+  content: "關於";
+}
+.copy-debug-log::before {
+  content: "複製 debug log";
+}
+.success.message-box::before {
+  content: "操作成功，關閉設定視窗後套用！";
+}
+.failed.message-box::before {
+  content: "操作失敗！";
+}
+.success-download.message-box::before {
+  content: "下載完成，關閉設定視窗後套用！";
+}
+.success-copy.message-box::before {
+  content: "複製成功！";
+}
+.success-failed.message-box::before {
+  content: "複製失敗！";
+}
+
+/* === 一般 === */
+.location-title::before {
+  content: "所在地";
+}
+.location-description::before {
+  content: "設定所在地可以在地震發生時預估你所在區域的地震震度。";
+}
+.rts-station-title::before {
+  content: "即時測站";
+}
+.rts-station-description::before {
+  content: "顯示於主畫面左上方的即時測站。";
+}
+.warning-title::before {
+  content: "預警條件";
+}
+.warning-description::before {
+  content: "即時測站(任一站)為觸發時任一站震度門檻，預估震度(所在地)為地震預警時所在地震度門檻，達到下方任一條件後軟體將會發出音效及彈出視窗。";
+}
+.current-realtime-station::before {
+  content: "即時測站（任一站）";
+}
+.current-estimate-intensity::before {
+  content: "預估震度（所在地）";
+}
+.setting-option .intensity-0:empty::after {
+  content: "0" !important;
+  font-size: unset !important;
+}
+.show-window-title::before {
+  content: "顯示視窗";
+}
+.show-window-description::before {
+  content: "程式自動跳窗時機。";
+}
+.earthquake-eew::before {
+  content: "地震預警";
+}
+.earthquake-report::before {
+  content: "地震報告";
+}
+.earthquake-detect::before {
+  content: "地震檢知";
+}
+.setting .rts-intensity::before {
+  content: "震度速報";
+}
+.other-function-title::before {
+  content: "其他功能";
+}
+.other-function-description::before {
+  content: "TREM Lite不常用的小功能都在這裡。";
+}
+.auto-start::before {
+  content: "開機自動啟動（Windows）";
+}
+.reset-button::before,
+.reset-setting-title::before {
+  content: "重設";
+}
+.reset-setting::before {
+  content: "重置所有設定";
+}
+
+/* === 圖形 === */
+.auto-zoom-title::before {
+  content: "地圖自動縮放";
+}
+.auto-zoom-description::before {
+  content: "預設地圖自動縮放為禁用狀態。";
+}
+.block-auto-zoom::before {
+  content: "禁用地圖自動縮放";
+}
+
+/* === 音效 === */
+.effects-dong-title::before {
+  content: "預警播報";
+}
+.effects-dong-description::before {
+  content: "地震發生時播報所在地預估震度以及地震波抵達剩餘秒數。";
+}
+.dong-dong::before {
+  content: "咚咚咚音效(僅在有倒數情況下生效)";
+}
+.sound-effects-list-title::before {
+  content: "音效列表";
+}
+.sound-effects-list-description::before {
+  content: "開啟或關閉特定的音效";
+}
+.eew-1::before {
+  content: "EEW（收到地震預警時播放）";
+}
+.eew-2 {
+  &::before {
+    content: "EEW2（最大預估";
+  }
+  .special-text::before {
+    content: "震度5弱";
+  }
+  &::after {
+    content: "以上播放）";
+  }
+}
+.p-alert::before {
+  content: "INTENSITY（收到震度速報時播放）";
+}
+.pga-1 {
+  &::before {
+    content: "PGA1（PGA >";
+  }
+  .special-text::before {
+    content: "8gal";
+  }
+  &::after {
+    content: "時播放）";
+  }
+}
+.pga-2 {
+  &::before {
+    content: "PGA2（PGA >";
+  }
+  .special-text::before {
+    content: "200gal";
+  }
+  &::after {
+    content: "時播放）";
+  }
+}
+.report::after {
+  content: "REPORT（收到地震報告時播放）";
+}
+.shindo-0 {
+  &::before {
+    content: "SHINDO0（地震檢知";
+  }
+  .special-text::before {
+    content: "震度0級";
+  }
+  &::after {
+    content: "以上播放）";
+  }
+}
+.shindo-1 {
+  &::before {
+    content: "SHINDO1（地震檢知";
+  }
+  .special-text::before {
+    content: "震度2級";
+  }
+  &::after {
+    content: "以上播放）";
+  }
+}
+.shindo-2 {
+  &::before {
+    content: "SHINDO2（地震檢知";
+  }
+  .special-text::before {
+    content: "震度4級";
+  }
+  &::after {
+    content: "以上播放）";
+  }
+}
+.update::before {
+  content: "UPDATE（地震預警更正時播放）";
+}
+
+/* === 擴充功能 === */
+.extended-list-title::before {
+  content: "擴充功能";
+}
+.extended-list-description:empty::before,
+.extended-info .extended-info-warning:empty::before {
+  content: "使用來源不明或無法信任的擴充可能危及您的個人資訊安全，請謹慎使用。";
+}
+.extended-list-descriptions:empty::before {
+  content: "選擇啟用的擴充，擴充將在程式啟動時載入。";
+}
+.extended-setting-button::before {
+  content: "設定";
+}
+.extended-download-button::before {
+  content: "下載";
+}
+.extended-download-button.downloading::before {
+  content: "下載中...";
+}
+.extended-download-button.downloaded::before {
+  content: "下載完成";
+}
+.extended-update-button::before {
+  content: "更新";
+}
+.extended-latest-button::before {
+  content: "已是最新版本";
+}
+.current:empty::before {
+  content: "未設定";
+}
+.unverified-badge::before {
+  content: "未驗證";
+}
+.verified-badge::before {
+  content: "已驗證";
+}
+.unloaded-badge::before {
+  content: "未載入";
+}
+.loaded-badge::before {
+  content: "已載入";
+}
+.extended-store::before {
+  content: "TREM 擴充商店";
+}
+.extended-list-button[for="extended-state-list"]::before {
+  content: "擴充狀態";
+}
+.extended-list-button[for="extended-installed-list"]::before {
+  content: "擴充列表";
+}
+.extended-list-button[for="extended-store-list"]::before {
+  content: "擴充商店";
+}
+.extended-state-list .extended-info:empty::before {
+  content: "未有異常擴充";
+}
+
+/* === 關於 === */
+.info-trem-lite::before {
+  content: "關於 TREM Lite";
+}
+.info-trem-description::before {
+  content: "TREM-Lite 是一款開源地震速報軟體，提供給您即時的地震資訊，利用自製的測站，顯示各地的即時震度，在地震發生的第一時間取得各管道發布的強震即時警報訊息。";
+}
+.app-version-title::before {
+  content: "程式版本";
+}
+.system-os-title::before {
+  content: "系統版本";
+}
+.system-cpu-title::before {
+  content: "CPU";
+}
+.source-title::before {
+  content: "資料來源";
+}
+.source-eew::before {
+  content: "地震預警";
+}
+.source-cwa::before {
+  content: "交通部中央氣象署 (CWA)";
+}
+.source-shindo::before {
+  content: "震度";
+}
+.source-sinica::before {
+  content: "中央研究院 (SINICA)";
+}
+.source-trem::before {
+  content: "臺灣即時地震監測 (TREM)";
+}
+.contributor-title::before {
+  content: "貢獻者";
+}
+.contributor-description::before {
+  content: "感謝以下的貢獻者們，因為有了他們的貢獻， TREM Lite 才得以實現。";
+}
+
+/* === 確認彈窗 === */
+.reset .confirm-title::before {
+  content: "您確定要重置設定嗎？重設後將無法返回。";
+}
+.extendedOpen .confirm-title::before {
+  content: "您確定要啟用 ";
+}
+.extendedOpen .confirm-title::after {
+  content: " 擴充嗎，若使用來源不明或無法信任的擴充可能危及您的個人資訊安全。";
+}
+.confirm-sure:empty::before {
+  content: "確定";
+}
+.confirm-sure:not(:empty)::after {
+  content: "秒";
+}
+.confirm-cancel::before {
+  content: "取消";
+}
+
+/*****************擴充編輯*****************/
+.btn-add:before {
+  content: "新增項目";
+}
+.root:before {
+  content: "新增根級欄位";
+}
+.json-title:before {
+  content: "JSON";
+}
+.yaml-title:before {
+  content: "YAML Editor";
+}
+.json-error:before {
+  content: "JSON 格式錯誤";
+}
+.yaml-transfer-error:before {
+  content: "YAML 轉換錯誤";
+}
+.yaml-extract-error:before {
+  content: "YAML 解析錯誤";
+}
+.auto-save-success:before {
+  content: "已自動儲存";
+}
+.auto-save-error:before {
+  content: "儲存錯誤";
+}
+.load-error:before {
+  content: "讀取錯誤";
+}

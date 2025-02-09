@@ -1,23 +1,10 @@
-﻿.rts-intenisty-list-text::before {
-  content: "各地震度排序";
-}
-
-.max-intensity-text::before {
-  content: "最大觀測震度";
-}
-
-.max-pga-text::before {
-  content: "最大加速度";
-}
-
-.max-station-pga:empty::before {
-  content: "0.00 gal";
-}
+﻿@import url("../../root/index.css");
+@import url("../../text/index.css");
 
 .max-intensity-pga-wrapper {
   position: absolute;
   top: 10rem;
-  color: white;
+  color: var(--light);
   font-size: 11px;
   font-weight: 500;
   display: flex;
@@ -31,7 +18,7 @@
 
   .rts-info-box {
     background-color: #505050c7;
-    color: white;
+    color: var(--light);
     font-size: 11px;
     border: 2px solid #00000008;
     border-radius: 5px;
@@ -110,7 +97,6 @@
   display: none;
 }
 
-/**即時震度列表外包**/
 .report-wrapper.hidden ~ .rts-intensity-list-wrapper {
   transform: translateX(216%);
 }
@@ -132,7 +118,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    color: white;
+    color: var(--light);
     z-index: 1001;
     justify-content: flex-end;
 
@@ -175,8 +161,8 @@
           /**震度**/
           .rts-intensity {
             font-family: Manrope, sans-serif;
-            width: 24px;
-            min-width: 24px;
+            width: 26px;
+            min-width: 26px;
             min-height: 24px;
             height: 24px;
             display: flex;
