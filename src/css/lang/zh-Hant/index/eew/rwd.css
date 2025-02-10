@@ -230,12 +230,11 @@
 
   .report-box-item-wrapper {
     width: 95% !important;
-    height: 40px;
+    /* height: 40px; */
   }
 
   .report-box-item-wrapper:first-child {
-    height: 115px;
-
+    /* height: 115px; */
     .report-box-item-contain {
       padding: 6px !important;
     }

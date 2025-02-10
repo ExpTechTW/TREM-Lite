@@ -117,7 +117,7 @@
   margin-right: 0px;
   position: relative;
   overflow: hidden;
-  max-height: 52px;
+  /* max-height: 52px; */
 
   .report-box-item-contain {
     display: contents;
@@ -398,6 +398,9 @@
       /**震央**/
       .report-loc {
         font-size: 28px;
+        white-space: unset;
+        text-overflow: ellipsis;
+        overflow: hidden;
       }
     }
   }
