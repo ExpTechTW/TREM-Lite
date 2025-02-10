@@ -125,7 +125,7 @@ const TREM = {
 
     EEW_AUTHOR: ['trem', 'cwa'],
 
-    REPORT_LIMIT: 75,
+    REPORT_LIMIT: 9000,
 
     MAP: {
       BOUNDS: [[118.0, 21.2], [124.0, 25.8]],

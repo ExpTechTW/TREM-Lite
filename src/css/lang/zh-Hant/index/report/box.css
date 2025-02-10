@@ -117,6 +117,7 @@
   margin-right: 0px;
   position: relative;
   overflow: hidden;
+  max-height: 52px;
 
   .report-box-item-contain {
     display: contents;
@@ -217,9 +218,13 @@
   /**震央、時間**/
   .report-info-item {
     font-weight: bold;
+    max-width: 180.2px;
 
     .report-loc {
       font-size: 21px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
 
     .report-time {
