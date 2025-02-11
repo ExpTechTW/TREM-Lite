@@ -5,8 +5,10 @@ const maplibregl = require('maplibre-gl');
 const TREM = require('./constant');
 const { createIntensityIcon, createIntensityIconSquare } = require('./utils/utils');
 
+let init_error = false;
+
 function initMap(delay = 3000) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     function attempt() {
       const map = new maplibregl.Map({
         container: 'map',
@@ -93,10 +95,12 @@ function initMap(delay = 3000) {
 
       map.on('load', () => resolve(map));
 
-      map.on('error', (e) => {
-        logger.error('Map loading error:', e);
+      map.on('error', () => {
+        if (!init_error) {
+          init_error = true;
+          logger.error('Map loading error!');
+        }
 
-        logger.warn(`Retrying... attempts remaining`);
         setTimeout(() => {
           attempt();
         }, delay);
