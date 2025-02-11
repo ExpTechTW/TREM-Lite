@@ -26,13 +26,13 @@
   }
 }
 
-.cancel-title span::before {
+/* .cancel-title span::before {
   content: "取　消";
 }
 
 .cancel-body span::before {
   content: "此地震速報已取消";
-}
+} */
 
 .no-eew.rts-trigger-low .info-unit::after {
   content: "弱反應 " !important;
