@@ -10,7 +10,9 @@ const {
 const path = require('path');
 const fs = require('fs-extra');
 const yaml = require('js-yaml');
+const Store = require('electron-store');
 
+const store = new Store();
 let win;
 let SettingWindow;
 let pipWindow = null;
@@ -33,12 +35,16 @@ function updateAutoLaunchSetting(value) {
 }
 
 function createWindow() {
+  const winState = store.get('windowState', { width: 1280, height: 815 });
+
   win = new BrowserWindow({
     title: `TREM Lite v${app.getVersion()}`,
     minWidth: 900,
     minHeight: 680,
-    width: 1280,
-    height: 815,
+    width: winState.width,
+    height: winState.height,
+    x: winState.x,
+    y: winState.y,
     maximizable: true,
     icon: 'TREM.ico',
     frame: true,
@@ -70,6 +76,9 @@ function createWindow() {
   });
 
   win.on('close', (event) => {
+    const bounds = win.getBounds();
+    store.set('windowState', bounds);
+
     if (forceQuit) {
       win = null;
       return;

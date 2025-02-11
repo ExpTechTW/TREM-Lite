@@ -31,6 +31,7 @@
   "dependencies": {
     "@electron/remote": "^2.1.2",
     "adm-zip": "^0.5.16",
+    "electron-store": "^8.2.0",
     "fs-extra": "^11.3.0",
     "js-yaml": "^4.1.0",
     "maplibre-gl": "^5.1.0",
