@@ -35,6 +35,7 @@ function updateAutoLaunchSetting(value) {
 }
 
 function createWindow() {
+  store.clear();
   const winState = store.get('windowState', { width: 1280, height: 815 });
 
   win = new BrowserWindow({
