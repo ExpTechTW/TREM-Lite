@@ -243,10 +243,10 @@
   line-height: 14px;
 }
 
-.eew-cancel .cancel-box {
+/* .eew-cancel .cancel-box {
+  opacity: 1;
+} */
+
+.eew-cancel .info-box {
   opacity: 1;
 }
-
-/* .eew-cancel .info-box {
-  opacity: 0;
-} */
