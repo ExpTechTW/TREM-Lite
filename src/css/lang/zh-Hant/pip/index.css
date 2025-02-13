@@ -25,7 +25,7 @@ body {
 .info-mag-val,
 .info-depth-val {
   font-size: 20px;
-  margin-top: 3px;
+  margin-top: 7px;
 }
 
 .info-mag-val {
@@ -75,6 +75,7 @@ body {
 .info-more {
   justify-content: center;
   gap: 8px;
+  margin-top: 3px;
 }
 
 .info-mag-text,
