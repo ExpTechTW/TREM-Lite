@@ -58,7 +58,17 @@ class WindowControler {
     }
     win.flashFrame(true);
     win.setAlwaysOnTop(true);
-    win.show();
+    if (win.isMinimized()) {
+      win.restore();
+    }
+    else if (!win.isVisible()) {
+      win.show();
+    }
+
+    if (win.isMaximized()) {
+      win.maximize();
+    }
+
     win.setAlwaysOnTop(false);
   }
 }
