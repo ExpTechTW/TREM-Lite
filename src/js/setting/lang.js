@@ -20,10 +20,11 @@ function generateColorCSS() {
       --rts-trigger-low: ${TREM.constant.COLOR.EEW.TRIGGER.LOW};
       --rts-trigger-middle: ${TREM.constant.COLOR.EEW.TRIGGER.MIDDLE};
       --rts-trigger-high: ${TREM.constant.COLOR.EEW.TRIGGER.HIGH};
-      
+
       --eew-s-warn: ${TREM.constant.COLOR.EEW.S.WARN};
       --eew-s-alert: ${TREM.constant.COLOR.EEW.S.ALERT};
       --eew-s-cancel: ${TREM.constant.COLOR.EEW.S.CANCEL};
+      --eew-s-rts: ${TREM.constant.COLOR.EEW.S.RTS};
       --eew-p: ${TREM.constant.COLOR.EEW.P};
     }
   </style>

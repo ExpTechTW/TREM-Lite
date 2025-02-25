@@ -103,8 +103,25 @@ body {
 .info-loc {
   font-size: 20px !important;
 }
+
 .eew-warn {
-  border: 0px solid var(--eew-s-warn) !important;
+  background-color: var(--eew-s-warn) !important;
+  border: 1px solid var(--eew-s-warn) !important;
+}
+
+.eew-alert {
+  background-color: var(--eew-s-alert) !important;
+  border: 1px solid var(--eew-s-alert) !important;
+}
+
+.eew-cancel {
+  background-color: var(--eew-s-cancel) !important;
+  border: 1px solid var(--eew-s-cancel) !important;
+}
+
+.eew-rts {
+  background-color: var(--eew-s-rts) !important;
+  border: 1px solid var(--eew-s-rts) !important;
 }
 
 .window-button-wrapper,
