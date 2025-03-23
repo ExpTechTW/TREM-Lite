@@ -7,10 +7,6 @@ const store = require('./main');
 const bubble = new store();
 const fetchData = require('../core/utils/fetch');
 
-const pluginStore = document.querySelector(
-  '.extended-store-list .extended-info',
-);
-
 class PluginList {
   constructor() {
     this.enablePluginList
@@ -78,7 +74,6 @@ class PluginList {
       }
     }
 
-    this.createPluginStoreList();
     this.getPluginState();
   }
 
@@ -147,59 +142,6 @@ class PluginList {
     const styleElement = document.createElement('style');
     styleElement.textContent = cssRules;
     document.head.appendChild(styleElement);
-  }
-
-  createPluginStoreList() {
-    this.storeData.forEach((item) => {
-      if (item.repository.releases.releases.length) {
-        let button = '';
-
-        const new_version
-          = item.repository.releases.releases[0].tag_name.replace('v', '');
-        item.version = new_version;
-        const local_item = this.pluginList.find((_) => _.name == item.name);
-
-        if (!local_item) {
-          button = 'download';
-        }
-        else if (
-          new_version != local_item.version
-          && PluginLoader.getInstance().compareVersions(
-            new_version,
-            local_item.version,
-          )
-        ) {
-          button = 'update';
-        }
-        else {
-          button = 'latest';
-        }
-
-        const newItem = this.renderPluginItem(item, true, button);
-        this.pluginStoreList += newItem;
-      }
-    });
-
-    document.addEventListener('click', async (e) => {
-      if (e.target.id?.startsWith('extended-download-button.')) {
-        const pluginName = e.target.id.split('.')[1];
-
-        const new_item = this.storeData.find((_) => _.name == pluginName);
-
-        e.target.classList.add('disabled');
-        e.target.classList.add('downloading');
-        if (new_item) {
-          await PluginLoader.getInstance().downloadPlugin(
-            pluginName,
-            `https://github.com/${new_item.repository.full_name}/releases/download/${new_item.repository.releases.releases[0].tag_name}/${pluginName}.trem`,
-          );
-        }
-        e.target.classList.add('downloaded');
-        bubble.showBubble('success-download', 1500);
-      }
-    });
-
-    pluginStore.innerHTML = this.pluginStoreList;
   }
 
   hotKey() {

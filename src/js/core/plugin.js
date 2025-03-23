@@ -1107,28 +1107,6 @@ class PluginLoader {
     ipcRenderer.send('all-reload');
   }
 
-  async downloadPlugin(name, url) {
-    try {
-      const res = await fetchData(url, 5000);
-      if (res && res.ok) {
-        const pluginPath = path.join(this.pluginDir, `${name}.trem`);
-
-        fs.removeSync(pluginPath);
-
-        const buffer = await res.arrayBuffer();
-        await fs.writeFile(pluginPath, Buffer.from(buffer));
-
-        logger.info(`Plugin downloaded successfully: ${name}`);
-      }
-      else {
-        logger.error(`Failed to download plugin ${name}: ${res?.status}`);
-      }
-    }
-    catch (error) {
-      logger.error(`Plugin download failed: ${error.message}`);
-    }
-  }
-
   parseVersion(version) {
     const regex = /^(\d+)\.(\d+)\.(\d+)(?:-([\w.-]+))?(?:\+([\w.-]+))?$/;
     const match = version.match(regex);
