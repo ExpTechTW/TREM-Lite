@@ -60,3 +60,13 @@ TREM-Net 是一個 2022 年 6 月初開始於全臺各地部署站點的專案�
 ## 開放原始碼授權
 
 開放原始碼授權資訊請詳見 [LICENSE](LICENSE) 檔案
+
+## Star History
+
+<a href="https://www.star-history.com/#ExpTechTW/TREM-Lite&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ExpTechTW/TREM-Lite&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ExpTechTW/TREM-Lite&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ExpTechTW/TREM-Lite&type=Date" />
+ </picture>
+</a>
