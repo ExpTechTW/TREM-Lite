@@ -205,6 +205,10 @@ function createSettingWindow() {
 
 const shouldQuit = app.requestSingleInstanceLock();
 
+if (process.platform === 'win32') {
+  app.setAppUserModelId('TREM Lite |臺灣即時地震監測');
+}
+
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
     app.setAsDefaultProtocolClient('trem-lite', process.execPath, [path.resolve(process.argv[1])]);
