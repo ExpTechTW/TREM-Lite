@@ -26,14 +26,6 @@ class Logger {
   #initLogger() {
     const logPath = path.join(app.getPath('logs'), '%DATE%.log');
 
-    const file = new winston.transports.DailyRotateFile({
-      filename: logPath,
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-    });
-
     const ansiColors = {
       reset: '\x1b[0m',
       red: '\x1b[31m',
@@ -73,7 +65,11 @@ class Logger {
           format: consoleFormat,
         }),
         new winston.transports.DailyRotateFile({
-          ...file,
+          filename: logPath,
+          datePattern: 'YYYY-MM-DD',
+          zippedArchive: true,
+          maxSize: '20m',
+          maxFiles: '14d',
           format: fileFormat,
         }),
       ],
