@@ -9,7 +9,6 @@ const MixinManager = require('./mixin');
 const PluginVerifier = require('./verify');
 const crypto = require('crypto');
 const manager = require('./manager');
-const fetchData = require('./utils/fetch');
 const { ipcRenderer } = require('electron');
 const now = require('../index/utils/ntp');
 
