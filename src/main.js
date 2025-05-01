@@ -27,6 +27,10 @@ const configDir = path.join(app.getPath('userData'), 'user/config.yml');
 const is_mac = process.platform === 'darwin';
 
 function updateAutoLaunchSetting(value) {
+  if (process.env.NODE_ENV === 'development') {
+    return;
+  }
+
   app.setLoginItemSettings({
     openAtLogin: value ? true : false,
     name: 'TREM Lite',
