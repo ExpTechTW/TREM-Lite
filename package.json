@@ -5,7 +5,7 @@
   "main": "./src/main.js",
   "author": "ExpTechTW <ExpTech.tw@gmail.com>",
   "scripts": {
-    "start": "NODE_ENV=development electron .",
+    "start": "cross-env NODE_ENV=development electron .",
     "build": "electron-builder build --mac --win --linux",
     "build:mac": "electron-builder build --mac",
     "build:win": "electron-builder build --win",
@@ -20,6 +20,7 @@
     "@eslint/js": "^9.14.0",
     "@stylistic/eslint-plugin": "^2.10.1",
     "@types/eslint__js": "^8.42.3",
+    "cross-env": "^7.0.3",
     "electron": "^34.1.1",
     "electron-builder": "^25.1.8",
     "eslint": "^9.14.0",
