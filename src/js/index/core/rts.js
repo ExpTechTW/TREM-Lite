@@ -143,6 +143,10 @@ TREM.variable.events.on('DataRts', (ans) => {
       }
     }
 
+    if (!maxPgaStationData) {
+      return;
+    }
+
     alert = alert ? true : (maxPgaStationData.pga > TREM.constant.DEV_NSSPE.PGA_LEVEL && (TREM.constant.DEV_NSSPE.STATION.includes('all') || TREM.constant.DEV_NSSPE.STATION.includes(maxPgaKey))) ? true : false;
 
     if (!alert) {
