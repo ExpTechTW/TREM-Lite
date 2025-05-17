@@ -26,6 +26,13 @@ const configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
 const is_mac = process.platform === 'darwin';
 
+const iconPath = path.join(__dirname, 'TREM.png');
+const appIcon = nativeImage.createFromPath(iconPath);
+
+if (is_mac) {
+  app.dock.setIcon(appIcon.resize({ width: 128, height: 128 }));
+}
+
 function updateAutoLaunchSetting(value) {
   if (process.env.NODE_ENV === 'development') {
     return;
@@ -51,7 +58,7 @@ function createWindow() {
     x: winState.x,
     y: winState.y,
     maximizable: true,
-    icon: 'TREM.ico',
+    icon: appIcon,
     frame: true,
     webPreferences: {
       nodeIntegration: true,
@@ -282,11 +289,6 @@ else {
     trayIcon();
     createWindow();
     createPiPWindow();
-
-    if (is_mac) {
-      const iconPath = path.join(__dirname, 'TREM.png');
-      app.dock.setIcon(nativeImage.createFromPath(iconPath));
-    }
   });
 }
 
@@ -445,8 +447,31 @@ function trayIcon() {
     tray = null;
   }
 
-  const iconPath = path.join(__dirname, 'TREM.ico');
-  tray = new Tray(nativeImage.createFromPath(iconPath));
+  let icon;
+  if (is_mac) {
+    const iconPath = path.join(__dirname, 'TREM.png');
+    icon = nativeImage.createFromPath(iconPath);
+    if (icon.isEmpty()) {
+      console.error('Failed to load tray icon');
+      return;
+    }
+
+    icon = icon.resize({ width: 16, height: 16 });
+
+    icon.setTemplateImage(false);
+  }
+  else {
+    icon = nativeImage.createFromPath(path.join(__dirname, 'TREM.ico'));
+  }
+
+  try {
+    tray = new Tray(icon);
+  }
+  catch (error) {
+    console.error('Failed to create tray:', error);
+    return;
+  }
+
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', () => {
     if (win != null) {
@@ -485,6 +510,12 @@ function trayIcon() {
 
   tray.setToolTip(`TREM Lite v${app.getVersion()}`);
   tray.setContextMenu(contextMenu);
+
+  if (is_mac) {
+    tray.on('right-click', () => {
+      tray.popUpContextMenu(contextMenu);
+    });
+  }
 }
 
 function restart() {
