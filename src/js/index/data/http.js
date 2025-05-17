@@ -55,7 +55,14 @@ async function getData(time) {
   activeRequests.push(...activeReqs);
 
   try {
-    const responses = await Promise.all(activeReqs.map((req) => !req ? null : req.execute()));
+    const responses = await Promise.all(
+      activeReqs.map((req) => {
+        if (!req) {
+          return null;
+        }
+        return req.execute().catch(() => null);
+      }),
+    );
 
     let rts = null, eew = null, intensity = null, lpgm = null;
 
@@ -65,11 +72,9 @@ async function getData(time) {
     if (responses[1]?.ok) {
       eew = await responses[1].json();
     }
-
     if (shouldFetchIntensity && responses[2]?.ok) {
       intensity = await responses[2].json();
     }
-
     if (shouldFetchLPGM && responses[responses.length - 1]?.ok) {
       lpgm = await responses[responses.length - 1].json();
     }

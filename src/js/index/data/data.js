@@ -21,52 +21,62 @@ class TimeoutManager {
 
     this.MIN_TIMEOUT = 1000;
     this.MAX_TIMEOUT = 10000;
-
+    this.ADJUST_STEP = 500;
+    this.lastAdjustTime = Date.now();
     this.failureCount = 0;
-    this.maxFailures = 5;
   }
 
   adjustTimeouts(data) {
+    const now = Date.now();
+    if (now - this.lastAdjustTime < 2000) {
+      return true;
+    }
+
+    this.lastAdjustTime = now;
+
     if (!data.eew && !data.rts) {
-      this.failureCount = Math.min(this.failureCount + 1, this.maxFailures);
+      this.failureCount = Math.min(this.failureCount + 1, 10);
 
-      const increaseAmount = Math.min(
-        1000 * (1 + this.failureCount * 0.5),
-        this.MAX_TIMEOUT - TREM.constant.HTTP_TIMEOUT.LOOP,
-      );
+      const increaseAmount = this.ADJUST_STEP * this.failureCount;
 
-      if (TREM.constant.HTTP_TIMEOUT.LOOP < this.MAX_TIMEOUT) {
-        ['LOOP', 'RTS', 'EEW'].forEach((type) => {
-          TREM.constant.HTTP_TIMEOUT[type] = Math.min(
-            TREM.constant.HTTP_TIMEOUT[type] + increaseAmount,
-            this.MAX_TIMEOUT,
-          );
-        });
-      }
+      ['LOOP', 'RTS', 'EEW'].forEach((type) => {
+        const currentTimeout = TREM.constant.HTTP_TIMEOUT[type];
+        const newTimeout = Math.min(
+          currentTimeout + increaseAmount,
+          this.MAX_TIMEOUT,
+        );
 
-      console.log(`Increased timeouts by ${increaseAmount}ms (Failure count: ${this.failureCount})`);
+        if (newTimeout !== currentTimeout) {
+          console.log(`[TimeoutManager] ${type} timeout increased to ${newTimeout}ms`);
+          TREM.constant.HTTP_TIMEOUT[type] = newTimeout;
+        }
+      });
+
       return false;
     }
     else {
-      this.failureCount = Math.max(0, this.failureCount - 1);
+      this.failureCount = Math.max(0, Math.floor(this.failureCount / 2));
 
-      const decreaseAmount = Math.min(
-        500 * (1 + (5 - this.failureCount) * 0.3),
-        TREM.constant.HTTP_TIMEOUT.LOOP - this.MIN_TIMEOUT,
-      );
-
-      if (TREM.constant.HTTP_TIMEOUT.LOOP > this.MIN_TIMEOUT) {
-        ['LOOP', 'RTS', 'EEW'].forEach((type) => {
-          TREM.constant.HTTP_TIMEOUT[type] = Math.max(
-            TREM.constant.HTTP_TIMEOUT[type] - decreaseAmount,
-            this.originalTimeouts[type],
-          );
-        });
+      const currentTimeout = TREM.constant.HTTP_TIMEOUT.LOOP;
+      if (currentTimeout <= this.originalTimeouts.LOOP) {
+        return true;
       }
 
-      if (decreaseAmount > 0) {
-        console.log(`Decreased timeouts by ${decreaseAmount}ms (Stability count: ${5 - this.failureCount})`);
-      }
+      const decreaseAmount = this.ADJUST_STEP * (this.failureCount + 1);
+
+      ['LOOP', 'RTS', 'EEW'].forEach((type) => {
+        const currentTimeout = TREM.constant.HTTP_TIMEOUT[type];
+        const newTimeout = Math.max(
+          this.originalTimeouts[type],
+          currentTimeout - decreaseAmount,
+        );
+
+        if (newTimeout !== currentTimeout) {
+          console.log(`[TimeoutManager] ${type} timeout decreased to ${newTimeout}ms`);
+          TREM.constant.HTTP_TIMEOUT[type] = newTimeout;
+        }
+      });
+
       return true;
     }
   }
@@ -75,6 +85,7 @@ class TimeoutManager {
     Object.keys(this.originalTimeouts).forEach((type) => {
       TREM.constant.HTTP_TIMEOUT[type] = this.originalTimeouts[type];
     });
+    this.lastAdjustTime = Date.now();
     this.failureCount = 0;
   }
 }

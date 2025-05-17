@@ -42,7 +42,6 @@ async function fetchData(url, timeout = 1000) {
 
     clearTimeout(timeoutId);
     networkState.setOffline(false);
-
     return response;
   }
   catch (error) {
@@ -73,7 +72,6 @@ fetchData.withController = function (url, timeout = 1000) {
 
         clearTimeout(timeoutId);
         networkState.setOffline(false);
-
         return response;
       }
       catch (error) {
