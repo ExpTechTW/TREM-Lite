@@ -38,6 +38,7 @@ async function fetchData(url, timeout = 1000) {
     const response = await fetch(url, {
       signal: controller.signal,
       cache: 'no-cache',
+      keepalive: false,
     });
 
     clearTimeout(timeoutId);
@@ -68,6 +69,7 @@ fetchData.withController = function (url, timeout = 1000) {
         const response = await fetch(url, {
           signal: controller.signal,
           cache: 'no-cache',
+          keepalive: false,
         });
 
         clearTimeout(timeoutId);
