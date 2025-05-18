@@ -1,3 +1,4 @@
+const { Pool } = require('undici');
 const logger = require('./logger');
 
 class NetworkState {
@@ -33,12 +34,16 @@ class FetchError extends Error {
 async function fetchData(url, timeout = 1000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const pool = new Pool(new URL(url).origin, {
+    pipelining: 0,
+    connections: 1,
+  });
 
   try {
     const response = await fetch(url, {
       signal: controller.signal,
       cache: 'no-cache',
-      keepalive: false,
+      dispatcher: pool,
     });
 
     clearTimeout(timeoutId);
@@ -46,8 +51,6 @@ async function fetchData(url, timeout = 1000) {
     return response;
   }
   catch (error) {
-    clearTimeout(timeoutId);
-
     if (error.name === 'AbortError') {
       logger.error(`[utils/fetch.js] -> time out | ${url}`);
       throw new FetchError('Request timeout', 'TIMEOUT', url);
@@ -57,11 +60,19 @@ async function fetchData(url, timeout = 1000) {
     networkState.setOffline(true);
     throw new FetchError(error.message, 'NETWORK_ERROR', url);
   }
+  finally {
+    clearTimeout(timeoutId);
+    pool.close();
+  }
 }
 
 fetchData.withController = function (url, timeout = 1000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const pool = new Pool(new URL(url).origin, {
+    pipelining: 0,
+    connections: 1,
+  });
 
   return {
     execute: async () => {
@@ -69,7 +80,7 @@ fetchData.withController = function (url, timeout = 1000) {
         const response = await fetch(url, {
           signal: controller.signal,
           cache: 'no-cache',
-          keepalive: false,
+          dispatcher: pool,
         });
 
         clearTimeout(timeoutId);
@@ -77,8 +88,6 @@ fetchData.withController = function (url, timeout = 1000) {
         return response;
       }
       catch (error) {
-        clearTimeout(timeoutId);
-
         if (error.name === 'AbortError') {
           logger.error(`[utils/fetch.js] -> time out | ${url}`);
           throw new FetchError('Request timeout', 'TIMEOUT', url);
@@ -87,6 +96,10 @@ fetchData.withController = function (url, timeout = 1000) {
         logger.error(`[utils/fetch.js] -> fetch error: ${url} | ${error.message}`);
         networkState.setOffline(true);
         throw new FetchError(error.message, 'NETWORK_ERROR', url);
+      }
+      finally {
+        clearTimeout(timeoutId);
+        pool.close();
       }
     },
     controller,
