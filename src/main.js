@@ -47,7 +47,7 @@ function updateAutoLaunchSetting(value) {
 
 function createWindow() {
   store.clear();
-  const winState = store.get('windowState', { width: 1280, height: 815 });
+  const winState = store.get('windowState', { width: 1280, height: 748 });
 
   win = new BrowserWindow({
     title: `TREM Lite v${app.getVersion()}`,

@@ -125,7 +125,7 @@ const TREM = {
 
     EEW_AUTHOR: ['trem', 'cwa'],
 
-    REPORT_LIMIT: 75,
+    REPORT_LIMIT: 7500,
 
     MAP: {
       BOUNDS: [[118.0, 21.2], [124.0, 25.8]],
@@ -168,7 +168,7 @@ const TREM = {
   },
 
   variable: {
-    rts_station_id: 0,
+    rts_station_id: 'D001',
     map: null,
     events: null,
     time: null,

@@ -188,7 +188,7 @@ TREM.variable.events.on('DataRts', (ans) => {
         pga = ans.data.station[id].pga;
       }
 
-      if (id == config['realtime-station-id']) {
+      if (TREM.variable.rts_station_id == id || id == config['realtime-station-id']) {
         const I = (alert && ans.data.station[id].alert) ? ans.data.station[id].I : ans.data.station[id].i;
         const loc = search_loc_name(station_location.code);
         current_station_loc.textContent = `${loc.city}${loc.town}`;
