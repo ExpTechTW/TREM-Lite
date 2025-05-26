@@ -193,6 +193,7 @@ function show_eew(rotation = true) {
   }
 
   triggerBox.innerHTML = '';
+  TREM.variable.last_rotation = eew_rotation;
 
   if (count && eew_list.length) {
     TREM.variable.cache.show_eew_box = true;
@@ -278,6 +279,7 @@ function show_eew(rotation = true) {
     }
     else {
       info_wrapper.className = 'info-wrapper no-eew';
+      TREM.variable.last_rotation = null;
 
       ipcRenderer.send('update-pip', {
         noEew: true,

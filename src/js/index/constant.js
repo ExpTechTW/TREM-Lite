@@ -168,6 +168,7 @@ const TREM = {
   },
 
   variable: {
+    last_rotation: 0,
     rts_station_id: 0,
     map: null,
     events: null,

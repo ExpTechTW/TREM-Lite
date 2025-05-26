@@ -155,10 +155,14 @@
     translate: 92%;
   }
 
+  .report-wrapper.hidden ~ .rts-intensity-list-wrapper {
+    transform: translateX(135%);
+  }
+
   .rts-intensity-list-wrapper {
     bottom: 2px;
     max-height: 100px !important;
-    width: 125px !important;
+    width: auto !important;
     right: 16.5rem;
     min-height: fit-content;
   }
@@ -219,7 +223,8 @@
   }
 
   .current-station-info {
-    width: 130px !important;
+    min-width: 130px;
+    width: auto !important;
     margin-right: 0 !important;
   }
 
