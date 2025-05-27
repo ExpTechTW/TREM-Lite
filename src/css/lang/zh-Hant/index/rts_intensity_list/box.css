@@ -95,7 +95,7 @@
 }
 
 .report-wrapper.hidden ~ .rts-intensity-list-wrapper {
-  transform: translateX(165%);
+  transform: translateX(158%);
 }
 
 .rts-intensity-list-wrapper {
@@ -104,7 +104,6 @@
   bottom: 3px;
   max-height: 300px;
   width: auto;
-  margin-right: 8px;
   right: 20rem;
   /* min-height: 180px; */
   transition: transform 0.6s ease;
@@ -120,6 +119,7 @@
     color: var(--light);
     z-index: 1001;
     justify-content: flex-end;
+    min-width: 199px;
 
     .rts-intensity-list-container {
       display: flex;
