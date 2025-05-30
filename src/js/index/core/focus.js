@@ -32,7 +32,7 @@ class FocusManager {
 
   bindEvents() {
     this.focusButton.addEventListener('click', () => {
-      this.focusReset();
+      this.focusReset(true);
       this.lock = false;
       this.isMouseDown = false;
       this.focusButton.style.color = 'white';
@@ -102,8 +102,8 @@ class FocusManager {
     }
   }
 
-  focusReset() {
-    if (this.config['check-box']['graphics-block-auto-zoom']) {
+  focusReset(isBtn) {
+    if (this.config['check-box']['graphics-block-auto-zoom'] && !isBtn) {
       return;
     }
 
