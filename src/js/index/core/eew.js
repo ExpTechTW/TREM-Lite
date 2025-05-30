@@ -193,7 +193,6 @@ function show_eew(rotation = true) {
   }
 
   triggerBox.innerHTML = '';
-  TREM.variable.last_rotation = eew_rotation;
 
   if (count && eew_list.length) {
     TREM.variable.cache.show_eew_box = true;
@@ -234,6 +233,7 @@ function show_eew(rotation = true) {
           time: formatTime(eew.eq.time),
         });
       }
+      TREM.variable.last_rotation = eew_rotation;
     }
 
     if (rotation) {
