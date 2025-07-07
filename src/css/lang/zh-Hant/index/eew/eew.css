@@ -173,7 +173,7 @@
 .info-depth-val {
   font-size: 26px;
   font-weight: bold;
-  width: 60px;
+  width: auto;
   margin-top: 8px;
 }
 
