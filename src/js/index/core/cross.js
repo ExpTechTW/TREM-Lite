@@ -76,25 +76,23 @@ function refresh_cross(show) {
         no++;
       }
 
-      if (no < 5) {
-        if (show || eew.status == 3) {
-          const opacity = eew.status == 3 ? 0.6 : 1;
-          markerFeatures.push({
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [eew.eq.lon, eew.eq.lat],
-            },
-            properties: {
-              no,
-              markerType: eew.eq.mag === 1 ? 'dot' : 'cross',
-              maxIntensity: eew.eq.max,
-              fillColor: TREM.constant.COLOR.INTENSITY[eew.eq.max],
-              strokeColor: TREM.constant.COLOR.INTENSITY_TEXT[eew.eq.max],
-              opacity: opacity,
-            },
-          });
-        }
+      if (show || eew.status == 3) {
+        const opacity = eew.status == 3 ? 0.6 : 1;
+        markerFeatures.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [eew.eq.lon, eew.eq.lat],
+          },
+          properties: {
+            no: (no < 5) ? no : 0,
+            markerType: !eew.level ? 'dot' : 'cross',
+            maxIntensity: eew.eq.max,
+            fillColor: TREM.constant.COLOR.INTENSITY[eew.eq.max],
+            strokeColor: TREM.constant.COLOR.INTENSITY_TEXT[eew.eq.max],
+            opacity: opacity,
+          },
+        });
       }
     }
   }
