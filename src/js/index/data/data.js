@@ -246,7 +246,7 @@ class DataManager {
               last_time: currentTime,
               serial: 1,
             };
-            TREM.variable.data.eew.push(data);
+            TREM.variable.data.eew.push({ ...data, method: 'nsspe' });
             TREM.variable.events.emit('EewRelease', eventData);
           }
           return;
@@ -261,6 +261,10 @@ class DataManager {
         }
 
         TREM.variable.events.emit('EewUpdate', eventData);
+
+        if (data.eq.mag && data.eq.mag != 1) {
+          data.method = 'eew';
+        }
 
         if (data.status == 3 && TREM.variable.data.eew[existingIndex].status != data.status) {
           TREM.variable.events.emit('EewCancel', eventData);
