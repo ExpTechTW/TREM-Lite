@@ -25,20 +25,31 @@ const eew_cache = {};
 TREM.variable.events.on('EewRelease', (ans) => {
   eew_cache[ans.data.id] = ans.data;
   show_eew(false);
+  createEewLayer(ans);
+});
 
-  TREM.variable.map.addSource(`${ans.data.id}-s-wave`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
-  TREM.variable.map.addSource(`${ans.data.id}-p-wave`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
-  TREM.variable.map.addSource(`${ans.data.id}-s-wave-bg`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
+function createEewLayer(ans) {
+  if (!TREM.variable.map.getSource(`${ans.data.id}-s-wave`)) {
+    TREM.variable.map.addSource(`${ans.data.id}-s-wave`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
+  }
+  if (!TREM.variable.map.getSource(`${ans.data.id}-p-wave`)) {
+    TREM.variable.map.addSource(`${ans.data.id}-p-wave`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
+  }
+  if (!TREM.variable.map.getSource(`${ans.data.id}-s-wave-bg`)) {
+    TREM.variable.map.addSource(`${ans.data.id}-s-wave-bg`, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, tolerance: 1, buffer: 128 });
+  }
 
-  TREM.variable.map.addLayer({
-    id: `${ans.data.id}-p-wave-outline`,
-    type: 'line',
-    source: `${ans.data.id}-p-wave`,
-    paint: {
-      'line-color': TREM.constant.COLOR.EEW.P,
-      'line-width': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.2 : 1,
-    },
-  });
+  if (!TREM.variable.map.getLayer(`${ans.data.id}-p-wave-outline`)) {
+    TREM.variable.map.addLayer({
+      id: `${ans.data.id}-p-wave-outline`,
+      type: 'line',
+      source: `${ans.data.id}-p-wave`,
+      paint: {
+        'line-color': TREM.constant.COLOR.EEW.P,
+        'line-width': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.2 : 1,
+      },
+    });
+  }
 
   const color = (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem')
     ? TREM.constant.COLOR.TREM.S
@@ -46,29 +57,33 @@ TREM.variable.events.on('EewRelease', (ans) => {
       ? TREM.constant.COLOR.EEW.S.ALERT
       : TREM.constant.COLOR.EEW.S.WARN;
 
-  TREM.variable.map.addLayer({
-    id: `${ans.data.id}-s-wave-outline`,
-    type: 'line',
-    source: `${ans.data.id}-s-wave`,
-    paint: {
-      'line-color': color,
-      'line-width': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.6 : 2,
-    },
-  });
-
-  TREM.variable.map.addLayer(
-    {
-      id: `${ans.data.id}-s-wave-background`,
-      type: 'fill',
-      source: `${ans.data.id}-s-wave-bg`,
+  if (!TREM.variable.map.getLayer(`${ans.data.id}-s-wave-outline`)) {
+    TREM.variable.map.addLayer({
+      id: `${ans.data.id}-s-wave-outline`,
+      type: 'line',
+      source: `${ans.data.id}-s-wave`,
       paint: {
-        'fill-color': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? TREM.constant.COLOR.TREM.P : color,
-        'fill-opacity': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0 : 0.25,
+        'line-color': color,
+        'line-width': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0.6 : 2,
       },
-    },
-    'county',
-  );
-});
+    });
+  }
+
+  if (!TREM.variable.map.getLayer(`${ans.data.id}-s-wave-background`)) {
+    TREM.variable.map.addLayer(
+      {
+        id: `${ans.data.id}-s-wave-background`,
+        type: 'fill',
+        source: `${ans.data.id}-s-wave-bg`,
+        paint: {
+          'fill-color': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? TREM.constant.COLOR.TREM.P : color,
+          'fill-opacity': (!TREM.constant.SHOW_TREM_EEW && ans.data.author == 'trem') ? 0 : 0.25,
+        },
+      },
+      'county',
+    );
+  }
+}
 
 TREM.variable.events.on('EewAlert', (ans) => {
   if (TREM.variable.map.getLayer(`${ans.data.id}-s-wave-outline`)) {
@@ -108,6 +123,9 @@ TREM.variable.events.on('EewAlert', (ans) => {
 
 TREM.variable.events.on('EewUpdate', (ans) => {
   eew_cache[ans.data.id] = ans.data;
+
+  createEewLayer(ans);
+
   show_eew(false);
   refresh_cross(false);
 

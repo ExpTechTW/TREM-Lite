@@ -266,7 +266,7 @@ class DataManager {
           TREM.variable.events.emit('EewCancel', eventData);
         }
 
-        if (!TREM.variable.data.eew[existingIndex].status && data.status == 1) {
+        if (TREM.variable.data.eew[existingIndex].status != 1 && data.status == 1) {
           TREM.variable.events.emit('EewAlert', eventData);
         }
 
