@@ -86,7 +86,7 @@ function refresh_cross(show) {
           },
           properties: {
             no: (no < 5) ? no : 0,
-            markerType: !eew.level ? 'dot' : 'cross',
+            markerType: !eew.level || eew.eq.mag == 1 ? 'dot' : 'cross',
             maxIntensity: eew.eq.max,
             fillColor: TREM.constant.COLOR.INTENSITY[eew.eq.max],
             strokeColor: TREM.constant.COLOR.INTENSITY_TEXT[eew.eq.max],
