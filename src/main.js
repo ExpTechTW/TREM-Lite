@@ -25,6 +25,7 @@ const tempDir = path.join(app.getPath('userData'), 'plugins-temp');
 const configDir = path.join(app.getPath('userData'), 'user/config.yml');
 
 const is_mac = process.platform === 'darwin';
+const is_linux = process.platform === 'linux';
 
 const iconPath = path.join(__dirname, 'TREM.png');
 const appIcon = nativeImage.createFromPath(iconPath);
@@ -448,7 +449,7 @@ function trayIcon() {
   }
 
   let icon;
-  if (is_mac) {
+  if (is_mac || is_linux) {
     const iconPath = path.join(__dirname, 'TREM.png');
     icon = nativeImage.createFromPath(iconPath);
     if (icon.isEmpty()) {
