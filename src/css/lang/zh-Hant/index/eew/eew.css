@@ -167,6 +167,7 @@
   font-size: 30px;
   font-weight: bold;
   opacity: 0.1;
+  right: 0;
 }
 
 .info-mag-val,
@@ -174,7 +175,9 @@
   font-size: 26px;
   font-weight: bold;
   width: auto;
+  min-width: 60px;
   margin-top: 8px;
+  text-align: left;
 }
 
 .info-mag-val:before {
