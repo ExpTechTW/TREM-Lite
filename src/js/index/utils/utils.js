@@ -103,6 +103,7 @@ function createIntensityIconSquare(intensity, backgroundColor, textColor, stroke
         fill="${textColor}"
         text-anchor="middle"
         dominant-baseline="middle"
+        font-family="Noto Sans TC, Manrope, sans-serif"
       >${intensity}</text>
     </svg>
   `;
@@ -131,6 +132,7 @@ function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor)
         fill="${textColor}"
         text-anchor="middle"
         dominant-baseline="middle"
+        font-family="Noto Sans TC, Manrope, sans-serif"
       >${intensity}</text>
     </svg>
   `;
