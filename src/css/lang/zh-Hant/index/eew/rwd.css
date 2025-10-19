@@ -161,8 +161,8 @@
   .rts-intensity-list-wrapper {
     bottom: 2px;
     max-height: 100px !important;
-    width: auto !important;
-    right: 17rem;
+    width: 125px !important;
+    right: 16.5rem;
     min-height: fit-content;
   }
 
@@ -222,8 +222,7 @@
   }
 
   .current-station-info {
-    min-width: 130px;
-    width: auto !important;
+    width: 130px !important;
     margin-right: 0 !important;
   }
 
