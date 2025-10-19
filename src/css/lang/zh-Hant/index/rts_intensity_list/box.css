@@ -109,8 +109,6 @@
   min-height: 180px;
   transition: transform 0.6s ease;
   pointer-events: none;
-  flex-direction: column;
-  gap: 5px;
 
   .rts-intensity-list-box {
     flex: 1;
