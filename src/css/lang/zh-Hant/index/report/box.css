@@ -218,13 +218,27 @@
   /**震央、時間**/
   .report-info-item {
     font-weight: bold;
-    max-width: 180.2px;
-
+    --report-loc-max-width: 180.2px;
     .report-loc {
       font-size: 21px;
+      max-width: var(--report-loc-max-width);
       white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
+    }
+    &.full {
+      max-width: 100%;
+
+      .report-loc {
+        max-width: none;
+      }
+    }
+    &.wrap {
+      .report-loc {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+      }
     }
 
     .report-time {
