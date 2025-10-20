@@ -412,9 +412,10 @@
       /**震央**/
       .report-loc {
         font-size: 28px;
-        white-space: unset;
+        white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
+        max-width: none;
       }
     }
   }
