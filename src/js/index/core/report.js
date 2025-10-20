@@ -496,8 +496,8 @@ class ReportManager {
     const data = this.simplifyEarthquakeData(ans.data);
     TREM.variable.data.report.unshift(data);
 
-    while (TREM.variable.data.report.length > TREM.constant.REPORT_LIMIT) {
-      TREM.variable.data.report.pop();
+    if (TREM.variable.data.report.length > TREM.constant.REPORT_LIMIT) {
+      TREM.variable.data.report.splice(TREM.constant.REPORT_LIMIT);
     }
 
     if (data.trem && Math.abs(data.trem - TREM.variable.cache.intensity.time) < 15000) {
