@@ -343,8 +343,8 @@ body {
 }
 .intensity div {
   justify-content: center !important;
-  font-weight: 100;
-  font-family: auto;
+  font-weight: 400;
+  font-family: Noto Sans TC, Manrope, sans-serif;
 }
 .setting-header {
   background-color: hsl(0deg 0% 32.55%);
