@@ -131,7 +131,8 @@ class DropDown {
 
   addToggleClick(container, toggleClass) {
     container.addEventListener('click', (event) => {
-      const select = event.target.querySelector('.selected-btn');
+      let target = event.target;
+      const select = target.querySelector('.selected-btn') || target.closest('.location')?.querySelector('.selected-btn');
       if (select) {
         select.classList.toggle('on');
         toggleClass.classList.toggle('select-show-big');
