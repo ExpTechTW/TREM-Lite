@@ -1100,10 +1100,76 @@ class PluginLoader {
   }
 
   async autoDownload(args) {
-    logger.warn('Auto download: ', args);
-    const params = args.split('@');
-    await this.downloadPlugin(params[0], params[1]);
-    ipcRenderer.send('all-reload');
+    logger.warn('Auto download:', args);
+    try {
+      const decoded = decodeURIComponent(args || '');
+      const [nameCandidate, urlCandidate] = decoded.split('@');
+      const downloadUrl = urlCandidate || nameCandidate;
+      if (!downloadUrl) {
+        return;
+      }
+
+      await fs.ensureDir(this.pluginDir);
+
+      const fetchData = require('./utils/fetch');
+      const res = await fetchData(downloadUrl, 20000);
+      if (!res || !res.ok) {
+        logger.error('Failed to download plugin:', downloadUrl, res?.status);
+        return;
+      }
+
+      let filename = '';
+      try {
+        filename = path.basename(new URL(res.url || downloadUrl).pathname) || '';
+      }
+      catch {
+        filename = '';
+      }
+
+      if (!filename) {
+        filename = (nameCandidate || 'plugin') + '.trem';
+      }
+      if (!filename.endsWith('.trem')) {
+        filename = `${path.parse(filename).name}.trem`;
+      }
+
+      const buf = Buffer.from(await res.arrayBuffer());
+      await fs.ensureDir(this.tempDir);
+      const tempName = `download_${Date.now()}.trem`;
+      const tempPath = path.join(this.tempDir, tempName);
+      await fs.writeFile(tempPath, buf);
+
+      try {
+        const zip = new AdmZip(tempPath);
+        const entries = zip.getEntries();
+        const infoEntry = entries.find((e) => path.basename(e.entryName) === 'info.json');
+        if (infoEntry) {
+          try {
+            const infoText = infoEntry.getData().toString('utf8');
+            const info = JSON.parse(infoText);
+            if (info?.name && /^[a-z0-9-]+$/.test(info.name)) {
+              filename = `${info.name}.trem`;
+            }
+          }
+          catch (e) {
+            logger.debug('Failed to parse info.json from downloaded plugin:', e.message || e);
+          }
+        }
+      }
+      catch (e) {
+        logger.debug('Failed to inspect downloaded trem archive:', e.message || e);
+      }
+
+      const dest = path.join(this.pluginDir, filename);
+      await fs.ensureDir(this.pluginDir);
+      await fs.move(tempPath, dest, { overwrite: true });
+      logger.info(`Downloaded plugin to ${dest}`);
+      await this.loadPlugins();
+      ipcRenderer.send('all-reload');
+    }
+    catch (err) {
+      logger.error('autoDownload failed:', err);
+    }
   }
 
   parseVersion(version) {

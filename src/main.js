@@ -218,7 +218,7 @@ function createSettingWindow() {
 const shouldQuit = app.requestSingleInstanceLock();
 
 if (process.platform === 'win32') {
-  app.setAppUserModelId('TREM Lite |臺灣即時地震監測');
+  app.setAppUserModelId('TREM Lite | 臺灣即時地震監測');
 }
 
 if (process.defaultApp) {
@@ -240,8 +240,9 @@ app.on('second-instance', (event, commandLine) => {
         if (win) {
           win.webContents.executeJavaScript(`
             localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
-          `);
-          win.webContents.send('auto-download');
+          `)
+            .then(() => win.webContents.send('auto-download'))
+            .catch((err) => console.error('executeJavaScript error:', err));
         }
       }
     }
@@ -267,8 +268,9 @@ app.on('open-url', (event, url) => {
       if (win) {
         win.webContents.executeJavaScript(`
           localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
-        `);
-        win.webContents.send('auto-download');
+        `)
+          .then(() => win.webContents.send('auto-download'))
+          .catch((err) => console.error('executeJavaScript error:', err));
       }
     }
   }
@@ -623,7 +625,7 @@ ipcMain.on('close-plugin-window', (event, windowId) => {
 });
 
 ipcMain.on('close-plugin-windows', (event, pluginId) => {
-  for (const [windowId, windowInfo] of pluginWindows.entries()) {
+  for (const [windowInfo] of pluginWindows.entries()) {
     if (windowInfo.pluginId === pluginId) {
       windowInfo.window.close();
     }
@@ -636,7 +638,7 @@ ipcMain.on('close-plugin-windows', (event, pluginId) => {
 
 ipcMain.on('get-plugin-windows', (event, pluginId) => {
   const windows = Array.from(pluginWindows.entries())
-    .filter(([_, info]) => info.pluginId === pluginId)
+    .filter(([info]) => info.pluginId === pluginId)
     .map(([windowId, info]) => ({
       windowId,
       htmlPath: info.htmlPath,

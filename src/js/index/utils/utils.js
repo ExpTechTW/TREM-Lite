@@ -78,7 +78,12 @@ function formatToChineseTime(dateTimeString) {
 
 function extractLocation(loc) {
   const match = loc.match(/位於(.+)(?=\))/);
-  return match ? match[1] : loc;
+  let extracted = match ? match[1] : loc;
+  const spaceIndex = extracted.indexOf(' ');
+  if (spaceIndex !== -1) {
+    extracted = extracted.substring(0, spaceIndex);
+  }
+  return extracted;
 }
 
 function createIntensityIconSquare(intensity, backgroundColor, textColor, strokeColor) {
@@ -103,6 +108,7 @@ function createIntensityIconSquare(intensity, backgroundColor, textColor, stroke
         fill="${textColor}"
         text-anchor="middle"
         dominant-baseline="middle"
+        font-family="Noto Sans TC, Manrope, sans-serif"
       >${intensity}</text>
     </svg>
   `;
@@ -131,6 +137,7 @@ function createIntensityIcon(intensity, backgroundColor, textColor, strokeColor)
         fill="${textColor}"
         text-anchor="middle"
         dominant-baseline="middle"
+        font-family="Noto Sans TC, Manrope, sans-serif"
       >${intensity}</text>
     </svg>
   `;

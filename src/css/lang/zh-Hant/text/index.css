@@ -314,7 +314,7 @@
   content: "音效列表";
 }
 .sound-effects-list-description::before {
-  content: "開啟或關閉特定的音效";
+  content: "開啟或關閉特定的音效。";
 }
 .eew-1::before {
   content: "EEW（收到地震預警時播放）";

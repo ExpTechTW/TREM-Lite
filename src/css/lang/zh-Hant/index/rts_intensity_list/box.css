@@ -90,12 +90,12 @@
   font-size: 14px;
 }
 
-.rts-intensity-list-box:has(.rts-intensity-list:empty) {
+.rts-intensity-list-wrapper:has(.rts-intensity-list:empty) {
   display: none;
 }
 
 .report-wrapper.hidden ~ .rts-intensity-list-wrapper {
-  transform: translateX(158%);
+  transform: translateX(216%);
 }
 
 .rts-intensity-list-wrapper {
@@ -103,13 +103,12 @@
   display: flex;
   bottom: 3px;
   max-height: 300px;
-  width: auto;
-  right: 20rem;
-  /* min-height: 180px; */
+  width: 145px;
+  margin-right: 8px;
+  right: 19.5rem;
+  min-height: 180px;
   transition: transform 0.6s ease;
   pointer-events: none;
-  flex-direction: column;
-  gap: 5px;
 
   .rts-intensity-list-box {
     flex: 1;
@@ -119,7 +118,7 @@
     color: var(--light);
     z-index: 1001;
     justify-content: flex-end;
-    min-width: 199px;
+    /* min-width: 199px; */
 
     .rts-intensity-list-container {
       display: flex;

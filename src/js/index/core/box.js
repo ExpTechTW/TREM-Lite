@@ -126,6 +126,7 @@ class BoxManager {
       }
     }
 
+    boxFeatures.sort((a, b) => (a.properties?.i || 0) - (b.properties?.i || 0));
     box_alert = true;
     TREM.variable.map.getSource('box-geojson').setData({
       type: 'FeatureCollection',

@@ -246,7 +246,8 @@ class DataManager {
               last_time: currentTime,
               serial: 1,
             };
-            TREM.variable.data.eew.push({ ...data, method: 'nsspe' });
+            const method = data.author === 'cwa' ? 'eew' : 'nsspe';
+            TREM.variable.data.eew.push({ ...data, method });
             TREM.variable.events.emit('EewRelease', eventData);
           }
           return;
