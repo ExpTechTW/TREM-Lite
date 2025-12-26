@@ -154,10 +154,6 @@
     translate: 92%;
   }
 
-  .report-wrapper.hidden ~ .rts-intensity-list-wrapper {
-    transform: translateX(135%);
-  }
-
   .rts-intensity-list-wrapper {
     bottom: 2px;
     max-height: 100px !important;
