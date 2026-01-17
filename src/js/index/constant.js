@@ -123,6 +123,8 @@ const TREM = {
 
     LAST_DATA_TIMEOUT_ERROR: 3000,
 
+    TIME_OFFSET: 3600 * 8 * 1000,
+
     EEW_AUTHOR: ['trem', 'cwa'],
 
     REPORT_LIMIT: 75,

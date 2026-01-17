@@ -51,8 +51,8 @@ function search_loc_code(str) {
   return null;
 }
 
-function formatTimestamp(Timestamp) {
-  const date = new Date(Timestamp);
+function formatTimestamp(Timestamp, offsetMs = 0) {
+  const date = new Date(Timestamp + offsetMs);
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   return `${hours}:${minutes}`;
