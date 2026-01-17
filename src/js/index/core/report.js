@@ -461,6 +461,7 @@ class ReportManager {
     }
 
     const dataList = [];
+    TREM.variable.cache.bounds.report = [];
 
     for (const city of Object.keys(data.list)) {
       for (const town of Object.keys(data.list[city].town)) {
