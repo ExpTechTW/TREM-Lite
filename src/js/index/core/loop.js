@@ -4,7 +4,7 @@ const { formatTime } = require('../utils/utils');
 const now = require('../utils/ntp');
 const refresh_cross = require('./cross');
 const refresh_box = require('./box');
-const fetchData = require('../../core/utils/fetch');
+const { NtpTimeSync } = require('ntp-time-sync');
 
 const time = document.getElementById('time');
 const warning_box_internet = document.getElementById('warning-box-internet');
@@ -51,13 +51,22 @@ TREM.variable.events.on('MapLoad', () => {
 });
 
 async function get_ntp() {
-  const t = Date.now();
-  const url = TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
-  const ans = await fetchData(`https://${url}/ntp`, TREM.constant.HTTP_TIMEOUT.NTP);
+  try {
+    const timeSync = NtpTimeSync.getInstance({
+      servers: ['time.exptech.com.tw'],
+      sampleCount: 4,
+      replyTimeout: 3000,
+    });
 
-  if (ans && ans.ok) {
-    TREM.variable.cache.time.syncedTime = await ans.json();
-    TREM.variable.cache.time.lastSync = Date.now() - (Date.now() - t) - 1000;
+    const result = await timeSync.getTime(true);
+
+    TREM.variable.cache.time.syncedTime = result.now.getTime();
+    TREM.variable.cache.time.lastSync = Date.now();
+
+    console.log(`NTP 同步完成，偏移量: ${result.offset.toFixed(2)} ms`);
+  }
+  catch (error) {
+    console.error('NTP 同步錯誤:', error.message);
   }
 }
 
