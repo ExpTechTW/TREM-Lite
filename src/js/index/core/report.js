@@ -356,9 +356,9 @@ class ReportManager {
     this.updateScrollbar();
   }
 
-  async getReport(url) {
+  async getReport() {
     const ans = await fetchData(
-      `https://${url}/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
+      `https://api.core-tnn1.exptech.dev/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
     if (!ans || !ans.ok) {
@@ -367,9 +367,9 @@ class ReportManager {
     return await ans.json();
   }
 
-  async getReportInfo(url, id) {
+  async getReportInfo(id) {
     const ans = await fetchData(
-      `https://${url}/api/v2/eq/report/${id}`,
+      `https://api.core-tnn1.exptech.dev/api/v2/eq/report/${id}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
     if (!ans || !ans.ok) {
@@ -443,9 +443,20 @@ class ReportManager {
       trem: data.trem,
     };
 
+    const canonicalStringify = (obj) => {
+      if (obj === null || typeof obj !== 'object') {
+        return JSON.stringify(obj);
+      }
+      if (Array.isArray(obj)) {
+        return '[' + obj.map((v) => canonicalStringify(v)).join(',') + ']';
+      }
+      const keys = Object.keys(obj).sort();
+      return '{' + keys.map((k) => `${JSON.stringify(k)}:${canonicalStringify(obj[k])}`).join(',') + '}';
+    };
+
     const md5Value = crypto
       .createHash('md5')
-      .update(JSON.stringify(earthquakeData))
+      .update(canonicalStringify(earthquakeData))
       .digest('hex')
       .toUpperCase();
 
