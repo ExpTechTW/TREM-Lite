@@ -41,7 +41,6 @@ win:
         - x64
         - ia32
   icon: ./src/TREM.ico
-  publish: null
 
 mac:
   protocols:
@@ -50,7 +49,6 @@ mac:
         - trem-lite
   category: public.app-category.productivity
   icon: ./src/TREM.png
-  publish: null
   hardenedRuntime: true
   target:
     - target: dmg
@@ -81,4 +79,3 @@ linux:
       arch:
         - x64
         - arm64
-  publish: null
