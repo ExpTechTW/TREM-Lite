@@ -84,7 +84,7 @@ jobs:
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
-          draft: false
+          draft: true
           files: |
             dist/*.dmg
             dist/*.zip
