@@ -81,30 +81,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run ${{ matrix.build_script }}
 
-      - name: Upload artifacts (macOS)
-        if: matrix.platform == 'macos-latest'
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-app
+          name: dist-${{ runner.os }}
+          if-no-files-found: ignore
+          compression-level: 0
           path: |
             dist/*.dmg
             dist/*.zip
-            dist/*.blockmap
-
-      - name: Upload artifacts (Windows)
-        if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-app
-          path: |
             dist/*.exe
-            dist/*.blockmap
-
-      - name: Upload artifacts (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-app
-          path: |
             dist/*.AppImage
             dist/*.blockmap
+            dist/latest*.yml
