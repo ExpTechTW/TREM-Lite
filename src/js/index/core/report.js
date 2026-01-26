@@ -358,7 +358,7 @@ class ReportManager {
 
   async getReport() {
     const ans = await fetchData(
-      `https://api.core-tnn1.exptech.dev/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
+      `https://api.core.exptech.dev/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
     if (!ans || !ans.ok) {
@@ -369,7 +369,7 @@ class ReportManager {
 
   async getReportInfo(id) {
     const ans = await fetchData(
-      `https://api.core-tnn1.exptech.dev/api/v2/eq/report/${id}`,
+      `https://api.core.exptech.dev/api/v2/eq/report/${id}`,
       TREM.constant.HTTP_TIMEOUT.REPORT,
     );
     if (!ans || !ans.ok) {
