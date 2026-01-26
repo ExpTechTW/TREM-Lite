@@ -395,7 +395,7 @@ class ReportManager {
     if (!TREM.variable.data.report.length) {
       TREM.variable.data.report = reportList.slice(0, TREM.constant.REPORT_LIMIT);
       if (TREM.constant.SHOW_REPORT) {
-        const data = await this.getReportInfo(url, reportList[0].id);
+        const data = await this.getReportInfo(reportList[0].id);
         TREM.variable.cache.last_report = data;
       }
       this.generateReportBoxItems(
