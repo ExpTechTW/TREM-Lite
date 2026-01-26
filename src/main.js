@@ -11,6 +11,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const yaml = require('js-yaml');
 const Store = require('electron-store');
+const { autoUpdater } = require('electron-updater');
 
 const store = new Store();
 let win;
@@ -292,6 +293,51 @@ else {
     trayIcon();
     createWindow();
     createPiPWindow();
+
+    // Auto-updater configuration
+    try {
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = true;
+      autoUpdater.allowPrerelease = true;
+      autoUpdater.allowDowngrade = false;
+
+      if (app.isPackaged) {
+        autoUpdater.setFeedURL({
+          provider: 'github',
+          owner: 'ExpTechTW',
+          repo: 'TREM-Lite',
+          vPrefixedTagName: false,
+        });
+      }
+
+      autoUpdater.on('update-available', (info) => {
+        console.log('Update available:', info.version);
+        if (win) {
+          win.webContents.send('update-available', info);
+        }
+      });
+
+      autoUpdater.on('update-downloaded', (info) => {
+        console.log('Update downloaded:', info.version);
+        setTimeout(() => {
+          autoUpdater.quitAndInstall(true, true);
+        }, 3000);
+      });
+
+      autoUpdater.on('error', (err) => {
+        console.error('Update error:', err && err.message ? err.message : err);
+      });
+
+      if (app.isPackaged) {
+        autoUpdater.checkForUpdates().catch(() => undefined);
+        setInterval(() => {
+          autoUpdater.checkForUpdates().catch(() => undefined);
+        }, 300000); // Check every 5 minutes
+      }
+    }
+    catch (err) {
+      console.error('Auto-updater init error:', err);
+    }
   });
 }
 
