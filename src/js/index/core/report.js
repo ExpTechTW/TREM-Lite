@@ -1,4 +1,4 @@
-const fetchData = require('../../core/utils/fetch');
+const { ExpTech } = require('@exptech/http');
 const TREM = require('../constant');
 const { extractLocation } = require('../utils/utils');
 const crypto = require('crypto');
@@ -229,11 +229,11 @@ class ReportManager {
     return box;
   }
 
-  createReportItem(item, isSurvey = false, url = '') {
+  createReportItem(item, isSurvey = false) {
     const wrapper = document.createElement('div');
     wrapper.className = `report-box-item-wrapper${isSurvey ? ' survey' : ''}`;
     wrapper.setAttribute('data-id', item.id);
-    wrapper.setAttribute('trem-url', (item.trem) ? `https://${url}/file/trem_info.html?id=${item.trem}` : '');
+    wrapper.setAttribute('trem-url', item.trem ? `https://api.exptech.dev/file/trem_info.html?id=${item.trem}` : '');
     wrapper.setAttribute('data-time', item.time);
     const contain = document.createElement('div');
     contain.className = 'report-box-item-contain';
@@ -300,14 +300,7 @@ class ReportManager {
     });
   }
 
-  now(time) {
-    if (!TREM.variable.replay.local_time) {
-      TREM.variable.replay.local_time = Date.now();
-    }
-    return Number(time) + (Date.now() - TREM.variable.replay.local_time);
-  }
-
-  generateReportBoxItems(list, survey = null, url = '') {
+  generateReportBoxItems(list, survey = null) {
     const container = document.getElementById('report-box-items');
     if (!container) {
       return;
@@ -321,19 +314,18 @@ class ReportManager {
     container.innerHTML = '';
 
     if (survey) {
-      const surveyItem = {
+      container.appendChild(this.createReportItem({
         int: survey.intensity || 0,
         loc: '',
         time: survey.time,
         mag: '',
         depth: '',
         id: 'survey-item',
-      };
-      container.appendChild(this.createReportItem(surveyItem, true));
+      }, true));
     }
 
     list.forEach((item) => {
-      container.appendChild(this.createReportItem(item, false, url));
+      container.appendChild(this.createReportItem(item));
     });
 
     this.clickEvent();
@@ -356,57 +348,38 @@ class ReportManager {
     this.updateScrollbar();
   }
 
-  async getReport() {
-    const ans = await fetchData(
-      `https://api.core.exptech.dev/api/v2/eq/report?limit=${TREM.constant.REPORT_LIMIT}`,
-      TREM.constant.HTTP_TIMEOUT.REPORT,
-    );
-    if (!ans || !ans.ok) {
-      return null;
-    }
-    return await ans.json();
-  }
-
-  async getReportInfo(id) {
-    const ans = await fetchData(
-      `https://api.core.exptech.dev/api/v2/eq/report/${id}`,
-      TREM.constant.HTTP_TIMEOUT.REPORT,
-    );
-    if (!ans || !ans.ok) {
-      return null;
-    }
-    return await ans.json();
-  }
-
   async refresh() {
-    const url = TREM.constant.URL.API[0];
-    let reportList = await this.getReport(url);
-    if (!reportList) {
+    let reportList;
+
+    try {
+      [reportList] = await ExpTech.getReportList(TREM.constant.REPORT_LIMIT, {
+        timeout: TREM.constant.HTTP_TIMEOUT.REPORT,
+      });
+    }
+    catch {
       return;
     }
 
     if (TREM.variable.replay.start_time) {
-      reportList = reportList.filter((item) => {
-        const itemTimeInMillis = new Date(item.time).getTime();
-        return itemTimeInMillis < TREM.variable.replay.start_time;
-      });
+      reportList = reportList.filter((item) => item.time < TREM.variable.replay.start_time);
     }
 
     if (!TREM.variable.data.report.length) {
-      TREM.variable.data.report = reportList.slice(0, TREM.constant.REPORT_LIMIT);
-      if (TREM.constant.SHOW_REPORT) {
-        const data = await this.getReportInfo(reportList[0].id);
-        TREM.variable.cache.last_report = data;
+      TREM.variable.data.report = reportList;
+      if (TREM.constant.SHOW_REPORT && reportList.length) {
+        try {
+          const [data] = await ExpTech.getReportById(reportList[0].id, {
+            timeout: TREM.constant.HTTP_TIMEOUT.REPORT,
+          });
+          TREM.variable.cache.last_report = data;
+        }
+        catch { /* ignore */ }
       }
       this.generateReportBoxItems(
         TREM.variable.data.report,
         TREM.variable.cache.intensity.time
-          ? {
-              time: TREM.variable.cache.intensity.time,
-              intensity: TREM.variable.cache.intensity.max,
-            }
+          ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max }
           : null,
-        url,
       );
       return;
     }
@@ -415,10 +388,13 @@ class ReportManager {
     const newReports = reportList.filter((report) => !existingIds.has(report.id));
 
     if (newReports.length > 0) {
-      const data = await this.getReportInfo(url, newReports[0].id);
-      if (data) {
-        TREM.variable.events.emit('ReportRelease', { info: { url }, data });
+      try {
+        const [data] = await ExpTech.getReportById(newReports[0].id, {
+          timeout: TREM.constant.HTTP_TIMEOUT.REPORT,
+        });
+        TREM.variable.events.emit('ReportRelease', { data });
       }
+      catch { /* ignore */ }
     }
   }
 
@@ -520,12 +496,8 @@ class ReportManager {
     this.generateReportBoxItems(
       TREM.variable.data.report,
       TREM.variable.cache.intensity.time
-        ? {
-            time: TREM.variable.cache.intensity.time,
-            intensity: TREM.variable.cache.intensity.max,
-          }
+        ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max }
         : null,
-      ans.info.url,
     );
   }
 }
@@ -542,5 +514,5 @@ reportManager.updateScrollbar();
 
 module.exports = {
   generateReportBoxItems: (list, survey) => reportManager.generateReportBoxItems(list, survey),
-  show_report_point: (data) => reportManager.showReportPoint(data),
+  showReportPoint: (data) => reportManager.showReportPoint(data),
 };

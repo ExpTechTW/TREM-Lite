@@ -4,7 +4,7 @@ const EEWCalculator = require('../utils/eewCalculator');
 
 const { intensity_float_to_int, search_loc_name } = require('../utils/utils');
 const show_eew = require('./eew');
-const { show_report_point } = require('./report');
+const { showReportPoint } = require('./report');
 
 const calculator = new EEWCalculator();
 
@@ -352,7 +352,7 @@ TREM.variable.events.on('DataRts', (ans) => {
         data_alert_0_list = [];
         data_alert_list = [];
         if (!TREM.variable.cache.bounds.report.length || !TREM.class.FocusManager?.getInstance().getLock()) {
-          show_report_point(TREM.variable.cache.last_report);
+          showReportPoint(TREM.variable.cache.last_report);
         }
       }
     }
