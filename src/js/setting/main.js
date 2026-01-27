@@ -76,10 +76,6 @@ class Main {
       if (updateStatus) {
         updateStatus.textContent = `目前已是最新版本 (${info.version})`;
         updateStatus.className = 'update-status not-available';
-        setTimeout(() => {
-          updateStatus.textContent = '';
-          updateStatus.className = 'update-status';
-        }, 5000);
       }
     });
 
@@ -95,8 +91,20 @@ class Main {
     ipcRenderer.on('update-downloaded', (_event, info) => {
       console.log('更新已下載:', info.version, '準備安裝');
       if (updateStatus) {
-        updateStatus.textContent = '更新已下載完成！應用程式將在 3 秒後重啟安裝更新...';
+        let countdown = 3;
+        updateStatus.textContent = `更新已下載完成！應用程式將在 ${countdown} 秒後重啟安裝更新...`;
         updateStatus.className = 'update-status downloaded';
+
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          if (countdown > 0) {
+            updateStatus.textContent = `更新已下載完成！應用程式將在 ${countdown} 秒後重啟安裝更新...`;
+          }
+          else {
+            updateStatus.textContent = '正在重啟應用程式...';
+            clearInterval(countdownInterval);
+          }
+        }, 1000);
       }
     });
 
@@ -109,10 +117,6 @@ class Main {
         }
         updateStatus.textContent = message;
         updateStatus.className = 'update-status error';
-        setTimeout(() => {
-          updateStatus.textContent = '';
-          updateStatus.className = 'update-status';
-        }, 5000);
       }
     });
   }
@@ -132,10 +136,6 @@ class Main {
       if (updateStatus) {
         updateStatus.textContent = `檢查更新失敗：${result.error}`;
         updateStatus.className = 'update-status error';
-        setTimeout(() => {
-          updateStatus.textContent = '';
-          updateStatus.className = 'update-status';
-        }, 5000);
       }
     }
   }

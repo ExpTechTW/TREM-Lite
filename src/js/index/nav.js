@@ -52,3 +52,25 @@ document.querySelector('.fab').addEventListener('click', function () {
 document.getElementById('setting').addEventListener('click', () => ipcRenderer.send('openSettingWindow'));
 
 document.getElementById('current-version').textContent = app.getVersion();
+
+ipcRenderer.on('update-available', (_event, info) => {
+  const notification = new Notification('🔔 發現新版本', {
+    body: `發現新版本 ${info.version}，正在自動下載中...\n下載完成後將在 3 秒後重啟安裝更新`,
+    icon: '../TREM.ico',
+  });
+
+  notification.onclick = () => {
+    ipcRenderer.send('openSettingWindow');
+  };
+});
+
+ipcRenderer.on('update-downloaded', (_event, info) => {
+  const notification = new Notification('✅ 更新已下載完成', {
+    body: `版本 ${info.version} 已下載完成，應用程式將在 3 秒後重啟安裝更新...`,
+    icon: '../TREM.ico',
+  });
+
+  notification.onclick = () => {
+    ipcRenderer.send('openSettingWindow');
+  };
+});

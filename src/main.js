@@ -52,7 +52,7 @@ function createWindow() {
   const winState = store.get('windowState', { width: 1280, height: 815 });
 
   win = new BrowserWindow({
-    title: `TREM Lite v${app.getVersion()}`,
+    title: 'TREM Lite',
     minWidth: 900,
     minHeight: 680,
     width: winState.width,
@@ -315,12 +315,18 @@ else {
         if (win) {
           win.webContents.send('update-checking');
         }
+        if (SettingWindow && !SettingWindow.isDestroyed()) {
+          SettingWindow.webContents.send('update-checking');
+        }
       });
 
       autoUpdater.on('update-available', (info) => {
         console.log('Update available:', info.version);
         if (win) {
           win.webContents.send('update-available', info);
+        }
+        if (SettingWindow && !SettingWindow.isDestroyed()) {
+          SettingWindow.webContents.send('update-available', info);
         }
       });
 
@@ -329,6 +335,9 @@ else {
         if (win) {
           win.webContents.send('update-not-available', info);
         }
+        if (SettingWindow && !SettingWindow.isDestroyed()) {
+          SettingWindow.webContents.send('update-not-available', info);
+        }
       });
 
       autoUpdater.on('download-progress', (progressObj) => {
@@ -336,12 +345,18 @@ else {
         if (win) {
           win.webContents.send('download-progress', progressObj);
         }
+        if (SettingWindow && !SettingWindow.isDestroyed()) {
+          SettingWindow.webContents.send('download-progress', progressObj);
+        }
       });
 
       autoUpdater.on('update-downloaded', (info) => {
         console.log('Update downloaded:', info.version);
         if (win) {
           win.webContents.send('update-downloaded', info);
+        }
+        if (SettingWindow && !SettingWindow.isDestroyed()) {
+          SettingWindow.webContents.send('update-downloaded', info);
         }
         setTimeout(() => {
           autoUpdater.quitAndInstall(true, true);
@@ -352,6 +367,9 @@ else {
         console.error('Update error:', err && err.message ? err.message : err);
         if (win) {
           win.webContents.send('update-error', err.message);
+        }
+        if (SettingWindow && !SettingWindow.isDestroyed()) {
+          SettingWindow.webContents.send('update-error', err.message);
         }
       });
 
