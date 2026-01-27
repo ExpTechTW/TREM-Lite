@@ -26,20 +26,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "20.18.1"
+          bun-version: latest
 
-      - name: Cache Node.js dependencies
+      - name: Cache Bun dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.npm
-            node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-bun-
 
       - name: Cache electron-builder
         uses: actions/cache@v4
@@ -51,12 +49,12 @@ jobs:
             ~/.cache/electron-builder
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: ${{ runner.os }}-electron-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-electron-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-electron-
 
       - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
+        run: bun install --frozen-lockfile
 
       - name: Import Code-Signing Certificates (macOS)
         if: matrix.platform == 'macos-latest'
@@ -79,7 +77,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.APPLE_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: npm run ${{ matrix.build_script }}
+        run: bun run ${{ matrix.build_script }}
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
