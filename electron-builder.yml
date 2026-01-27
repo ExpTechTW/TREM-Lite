@@ -1,6 +1,7 @@
 appId: com.exptech.trem-lite
 productName: TREM-Lite
 copyright: Copyright © 2026 ExpTech Studio
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 directories:
   output: dist
@@ -12,55 +13,34 @@ compression: maximum
 asar: true
 asarUnpack:
   - "**/*.mp3"
-artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 files:
   - "**/*"
-  - "!**/*.map"
-  - "!**/*.ts"
-  - "!**/*.md"
-  - "!**/*.txt"
-  - "!**/LICENSE*"
-  - "!**/CHANGELOG*"
-  - "!**/README*"
-  - "!**/.eslint*"
-  - "!**/.prettier*"
+  # Source maps & dev files
+  - "!**/*.{map,ts,md,txt}"
+  - "!**/{LICENSE,CHANGELOG,README}*"
+  - "!**/.{eslint,prettier}*"
   - "!**/tsconfig.json"
-  - "!node_modules/**/test/**"
-  - "!node_modules/**/tests/**"
-  - "!node_modules/**/__tests__/**"
-  - "!node_modules/**/docs/**"
-  - "!node_modules/**/doc/**"
-  - "!node_modules/**/example/**"
-  - "!node_modules/**/examples/**"
-  - "!node_modules/**/demo/**"
-  - "!node_modules/**/.github/**"
-  - "!node_modules/maplibre-gl/dist/*-dev.js"
-  - "!node_modules/maplibre-gl/dist/*-dev.js.map"
-  - "!node_modules/maplibre-gl/src/**"
-  - "!node_modules/@maplibre/maplibre-gl-style-spec/src/**"
-  - "!node_modules/moment/src/**"
-  - "!node_modules/moment/locale/**"
-  - "!node_modules/moment/min/locales.js"
-  - "!node_modules/moment/min/locales.min.js"
-  - "!node_modules/moment/min/moment-with-locales.js"
-  - "!node_modules/moment/min/moment-with-locales.min.js"
+  # node_modules cleanup
+  - "!node_modules/**/{test,tests,__tests__,docs,doc,example,examples,demo,.github}/**"
+  - "!node_modules/**/src/**"
+  # maplibre-gl
+  - "!node_modules/maplibre-gl/dist/*-dev.js*"
+  # moment (unused locales)
+  - "!node_modules/moment/{locale,min/locales*,min/moment-with-locales*}/**"
 
 afterPack: scripts/afterPack.js
 
 win:
   appId: tw.exptech.trem_lite
-  protocols:
-    - name: TREM Lite Protocol
-      schemes:
-        - trem-lite
-  target:
-    - target: nsis
-      arch:
-        - x64
-        - ia32
   icon: ./src/TREM.ico
   verifyUpdateCodeSignature: false
+  protocols:
+    - name: TREM Lite Protocol
+      schemes: [trem-lite]
+  target:
+    - target: nsis
+      arch: [x64, ia32]
 
 nsis:
   perMachine: false
@@ -68,35 +48,27 @@ nsis:
   deleteAppDataOnUninstall: false
 
 mac:
-  protocols:
-    - name: TREM Lite Protocol
-      schemes:
-        - trem-lite
-  category: public.app-category.productivity
   icon: ./src/TREM.png
+  category: public.app-category.productivity
   hardenedRuntime: true
-  target:
-    - target: dmg
-      arch:
-        - x64
-        - arm64
-    - target: zip
-      arch:
-        - x64
-        - arm64
   gatekeeperAssess: false
   entitlements: assets/entitlements.mac.plist
   entitlementsInherit: assets/entitlements.mac.plist
-
-linux:
   protocols:
     - name: TREM Lite Protocol
-      schemes:
-        - trem-lite
-  category: Development
+      schemes: [trem-lite]
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+
+linux:
   icon: ./src/TREM.png
+  category: Development
+  protocols:
+    - name: TREM Lite Protocol
+      schemes: [trem-lite]
   target:
     - target: AppImage
-      arch:
-        - x64
-        - arm64
+      arch: [x64, arm64]
