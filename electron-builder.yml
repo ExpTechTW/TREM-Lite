@@ -8,23 +8,11 @@ directories:
 extraMetadata:
   main: ./src/main.js
 
-files:
-  - src/main.js
-  - src/js/**/*
-  - src/view/**/*
-  - src/css/**/*
-  - src/resource/**/*
-  - src/TREM.ico
-  - src/TREM.png
-  - package.json
-  - "!tsconfig*.json"
-  - "!*.md"
-  - "!package-lock.json"
-  - "!dist/builder-*"
-  - "!dist/win-unpacked/**/*"
-
 compression: maximum
 asar: true
+asarUnpack:
+  - "**/*.mp3"
+  - "**/*.wav"
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 afterPack: scripts/afterPack.js

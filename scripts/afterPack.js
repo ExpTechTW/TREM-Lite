@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-module.exports = async function(context) {
+module.exports = async function (context) {
   console.log('🗑️  Removing unused language packs...');
 
   const appOutDir = context.appOutDir;
@@ -10,8 +10,8 @@ module.exports = async function(context) {
     ? path.join(appOutDir, `${context.packager.appInfo.productFilename}.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources`)
     : path.join(appOutDir, 'locales');
 
-  // 只保留英文
-  const keepLanguages = ['en.lproj', 'en_US.pak'];
+  // 保留英文和中文
+  const keepLanguages = ['en.lproj', 'en-US.pak', 'zh-TW.pak', 'zh-CN.pak'];
 
   try {
     if (context.electronPlatformName === 'darwin') {
@@ -19,7 +19,7 @@ module.exports = async function(context) {
       const files = fs.readdirSync(electronPath);
       let removed = 0;
 
-      files.forEach(file => {
+      files.forEach((file) => {
         if (file.endsWith('.lproj') && !keepLanguages.includes(file)) {
           const fullPath = path.join(electronPath, file);
           fs.rmSync(fullPath, { recursive: true, force: true });
@@ -28,12 +28,13 @@ module.exports = async function(context) {
       });
 
       console.log(`✅ Removed ${removed} language packs from macOS`);
-    } else {
+    }
+    else {
       // Windows/Linux: 刪除 .pak 檔案
       const files = fs.readdirSync(electronPath);
       let removed = 0;
 
-      files.forEach(file => {
+      files.forEach((file) => {
         if (file.endsWith('.pak') && !keepLanguages.includes(file)) {
           const fullPath = path.join(electronPath, file);
           fs.unlinkSync(fullPath);
@@ -43,7 +44,8 @@ module.exports = async function(context) {
 
       console.log(`✅ Removed ${removed} language packs from ${context.electronPlatformName}`);
     }
-  } catch (err) {
+  }
+  catch (err) {
     console.error('⚠️  Error removing language packs:', err.message);
   }
 };
