@@ -358,6 +358,7 @@ else {
         if (SettingWindow && !SettingWindow.isDestroyed()) {
           SettingWindow.webContents.send('update-downloaded', info);
         }
+        isQuitting = true;
         setTimeout(() => {
           autoUpdater.quitAndInstall(true, true);
         }, 3000);
@@ -813,35 +814,4 @@ ipcMain.on('open-yaml-editor', (event, filePath) => {
   yamlEditorWindow.on('close', () => {
     yamlEditorWindow = null;
   });
-});
-
-ipcMain.handle('check-for-updates', async () => {
-  try {
-    if (!app.isPackaged) {
-      return { success: false, error: '開發模式下無法檢查更新' };
-    }
-
-    const result = await autoUpdater.checkForUpdates();
-    return { success: true, updateInfo: result.updateInfo };
-  }
-  catch (error) {
-    console.error('Check for updates error:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('download-update', async () => {
-  try {
-    await autoUpdater.downloadUpdate();
-    return { success: true };
-  }
-  catch (error) {
-    console.error('Download update error:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('install-update', () => {
-  forceQuit = true;
-  autoUpdater.quitAndInstall(true, true);
 });
