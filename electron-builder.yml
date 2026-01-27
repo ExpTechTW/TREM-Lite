@@ -12,7 +12,6 @@ compression: maximum
 asar: true
 asarUnpack:
   - "**/*.mp3"
-  - "**/*.wav"
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 afterPack: scripts/afterPack.js
@@ -29,6 +28,12 @@ win:
         - x64
         - ia32
   icon: ./src/TREM.ico
+  verifyUpdateCodeSignature: false
+
+nsis:
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  deleteAppDataOnUninstall: false
 
 mac:
   protocols:
@@ -60,10 +65,6 @@ linux:
   icon: ./src/TREM.png
   target:
     - target: AppImage
-      arch:
-        - x64
-        - arm64
-    - target: deb
       arch:
         - x64
         - arm64
