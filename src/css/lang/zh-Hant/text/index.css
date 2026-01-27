@@ -224,6 +224,21 @@
 .success-failed.message-box::before {
   content: "複製失敗！";
 }
+.update-available.message-box::before {
+  content: "發現新版本！正在下載更新...";
+}
+.update-not-available.message-box::before {
+  content: "目前已是最新版本！";
+}
+.update-downloaded.message-box::before {
+  content: "更新已下載完成！應用程式將在 3 秒後重啟安裝更新...";
+}
+.update-error.message-box::before {
+  content: "檢查更新時發生錯誤！";
+}
+.update-check-failed.message-box::before {
+  content: "檢查更新失敗！請稍後再試。";
+}
 
 /* === 一般 === */
 .location-title::before {
@@ -280,6 +295,18 @@
 }
 .auto-start::before {
   content: "開機自動啟動（Windows）";
+}
+.check-update-title::before {
+  content: "檢查更新";
+}
+.check-update-description::before {
+  content: "檢查是否有新版本可用，並自動下載安裝。";
+}
+.check-update-text::before {
+  content: "檢查軟體更新";
+}
+.check-update-button::before {
+  content: "檢查更新";
 }
 .reset-button::before,
 .reset-setting-title::before {

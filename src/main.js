@@ -298,7 +298,7 @@ else {
     try {
       autoUpdater.autoDownload = true;
       autoUpdater.autoInstallOnAppQuit = true;
-      autoUpdater.allowPrerelease = true;
+      autoUpdater.allowPrerelease = false;
       autoUpdater.allowDowngrade = false;
 
       if (app.isPackaged) {
@@ -310,6 +310,13 @@ else {
         });
       }
 
+      autoUpdater.on('checking-for-update', () => {
+        console.log('Checking for update...');
+        if (win) {
+          win.webContents.send('update-checking');
+        }
+      });
+
       autoUpdater.on('update-available', (info) => {
         console.log('Update available:', info.version);
         if (win) {
@@ -317,8 +324,25 @@ else {
         }
       });
 
+      autoUpdater.on('update-not-available', (info) => {
+        console.log('Update not available:', info.version);
+        if (win) {
+          win.webContents.send('update-not-available', info);
+        }
+      });
+
+      autoUpdater.on('download-progress', (progressObj) => {
+        console.log('Download progress:', progressObj.percent);
+        if (win) {
+          win.webContents.send('download-progress', progressObj);
+        }
+      });
+
       autoUpdater.on('update-downloaded', (info) => {
         console.log('Update downloaded:', info.version);
+        if (win) {
+          win.webContents.send('update-downloaded', info);
+        }
         setTimeout(() => {
           autoUpdater.quitAndInstall(true, true);
         }, 3000);
@@ -326,6 +350,9 @@ else {
 
       autoUpdater.on('error', (err) => {
         console.error('Update error:', err && err.message ? err.message : err);
+        if (win) {
+          win.webContents.send('update-error', err.message);
+        }
       });
 
       if (app.isPackaged) {
@@ -768,4 +795,35 @@ ipcMain.on('open-yaml-editor', (event, filePath) => {
   yamlEditorWindow.on('close', () => {
     yamlEditorWindow = null;
   });
+});
+
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    if (!app.isPackaged) {
+      return { success: false, error: '開發模式下無法檢查更新' };
+    }
+
+    const result = await autoUpdater.checkForUpdates();
+    return { success: true, updateInfo: result.updateInfo };
+  }
+  catch (error) {
+    console.error('Check for updates error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('download-update', async () => {
+  try {
+    await autoUpdater.downloadUpdate();
+    return { success: true };
+  }
+  catch (error) {
+    console.error('Download update error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('install-update', () => {
+  forceQuit = true;
+  autoUpdater.quitAndInstall(true, true);
 });

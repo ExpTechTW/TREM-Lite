@@ -112,7 +112,7 @@
     align-items: center;
     justify-content: center;
     background: #505050c7;
-    margin-right: 3;
+    margin-right: 3px;
 
     &:hover {
       background-color: #252424c7;

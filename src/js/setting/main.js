@@ -42,6 +42,102 @@ class Main {
     });
 
     this.copyDebugLog.addEventListener('click', () => this.copySettingInfo());
+
+    const checkUpdateBtn = document.getElementById('check-update-button');
+    if (checkUpdateBtn) {
+      checkUpdateBtn.addEventListener('click', () => this.checkForUpdates());
+    }
+
+    this.setupUpdateListeners();
+  }
+
+  setupUpdateListeners() {
+    const updateStatus = document.getElementById('update-status');
+
+    ipcRenderer.on('update-checking', () => {
+      console.log('正在檢查更新...');
+      if (updateStatus) {
+        updateStatus.textContent = '正在檢查更新...';
+        updateStatus.className = 'update-status checking';
+      }
+    });
+
+    ipcRenderer.on('update-available', (_event, info) => {
+      const currentVersion = app.getVersion();
+      console.log('發現新版本:', info.version, '目前版本:', currentVersion);
+      if (updateStatus) {
+        updateStatus.textContent = `發現新版本 ${info.version}！正在下載更新...`;
+        updateStatus.className = 'update-status available';
+      }
+    });
+
+    ipcRenderer.on('update-not-available', (_event, info) => {
+      console.log('已是最新版本:', info.version);
+      if (updateStatus) {
+        updateStatus.textContent = `目前已是最新版本 (${info.version})`;
+        updateStatus.className = 'update-status not-available';
+        setTimeout(() => {
+          updateStatus.textContent = '';
+          updateStatus.className = 'update-status';
+        }, 5000);
+      }
+    });
+
+    ipcRenderer.on('download-progress', (_event, progressObj) => {
+      const percent = progressObj.percent.toFixed(1);
+      console.log(`下載進度: ${percent}%`);
+      if (updateStatus) {
+        updateStatus.textContent = `下載進度: ${percent}%`;
+        updateStatus.className = 'update-status downloading';
+      }
+    });
+
+    ipcRenderer.on('update-downloaded', (_event, info) => {
+      console.log('更新已下載:', info.version, '準備安裝');
+      if (updateStatus) {
+        updateStatus.textContent = '更新已下載完成！應用程式將在 3 秒後重啟安裝更新...';
+        updateStatus.className = 'update-status downloaded';
+      }
+    });
+
+    ipcRenderer.on('update-error', (_event, error) => {
+      console.error('更新錯誤:', error);
+      if (updateStatus) {
+        let message = '檢查更新時發生錯誤';
+        if (error && error.includes('Cannot find latest.yml')) {
+          message = '無法連接到更新伺服器，請稍後再試';
+        }
+        updateStatus.textContent = message;
+        updateStatus.className = 'update-status error';
+        setTimeout(() => {
+          updateStatus.textContent = '';
+          updateStatus.className = 'update-status';
+        }, 5000);
+      }
+    });
+  }
+
+  async checkForUpdates() {
+    const updateStatus = document.getElementById('update-status');
+
+    if (updateStatus) {
+      updateStatus.textContent = '正在檢查更新...';
+      updateStatus.className = 'update-status checking';
+    }
+
+    const result = await ipcRenderer.invoke('check-for-updates');
+
+    if (!result.success) {
+      console.error('檢查更新失敗:', result.error);
+      if (updateStatus) {
+        updateStatus.textContent = `檢查更新失敗：${result.error}`;
+        updateStatus.className = 'update-status error';
+        setTimeout(() => {
+          updateStatus.textContent = '';
+          updateStatus.className = 'update-status';
+        }, 5000);
+      }
+    }
   }
 
   renderLastPage() {

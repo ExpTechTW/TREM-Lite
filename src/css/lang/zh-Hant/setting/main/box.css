@@ -366,20 +366,69 @@ body {
   -webkit-app-region: no-drag;
   z-index: 1002;
 }
-.reset-button {
+.reset-button,
+.check-update-button {
   border-radius: 5px;
   border: 1px solid #ffffff24;
   width: auto;
   height: 3px;
   cursor: pointer;
-  color: var(--danger);
   justify-content: center;
 }
-.reset-button:hover {
+.reset-button {
+  color: var(--danger);
+}
+.check-update-button {
+  color: var(--primary);
+}
+.reset-button:hover,
+.check-update-button:hover {
   background: #48484d;
 }
-.reset-setting + .switch {
+.reset-setting + .switch,
+.check-update-text + .switch {
   width: auto;
+}
+.update-status {
+  transition: all 0.3s ease;
+  display: none;
+}
+.update-status:not(:empty) {
+  display: block;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 14px;
+}
+.update-status.checking {
+  background: #ffc10742;
+  color: #ffc107;
+  border: 1px solid #ffc10770;
+}
+.update-status.available {
+  background: #4caf5042;
+  color: #4caf50;
+  border: 1px solid #4caf5070;
+}
+.update-status.not-available {
+  background: #2196f342;
+  color: #2196f3;
+  border: 1px solid #2196f370;
+}
+.update-status.downloading {
+  background: #2196f342;
+  color: #2196f3;
+  border: 1px solid #2196f370;
+}
+.update-status.downloaded {
+  background: #ff980042;
+  color: #ff9800;
+  border: 1px solid #ff980070;
+}
+.update-status.error {
+  background: #f4433642;
+  color: #f44336;
+  border: 1px solid #f4433670;
 }
 .disabled {
   background: #0000008c;
