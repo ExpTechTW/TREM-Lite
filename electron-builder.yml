@@ -14,6 +14,38 @@ asarUnpack:
   - "**/*.mp3"
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
+files:
+  - "**/*"
+  - "!**/*.map"
+  - "!**/*.ts"
+  - "!**/*.md"
+  - "!**/*.txt"
+  - "!**/LICENSE*"
+  - "!**/CHANGELOG*"
+  - "!**/README*"
+  - "!**/.eslint*"
+  - "!**/.prettier*"
+  - "!**/tsconfig.json"
+  - "!node_modules/**/test/**"
+  - "!node_modules/**/tests/**"
+  - "!node_modules/**/__tests__/**"
+  - "!node_modules/**/docs/**"
+  - "!node_modules/**/doc/**"
+  - "!node_modules/**/example/**"
+  - "!node_modules/**/examples/**"
+  - "!node_modules/**/demo/**"
+  - "!node_modules/**/.github/**"
+  - "!node_modules/maplibre-gl/dist/*-dev.js"
+  - "!node_modules/maplibre-gl/dist/*-dev.js.map"
+  - "!node_modules/maplibre-gl/src/**"
+  - "!node_modules/@maplibre/maplibre-gl-style-spec/src/**"
+  - "!node_modules/moment/src/**"
+  - "!node_modules/moment/locale/**"
+  - "!node_modules/moment/min/locales.js"
+  - "!node_modules/moment/min/locales.min.js"
+  - "!node_modules/moment/min/moment-with-locales.js"
+  - "!node_modules/moment/min/moment-with-locales.min.js"
+
 afterPack: scripts/afterPack.js
 
 win:
