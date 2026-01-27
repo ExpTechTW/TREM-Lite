@@ -24,6 +24,8 @@ class ReportManager {
     this.currentFlashingId = null;
     this.startY = 0;
     this.initialScrollTop = 0;
+    this.refreshInterval = null;
+    this.mapInitialized = false;
     this.bindEvents();
     ReportManager.instance = this;
   }
@@ -45,13 +47,25 @@ class ReportManager {
     document.addEventListener('mouseup', () => this.onDragEnd());
     window.addEventListener('resize', () => this.updateScrollbar());
 
+    // 事件委派：只綁定一次，處理所有 report item 的點擊
+    this.reportBoxItems.addEventListener('click', (e) => this.handleReportClick(e));
+
     TREM.variable.events.on('MapLoad', (map) => this.onMapLoad(map));
     TREM.variable.events.on('ReportRelease', (ans) => this.onReportRelease(ans));
   }
 
   onMapLoad(map) {
+    if (this.mapInitialized) {
+      return;
+    }
+    this.mapInitialized = true;
+
     this.initializeMapLayers(map);
-    setInterval(() => this.refresh(), 10000);
+
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+    this.refreshInterval = setInterval(() => this.refresh(), 10000);
     this.refresh();
   }
 
@@ -253,51 +267,47 @@ class ReportManager {
     return wrapper;
   }
 
-  clickEvent() {
-    const stopFlashing = () => {
-      document.querySelectorAll('.flashing').forEach((el) => {
-        el.classList.remove('flashing');
-      });
-      this.currentFlashingId = null;
-    };
-
-    this.reportWebButtons = document.querySelectorAll('.report-web');
-    this.reportWebButtons.forEach((button) => {
-      button.addEventListener('click', (event) => {
-        const wrapper = event.target.closest('.report-box-item-wrapper');
-        if (wrapper) {
-          const id = wrapper.getAttribute('data-id');
-          const trem = wrapper.getAttribute('trem-url');
-          const reportId = id.replace(`-${id.split('-')[1]}`, '');
-          const url = (trem) ? trem : `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
-          ipcRenderer.send('openUrl', url);
-        }
-      });
+  stopFlashing() {
+    document.querySelectorAll('.flashing').forEach((el) => {
+      el.classList.remove('flashing');
     });
+    this.currentFlashingId = null;
+  }
 
-    this.reportReplyButtons = document.querySelectorAll('.report-replay');
-    this.reportReplyButtons.forEach((button) => {
-      button.addEventListener('click', async (event) => {
-        const wrapper = event.target.closest('.report-box-item-wrapper');
-        const time = Number(wrapper.getAttribute('data-time')) - 5000;
-        const itemId = wrapper.getAttribute('data-id');
+  handleReportClick(e) {
+    const webBtn = e.target.closest('.report-web');
+    const replayBtn = e.target.closest('.report-replay');
 
-        stopReplay();
+    if (webBtn) {
+      const wrapper = e.target.closest('.report-box-item-wrapper');
+      if (wrapper) {
+        const id = wrapper.getAttribute('data-id');
+        const trem = wrapper.getAttribute('trem-url');
+        const reportId = id.replace(`-${id.split('-')[1]}`, '');
+        const url = trem ? trem : `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
+        ipcRenderer.send('openUrl', url);
+      }
+    }
+    else if (replayBtn) {
+      const wrapper = e.target.closest('.report-box-item-wrapper');
+      const time = Number(wrapper.getAttribute('data-time')) - 5000;
+      const itemId = wrapper.getAttribute('data-id');
 
-        if (last_replay_time == time) {
-          last_replay_time = 0;
-          stopFlashing();
-          return;
-        }
+      stopReplay();
 
-        last_replay_time = time;
-        startReplay(time);
+      if (last_replay_time == time) {
+        last_replay_time = 0;
+        this.stopFlashing();
+        return;
+      }
 
-        stopFlashing();
-        wrapper.classList.add('flashing');
-        this.currentFlashingId = itemId;
-      });
-    });
+      last_replay_time = time;
+      startReplay(time);
+
+      this.stopFlashing();
+      wrapper.classList.add('flashing');
+      this.currentFlashingId = itemId;
+    }
   }
 
   generateReportBoxItems(list, survey = null) {
@@ -327,8 +337,6 @@ class ReportManager {
     list.forEach((item) => {
       container.appendChild(this.createReportItem(item));
     });
-
-    this.clickEvent();
 
     if (this.currentFlashingId && last_replay_time !== 0) {
       const itemToFlash = container.querySelector(`[data-id="${this.currentFlashingId}"]`);

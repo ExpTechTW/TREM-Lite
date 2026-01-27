@@ -93,6 +93,7 @@ class AudioManager {
 
     this.ttsCache = {};
     this.ttsEewAlertLock = false;
+    this.ttsInterval = null;
     this.audioQueues = {
       eew: new AudioQueue(),
       pga: new AudioQueue(),
@@ -528,25 +529,31 @@ class AudioManager {
   }
 
   initTtsInterval() {
-    if (TREM.variable.tts) {
-      setInterval(() => {
-        if (this.ttsEewAlertLock) {
-          return;
-        }
-        for (const id of Object.keys(this.ttsCache)) {
-          if (this.ttsCache[id].now.i > this.ttsCache[id].last.i) {
-            this.ttsCache[id].last.loc = this.ttsCache[id].now.loc;
-            TREM.variable.speech.speak({ text: `${this.ttsCache[id].last.loc}發生地震`, queue: true });
-
-            this.ttsCache[id].last.i = this.ttsCache[id].now.i;
-            TREM.variable.speech.speak({
-              text: `預估最大震度${(!this.ttsCache[id].last.i) ? '不明' : intensity_list[this.ttsCache[id].last.i].replace('⁻', '弱').replace('⁺', '強')}`,
-              queue: true,
-            });
-          }
-        }
-      }, 3000);
+    if (!TREM.variable.tts) {
+      return;
     }
+
+    if (this.ttsInterval) {
+      clearInterval(this.ttsInterval);
+    }
+
+    this.ttsInterval = setInterval(() => {
+      if (this.ttsEewAlertLock) {
+        return;
+      }
+      for (const id of Object.keys(this.ttsCache)) {
+        if (this.ttsCache[id].now.i > this.ttsCache[id].last.i) {
+          this.ttsCache[id].last.loc = this.ttsCache[id].now.loc;
+          TREM.variable.speech.speak({ text: `${this.ttsCache[id].last.loc}發生地震`, queue: true });
+
+          this.ttsCache[id].last.i = this.ttsCache[id].now.i;
+          TREM.variable.speech.speak({
+            text: `預估最大震度${(!this.ttsCache[id].last.i) ? '不明' : intensity_list[this.ttsCache[id].last.i].replace('⁻', '弱').replace('⁺', '強')}`,
+            queue: true,
+          });
+        }
+      }
+    }, 3000);
   }
 }
 

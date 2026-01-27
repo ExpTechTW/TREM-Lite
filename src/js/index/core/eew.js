@@ -21,9 +21,10 @@ const triggerBox = document.getElementById('trigger-box');
 let flash = false;
 let eew_rotation = 0;
 const eew_cache = {};
+const EEW_CACHE_TTL = 600000; // 10 分鐘
 
 TREM.variable.events.on('EewRelease', (ans) => {
-  eew_cache[ans.data.id] = ans.data;
+  eew_cache[ans.data.id] = { ...ans.data, cacheTime: Date.now() };
   show_eew(false);
   createEewLayer(ans);
 });
@@ -122,7 +123,7 @@ TREM.variable.events.on('EewAlert', (ans) => {
 });
 
 TREM.variable.events.on('EewUpdate', (ans) => {
-  eew_cache[ans.data.id] = ans.data;
+  eew_cache[ans.data.id] = { ...ans.data, cacheTime: Date.now() };
 
   createEewLayer(ans);
 
@@ -138,6 +139,17 @@ TREM.variable.events.on('EewEnd', (ans) => {
   delete eew_cache[ans.data.id];
   show_eew(true);
 });
+
+// 定期清理過期的 eew_cache
+setInterval(() => {
+  const now = Date.now();
+  for (const id of Object.keys(eew_cache)) {
+    if (now - eew_cache[id].cacheTime > EEW_CACHE_TTL) {
+      removeEewLayersAndSources(id);
+      delete eew_cache[id];
+    }
+  }
+}, 60000);
 
 setInterval(() => {
   flash = !flash;

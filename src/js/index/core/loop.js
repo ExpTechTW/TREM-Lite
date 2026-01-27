@@ -10,6 +10,8 @@ const time = document.getElementById('time');
 const warning_box_internet = document.getElementById('warning-box-internet');
 
 let flash = false;
+let mapLoopInterval = null;
+let mapInitialized = false;
 
 setInterval(() => {
   if (TREM.variable.play_mode == 2 || TREM.variable.play_mode == 3) {
@@ -43,7 +45,15 @@ setInterval(() => {
 }, 1000);
 
 TREM.variable.events.on('MapLoad', () => {
-  setInterval(() => {
+  if (mapInitialized) {
+    return;
+  }
+  mapInitialized = true;
+
+  if (mapLoopInterval) {
+    clearInterval(mapLoopInterval);
+  }
+  mapLoopInterval = setInterval(() => {
     flash = !flash;
     refresh_cross(flash);
     refresh_box(flash);

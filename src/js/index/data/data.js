@@ -100,6 +100,8 @@ class DataManager {
       return DataManager.instance;
     }
     this.lastFetchTime = 0;
+    this.fetchInterval = null;
+    this.mapInitialized = false;
     this.initialize();
     DataManager.instance = this;
   }
@@ -113,7 +115,15 @@ class DataManager {
 
   initialize() {
     TREM.variable.events.on('MapLoad', () => {
-      setInterval(async () => {
+      if (this.mapInitialized) {
+        return;
+      }
+      this.mapInitialized = true;
+
+      if (this.fetchInterval) {
+        clearInterval(this.fetchInterval);
+      }
+      this.fetchInterval = setInterval(async () => {
         await this.fetchData();
       }, 100);
     });

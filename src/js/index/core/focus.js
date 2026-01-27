@@ -12,6 +12,8 @@ class FocusManager {
     this.lock = false;
     this.isMouseDown = false;
     this.config = Config.getInstance().getConfig();
+    this.focusInterval = null;
+    this.mapInitialized = false;
 
     this.focusButton = document.getElementById('focus');
     this.initialize();
@@ -27,7 +29,10 @@ class FocusManager {
   }
 
   initialize() {
-    setInterval(() => this.focus(), 3000);
+    if (this.focusInterval) {
+      clearInterval(this.focusInterval);
+    }
+    this.focusInterval = setInterval(() => this.focus(), 3000);
   }
 
   bindEvents() {
@@ -45,6 +50,11 @@ class FocusManager {
   }
 
   onMapLoad() {
+    if (this.mapInitialized) {
+      return;
+    }
+    this.mapInitialized = true;
+
     TREM.variable.map.on('mousedown', () => {
       this.isMouseDown = true;
       this.lock = true;
