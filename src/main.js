@@ -772,6 +772,21 @@ ipcMain.handle('read-yaml', async (event, filePath) => {
   }
 });
 
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    if (!app.isPackaged) {
+      return { success: false, error: '檢查更新功能僅在打包版本中可用' };
+    }
+
+    await autoUpdater.checkForUpdates();
+    return { success: true };
+  }
+  catch (error) {
+    console.error('檢查更新失敗:', error);
+    return { success: false, error: error.message || '未知錯誤' };
+  }
+});
+
 ipcMain.handle('write-yaml', async (event, filePath, content) => {
   try {
     yaml.load(content);
