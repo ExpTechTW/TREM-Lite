@@ -23,7 +23,6 @@ files:
   - "!**/tsconfig.json"
   # node_modules cleanup
   - "!node_modules/**/{test,tests,__tests__,docs,doc,example,examples,demo,.github}/**"
-  - "!node_modules/**/src/**"
   # maplibre-gl
   - "!node_modules/maplibre-gl/dist/*-dev.js*"
   # moment (unused locales)
