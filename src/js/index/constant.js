@@ -92,7 +92,7 @@ const TREM = {
         'lb-3.exptech.dev',
         'lb-4.exptech.dev',
       ],
-      REPLAY: ['api-1.exptech.dev'],
+      REPLAY: ['api.core.exptech.dev'],
     },
 
     AUDIO: {
