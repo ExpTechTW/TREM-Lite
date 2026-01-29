@@ -29,7 +29,7 @@ async function getData(time) {
   const eew_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-      `https://${url}/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
+      `https:/api.core.exptech.dev/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
       TREM.constant.HTTP_TIMEOUT.EEW,
     );
 
