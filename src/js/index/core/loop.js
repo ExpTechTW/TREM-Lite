@@ -1,4 +1,5 @@
 const TREM = require('../constant');
+const logger = require('../../core/utils/logger');
 
 const { formatTime } = require('../utils/utils');
 const now = require('../utils/ntp');
@@ -73,10 +74,10 @@ async function get_ntp() {
     TREM.variable.cache.time.syncedTime = result.now.getTime();
     TREM.variable.cache.time.lastSync = Date.now();
 
-    console.log(`NTP 同步完成，偏移量: ${result.offset.toFixed(2)} ms`);
+    logger.info(`NTP 同步完成，偏移量: ${result.offset.toFixed(2)} ms`);
   }
   catch (error) {
-    console.error('NTP 同步錯誤:', error.message);
+    logger.error('NTP 同步錯誤:', error.message);
   }
 }
 
