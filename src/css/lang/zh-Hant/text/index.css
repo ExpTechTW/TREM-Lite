@@ -296,6 +296,9 @@
 .auto-start::before {
   content: "開機自動啟動（Windows）";
 }
+.ota-auto-update-text::before {
+  content: "啟用 OTA（自動更新）";
+}
 .check-update-title::before {
   content: "檢查更新";
 }

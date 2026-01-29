@@ -12,6 +12,7 @@ const fs = require('fs-extra');
 const yaml = require('js-yaml');
 const Store = require('electron-store').default;
 const { autoUpdater } = require('electron-updater');
+const { initAutoUpdater } = require('./js/core/ota');
 
 const store = new Store();
 let win;
@@ -19,6 +20,8 @@ let SettingWindow;
 let pipWindow = null;
 let tray = null;
 let forceQuit = false;
+let isQuitting = false;
+let otaController = null;
 const hide = process.argv.includes('--start') ? true : false;
 const pluginDir = path.join(app.getPath('userData'), 'plugins');
 const replayDir = path.join(app.getPath('userData'), 'replay');
@@ -93,7 +96,7 @@ function createWindow() {
     const bounds = win.getBounds();
     store.set('windowState', bounds);
 
-    if (forceQuit) {
+    if (forceQuit || isQuitting) {
       win = null;
       return;
     }
@@ -293,97 +296,16 @@ else {
     trayIcon();
     createWindow();
     createPiPWindow();
-
-    // Auto-updater configuration
-    try {
-      autoUpdater.autoDownload = true;
-      autoUpdater.autoInstallOnAppQuit = true;
-      autoUpdater.allowPrerelease = false;
-      autoUpdater.allowDowngrade = false;
-
-      if (app.isPackaged) {
-        autoUpdater.setFeedURL({
-          provider: 'github',
-          owner: 'ExpTechTW',
-          repo: 'TREM-Lite',
-          vPrefixedTagName: false,
-        });
-      }
-
-      autoUpdater.on('checking-for-update', () => {
-        console.log('Checking for update...');
-        if (win) {
-          win.webContents.send('update-checking');
-        }
-        if (SettingWindow && !SettingWindow.isDestroyed()) {
-          SettingWindow.webContents.send('update-checking');
-        }
-      });
-
-      autoUpdater.on('update-available', (info) => {
-        console.log('Update available:', info.version);
-        if (win) {
-          win.webContents.send('update-available', info);
-        }
-        if (SettingWindow && !SettingWindow.isDestroyed()) {
-          SettingWindow.webContents.send('update-available', info);
-        }
-      });
-
-      autoUpdater.on('update-not-available', (info) => {
-        console.log('Update not available:', info.version);
-        if (win) {
-          win.webContents.send('update-not-available', info);
-        }
-        if (SettingWindow && !SettingWindow.isDestroyed()) {
-          SettingWindow.webContents.send('update-not-available', info);
-        }
-      });
-
-      autoUpdater.on('download-progress', (progressObj) => {
-        console.log('Download progress:', progressObj.percent);
-        if (win) {
-          win.webContents.send('download-progress', progressObj);
-        }
-        if (SettingWindow && !SettingWindow.isDestroyed()) {
-          SettingWindow.webContents.send('download-progress', progressObj);
-        }
-      });
-
-      autoUpdater.on('update-downloaded', (info) => {
-        console.log('Update downloaded:', info.version);
-        if (win) {
-          win.webContents.send('update-downloaded', info);
-        }
-        if (SettingWindow && !SettingWindow.isDestroyed()) {
-          SettingWindow.webContents.send('update-downloaded', info);
-        }
+    otaController = initAutoUpdater({
+      app,
+      configPath: configDir,
+      getMainWindow: () => win,
+      getSettingWindow: () => SettingWindow,
+      onBeforeQuitAndInstall: () => {
         isQuitting = true;
-        setTimeout(() => {
-          autoUpdater.quitAndInstall(true, true);
-        }, 3000);
-      });
-
-      autoUpdater.on('error', (err) => {
-        console.error('Update error:', err && err.message ? err.message : err);
-        if (win) {
-          win.webContents.send('update-error', err.message);
-        }
-        if (SettingWindow && !SettingWindow.isDestroyed()) {
-          SettingWindow.webContents.send('update-error', err.message);
-        }
-      });
-
-      if (app.isPackaged) {
-        autoUpdater.checkForUpdates().catch(() => undefined);
-        setInterval(() => {
-          autoUpdater.checkForUpdates().catch(() => undefined);
-        }, 300000); // Check every 5 minutes
-      }
-    }
-    catch (err) {
-      console.error('Auto-updater init error:', err);
-    }
+        forceQuit = true;
+      },
+    });
   });
 }
 
@@ -784,6 +706,15 @@ ipcMain.handle('check-for-updates', async () => {
   catch (error) {
     console.error('檢查更新失敗:', error);
     return { success: false, error: error.message || '未知錯誤' };
+  }
+});
+
+ipcMain.on('config-updated', () => {
+  try {
+    otaController?.refresh('config-updated');
+  }
+  catch (err) {
+    console.error('Failed to refresh auto update scheduler:', err);
   }
 });
 
