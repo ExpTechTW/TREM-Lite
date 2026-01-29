@@ -10,7 +10,7 @@ const {
 const path = require('path');
 const fs = require('fs-extra');
 const yaml = require('js-yaml');
-const Store = require('electron-store');
+const Store = require('electron-store').default;
 const { autoUpdater } = require('electron-updater');
 
 const store = new Store();
