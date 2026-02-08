@@ -162,7 +162,7 @@ class PluginLoader {
           type: 'error',
           time: now(),
           plugin: pluginInfo.name,
-          msg: `需要至少 TREM-Lite 的版本為 ${trem} 以上，但目前安裝的版本為 ${this.tremVersion}。`,
+          msg: `需要 TREM-Lite 的版本為 ${this.getVersionPrefixString(trem)}，但目前安裝的版本為 ${this.tremVersion}。`,
         });
         logger.error(`Plugin ${pluginInfo.name} requires TREM version ${trem}, but ${this.tremVersion} is installed`);
         return false;
@@ -187,7 +187,7 @@ class PluginLoader {
           type: 'error',
           time: now(),
           plugin: pluginInfo.name,
-          msg: `需要至少 ${dep} 的版本為 ${version} 以上，但目前安裝的版本為 ${dependencyPlugin.info.version}。`,
+          msg: `需要 ${dep} 的版本為 ${this.getVersionPrefixString(version)}，但目前安裝的版本為 ${dependencyPlugin.info.version}。`,
         });
         logger.error(`Plugin ${pluginInfo.name} requires ${dep} version ${version}, but ${dependencyPlugin.info.version} is installed`);
         return false;
@@ -331,6 +331,41 @@ class PluginLoader {
       case '<=': return !this.compareVersions(current, reqVersion) || this.isExactVersionMatch(current, reqVersion);
       default: return this.compareVersions(current, reqVersion);
     }
+  }
+
+  /**
+ * 解析版本需求字串，將「等於/大於/小於」放在版本號之前
+ * @param {string} required - 需求版本字串 (例如 ">=1.0.0", "<2.0.0")
+ * @returns {string} 中文描述 (例如 "大於等於1.0.0", "小於2.0.0")
+ */
+  getVersionPrefixString(required) {
+    // 1. 處理多重範圍 (例如 ">=1.0.0 <2.0.0")
+    if (required.includes(' ')) {
+      return required
+        .split(' ')
+        .map((r) => this.getVersionPrefixString(r)) // 注意這裡要用 this
+        .join(' 且 '); // 用 "且" 連接多個條件
+    }
+
+    // 2. 解析運算子與版本號
+    // 邏輯參照 PluginLoader.js 第 300 行：若無運算子預設為 '>='
+    const operatorMatch = required.match(/^[>=<]+/);
+    const operator = operatorMatch ? operatorMatch[0] : '>=';
+    const version = required.replace(/^[>=<]+/, '');
+
+    // 3. 定義中文前綴對照表
+    const prefixMap = {
+      '=': '等於',
+      '>': '大於',
+      '>=': '大於等於', // 或 "不小於"
+      '<': '小於',
+      '<=': '小於等於', // 或 "不大於"
+    };
+
+    // 4. 組合字串：中文前綴 + 版本號
+    const prefix = prefixMap[operator] || '大於等於';
+
+    return `${prefix} ${version}`;
   }
 
   buildDependencyGraph() {

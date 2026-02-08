@@ -82,8 +82,8 @@ class PluginList {
     const data = JSON.parse(localStorage.getItem('plugin-status')) || [];
     const msgClassMap = {
       'no-certificate': /未發現有效簽名/,
-      'version-low-greater': /需要至少 TREM-Lite 的版本為 >=.*以上，但目前安裝的版本為 .*\./,
-      'version-low-equal': /需要至少 TREM-Lite 的版本為 =.*以上，但目前安裝的版本為 .*\./,
+      'version-low-greater': /需要 .* 的版本為 (大於等於|大於|小於等於|小於)(?: .* 且 .*| .*)，但目前安裝的版本為 .*\./,
+      'version-low-equal': /需要 .* 的版本為 等於 .*，但目前安裝的版本為 .*\./,
       'missing-dependencies': /缺少(.*)依賴/,
       'init-error': /初始化失敗/,
       'not-enabled': /未啟用/,
