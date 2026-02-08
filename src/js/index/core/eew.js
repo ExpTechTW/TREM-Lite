@@ -248,7 +248,7 @@ function show_eew(rotation = true) {
         info_mag.textContent = eew.eq.mag.toFixed(1);
         info_intensity.className = `info-title-box intensity-${eew.eq.max}`;
         info_footer.className = `info-footer${eew.eq.mag == 1 ? ' nsspe' : ''}`;
-        info_time.textContent = formatTime(eew.eq.time + TREM.constant.TIME_OFFSET);
+        info_time.textContent = formatTime(eew.eq.time);
 
         ipcRenderer.send('update-pip', {
           statusClass,
@@ -260,7 +260,7 @@ function show_eew(rotation = true) {
           mag: eew.eq.mag.toFixed(1),
           max: eew.eq.max,
           footer: eew.eq.mag == 1,
-          time: formatTime(eew.eq.time + TREM.constant.TIME_OFFSET),
+          time: formatTime(eew.eq.time),
         });
       }
       TREM.variable.last_rotation = eew_rotation;

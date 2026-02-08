@@ -169,7 +169,7 @@ class AudioManager {
     };
 
     const notification = new Notification(`${(ans.data.status == 1) ? '🚨 緊急地震速報' : '⚠️ 地震速報'} ${ans.data.serial}報`, {
-      body: `${formatTimestamp(ans.data.eq.time, TREM.constant.TIME_OFFSET)} 最大預估${intensity_list[ans.data.eq.max]}\n${ans.data.eq.loc} M${ans.data.eq.mag} ${ans.data.eq.depth}km`,
+      body: `${formatTimestamp(ans.data.eq.time)} 最大預估${intensity_list[ans.data.eq.max]}\n${ans.data.eq.loc} M${ans.data.eq.mag} ${ans.data.eq.depth}km`,
       icon: '../TREM.ico',
     });
 
@@ -200,7 +200,7 @@ class AudioManager {
     this.ttsCache[ans.data.id].now.i = ans.data.eq.max;
 
     const notification = new Notification(`${(ans.data.status == 1) ? '🚨 緊急地震速報' : '⚠️ 地震速報'} ${ans.data.serial}報`, {
-      body: `${formatTimestamp(ans.data.eq.time, TREM.constant.TIME_OFFSET)} 最大預估${intensity_list[ans.data.eq.max]}\n${ans.data.eq.loc} M${ans.data.eq.mag} ${ans.data.eq.depth}km`,
+      body: `${formatTimestamp(ans.data.eq.time)} 最大預估${intensity_list[ans.data.eq.max]}\n${ans.data.eq.loc} M${ans.data.eq.mag} ${ans.data.eq.depth}km`,
       icon: '../TREM.ico',
     });
 
@@ -211,7 +211,7 @@ class AudioManager {
 
   handleEewCancel(ans) {
     const notification = new Notification(`⚠️ 地震速報 ${ans.data.serial}報 (取消)`, {
-      body: `${formatTimestamp(ans.data.eq.time, TREM.constant.TIME_OFFSET)} 最大預估不明\n${ans.data.eq.loc} M0.0 0km`,
+      body: `${formatTimestamp(ans.data.eq.time)} 最大預估不明\n${ans.data.eq.loc} M0.0 0km`,
       icon: '../TREM.ico',
     });
 
