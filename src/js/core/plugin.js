@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const manager = require('./manager');
 const { ipcRenderer } = require('electron');
 const now = require('../index/utils/ntp');
+const maplibregl = require('maplibre-gl');
 
 class PluginLoader {
   static instance = null;
@@ -74,6 +75,7 @@ class PluginLoader {
       logger,
       Logger,
       MixinManager,
+      maplibregl,
       info: {
         pluginDir: this.tempDir,
         originalPath: this.pluginDir,
