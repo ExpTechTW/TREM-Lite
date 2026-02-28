@@ -23,15 +23,15 @@ async function getData(time) {
   const rts_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-      `https://${url}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
-      TREM.constant.HTTP_TIMEOUT.RTS,
-    );
+        `https://${url}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
+        TREM.constant.HTTP_TIMEOUT.RTS,
+      );
   const eew_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-      `https:/api.core.exptech.dev/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
-      TREM.constant.HTTP_TIMEOUT.EEW,
-    );
+        `https:/api.lb.exptech.dev/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
+        TREM.constant.HTTP_TIMEOUT.EEW,
+      );
 
   const activeReqs = [rts_req, eew_req];
   let intensity_req, lpgm_req;
