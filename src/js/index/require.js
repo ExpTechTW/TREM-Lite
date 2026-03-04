@@ -1,42 +1,50 @@
+const path = require('path');
+const basePath = path.basename(__dirname) === 'view' ? path.join(__dirname, '../js/index') : __dirname;
 const isDev = process.defaultApp
   || process.argv[0].includes('node_modules');
 
 let TREM;
 
 if (isDev) {
-  TREM = require('../js/index/constant');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  TREM = require(path.join(basePath, 'constant'));
 }
 
-const logger = require('../js/core/utils/logger');
+const logger = require(path.join(basePath, '../core/utils/logger'));
 
 logger.info('App start');
 
-const copyMissingTremFiles = require('../js/index/plugin_init');
+const copyMissingTremFiles = require(path.join(basePath, 'plugin_init'));
 
 (async () => {
-  await copyMissingTremFiles();
+  try {
+    await copyMissingTremFiles();
+  }
+  catch (e) {
+    console.error('Init error:', e);
+  }
 
   localStorage.setItem('loaded-plugins', JSON.stringify([]));
 
-  // require('../js/core/config');
-  require('../js/core/plugin').createPluginLoader('index');
+  // require('../core/config');
+  require(path.join(basePath, '../core/plugin')).createPluginLoader('index');
 
-  require('../js/index/nav');
-  require('../js/index/lang');
-  require('../js/index/event');
-  require('../js/index/map');
-  require('../js/index/data/data');
+  require(path.join(basePath, 'nav'));
+  require(path.join(basePath, 'lang'));
+  require(path.join(basePath, 'event'));
+  require(path.join(basePath, 'map'));
+  require(path.join(basePath, 'data/data'));
 
-  require('../js/index/core/resource');
-  require('../js/index/core/tts');
-  require('../js/index/core/rts');
-  require('../js/index/core/eew');
-  require('../js/index/core/loop');
-  require('../js/index/core/estimate');
-  require('../js/index/core/audio');
-  require('../js/index/core/focus');
-  require('../js/index/core/report');
-  require('../js/index/core/intensity');
-  require('../js/index/core/lpgm');
-  require('../js/index/core/window');
+  require(path.join(basePath, 'core/resource'));
+  require(path.join(basePath, 'core/tts'));
+  require(path.join(basePath, 'core/rts'));
+  require(path.join(basePath, 'core/eew'));
+  require(path.join(basePath, 'core/loop'));
+  require(path.join(basePath, 'core/estimate'));
+  require(path.join(basePath, 'core/audio'));
+  require(path.join(basePath, 'core/focus'));
+  require(path.join(basePath, 'core/report'));
+  require(path.join(basePath, 'core/intensity'));
+  require(path.join(basePath, 'core/lpgm'));
+  require(path.join(basePath, 'core/window'));
 })();

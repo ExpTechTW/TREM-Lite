@@ -87,6 +87,30 @@ function createWindow() {
     }
   });
 
+  win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Window failed to load:', errorCode, errorDescription);
+  });
+
+  function formatTimestamp() {
+    const d = new Date();
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+
+  win.webContents.on('console-message', (event, ...args) => {
+    const ts = formatTimestamp();
+    if (args.length > 0 && typeof args[0] === 'object') {
+      const d = args[0];
+      console.log(`[${ts}][Renderer] ${d.message} (${d.sourceId}:${d.line})`);
+    }
+    else {
+      const [,message, line, sourceId] = args;
+      console.log(`[${ts}][Renderer] ${message} (${sourceId}:${line})`);
+    }
+  });
+
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };

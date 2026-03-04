@@ -5,7 +5,8 @@
   "main": "./src/main.js",
   "author": "ExpTechTW <ExpTech.tw@gmail.com>",
   "scripts": {
-    "start": "NODE_ENV=development electron .",
+    "rebuild": "electron-rebuild",
+    "start": "bun run rebuild && NODE_ENV=development electron .",
     "build": "electron-builder build --mac --win --linux",
     "build:mac": "electron-builder build --mac",
     "build:win": "electron-builder build --win",

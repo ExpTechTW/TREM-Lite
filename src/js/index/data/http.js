@@ -16,14 +16,14 @@ async function getData(time) {
   const shouldFetchLPGM = requestCounter % 7 === 0;
   const shouldFetchIntensity = requestCounter % 5 === 0;
 
-  const url = (time)
-    ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)]
-    : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
+  // const url = (time)
+  //   ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)]
+  //   : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
 
   const rts_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-        `https://${url}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
+        `https://api.lb.exptech.dev/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
         TREM.constant.HTTP_TIMEOUT.RTS,
       );
   const eew_req = (TREM.variable.play_mode == 1)

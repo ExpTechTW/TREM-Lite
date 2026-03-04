@@ -1,5 +1,6 @@
 const { Pool } = require('undici');
 const logger = require('./logger');
+const { runMonitor } = require('./monitor');
 
 class NetworkState {
   constructor() {
@@ -48,6 +49,7 @@ async function fetchData(url, timeout = 1000) {
 
     clearTimeout(timeoutId);
     networkState.setOffline(false);
+
     return response;
   }
   catch (error) {
@@ -73,6 +75,7 @@ fetchData.withController = function (url, timeout = 1000) {
     pipelining: 0,
     connections: 1,
   });
+  const startTime = Date.now(); // 記錄開始時間
 
   return {
     execute: async () => {
@@ -85,11 +88,16 @@ fetchData.withController = function (url, timeout = 1000) {
 
         clearTimeout(timeoutId);
         networkState.setOffline(false);
+
+        if (process.env.NODE_ENV === 'development') {
+          runMonitor(url, response, startTime);
+        }
+
         return response;
       }
       catch (error) {
         if (error.name === 'AbortError') {
-          logger.error(`[utils/fetch.js] -> time out | ${url}`);
+          logger.error(`[utils/fetch.js] -> time out ${timeout} ms | ${url}`);
           throw new FetchError('Request timeout', 'TIMEOUT', url);
         }
 
