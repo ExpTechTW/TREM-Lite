@@ -1,6 +1,7 @@
 const os = require('node:os');
 const { app } = require('@electron/remote');
 const { ipcRenderer } = require('electron');
+const Config = require('../core/config');
 
 class Main {
   constructor() {
@@ -49,6 +50,7 @@ class Main {
     }
 
     this.setupUpdateListeners();
+    this.initapiProxyDomain();
   }
 
   setupUpdateListeners() {
@@ -119,6 +121,38 @@ class Main {
         updateStatus.className = 'update-status error';
       }
     });
+  }
+
+  initapiProxyDomain() {
+    const input = document.getElementById('api-proxy-domain-input');
+    const resetBtn = document.getElementById('api-proxy-domain-reset');
+    const DEFAULT_DOMAIN = 'api.lb.exptech.dev';
+
+    if (input && resetBtn) {
+      const configInstance = Config.getInstance();
+      const updateValue = () => {
+        const config = configInstance.getConfig();
+        input.value = config.apiProxyDomain || DEFAULT_DOMAIN;
+      };
+      updateValue();
+
+      input.addEventListener('change', () => {
+        const config = configInstance.getConfig();
+        // 若使用者清空輸入框，則自動填回預設值
+        config.apiProxyDomain = input.value.trim() || DEFAULT_DOMAIN;
+        input.value = config.apiProxyDomain;
+        configInstance.writeConfig(config);
+        this.showBubble('success', 1500);
+      });
+
+      resetBtn.addEventListener('click', () => {
+        const config = configInstance.getConfig();
+        config.apiProxyDomain = DEFAULT_DOMAIN;
+        configInstance.writeConfig(config);
+        input.value = DEFAULT_DOMAIN;
+        this.showBubble('success', 1500);
+      });
+    }
   }
 
   async checkForUpdates() {

@@ -296,6 +296,12 @@
 .auto-start::before {
   content: "開機自動啟動（Windows）";
 }
+.api-proxy-domain-title::before {
+  content: "API 代理網域";
+}
+.api-proxy-domain-description::before {
+  content: "設定備援 API 代理網域，如果主要線路發生問題時可輸入備援 API 代理網域將會套用此設定。";
+}
 .ota-auto-update-text::before {
   content: "啟用 OTA（自動更新）";
 }

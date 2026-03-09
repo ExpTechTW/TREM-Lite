@@ -1,4 +1,4 @@
-ver: 4
+ver: 5
 
 location-code: 711
 
@@ -30,3 +30,5 @@ check-box:
   sound-effects-Shindo1: true
   sound-effects-Shindo2: true
   sound-effects-Update: true
+
+apiProxyDomain: 'api.lb.exptech.dev'

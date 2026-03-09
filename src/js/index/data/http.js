@@ -1,5 +1,6 @@
 const TREM = require('../constant');
 const fetchData = require('../../core/utils/fetch');
+const Config = require('../../core/config');
 
 let activeRequests = [];
 
@@ -20,16 +21,18 @@ async function getData(time) {
   //   ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)]
   //   : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
 
+  const apiProxyDomain = Config.getInstance().getConfig().apiProxyDomain || 'api.lb.exptech.dev';
+
   const rts_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-        `https://api.lb.exptech.dev/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
+        `https://${apiProxyDomain}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
         TREM.constant.HTTP_TIMEOUT.RTS,
       );
   const eew_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-        `https:/api.lb.exptech.dev/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
+        `https://${apiProxyDomain}/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
         TREM.constant.HTTP_TIMEOUT.EEW,
       );
 
