@@ -31,7 +31,7 @@
     "typescript-eslint": "^8.13.0"
   },
   "dependencies": {
-    "@electron/remote": "^2.1.2",
+    "@electron/remote": "^2.1.3",
     "@exptech/http": "github:ExpTechTW/exptech-sdk-http#0.0.4",
     "adm-zip": "^0.5.16",
     "electron-store": "11.0.2",

@@ -1,6 +1,7 @@
 const pino = require('pino');
 const path = require('path');
-const { app } = require('@electron/remote');
+// 動態判斷進程：主進程 (browser) 用 electron 原生模組，渲染進程用 @electron/remote
+const { app } = process.type === 'browser' ? require('electron') : require('@electron/remote');
 const fs = require('fs');
 const util = require('util');
 const { compress } = require('zstd-napi');

@@ -6,6 +6,7 @@ const {
   Tray,
   nativeImage,
   Menu,
+  dialog,
 } = require('electron');
 const path = require('path');
 const fs = require('fs-extra');
@@ -13,6 +14,7 @@ const yaml = require('js-yaml');
 const Store = require('electron-store').default;
 const { autoUpdater } = require('electron-updater');
 const { initAutoUpdater } = require('./js/core/ota');
+const logger = require('./js/core/utils/logger');
 
 const store = new Store();
 let win;
@@ -88,26 +90,68 @@ function createWindow() {
   });
 
   win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('Window failed to load:', errorCode, errorDescription);
+    logger.error('Window failed to load: %s %s', errorCode, errorDescription);
   });
 
-  function formatTimestamp() {
-    const d = new Date();
-    const h = String(d.getHours()).padStart(2, '0');
-    const m = String(d.getMinutes()).padStart(2, '0');
-    const s = String(d.getSeconds()).padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  }
+  // 監聽渲染進程崩潰 (白畫面)
+  win.webContents.on('render-process-gone', async (event, details) => {
+    if (isQuitting || forceQuit) {
+      return;
+    }
+    logger.error(`[Renderer Crash] 畫面崩潰，原因: ${details.reason}, 錯誤碼: ${details.exitCode}`);
+
+    if (details.reason === 'clean-exit') {
+      logger.info('偵測到 clean-exit，自動重新載入畫面...');
+      win.reload();
+    }
+    else {
+      const { response } = await dialog.showMessageBox(win, {
+        type: 'error',
+        title: '渲染進程崩潰',
+        message: '發生非預期的錯誤導致畫面崩潰。',
+        detail: `原因: ${details.reason}\n錯誤碼: ${details.exitCode}\n\n是否嘗試重新載入？`,
+        buttons: ['重新載入', '關閉應用程式'],
+        defaultId: 0,
+        cancelId: 1,
+      });
+
+      if (response === 0) {
+        logger.info('使用者選擇重新載入畫面...');
+        win.reload();
+      }
+      else {
+        app.quit();
+      }
+    }
+  });
+
+  // 監聽渲染進程無回應 (卡死 / 無窮迴圈 / 嚴重的 Memory Leak)
+  win.on('unresponsive', async () => {
+    logger.error('[Renderer Hung] 畫面無回應 (可能發生無窮迴圈或極高負載)');
+    const { response } = await dialog.showMessageBox(win, {
+      type: 'warning',
+      title: '畫面無回應',
+      message: '應用程式似乎沒有回應。',
+      detail: '您可以選擇等待其恢復，或強制重新載入。',
+      buttons: ['強制重新載入', '等待'],
+      defaultId: 0,
+      cancelId: 1,
+    });
+
+    if (response === 0) {
+      logger.info('使用者選擇強制重新載入...');
+      win.reload();
+    }
+  });
 
   win.webContents.on('console-message', (event, ...args) => {
-    const ts = formatTimestamp();
     if (args.length > 0 && typeof args[0] === 'object') {
       const d = args[0];
-      console.log(`[${ts}][Renderer] ${d.message} (${d.sourceId}:${d.line})`);
+      logger.info(`[Renderer] ${d.message} (${d.sourceId}:${d.line})`);
     }
     else {
       const [,message, line, sourceId] = args;
-      console.log(`[${ts}][Renderer] ${message} (${sourceId}:${line})`);
+      logger.info(`[Renderer] ${message} (${sourceId}:${line})`);
     }
   });
 
@@ -270,12 +314,12 @@ app.on('second-instance', (event, commandLine) => {
             localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
           `)
             .then(() => win.webContents.send('auto-download'))
-            .catch((err) => console.error('executeJavaScript error:', err));
+            .catch((err) => logger.error('executeJavaScript error:', err));
         }
       }
     }
     catch (error) {
-      console.error('Error processing URL:', error);
+      logger.error('Error processing URL:', error);
     }
   }
 
@@ -298,13 +342,22 @@ app.on('open-url', (event, url) => {
           localStorage.setItem('pendingInstallPlugin', '${urlObj.pathname.replace('/install:', '')}');
         `)
           .then(() => win.webContents.send('auto-download'))
-          .catch((err) => console.error('executeJavaScript error:', err));
+          .catch((err) => logger.error('executeJavaScript error:', err));
       }
     }
   }
   catch (error) {
-    console.error('Error processing URL:', error);
+    logger.error('Error processing URL:', error);
   }
+});
+
+// 捕捉主進程未預期的例外錯誤，避免程式直接閃退
+process.on('uncaughtException', (error) => {
+  logger.error('[Main Process Error] 發生未捕獲的例外錯誤:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('[Main Process Error] 發生未捕獲的 Promise 拒絕:', promise, '原因:', reason);
 });
 
 if (!shouldQuit) {
@@ -422,7 +475,7 @@ ipcMain.on('openReplayFolder', () => {
 
   shell.openPath(replayDir)
     .catch((error) => {
-      console.error(error);
+      logger.error(error);
     });
 });
 
@@ -433,7 +486,7 @@ ipcMain.on('openPluginFolder', () => {
 
   shell.openPath(pluginDir)
     .catch((error) => {
-      console.error(error);
+      logger.error(error);
     });
 });
 
@@ -444,14 +497,14 @@ ipcMain.on('openTempFolder', () => {
 
   shell.openPath(tempDir)
     .catch((error) => {
-      console.error(error);
+      logger.error(error);
     });
 });
 
 ipcMain.on('openConfigFolder', () => {
   shell.openPath(path.dirname(configDir))
     .catch((error) => {
-      console.error(error);
+      logger.error(error);
     });
 });
 
@@ -493,7 +546,7 @@ function trayIcon() {
     const iconPath = path.join(__dirname, 'TREM.png');
     icon = nativeImage.createFromPath(iconPath);
     if (icon.isEmpty()) {
-      console.error('Failed to load tray icon');
+      logger.error('Failed to load tray icon');
       return;
     }
 
@@ -509,7 +562,7 @@ function trayIcon() {
     tray = new Tray(icon);
   }
   catch (error) {
-    console.error('Failed to create tray:', error);
+    logger.error('Failed to create tray:', error);
     return;
   }
 
@@ -641,7 +694,7 @@ ipcMain.on('open-plugin-window', (event, data) => {
     });
   }
   catch (error) {
-    console.error('Error opening plugin window:', error);
+    logger.error('Error opening plugin window:', error);
     event.reply('plugin-window-opened', {
       success: false,
       error: error.message,
@@ -728,7 +781,7 @@ ipcMain.handle('check-for-updates', async () => {
     return { success: true };
   }
   catch (error) {
-    console.error('檢查更新失敗:', error);
+    logger.error('檢查更新失敗:', error);
     return { success: false, error: error.message || '未知錯誤' };
   }
 });
@@ -738,7 +791,7 @@ ipcMain.on('config-updated', () => {
     otaController?.refresh('config-updated');
   }
   catch (err) {
-    console.error('Failed to refresh auto update scheduler:', err);
+    logger.error('Failed to refresh auto update scheduler:', err);
   }
 });
 
