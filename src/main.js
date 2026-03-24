@@ -101,8 +101,10 @@ function createWindow() {
     logger.error(`[Renderer Crash] 畫面崩潰，原因: ${details.reason}, 錯誤碼: ${details.exitCode}`);
 
     if (details.reason === 'clean-exit') {
-      logger.info('偵測到 clean-exit，自動重新載入畫面...');
-      win.reload();
+      // logger.info('偵測到 clean-exit，自動重新載入畫面...');
+      // win.reload();
+      logger.info('偵測到 clean-exit，自動重新啟動...');
+      restart();
     }
     else {
       const { response } = await dialog.showMessageBox(win, {
