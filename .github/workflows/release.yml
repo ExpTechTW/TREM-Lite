@@ -67,7 +67,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm
+          sudo apt-get install -y rpm dpkg fakeroot
 
       - name: Build Electron app
         env:
@@ -88,6 +88,7 @@ jobs:
             dist/*.zip
             dist/*.exe
             dist/*.AppImage
+            dist/*.deb
             dist/*.blockmap
             dist/latest*.yml
         env:
