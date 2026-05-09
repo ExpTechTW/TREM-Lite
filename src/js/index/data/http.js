@@ -23,16 +23,23 @@ async function getData(time) {
 
   const apiProxyDomain = Config.getInstance().getConfig().apiProxyDomain || 'api.lb.exptech.dev';
 
+  const eewDomain = (TREM.variable.play_mode == 2)
+    ? 'api.core.exptech.dev'
+    : apiProxyDomain;
+  const rtsDomain = (TREM.variable.play_mode == 2)
+    ? 'api-1.exptech.dev'
+    : apiProxyDomain;
+
   const rts_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-        `https://${apiProxyDomain}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
+        `https://${rtsDomain}/api/v2/trem/rts${(time) ? `/${time}` : ''}`,
         TREM.constant.HTTP_TIMEOUT.RTS,
       );
   const eew_req = (TREM.variable.play_mode == 1)
     ? null
     : fetchData.withController(
-        `https://${apiProxyDomain}/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
+        `https://${eewDomain}/api/v2/eq/eew${(time) ? `/${time}` : ''}`,
         TREM.constant.HTTP_TIMEOUT.EEW,
       );
 
