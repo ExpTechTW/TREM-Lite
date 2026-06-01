@@ -1,6 +1,6 @@
 const { Pool } = require('undici');
 const logger = require('./logger');
-const { runMonitor } = require('./monitor');
+// const { runMonitor } = require('./monitor');
 
 class NetworkState {
   constructor() {
@@ -75,7 +75,7 @@ fetchData.withController = function (url, timeout = 1000) {
     pipelining: 0,
     connections: 1,
   });
-  const startTime = Date.now(); // 記錄開始時間
+  // const startTime = Date.now(); // 記錄開始時間
 
   return {
     execute: async () => {
@@ -90,7 +90,7 @@ fetchData.withController = function (url, timeout = 1000) {
         networkState.setOffline(false);
 
         if (process.env.NODE_ENV === 'development') {
-          runMonitor(url, response, startTime);
+          // runMonitor(url, response, startTime);
         }
 
         return response;

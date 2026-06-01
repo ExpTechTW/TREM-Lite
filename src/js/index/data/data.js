@@ -102,6 +102,9 @@ class DataManager {
     this.lastFetchTime = 0;
     this.fetchInterval = null;
     this.mapInitialized = false;
+    this.sseActive = false;
+    this.sseManager = null;
+    this.sseHandled = false;
     this.initialize();
     DataManager.instance = this;
   }
@@ -151,6 +154,25 @@ class DataManager {
     }
     this.lastFetchTime = localNow;
 
+    // 進入 normal mode 時自動啟動 SSE
+    if (TREM.variable.play_mode === 0) {
+      this.startSSE();
+    }
+
+    // 進入 replay mode 時關閉 SSE
+    if (TREM.variable.play_mode === 3) {
+      this.stopSSE();
+    }
+
+    // SSE 即時串流模式，不觸發 polling
+    if (this.sseActive) {
+      if (!this.sseHandled) {
+        console.log('[SSE] waiting for event data, skipping polling...');
+      }
+      return null;
+    }
+    console.log('[SSE] polling HTTP...');
+
     if (TREM.variable.play_mode === 3) {
       // replay (file)
       if (file_index >= file_list.length - 1) {
@@ -170,6 +192,12 @@ class DataManager {
         this.processEEWData(json.eew);
         this.processIntensityData(json.intensity);
       });
+      return null;
+    }
+
+    // SSE 剛更新過（100ms 內），跳過此次 polling
+    if (this.sseHandled) {
+      this.sseHandled = false;
       return null;
     }
 
@@ -211,6 +239,66 @@ class DataManager {
     }
   }
 
+  startSSE() {
+    console.log('[SSE] starting...');
+    const { play_mode } = TREM.variable;
+
+    if (play_mode === 1 || play_mode === 3) {
+      console.log('[SSE] play_mode', play_mode, '- skipping');
+      return;
+    }
+
+    this.sseActive = true;
+    console.log('[SSE] play_mode normal, setting sseActive=true');
+
+    if (!this.sseManager) {
+      this.sseManager = http.init({
+        reconnectDelay: 3000,
+        onRts: (data) => {
+          if (data == null) return;
+          console.log('[SSE] onRts:', data);
+          this.sseHandled = true;
+          TREM.variable.data.rts = data.value;
+          TREM.variable.events.emit('DataRts', {
+            info: { type: TREM.variable.play_mode },
+            data: data.value || {},
+          });
+        },
+        onEew: (data) => {
+          if (data == null) return;
+          console.log('[SSE] onEew:', data);
+          this.sseHandled = true;
+          this.processEEWData(data.value);
+        },
+        onIntensity: (data) => {
+          if (data == null) return;
+          console.log('[SSE] onIntensity:', data);
+          this.sseHandled = true;
+          this.processIntensityData(data.value);
+        },
+        onLpgm: (data) => {
+          if (data == null) return;
+          console.log('[SSE] onLpgm:', data);
+          this.sseHandled = true;
+          this.processLpgmData(data.value);
+        },
+      });
+      console.log('[SSE] http.init returned');
+    }
+  }
+
+  stopSSE() {
+    console.log('[SSE] stopping...');
+    this.sseActive = false;
+    if (this.sseManager) {
+      this.sseManager.abort();
+      this.sseManager = null;
+      console.log('[SSE] aborted manager');
+    }
+    this.sseHandled = false;
+    console.log('[SSE] stopped');
+  }
+
   processEEWData(newData = []) {
     const currentTime = now();
     const EXPIRY_TIME = 240 * 1000;
@@ -238,7 +326,7 @@ class DataManager {
       && !(item.status === 3 && currentTime - item.status3Time > STATUS_3_TIMEOUT),
     );
 
-    newData.forEach((data) => {
+    Array.from(newData || {}).forEach((data) => {
       if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) {
         return;
       }
@@ -341,7 +429,7 @@ class DataManager {
       && !item.IntensityEnd,
     );
 
-    newData.forEach((data) => {
+    Array.from(newData || {}).forEach((data) => {
       if (!data.id || currentTime - data.id > EXPIRY_TIME || data.IntensityEnd) {
         return;
       }
@@ -403,7 +491,7 @@ class DataManager {
       && !item.LpgmEnd,
     );
 
-    newData.forEach((data) => {
+    Array.from(newData || {}).forEach((data) => {
       if (!data.id || data.LpgmEnd) {
         return;
       }
