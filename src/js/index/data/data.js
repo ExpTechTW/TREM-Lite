@@ -167,11 +167,11 @@ class DataManager {
     // SSE 即時串流模式，不觸發 polling
     if (this.sseActive) {
       if (!this.sseHandled) {
-        console.log('[SSE] waiting for event data, skipping polling...');
+        // console.log('[SSE] waiting for event data, skipping polling...');
       }
       return null;
     }
-    console.log('[SSE] polling HTTP...');
+    // console.log('[SSE] polling HTTP...');
 
     if (TREM.variable.play_mode === 3) {
       // replay (file)
@@ -249,7 +249,7 @@ class DataManager {
     this.sseActive = true;
 
     if (!this.sseManager) {
-      console.log('[SSE] starting...');
+      // console.log('[SSE] starting...');
       this.sseManager = http.init({
         reconnectDelay: 3000,
         onRts: (data) => {
@@ -322,20 +322,20 @@ class DataManager {
           this.processLpgmData(value);
         },
       });
-      console.log('[SSE] http.init returned');
+      // console.log('[SSE] http.init returned');
     }
   }
 
   stopSSE() {
-    console.log('[SSE] stopping...');
+    // console.log('[SSE] stopping...');
     this.sseActive = false;
     if (this.sseManager) {
       this.sseManager.abort();
       this.sseManager = null;
-      console.log('[SSE] aborted manager');
+      // console.log('[SSE] aborted manager');
     }
     this.sseHandled = false;
-    console.log('[SSE] stopped');
+    // console.log('[SSE] stopped');
   }
 
   processEEWData(newData = []) {

@@ -52,7 +52,7 @@ function abortAll() {
  * SSE 串流解析器
  * 持續讀取 ReadableStream，每次 yield 解析完的 event
  */
-function* parseStream(reader, _type) {
+function* parseStream() {
   let buffer = '';
 
   while (true) {
@@ -62,7 +62,7 @@ function* parseStream(reader, _type) {
       ? yielded
       : { value: yielded, done: false };
     const { value, done } = result;
-    
+
     if (done) {
       yield result;
       return;
@@ -111,8 +111,8 @@ let requestCounter = 0;
 function init(options = {}) {
   const { onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
 
-  const wasAborted = sseController?.signal.aborted;
-  console.log(`[SSE][init] called, wasAborted=${wasAborted}, existing=${!!sseController}`);
+  // const wasAborted = sseController?.signal.aborted;
+  // console.log(`[SSE][init] called, wasAborted=${wasAborted}, existing=${!!sseController}`);
 
   // 如果 controller 已存在且未中止，先中止重連避免重複
   if (sseController) {
@@ -121,7 +121,7 @@ function init(options = {}) {
 
   // 如果 signal 已中止，等待下一次 tick 再創建新的 controller
   if (sseController && sseController.signal.aborted) {
-    console.log('[SSE][init] signal is aborted, retrying in next tick');
+    // console.log('[SSE][init] signal is aborted, retrying in next tick');
     return new Promise((resolve) => {
       setTimeout(() => {
         const result = init(options);
@@ -132,7 +132,7 @@ function init(options = {}) {
 
   sseController = new AbortController();
   const { signal } = sseController;
-  console.log('[SSE][init] new controller created, signal:', signal);
+  // console.log('[SSE][init] new controller created, signal:', signal);
 
   function doConnect() {
     if (signal.aborted) {
@@ -215,14 +215,14 @@ function init(options = {}) {
             }
             if (!result || typeof result !== 'object') {
               // reader.read() 回傳非 object（stream 結束或讀取失敗）
-              console.log(`[SSE][${type}] reader.read() unexpected result:`, result);
+              // console.log(`[SSE][${type}] reader.read() unexpected result:`, result);
               doReconnect();
               return;
             }
-            
+
             const { value, done } = result;
             if (done) {
-              console.log(`[SSE][${type}] stream done`);
+              // console.log(`[SSE][${type}] stream done`);
               doReconnect();
               return;
             }
