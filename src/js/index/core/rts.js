@@ -129,13 +129,13 @@ TREM.variable.events.on('DataRts', (ans) => {
   const eew_alert = (TREM.variable.data.eew.length && TREM.constant.SHOW_TREM_EEW) ? true : TREM.variable.data.eew.some((item) => item.author != 'trem');
 
   if (ans.data) {
-    let alert = Object.keys(ans.data.box).length;
+    let alert = (ans.data && ans.data.box) ? Object.keys(ans.data.box).length : 0;
 
     let maxPgaKey = null;
     let maxPgaValue = -Infinity;
     let maxPgaStationData = null;
 
-    for (const [key, data] of Object.entries(ans.data.station)) {
+    for (const [key, data] of Object.entries(ans.data.station || {})) {
       if (data.pga > maxPgaValue) {
         maxPgaValue = data.pga;
         maxPgaKey = key;

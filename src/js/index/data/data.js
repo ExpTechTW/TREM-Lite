@@ -240,47 +240,86 @@ class DataManager {
   }
 
   startSSE() {
-    console.log('[SSE] starting...');
     const { play_mode } = TREM.variable;
 
     if (play_mode === 1 || play_mode === 3) {
-      console.log('[SSE] play_mode', play_mode, '- skipping');
       return;
     }
 
     this.sseActive = true;
-    console.log('[SSE] play_mode normal, setting sseActive=true');
 
     if (!this.sseManager) {
+      console.log('[SSE] starting...');
       this.sseManager = http.init({
         reconnectDelay: 3000,
         onRts: (data) => {
-          if (data == null) return;
-          console.log('[SSE] onRts:', data);
+          if (data == null) {
+            return;
+          }
+          let value = data.value;
+          if (value instanceof Uint8Array) {
+            try {
+              value = JSON.parse(new TextDecoder().decode(value));
+            }
+            catch {
+              return;
+            }
+          }
           this.sseHandled = true;
-          TREM.variable.data.rts = data.value;
+          TREM.variable.data.rts = value;
           TREM.variable.events.emit('DataRts', {
             info: { type: TREM.variable.play_mode },
-            data: data.value || {},
+            data: value || {},
           });
+          TREM.variable.cache.last_data_time = Date.now();
         },
         onEew: (data) => {
-          if (data == null) return;
-          console.log('[SSE] onEew:', data);
+          if (data == null) {
+            return;
+          }
+          let value = data.value;
+          if (value instanceof Uint8Array) {
+            try {
+              value = JSON.parse(new TextDecoder().decode(value));
+            }
+            catch {
+              return;
+            }
+          }
           this.sseHandled = true;
-          this.processEEWData(data.value);
+          this.processEEWData(value);
         },
         onIntensity: (data) => {
-          if (data == null) return;
-          console.log('[SSE] onIntensity:', data);
+          if (data == null) {
+            return;
+          }
+          let value = data.value;
+          if (value instanceof Uint8Array) {
+            try {
+              value = JSON.parse(new TextDecoder().decode(value));
+            }
+            catch {
+              return;
+            }
+          }
           this.sseHandled = true;
-          this.processIntensityData(data.value);
+          this.processIntensityData(value);
         },
         onLpgm: (data) => {
-          if (data == null) return;
-          console.log('[SSE] onLpgm:', data);
+          if (data == null) {
+            return;
+          }
+          let value = data.value;
+          if (value instanceof Uint8Array) {
+            try {
+              value = JSON.parse(new TextDecoder().decode(value));
+            }
+            catch {
+              return;
+            }
+          }
           this.sseHandled = true;
-          this.processLpgmData(data.value);
+          this.processLpgmData(value);
         },
       });
       console.log('[SSE] http.init returned');
