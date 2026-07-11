@@ -1,46 +1,26 @@
-// @ts-check
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
 
-const ts = require('typescript-eslint');
-const js = require('@eslint/js');
-const globals = require('globals');
-const stylistic = require('@stylistic/eslint-plugin');
-
-module.exports = ts.config(
-  js.configs.recommended,
-  ...ts.configs.strict,
-  ...ts.configs.stylistic,
-  stylistic.configs.customize({
-    arrowParens: true,
-    semi: true,
-    flat: true,
-  }),
+export default tseslint.config(
+  { ignores: ["dist", "legacy", "src-tauri", "node_modules"] },
   {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-        ...globals.es2015,
-        L: 'readonly',
-        variable: 'writable',
-        constant: 'writable',
-        TREM: 'writable',
-        api: 'readonly',
-        ipcRenderer: 'readonly',
-        ipcMain: 'readonly',
-        reportMarkers: 'readonly',
-      },
+      ecmaVersion: 2022,
+      globals: globals.browser,
     },
-  },
-  {
-    files: [
-      './src/**/*.{js}',
-      'eslint.config.js',
-    ],
-  },
-  {
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+    },
     rules: {
-      'curly': ['error'],
-      '@typescript-eslint/no-require-imports': ['off'],
+      ...reactHooks.configs.recommended.rules,
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 );

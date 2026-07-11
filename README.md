@@ -53,9 +53,21 @@ TREM-Net 是一個 2022 年 6 月初開始於全臺各地部署站點的專案�
      git clone https://github.com/ExpTechTW/TREM-Lite.git
      ```
 
-2. 執行 `npm i` 下載 TREM-Lite 依賴
+2. 安裝先決條件
 
-3. 執行 `npm run build` 編譯
+   - [Bun](https://bun.sh)（套件管理與執行）
+   - [Rust](https://www.rust-lang.org/tools/install)（Tauri 後端）
+   - 各平台的 Tauri 系統依賴，請參考 [Tauri Prerequisites](https://tauri.app/start/prerequisites/)
+
+3. 執行 `bun install` 下載前端依賴
+
+4. 開發模式：`bun run tauri dev`
+
+5. 編譯打包：`bun run tauri build`
+
+> TREM-Lite v4 已從 Electron 遷移至 **Bun + Tauri v2 + Vite + React + Tailwind + shadcn**。
+> 所有地震警報音效改由 Rust（rodio）在原生進程播放，解決 OBS 視窗擷取音訊異常的問題。
+> 舊版 Electron 原始碼保留於 [`legacy/`](legacy/) 目錄作為移植參照。
 
 ## 開放原始碼授權
 

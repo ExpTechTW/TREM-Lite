@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   shadcn base tokens (dark-first — TREM's map background is near-black)
+   --------------------------------------------------------------------------- */
+:root {
+  --radius: 0.625rem;
+  --background: #1f2025;
+  --foreground: #f4f4f5;
+  --card: #26272e;
+  --card-foreground: #f4f4f5;
+  --popover: #26272e;
+  --popover-foreground: #f4f4f5;
+  --primary: #beff0c;
+  --primary-foreground: #1f2025;
+  --secondary: #3f4045;
+  --secondary-foreground: #f4f4f5;
+  --muted: #3f4045;
+  --muted-foreground: #a9b4bc;
+  --accent: #3f4045;
+  --accent-foreground: #f4f4f5;
+  --destructive: #ff0000;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: #beff0c;
+}
+
+/* ---------------------------------------------------------------------------
+   TREM domain palette — single source of truth, ported from
+   legacy/src/js/index/constant.js COLOR.*
+   --------------------------------------------------------------------------- */
+:root {
+  /* map */
+  --map-background: #1f2025;
+  --map-county-fill: #3f4045;
+  --map-town-fill: #3f4045;
+  --map-county-outline: #a9b4bc;
+  --map-global-fill: #3f4045;
+
+  /* RTS realtime intensities */
+  --rts-intensity-m3: #0005d0;
+  --rts-intensity-m2: #004bf8;
+  --rts-intensity-m1: #009ef8;
+  --rts-intensity-0: #79e5fd;
+  --rts-intensity-1: #49e9ad;
+  --rts-intensity-2: #44fa34;
+  --rts-intensity-3: #beff0c;
+  --rts-intensity-4: #fff000;
+  --rts-intensity-5: #ff9300;
+  --rts-intensity-6: #fc5235;
+  --rts-intensity-7: #b720e9;
+
+  /* CWA intensity scale 0..9 (0,1,2,3,4,5-,5+,6-,6+,7) */
+  --intensity-0: #202020;
+  --intensity-1: #003264;
+  --intensity-2: #0064c8;
+  --intensity-3: #1e9632;
+  --intensity-4: #ffc800;
+  --intensity-5: #ff9600;
+  --intensity-6: #ff6400;
+  --intensity-7: #ff0000;
+  --intensity-8: #c00000;
+  --intensity-9: #9600c8;
+
+  --intensity-text-0: #ffffff;
+  --intensity-text-1: #ffffff;
+  --intensity-text-2: #ffffff;
+  --intensity-text-3: #ffffff;
+  --intensity-text-4: #000000;
+  --intensity-text-5: #000000;
+  --intensity-text-6: #000000;
+  --intensity-text-7: #ffffff;
+  --intensity-text-8: #ffffff;
+  --intensity-text-9: #ffffff;
+
+  /* long-period ground motion */
+  --lpgm-1: #0040ff;
+  --lpgm-2: #ffe600;
+  --lpgm-3: #ff2800;
+  --lpgm-4: #a50021;
+
+  /* EEW */
+  --eew-warn: #ffaa00;
+  --eew-alert: #ff0000;
+  --eew-cancel: #000000;
+  --eew-p: #00caca;
+  --eew-s-rts: #0005d0;
+  --trem-s: #beff0c;
+  --trem-p: #beff0c;
+
+  /* detection box */
+  --box-0: #00db00;
+  --box-1: #eac100;
+  --box-2: #ff0000;
+
+  /* legacy-compatible aliases (names used by the old lang.js CSS-var injection) */
+  --eew-s-warn: var(--eew-warn);
+  --eew-s-alert: var(--eew-alert);
+  --eew-s-cancel: var(--eew-cancel);
+  --rts-trigger-low: #1e9632;
+  --rts-trigger-middle: #ffc800;
+  --rts-trigger-high: #c00000;
+  --light: #f4f4f5;
+  --dark: #1f2025;
+  /* legacy semi-transparent panel background used across overlays */
+  --panel-bg: #505050c7;
+  --panel-border: #515151;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: "Manrope", "Noto Sans TC", sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Fonts (subset woff2 carried over from the Electron app)
+   --------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/src/assets/fonts/Manrope-subset.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Noto Sans TC";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/src/assets/fonts/NotoSansTC-subset.woff2") format("woff2");
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}

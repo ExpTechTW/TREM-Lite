@@ -1,0 +1,34 @@
+ver: 5
+
+location-code: 711
+
+realtime-station-id: 6732340
+
+alert-level:
+  rts-intensity: 0 # 任意即時站震度
+  eew-intensity: 0 # EEW 所在地預估震度
+
+check-box:
+  show-window-eew: true
+  show-window-report: true
+  show-window-detect: true
+  show-window-rts-intensity: true
+  early-warning-trem-eew: false
+  other-auto-start: true
+  other-tts: true
+  ota-auto-update: true
+  graphics-block-auto-zoom: false
+  graphics-show-fault: false
+  sound-effects-dong: true
+  sound-effects-EEW: true
+  sound-effects-EEW2: true
+  sound-effects-PAlert: true
+  sound-effects-PGA1: true
+  sound-effects-PGA2: true
+  sound-effects-Report: true
+  sound-effects-Shindo0: true
+  sound-effects-Shindo1: true
+  sound-effects-Shindo2: true
+  sound-effects-Update: true
+
+apiProxyDomain: 'api.lb.exptech.dev'
