@@ -1,37 +1,29 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
 # Dependencies
 node_modules/
 .pnp.*
 
-# Build output
+# Build output (any workspace: packages/*/dist, apps/*/dist, Rust target/)
 dist/
 dist-ssr/
+target/
+.vite/
+*.tsbuildinfo
 *.local
 
-# Vite
-.vite/
+# Tauri
+**/src-tauri/gen/
+**/src-tauri/icons/_base1024.png
 
-# Rust / Tauri
-src-tauri/target/
-src-tauri/gen/
-src-tauri/icons/_base1024.png
+# Logs
+logs
+*.log
+*-debug.log*
 
 # Editor / OS
 .DS_Store
 .vscode/*
 !.vscode/extensions.json
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?
 
 # Env
@@ -40,5 +32,4 @@ src-tauri/icons/_base1024.png
 !.env.example
 
 # Misc
-*.tsbuildinfo
 .eslintcache

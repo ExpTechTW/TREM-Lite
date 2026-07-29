@@ -42,12 +42,14 @@ pub fn run() {
     builder
         .manage(AudioEngine::new())
         .setup(|app| {
-            use tauri::Manager;
             logging::prune_old_logs(app.handle());
             config::ensure_initialized(app.handle());
             #[cfg(debug_assertions)]
-            if let Some(w) = app.get_webview_window("main") {
-                w.open_devtools();
+            {
+                use tauri::Manager;
+                if let Some(w) = app.get_webview_window("main") {
+                    w.open_devtools();
+                }
             }
             Ok(())
         })

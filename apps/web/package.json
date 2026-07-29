@@ -1,0 +1,17 @@
+{
+  "name": "@trem/web",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TREM-Lite web shell (browser / PWA). Reuses @trem/core, ships the main window only.",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --port 5173"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "@vitejs/plugin-react": "^6.0.3",
+    "vite": "^8.1.4"
+  }
+}

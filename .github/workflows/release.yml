@@ -13,19 +13,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # macOS — universal (one .dmg + one updater artifact for both Apple
+          # Silicon & Intel). Per-arch mac builds would collide on the arch-less
+          # `TREM-Lite.app.tar.gz` updater artifact when uploaded to one release.
           - platform: macos-latest
+            target: aarch64-apple-darwin,x86_64-apple-darwin
             args: "--target universal-apple-darwin"
+          # Linux — x86_64 (amd64) + arm64. arm64 uses a GitHub-hosted ARM runner.
           - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
             args: ""
+          - platform: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+            args: ""
+          # Windows — x64 + arm64 + 32-bit (ia32). arm64/ia32 cross-compile on the x64 runner.
           - platform: windows-latest
-            args: ""
+            target: x86_64-pc-windows-msvc
+            args: "--target x86_64-pc-windows-msvc"
+          - platform: windows-latest
+            target: aarch64-pc-windows-msvc
+            args: "--target aarch64-pc-windows-msvc"
+          - platform: windows-latest
+            target: i686-pc-windows-msvc
+            args: "--target i686-pc-windows-msvc"
 
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
+        if: startsWith(matrix.platform, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
@@ -38,14 +55,23 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: "./apps/desktop/src-tauri -> target"
+          key: ${{ matrix.target }}
 
-      - name: Install frontend dependencies
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
         run: bun install
 
       - name: Build & publish (tauri-action)
@@ -63,8 +89,31 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
+          projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
           releaseName: "TREM-Lite ${{ github.ref_name }}"
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  # Rename the draft release's assets to TREM-Lite-<version>-<os>-<arch>.<ext>
+  # (arm64 / x64 / ia32) and patch latest.json's URLs to match. Runs once after
+  # all matrix builds have uploaded. Updater signatures are embedded in
+  # latest.json and depend on file content, so renaming keeps OTA valid.
+  rename-assets:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Rename assets + patch latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: bun scripts/rename-release-assets.mjs
