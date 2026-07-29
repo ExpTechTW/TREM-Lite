@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>地震儀</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+  }
+
+  body {
+    background: #1f2025;
+    font-family: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
+    overflow: hidden;
+  }
+
+  .frame {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* 頂部標題列 */
+  .header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background: #292929;
+    border-bottom: 1px solid #585858;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 20px;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-right: 4px;
+  }
+
+  .header-title {
+    font-size: 24px;
+    font-weight: 500;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .header-station-number {
+    font-size: 15px;
+    font-weight: 500;
+    color: #8a9a8f;
+  }
+
+  .header-status {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6fcf7f;
+    white-space: nowrap;
+  }
+
+  .header-status.offline {
+    color: #e06060;
+  }
+
+  .header-clock {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 500;
+    color: #b0b0b0;
+    white-space: nowrap;
+  }
+
+  /* 波形圖區 */
+  .waveform-area {
+    position: absolute;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 80px);
+    background: #17181b;
+  }
+
+  canvas#waveform {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .channel-label {
+    position: absolute;
+    left: 24px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #8a9a8f;
+    white-space: nowrap;
+  }
+
+  .channel-value {
+    position: absolute;
+    right: 24px;
+    font-size: 20px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .header-accel-group {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .header-accel {
+    font-size: 22px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .header-accel-unit {
+    font-size: 13px;
+    font-weight: 500;
+    color: #b0b0b0;
+  }
+
+  .header-intensity-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-intensity-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #8a9a8f;
+    white-space: nowrap;
+  }
+
+  .intensity-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: 700;
+    background: #6b7785;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  /* iOS 需要使用者手動點擊才能要求動作感測權限 */
+  .start-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: rgba(23, 24, 27, 0.96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .start-overlay.hidden {
+    display: none;
+  }
+
+  .start-button {
+    padding: 18px 36px;
+    font-size: 20px;
+    font-weight: 500;
+    color: #ffffff;
+    background: #0064c8;
+    border: none;
+    border-radius: 12px;
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="header">
+      <div class="header-left">
+        <p class="header-title">地震儀 <span id="stationNumber" class="header-station-number"></span></p>
+        <p class="header-status offline" id="status">感測器未啟動</p>
+        <p class="header-status offline" id="locationStatus">定位未啟動</p>
+      </div>
+      <p class="header-accel-group">
+        <span class="header-accel" id="headerAccel">0.00</span><span class="header-accel-unit">m/s²</span>
+      </p>
+      <div class="header-intensity-group">
+        <span class="header-intensity-label">震度</span>
+        <span class="intensity-badge" id="intensityBadge">0</span>
+      </div>
+      <p class="header-clock" id="clock">--:--:--</p>
+    </div>
+
+    <div class="waveform-area" id="waveformArea">
+      <canvas id="waveform"></canvas>
+      <p class="channel-label" id="label-x">X</p>
+      <p class="channel-label" id="label-y">Y</p>
+      <p class="channel-label" id="label-z">Z</p>
+      <p class="channel-value" id="value-x">0.00 m/s²</p>
+      <p class="channel-value" id="value-y">0.00 m/s²</p>
+      <p class="channel-value" id="value-z">0.00 m/s²</p>
+    </div>
+  </div>
+
+  <div class="start-overlay" id="startOverlay">
+    <button class="start-button" id="startButton">點擊開始感測</button>
+  </div>
+
+  <script>
+    // ---- 時鐘 ----
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ---- 波形（響應式，隨畫面 100% 寬高縮放） ----
+    const canvas = document.getElementById('waveform');
+    const ctx = canvas.getContext('2d');
+    const waveformArea = document.getElementById('waveformArea');
+    const statusEl = document.getElementById('status');
+
+    // ---- 配對權杖：App 顯示的網址帶 ?token=...，第一次打開時存起來，之後每次
+    // 回報都要帶著送，伺服器才會接受——避免陌生人拿到網址就能冒充測站灌假資料。
+    const urlToken = new URLSearchParams(location.search).get('token');
+    if (urlToken) {
+      localStorage.setItem('seismometerPairingToken', urlToken);
+    }
+    const pairingToken = localStorage.getItem('seismometerPairingToken') || '';
+    let pairingRejected = false;
+
+    const CHANNELS = [
+      { key: 'x', color: '#ffffff', labelId: 'label-x' },
+      { key: 'y', color: '#ffffff', labelId: 'label-y' },
+      { key: 'z', color: '#ffffff', labelId: 'label-z' },
+    ];
+
+    // 手機加速度計即時數值（由 devicemotion 事件更新），單位 m/s^2
+    const liveAccel = { x: 0, y: 0, z: 0 };
+    // 各軸的緩慢移動平均，用來扣掉重力造成的固定偏移，只留下「晃動」的部分
+    const baseline = { x: 0, y: 0, z: 0 };
+    let sensorActive = false;
+
+    let W = 0, H = 0, channelHeight = 0;
+    let state = [];
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      W = waveformArea.clientWidth;
+      H = waveformArea.clientHeight;
+      channelHeight = H / CHANNELS.length;
+
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      CHANNELS.forEach((ch, i) => {
+        const label = document.getElementById(ch.labelId);
+        label.style.top = (80 + channelHeight * i + channelHeight / 2 - 12) + 'px';
+        const value = document.getElementById('value-' + ch.key);
+        value.style.top = (80 + channelHeight * i + channelHeight / 2 - 13) + 'px';
+      });
+
+      state = CHANNELS.map((ch, i) => {
+        const prev = state[i];
+        const buffer = new Array(Math.ceil(W)).fill(0);
+        if (prev && prev.buffer.length) {
+          const overlap = Math.min(buffer.length, prev.buffer.length);
+          for (let x = 0; x < overlap; x++) {
+            buffer[buffer.length - 1 - x] = prev.buffer[prev.buffer.length - 1 - x];
+          }
+        }
+        return { buffer };
+      });
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', resize);
+    resize();
+
+    // 每個軸取即時加速度，扣掉緩慢基準線（重力/傾斜），只留下「晃動」的部分
+    const SCALE = 12;
+    const filtered = { x: 0, y: 0, z: 0 };
+    let lastFrameTime = performance.now();
+
+    // 用洩漏積分（leaky integrator）把加速度積成速度，避免長時間累積漂移
+    const velocity = { x: 0, y: 0, z: 0 };
+    const VELOCITY_DECAY_PER_SEC = 0.6; // 每秒衰減到 60%，模擬感測雜訊/漂移的消散
+
+    // PGA / PGV 用「峰值保持 + 緩慢衰減」，反映最近一小段時間內的峰值搖晃程度
+    let pgaPeak = 0; // gal (cm/s²)
+    let pgvPeak = 0; // cm/s
+    const PEAK_DECAY_PER_SEC = 0.5; // 每秒衰減到 50%
+
+    // 基準線（重力/傾斜）用時間常數收斂，跟畫面更新頻率無關，每秒約收斂到剩 30%
+    const BASELINE_HOLD_PER_SEC = 0.3;
+
+    // 手機加速度計本身的雜訊（靜止時也會有 0.05~0.2 m/s² 左右的抖動）遠大於 0 級的 0.8 gal 門檻，
+    // 所以拿原始瞬時值去判斷震度會永遠卡在 1 級以上。用短時間的低通濾波把雜訊平均掉，
+    // 靜止時數值會趨近 0，真的搖晃時仍會在零點幾秒內反應出來。
+    const smoothed = { x: 0, y: 0, z: 0 };
+    const SMOOTH_HOLD_PER_SEC = 0.35; // 每秒收斂到剩 35%，時間常數約 1 秒（拉長平均視窗才能有效壓低雜訊底噪）
+
+    function updateFiltered(dt) {
+      const baselineFactor = Math.pow(BASELINE_HOLD_PER_SEC, dt);
+      const smoothFactor = Math.pow(SMOOTH_HOLD_PER_SEC, dt);
+      CHANNELS.forEach((ch) => {
+        const raw = liveAccel[ch.key];
+        baseline[ch.key] = raw * (1 - baselineFactor) + baseline[ch.key] * baselineFactor;
+        filtered[ch.key] = raw - baseline[ch.key];
+
+        smoothed[ch.key] = filtered[ch.key] * (1 - smoothFactor) + smoothed[ch.key] * smoothFactor;
+
+        velocity[ch.key] += smoothed[ch.key] * dt;
+        velocity[ch.key] *= Math.pow(VELOCITY_DECAY_PER_SEC, dt);
+      });
+    }
+
+    const valueEls = {
+      x: document.getElementById('value-x'),
+      y: document.getElementById('value-y'),
+      z: document.getElementById('value-z'),
+    };
+    const headerAccelEl = document.getElementById('headerAccel');
+    const intensityBadgeEl = document.getElementById('intensityBadge');
+
+    // 中央氣象署地震震度分級表（PGA 單位 gal=cm/s²，PGV 單位 cm/s）
+    function classifyIntensity(gal, pgv) {
+      if (gal < 0.8)  return { label: '0',  color: '#6b7785', dark: false };
+      if (gal < 2.5)  return { label: '1',  color: '#003264', dark: false };
+      if (gal < 8.0)  return { label: '2',  color: '#0064c8', dark: false };
+      if (gal < 25.0) return { label: '3',  color: '#1e9632', dark: true };
+      if (gal < 80.0) return { label: '4',  color: '#ffc800', dark: true };
+      // PGA >= 80 gal，改用 PGV 細分 5 弱~7 級
+      if (pgv < 30.0)  return { label: '5弱', color: '#ff9600', dark: true };
+      if (pgv < 50.0)  return { label: '5強', color: '#ff6400', dark: false };
+      if (pgv < 80.0)  return { label: '6弱', color: '#ff0000', dark: false };
+      if (pgv < 140.0) return { label: '6強', color: '#c00000', dark: false };
+      return { label: '7', color: '#9800ff', dark: false };
+    }
+
+    // 手機感測器就算完全靜止也很難把「合成向量大小」的平滑值準確收斂到 0
+    // （3 軸各自的殘餘雜訊平方相加後一定 >= 0，不會互相抵消），而且每支手機的雜訊大小不一樣，
+    // 固定寫死一個死區門檻不可靠。改成自動追蹤「目前的雜訊底噪」：
+    // 數值變小時快速跟下去（貼著最近的低點），變大時緩慢跟上去（不會被瞬間尖峰拉高），
+    // 這樣不管手機實際雜訊多大，靜止一陣子後底噪估計值都會貼近真實雜訊大小。
+    let noiseFloor = 0;
+    const FLOOR_RELEASE_HOLD_PER_5SEC = 0.3; // 底噪往上追的時間常數（秒），避免被地震尖峰瞬間拉高
+
+    // 對應「level/trigger」面板：把震度分級標籤換成數字（5弱=5.0、5強=5.5...）
+    const LEVEL_MAP = { '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5弱': 5.0, '5強': 5.5, '6弱': 6.0, '6強': 6.5, '7': 7 };
+
+    // 給 TREM-Lite 主地圖的虛擬測站用的最新一筆快照
+    let sensorSnapshot = {
+      intensityValue: 0,
+      intensityLabel: '0',
+      accel: 0,
+      maxAccel: 0,
+      level: 0,
+      trigger: 0,
+    };
+
+    function updateReadouts(dt) {
+      let accelSumSq = 0;
+      let velSumSq = 0;
+      CHANNELS.forEach((ch) => {
+        const v = filtered[ch.key];
+        accelSumSq += smoothed[ch.key] * smoothed[ch.key];
+        velSumSq += velocity[ch.key] * velocity[ch.key];
+        valueEls[ch.key].textContent = v.toFixed(2) + ' m/s²';
+      });
+      const rawMagnitude = Math.sqrt(accelSumSq); // m/s²，用平滑過的訊號計算，避免感測雜訊誤判
+
+      if (rawMagnitude < noiseFloor) {
+        noiseFloor = rawMagnitude; // 貼著最近的低點，快速下修
+      } else {
+        const releaseFactor = Math.pow(FLOOR_RELEASE_HOLD_PER_5SEC, dt / 5);
+        noiseFloor = rawMagnitude * (1 - releaseFactor) + noiseFloor * releaseFactor;
+      }
+      const deadzone = noiseFloor * 1.8 + 0.005; // 底噪的 1.8 倍再加一點點餘裕
+
+      let magnitude = rawMagnitude < deadzone ? 0 : rawMagnitude;
+      headerAccelEl.textContent = magnitude.toFixed(2);
+
+      const gal = magnitude * 100; // m/s² -> gal (cm/s²)
+      const pgv = magnitude === 0 ? 0 : Math.sqrt(velSumSq) * 100; // m/s -> cm/s
+
+      // 峰值保持：取目前值跟前一峰值的較大者，再依時間緩慢衰減
+      pgaPeak = Math.max(gal, pgaPeak * Math.pow(PEAK_DECAY_PER_SEC, dt));
+      pgvPeak = Math.max(pgv, pgvPeak * Math.pow(PEAK_DECAY_PER_SEC, dt));
+
+      const intensity = classifyIntensity(pgaPeak, pgvPeak);
+      intensityBadgeEl.textContent = intensity.label;
+      intensityBadgeEl.style.background = intensity.color;
+      intensityBadgeEl.style.color = intensity.dark ? '#14161a' : '#ffffff';
+
+      // 原始儀器震度（未分級前的連續數值，靜止時會是負值）
+      const rawIntensity = 2 * Math.log10(Math.max(pgaPeak, 0.001)) + 0.94;
+      sensorSnapshot = {
+        intensityValue: rawIntensity,
+        intensityLabel: intensity.label,
+        accel: gal,
+        maxAccel: pgaPeak,
+        level: LEVEL_MAP[intensity.label] ?? 0,
+        trigger: magnitude > 0 ? 1 : 0,
+      };
+    }
+
+    function draw() {
+      const now = performance.now();
+      const dt = Math.min((now - lastFrameTime) / 1000, 0.1); // 秒，避免分頁切換造成超大跳動
+      lastFrameTime = now;
+
+      ctx.clearRect(0, 0, W, H);
+      if (sensorActive) {
+        updateFiltered(dt);
+        updateReadouts(dt);
+      }
+
+      CHANNELS.forEach((ch, i) => {
+        const s = state[i];
+        if (!s || !s.buffer.length) return;
+        const baselineY = channelHeight * i + channelHeight / 2;
+
+        s.buffer.shift();
+        s.buffer.push(sensorActive ? filtered[ch.key] * SCALE : 0);
+
+        if (i > 0) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, channelHeight * i);
+          ctx.lineTo(W, channelHeight * i);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.beginPath();
+        ctx.moveTo(0, baselineY);
+        ctx.lineTo(W, baselineY);
+        ctx.stroke();
+
+        ctx.strokeStyle = ch.color;
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = ch.color;
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        for (let x = 0; x < s.buffer.length; x++) {
+          const y = baselineY - s.buffer[x];
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    requestAnimationFrame(draw);
+
+    // ---- 手機動作感測（真實地震波來源） ----
+    function onDeviceMotion(event) {
+      const a = event.accelerationIncludingGravity || event.acceleration;
+      if (!a) return;
+      liveAccel.x = a.x || 0;
+      liveAccel.y = a.y || 0;
+      liveAccel.z = a.z || 0;
+      if (!sensorActive) {
+        sensorActive = true;
+        // 開始的當下直接把基準線設成目前讀數（通常包含重力），
+        // 避免從 0 開始緩慢收斂時，一開始出現一個假的搖晃尖峰
+        baseline.x = liveAccel.x;
+        baseline.y = liveAccel.y;
+        baseline.z = liveAccel.z;
+        statusEl.textContent = '即時感測中';
+        statusEl.classList.remove('offline');
+      }
+    }
+
+    function startSensing() {
+      if (typeof DeviceMotionEvent !== 'undefined' &&
+          typeof DeviceMotionEvent.requestPermission === 'function') {
+        // iOS 13+ 需要使用者手勢觸發並取得授權
+        DeviceMotionEvent.requestPermission()
+          .then((result) => {
+            if (result === 'granted') {
+              window.addEventListener('devicemotion', onDeviceMotion);
+              statusEl.textContent = '等待感測資料…';
+            } else {
+              statusEl.textContent = '未取得感測權限';
+            }
+          })
+          .catch(() => {
+            statusEl.textContent = '無法取得感測權限';
+          });
+      } else if (typeof DeviceMotionEvent !== 'undefined') {
+        // Android / 其他不需要明確授權的瀏覽器
+        window.addEventListener('devicemotion', onDeviceMotion);
+        statusEl.textContent = '等待感測資料…';
+      } else {
+        statusEl.textContent = '此裝置不支援動作感測';
+      }
+
+      startLocationBroadcast();
+      document.getElementById('startOverlay').classList.add('hidden');
+    }
+
+    document.getElementById('startButton').addEventListener('click', startSensing);
+
+    // ---- 定位：取得目前 GPS 座標，供下面的感測資料回報一起送出（地名由主程式端本地比對）----
+    let geoWatchId = null;
+    const locationStatusEl = document.getElementById('locationStatus');
+
+    let currentLat = null;
+    let currentLng = null;
+
+    // 地名反查改交給主程式端用本地 region.json 就近比對（跟其他真實測站同一套邏輯），
+    // 不在手機端呼叫外部的 Nominatim 服務——GPS 座標在行政區交界附近時，外部反查
+    // 結果可能每次飄動（例如「樹林區」「三峽區」交替），跟主程式自己算出來的對不上；
+    // 而且送出 GPS 座標給第三方地圖服務也不必要，只送座標本身給自己的伺服器就好。
+    function onLocationUpdate(position) {
+      currentLat = position.coords.latitude;
+      currentLng = position.coords.longitude;
+      locationStatusEl.textContent = `已定位 ${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
+      locationStatusEl.classList.remove('offline');
+    }
+
+    function onLocationError(err) {
+      const messages = {
+        1: '定位權限被拒絕',
+        2: '無法取得定位（訊號不足）',
+        3: '定位逾時',
+      };
+      locationStatusEl.textContent = messages[err.code] || '定位失敗';
+      locationStatusEl.classList.add('offline');
+    }
+
+    function startLocationBroadcast() {
+      if (!('geolocation' in navigator)) {
+        locationStatusEl.textContent = '此瀏覽器不支援定位';
+        return;
+      }
+      if (!window.isSecureContext) {
+        locationStatusEl.textContent = '定位需要 HTTPS，請用 https:// 網址開啟';
+        return;
+      }
+      if (geoWatchId !== null) return;
+      locationStatusEl.textContent = '定位中…';
+      geoWatchId = navigator.geolocation.watchPosition(
+        onLocationUpdate,
+        onLocationError,
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+    }
+
+    // ---- 每支手機都是獨立的測站，用一組固定的 deviceId 識別自己 ----
+    // 現實中不會只有一個測站在回報，所以每台裝置要有自己的身分，
+    // 存在 localStorage 裡，重新整理同一支手機還是同一個測站，不會被當成新的。
+    function getDeviceId() {
+      let id = localStorage.getItem('seismometerDeviceId');
+      if (!id) {
+        id = (crypto.randomUUID && crypto.randomUUID()) ||
+          `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        localStorage.setItem('seismometerDeviceId', id);
+      }
+      return id;
+    }
+    const deviceId = getDeviceId();
+    const stationNumberEl = document.getElementById('stationNumber');
+
+    // ---- 把即時感測數據（震度、加速度、level/trigger…）定期送到伺服器（/api/sensor），
+    // 讓 TREM-Lite 主地圖把這支手機當一個虛擬測站顯示出來 ----
+    function broadcastSensor() {
+      if (!sensorActive || pairingRejected) return;
+      fetch('/api/sensor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Pairing-Token': pairingToken },
+        body: JSON.stringify({
+          deviceId,
+          lat: currentLat,
+          lng: currentLng,
+          ...sensorSnapshot,
+        }),
+      })
+        .then((res) => {
+          if (res.status === 401) {
+            pairingRejected = true;
+            statusEl.textContent = '配對碼錯誤，請用 App 顯示的最新網址重新開啟本頁';
+            statusEl.classList.add('offline');
+            return null;
+          }
+          return res.json();
+        })
+        .then((result) => {
+          // 伺服器統一發放的測站編號，同一個 deviceId 永遠拿到同一組
+          if (result && result.stationNumber) {
+            stationNumberEl.textContent = `#${result.stationNumber}`;
+          }
+        })
+        .catch(() => {});
+    }
+    setInterval(broadcastSensor, 300);
+
+    // 關閉頁面時清掉伺服器上這個測站的資料，避免面板/地圖留著一個已經沒在跑的裝置
+    window.addEventListener('beforeunload', () => {
+      if (geoWatchId !== null) navigator.geolocation.clearWatch(geoWatchId);
+      fetch(`/api/sensor?deviceId=${encodeURIComponent(deviceId)}`, {
+        method: 'DELETE',
+        headers: { 'X-Pairing-Token': pairingToken },
+      }).catch(() => {});
+    });
+  </script>
+</body>
+</html>

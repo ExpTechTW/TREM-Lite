@@ -2,6 +2,8 @@ const os = require('node:os');
 const { app } = require('@electron/remote');
 const { ipcRenderer } = require('electron');
 const Config = require('../core/config');
+const { RELAY_URL } = require('../core/phoneRelayConfig');
+const QRCode = require('qrcode');
 
 class Main {
   constructor() {
@@ -48,6 +50,17 @@ class Main {
     if (checkUpdateBtn) {
       checkUpdateBtn.addEventListener('click', () => this.checkForUpdates());
     }
+
+    const simulateEewBtn = document.getElementById('simulate-eew-button');
+    if (simulateEewBtn) {
+      simulateEewBtn.addEventListener('click', () => {
+        ipcRenderer.send('simulate-eew');
+        this.showBubble('success', 1500);
+      });
+    }
+
+    this.initPhoneSeismometer();
+    this.initPhoneRelay();
 
     this.setupUpdateListeners();
     this.initapiProxyDomain();
@@ -152,6 +165,176 @@ class Main {
         input.value = DEFAULT_DOMAIN;
         this.showBubble('success', 1500);
       });
+    }
+  }
+
+  initPhoneSeismometer() {
+    const checkbox = document.getElementById('phone-seismometer-enabled');
+    const remoteCheckbox = document.getElementById('phone-seismometer-remote-enabled');
+    const regenerateBtn = document.getElementById('phone-seismometer-regenerate-button');
+    const status = document.getElementById('phone-seismometer-status');
+    const qrImg = document.getElementById('phone-seismometer-qr');
+    const qrHint = document.getElementById('phone-seismometer-qr-hint');
+    if (!checkbox || !status) {
+      return;
+    }
+
+    const TUNNEL_STATUS_TEXT = {
+      connecting: '穿透連線中…',
+      error: '穿透連線失敗',
+    };
+
+    // 跨網路穿透（cloudflared Quick Tunnel）沒有帳號/網域就沒辦法固定網址，每次
+    // 重新連線都會換一個新的隨機網址，手動打字很麻煩，所以用 QR Code 讓手機直接
+    // 掃碼開啟，掃碼比每次找新網址重打方便。優先顯示跨網路網址（比較常變動、
+    // 掃碼的意義比較大），沒開跨網路連線的話就顯示區網網址。
+    const updateQrCode = async (result) => {
+      if (!qrImg || !qrHint) {
+        return;
+      }
+      const targetUrl = (remoteCheckbox?.checked && result.tunnel.status === 'connected' && result.tunnel.url)
+        ? result.tunnel.url
+        : result.urls[0];
+
+      if (!targetUrl) {
+        qrImg.style.display = 'none';
+        qrHint.style.display = 'none';
+        return;
+      }
+
+      try {
+        qrImg.src = await QRCode.toDataURL(targetUrl, { margin: 1, width: 160 });
+        qrImg.style.display = 'block';
+        qrHint.style.display = 'block';
+      }
+      catch (error) {
+        console.error('Failed to generate QR code:', error);
+      }
+    };
+
+    const refreshStatus = async () => {
+      const result = await ipcRenderer.invoke('phone-server:get-status');
+      if (!result || !result.running) {
+        status.textContent = '';
+        if (qrImg) {
+          qrImg.style.display = 'none';
+        }
+        if (qrHint) {
+          qrHint.style.display = 'none';
+        }
+        return result;
+      }
+
+      const urls = result.urls.length ? result.urls.join('\n') : '尚未偵測到區網 IP，請確認已連上 Wi-Fi';
+      let text = `手機用瀏覽器連到以下網址（同一個 Wi-Fi）：\n${urls}`;
+
+      if (remoteCheckbox && remoteCheckbox.checked) {
+        if (result.tunnel.status === 'connected' && result.tunnel.url) {
+          text += `\n\n跨網路（行動網路也可以）連到：\n${result.tunnel.url}`;
+        }
+        else if (result.tunnel.status === 'error') {
+          text += `\n\n${TUNNEL_STATUS_TEXT.error}${result.tunnel.error ? `：${result.tunnel.error}` : ''}`;
+        }
+        else {
+          text += `\n\n${TUNNEL_STATUS_TEXT.connecting}`;
+        }
+      }
+
+      text += '\n（首次連線瀏覽器會顯示「不安全」警告，點選繼續前往即可）';
+      status.textContent = text;
+      await updateQrCode(result);
+      return result;
+    };
+
+    // 起 tunnel 是非同步的（要連外部的穿透伺服器），不會在勾選當下就有網址，
+    // 這裡短時間內多輪詢幾次，看到 connected/error（不再是 connecting）就停手，
+    // 不要無限一直打 IPC。
+    const pollStatus = async (times = 8, delay = 1000) => {
+      for (let i = 0; i < times; i++) {
+        const result = await refreshStatus();
+        if (!result?.running || !remoteCheckbox?.checked || result.tunnel.status !== 'connecting') {
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    };
+
+    checkbox.addEventListener('change', () => {
+      setTimeout(() => pollStatus(), 500);
+    });
+
+    if (remoteCheckbox) {
+      remoteCheckbox.addEventListener('change', () => {
+        setTimeout(() => pollStatus(), 500);
+      });
+    }
+
+    if (regenerateBtn) {
+      regenerateBtn.addEventListener('click', async () => {
+        await ipcRenderer.invoke('phone-server:regenerate-token');
+        await refreshStatus();
+        this.showBubble('success', 1500);
+      });
+    }
+
+    if (checkbox.checked) {
+      pollStatus();
+    }
+  }
+
+  // 全球手機測站中繼網路：跟本機手機伺服器（LAN/穿透）是不同的東西，開了這個開關
+  // 不需要自己也有手機連著，單純只是「要不要接上、看別人回報的測站」，所以這裡
+  // 獨立輪詢中繼網址顯示目前連線狀態/測站數，不依賴 initPhoneSeismometer() 那邊的邏輯。
+  initPhoneRelay() {
+    const checkbox = document.getElementById('phone-relay-enabled');
+    const status = document.getElementById('phone-relay-status');
+    if (!checkbox || !status) {
+      return;
+    }
+
+    let pollTimer = null;
+
+    const refreshStatus = async () => {
+      if (!checkbox.checked) {
+        status.textContent = '';
+        return;
+      }
+      try {
+        const res = await fetch(RELAY_URL);
+        const body = await res.json();
+        const count = body?.stations?.length ?? 0;
+        status.textContent = `已連上全球手機測站網路（原型功能），目前共 ${count} 個測站在回報\n（這是公開分享的資料，任何 TREM-Lite 使用者都看得到）`;
+      }
+      catch {
+        status.textContent = '連線中繼伺服器失敗，稍後會自動重試';
+      }
+    };
+
+    const startPolling = () => {
+      stopPolling();
+      refreshStatus();
+      pollTimer = setInterval(refreshStatus, 5000);
+    };
+
+    const stopPolling = () => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        startPolling();
+      }
+      else {
+        stopPolling();
+        status.textContent = '';
+      }
+    });
+
+    if (checkbox.checked) {
+      startPolling();
     }
   }
 

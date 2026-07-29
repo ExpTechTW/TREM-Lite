@@ -1,0 +1,6 @@
+{
+  "name": "trem-lite-phone-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TREM-Lite 手機地震儀中繼伺服器（原型版）：讓所有 TREM-Lite 使用者互相看到彼此的手機測站。"
+}

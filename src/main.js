@@ -15,6 +15,7 @@ const Store = require('electron-store').default;
 const { autoUpdater } = require('electron-updater');
 const { initAutoUpdater } = require('./js/core/ota');
 const logger = require('./js/core/utils/logger');
+const phoneServer = require('./js/core/phoneServer');
 
 const store = new Store();
 let win;
@@ -50,6 +51,52 @@ function updateAutoLaunchSetting(value) {
     name: 'TREM Lite',
     args: ['--start'],
   });
+}
+
+function syncPhoneServerFromConfig() {
+  let enabled = false;
+  let remoteEnabled = false;
+  try {
+    const cfg = yaml.load(fs.readFileSync(configDir, 'utf8'));
+    enabled = !!cfg?.['check-box']?.['phone-seismometer-enabled'];
+    remoteEnabled = !!cfg?.['check-box']?.['phone-seismometer-remote-enabled'];
+  }
+  catch (err) {
+    logger.error('[PhoneServer] failed to read config:', err);
+    return;
+  }
+
+  const status = phoneServer.getStatus();
+
+  if (enabled && !status.running) {
+    phoneServer.start(app.getPath('userData'), (list) => {
+      if (win) {
+        win.webContents.send('phone-stations-update', list);
+      }
+    }).then(() => {
+      // 基礎伺服器啟動完成後才有辦法起穿透（tunnel 直接轉發到這個 port），
+      // 所以「跨網路連線」的判斷放在 start() 之後這個 then 裡面，跟下面
+      // 已經在跑的情況（enabled && status.running）共用同一段邏輯。
+      if (remoteEnabled) {
+        phoneServer.startTunnel().catch((err) => logger.error('[PhoneServer] tunnel start failed:', err));
+      }
+    }).catch((err) => logger.error('[PhoneServer] start failed:', err));
+  }
+  else if (!enabled && status.running) {
+    phoneServer.stop().then(() => {
+      if (win) {
+        win.webContents.send('phone-stations-update', []);
+      }
+    });
+  }
+  else if (enabled && status.running) {
+    if (remoteEnabled && status.tunnel.status === 'stopped') {
+      phoneServer.startTunnel().catch((err) => logger.error('[PhoneServer] tunnel start failed:', err));
+    }
+    else if (!remoteEnabled && status.tunnel.status !== 'stopped') {
+      phoneServer.stopTunnel();
+    }
+  }
 }
 
 function createWindow() {
@@ -375,6 +422,7 @@ else {
     trayIcon();
     createWindow();
     createPiPWindow();
+    syncPhoneServerFromConfig();
     otaController = initAutoUpdater({
       app,
       configPath: configDir,
@@ -397,6 +445,7 @@ app.on('window-all-closed', (event) => {
 
 app.on('before-quit', () => {
   forceQuit = true;
+  phoneServer.stop().catch(() => {});
 });
 
 app.on('activate', () => {
@@ -425,6 +474,12 @@ ipcMain.on('update-pip', (event, data) => {
 });
 
 ipcMain.on('openSettingWindow', () => createSettingWindow());
+
+ipcMain.on('simulate-eew', () => {
+  if (win) {
+    win.webContents.send('simulate-eew');
+  }
+});
 
 ipcMain.on('openUrl', (_, url) => {
   shell.openExternal(url);
@@ -795,6 +850,19 @@ ipcMain.on('config-updated', () => {
   catch (err) {
     logger.error('Failed to refresh auto update scheduler:', err);
   }
+
+  syncPhoneServerFromConfig();
+
+  if (win) {
+    win.webContents.send('refresh-config');
+  }
+});
+
+ipcMain.handle('phone-server:get-status', () => phoneServer.getStatus());
+
+ipcMain.handle('phone-server:regenerate-token', () => {
+  phoneServer.regenerateToken();
+  return phoneServer.getStatus();
 });
 
 ipcMain.handle('write-yaml', async (event, filePath, content) => {

@@ -317,6 +317,42 @@
 .check-update-button::before {
   content: "檢查更新";
 }
+.simulate-eew-title::before {
+  content: "測試警報";
+}
+.simulate-eew-description::before {
+  content: "在不影響真實資料的情況下，模擬一次地震速報，預覽警報畫面、音效與通知效果。";
+}
+.simulate-eew-text::before {
+  content: "模擬地震速報";
+}
+.simulate-eew-button::before {
+  content: "開始模擬";
+}
+.phone-seismometer-title::before {
+  content: "手機地震儀";
+}
+.phone-seismometer-description::before {
+  content: "啟用後可用手機瀏覽器連進來，把手機當成一個即時測站，顯示在主地圖上。預設手機需與本機在同一個 Wi-Fi 網路，開啟下方「允許跨網路連線」可改用行動網路連線。";
+}
+.phone-seismometer-text::before {
+  content: "啟用手機地震儀伺服器";
+}
+.phone-seismometer-remote-text::before {
+  content: "允許跨網路連線（不需同一個 Wi-Fi）";
+}
+.phone-seismometer-qr-hint::before {
+  content: "用手機掃描這個 QR Code 開啟（跨網路穿透網址每次重新連線會換掉，掃碼比手打網址快）";
+}
+.phone-relay-text::before {
+  content: "加入全球手機測站網路（原型功能，資料會公開分享給所有 TREM-Lite 使用者）";
+}
+.phone-seismometer-regenerate-text::before {
+  content: "配對碼";
+}
+.phone-seismometer-regenerate-button::before {
+  content: "重新產生配對碼";
+}
 .reset-button::before,
 .reset-setting-title::before {
   content: "重設";

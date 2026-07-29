@@ -13,9 +13,14 @@ compression: maximum
 asar: true
 asarUnpack:
   - "**/*.mp3"
+  # cloudflared 是要被 child_process.spawn 執行的執行檔，不能留在 asar 虛擬檔案系統
+  # 裡面（沒辦法直接執行 asar 內的二進位檔），要解壓縮到 app.asar.unpacked 底下。
+  - "node_modules/cloudflared/**"
 
 files:
   - "**/*"
+  # 獨立部署到 Vercel 的中繼伺服器，不屬於桌面 App 本體
+  - "!relay-server/**"
   # Source maps & dev files
   - "!**/*.{map,ts,md,txt}"
   - "!**/{LICENSE,CHANGELOG,README}*"

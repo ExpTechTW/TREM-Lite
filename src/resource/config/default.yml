@@ -1,4 +1,4 @@
-ver: 5
+ver: 8
 
 location-code: 711
 
@@ -16,6 +16,9 @@ check-box:
   early-warning-trem-eew: false
   other-auto-start: true
   other-tts: true
+  phone-seismometer-enabled: false
+  phone-seismometer-remote-enabled: false
+  phone-relay-enabled: false
   ota-auto-update: true
   graphics-block-auto-zoom: false
   graphics-show-fault: false

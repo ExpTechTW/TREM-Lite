@@ -367,7 +367,9 @@ body {
   z-index: 1002;
 }
 .reset-button,
-.check-update-button {
+.check-update-button,
+.simulate-eew-button,
+.phone-seismometer-regenerate-button {
   border-radius: 5px;
   border: 1px solid #ffffff24;
   width: auto;
@@ -378,15 +380,21 @@ body {
 .reset-button {
   color: var(--danger);
 }
-.check-update-button {
+.check-update-button,
+.simulate-eew-button,
+.phone-seismometer-regenerate-button {
   color: var(--primary);
 }
 .reset-button:hover,
-.check-update-button:hover {
+.check-update-button:hover,
+.simulate-eew-button:hover,
+.phone-seismometer-regenerate-button:hover {
   background: #48484d;
 }
 .reset-setting + .switch,
-.check-update-text + .switch {
+.check-update-text + .switch,
+.simulate-eew-text + .switch,
+.phone-seismometer-regenerate-text + .switch {
   width: auto;
 }
 .update-status {

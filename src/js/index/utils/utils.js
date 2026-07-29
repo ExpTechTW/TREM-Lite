@@ -4,16 +4,19 @@ const region = require('../../../resource/data/region.json');
 const intensity_list = ['0', '1', '2', '3', '4', '5⁻', '5⁺', '6⁻', '6⁺', '7'];
 
 function distance(latA, lngA) {
+  // 注意：內層函式不能直接重新賦值外層參數 latA/lngA，那樣同一個 distance(a,b)
+  // 產生的函式被重複呼叫第二次以後，角度會被誤當弧度再轉一次，算出離譜的錯誤距離。
+  const latARad = latA * Math.PI / 180;
+  const lngARad = lngA * Math.PI / 180;
+  const sin_latA = Math.sin(Math.atan(Math.tan(latARad)));
+  const cos_latA = Math.cos(Math.atan(Math.tan(latARad)));
+
   return function (latB, lngB) {
-    latA = latA * Math.PI / 180;
-    lngA = lngA * Math.PI / 180;
-    latB = latB * Math.PI / 180;
-    lngB = lngB * Math.PI / 180;
-    const sin_latA = Math.sin(Math.atan(Math.tan(latA)));
-    const sin_latB = Math.sin(Math.atan(Math.tan(latB)));
-    const cos_latA = Math.cos(Math.atan(Math.tan(latA)));
-    const cos_latB = Math.cos(Math.atan(Math.tan(latB)));
-    return Math.acos(sin_latA * sin_latB + cos_latA * cos_latB * Math.cos(lngA - lngB)) * 6371.008;
+    const latBRad = latB * Math.PI / 180;
+    const lngBRad = lngB * Math.PI / 180;
+    const sin_latB = Math.sin(Math.atan(Math.tan(latBRad)));
+    const cos_latB = Math.cos(Math.atan(Math.tan(latBRad)));
+    return Math.acos(sin_latA * sin_latB + cos_latA * cos_latB * Math.cos(lngARad - lngBRad)) * 6371.008;
   };
 }
 
@@ -49,6 +52,27 @@ function search_loc_code(str) {
     }
   }
   return null;
+}
+
+// 手機只有經緯度，沒有官方的行政區代碼，找離它最近的鄉鎮中心點借用其代碼，
+// 這樣手機資料才能併入跟「地區震度速報」清單一樣依代碼分組的邏輯。
+function nearest_loc_code(lat, lon) {
+  let nearestCode = null;
+  let nearestDist = Infinity;
+  const dist = distance(lat, lon);
+
+  for (const city of Object.keys(region)) {
+    for (const town of Object.keys(region[city])) {
+      const info = region[city][town];
+      const d = dist(info.lat, info.lon);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearestCode = info.code;
+      }
+    }
+  }
+
+  return nearestCode;
 }
 
 function formatTimestamp(Timestamp, offsetMs = 0) {
@@ -208,6 +232,7 @@ module.exports = {
   formatTimestamp,
   search_loc_name,
   search_loc_code,
+  nearest_loc_code,
   intensity_float_to_int,
   int_to_string,
   formatToChineseTime,

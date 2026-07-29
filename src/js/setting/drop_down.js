@@ -1,5 +1,6 @@
+const { ipcRenderer } = require('electron');
 const TREM = require('./constant');
-const { intensity_list: intensityText } = require('../index/utils/utils');
+const { intensity_list: intensityText, nearest_loc_code } = require('../index/utils/utils');
 const Config = require('../core/config');
 const logger = require('../core/utils/logger');
 
@@ -29,9 +30,48 @@ class DropDown {
       this.initializeElements();
       this.init();
       this.initializeConfigs();
+      this.loadPhoneStations();
     }
     catch (error) {
       this.logError('Constructor error:', error);
+    }
+  }
+
+  // 「即時測站」下拉選單原本只有 processStation() 從官方測站快取（cache.station）
+  // 建立的清單，手機虛擬測站是執行期才動態產生、不會寫進那份快取，所以這裡另外跟
+  // 主程式要一次目前連線中的手機測站清單，用跟 phoneStation.js 合併官方測站資料
+  // 同一套方式（net:'Phone'、經緯度用 nearest_loc_code 借最近鄉鎮代碼）塞進
+  // this.station，讓它可以直接被 processStation()/renderTown() 當成一般測站處理，
+  // 選了之後 realtime-station-id 存的就是 phone-<deviceId>，跟真實測站的 id 格式一致。
+  async loadPhoneStations() {
+    try {
+      const result = await ipcRenderer.invoke('phone-server:get-status');
+      const list = result?.stations || [];
+      let changed = false;
+
+      for (const station of list) {
+        if (typeof station.lat !== 'number' || typeof station.lng !== 'number') {
+          continue;
+        }
+        const code = nearest_loc_code(station.lat, station.lng);
+        if (code == null) {
+          continue;
+        }
+
+        this.station[`phone-${station.deviceId}`] = {
+          net: 'Phone',
+          info: [{ code, lat: station.lat, lon: station.lng, time: new Date().toISOString().slice(0, 10) }],
+          work: true,
+        };
+        changed = true;
+      }
+
+      if (changed) {
+        this.renderCity(this.realtimeCity);
+      }
+    }
+    catch (error) {
+      this.logError('Load phone stations error:', error);
     }
   }
 

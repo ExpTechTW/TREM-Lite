@@ -5,6 +5,7 @@ const http = require('./http');
 const fs = require('fs-extra');
 const path = require('path');
 const { app } = require('@electron/remote');
+const { ipcRenderer } = require('electron');
 
 const replayDir = path.join(app.getPath('userData'), 'replay');
 
@@ -130,6 +131,8 @@ class DataManager {
         await this.fetchData();
       }, 100);
     });
+
+    ipcRenderer.on('simulate-eew', () => this.simulateEew());
 
     fs.readdir(replayDir, (err, list) => {
       if (!list) {
@@ -338,6 +341,61 @@ class DataManager {
     // console.log('[SSE] stopped');
   }
 
+  simulateEew() {
+    if (this.testEewTimers) {
+      this.testEewTimers.forEach(clearTimeout);
+    }
+    this.testEewTimers = [];
+
+    const eqTime = now();
+    const id = `test-${eqTime}`;
+    const eq = {
+      lat: 23.87,
+      lon: 121.58,
+      depth: 15,
+      loc: '花蓮縣政府東方 30.5 公里（模擬測試）',
+      mag: 5.5,
+      max: 4,
+    };
+
+    this.processEEWData([{
+      id,
+      author: 'cwa',
+      serial: 1,
+      status: 0,
+      final: false,
+      eq: { ...eq, time: eqTime },
+    }]);
+
+    this.testEewTimers.push(setTimeout(() => {
+      this.processEEWData([{
+        id,
+        author: 'cwa',
+        serial: 2,
+        status: 1,
+        final: true,
+        eq: { ...eq, max: 5, time: eqTime },
+      }]);
+    }, 4000));
+
+    this.testEewTimers.push(setTimeout(() => {
+      this.endSimulatedEew(id);
+    }, 9000));
+  }
+
+  endSimulatedEew(id) {
+    const index = TREM.variable.data.eew.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return;
+    }
+    const data = TREM.variable.data.eew[index];
+    TREM.variable.data.eew.splice(index, 1);
+    TREM.variable.events.emit('EewEnd', {
+      info: { type: TREM.variable.play_mode },
+      data: { ...data, EewEnd: true },
+    });
+  }
+
   processEEWData(newData = []) {
     const currentTime = now();
     const EXPIRY_TIME = 240 * 1000;
@@ -391,7 +449,11 @@ class DataManager {
         }
       }
 
-      if (TREM.variable.cache.eew_last[data.id] && TREM.variable.cache.eew_last[data.id].serial < data.serial) {
+      // existingIndex 可能是 -1：eew_last 的存活時間（10 分鐘）比陣列項目的到期時間
+      // （240 秒）長，這中間有個空窗期，項目已經從陣列過期移除、但 eew_last 快取還在。
+      // 這時如果又收到同一個 id 的資料，不能當作「更新」處理，
+      // 不然下面直接用 -1 去存取陣列元素的 .status 會噴例外。
+      if (existingIndex !== -1 && TREM.variable.cache.eew_last[data.id] && TREM.variable.cache.eew_last[data.id].serial < data.serial) {
         TREM.variable.cache.eew_last[data.id].serial = data.serial;
 
         if (data.status === 3) {

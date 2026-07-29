@@ -196,6 +196,13 @@ class AudioManager {
       this.audioQueues.update.add(TREM.constant.AUDIO.UPDATE);
     }
 
+    // handleEewRelease 在 SHOW_TREM_EEW 關閉時會提早 return、不會建立 ttsCache[id]。
+    // 如果那之後設定被打開、或這裡因為其他原因先收到 Update 沒收到 Release，
+    // 直接存取 .now 會噴例外，這裡補一個保險初始化。
+    if (!this.ttsCache[ans.data.id]) {
+      this.ttsCache[ans.data.id] = { last: { loc: '', i: -1 }, now: { loc: '', i: -1 } };
+    }
+
     this.ttsCache[ans.data.id].now.loc = ans.data.eq.loc;
     this.ttsCache[ans.data.id].now.i = ans.data.eq.max;
 

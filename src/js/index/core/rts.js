@@ -2,7 +2,7 @@ const TREM = require('../constant');
 
 const EEWCalculator = require('../utils/eewCalculator');
 
-const { intensity_float_to_int, search_loc_name } = require('../utils/utils');
+const { intensity_float_to_int, search_loc_name, nearest_loc_code } = require('../utils/utils');
 const show_eew = require('./eew');
 const { showReportPoint } = require('./report');
 
@@ -364,7 +364,31 @@ TREM.variable.events.on('DataRts', (ans) => {
     TREM.variable.map.getSource('markers-geojson-0').setData({ type: 'FeatureCollection', features: data_alert_0_list });
   }
 
-  const int_list = ans.data?.int ?? [];
+  // 手機只有經緯度，沒有官方行政區代碼，借用離它最近的鄉鎮代碼，
+  // 併進跟真實地區震度速報同一份清單，讓「地區震度速報」面板也看得到手機回報的地點。
+  const phoneIntList = (TREM.variable.data.phoneStations || [])
+    .filter((station) => station.trigger && station.accel > 0 && typeof station.lat === 'number' && typeof station.lng === 'number')
+    .map((station) => ({
+      code: nearest_loc_code(station.lat, station.lng),
+      // 跟官方測站用同一套 PGA 換算震度公式（calculator.pgaToIntensity），
+      // 不是手機自己算的 intensityLabel，兩邊的推算機制要一致。
+      i: calculator.pgaToIntensity(station.accel),
+    }))
+    .filter((item) => item.code != null);
+
+  // 中繼網路拉回來、別的 TREM-Lite 使用者回報的手機測站，同一套處理方式；
+  // 排除掉自己正在廣播出去的那幾支，避免自己的手機在這份清單裡重複算兩次。
+  const localPhoneIds = new Set((TREM.variable.data.phoneStations || []).map((station) => station.deviceId));
+  const relayIntList = (TREM.variable.data.relayStations || [])
+    .filter((station) => !localPhoneIds.has(station.id) && station.trigger && station.accel > 0
+      && typeof station.lat === 'number' && typeof station.lng === 'number')
+    .map((station) => ({
+      code: nearest_loc_code(station.lat, station.lng),
+      i: calculator.pgaToIntensity(station.accel),
+    }))
+    .filter((item) => item.code != null);
+
+  const int_list = [...(ans.data?.int ?? []), ...phoneIntList, ...relayIntList].sort((a, b) => b.i - a.i);
 
   const box_list = getTopIntensities(
     updateIntensityHistory(int_list, ans.data?.time ?? 0),
