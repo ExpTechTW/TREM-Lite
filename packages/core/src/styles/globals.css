@@ -25,7 +25,7 @@
   --destructive: #ff0000;
   --border: rgba(255, 255, 255, 0.12);
   --input: rgba(255, 255, 255, 0.16);
-  --ring: #beff0c;
+  --ring: #4caf50;
 }
 
 /* ---------------------------------------------------------------------------
@@ -148,6 +148,7 @@
   font-display: swap;
   src: url("/src/assets/fonts/Manrope-subset.woff2") format("woff2");
 }
+
 @font-face {
   font-family: "Noto Sans TC";
   font-style: normal;
@@ -160,12 +161,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   html,
   body,
   #root {
     height: 100%;
     margin: 0;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
@@ -174,4 +177,37 @@
     user-select: none;
     -webkit-user-select: none;
   }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Custom Scroll Bar
+   --------------------------------------------------------------------------- */
+.report-list-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+@keyframes report-replay-pulse {
+
+  0%,
+  100% {
+    background-color: #5b4a25;
+    border-color: rgba(255, 208, 82, 0.55);
+    color: #ffe9aa;
+    box-shadow: 0 0 8px rgba(255, 186, 57, 0.35);
+  }
+
+  50% {
+    background-color: #7c2d12;
+    border-color: rgba(255, 119, 48, 0.9);
+    color: #fff2d0;
+    box-shadow:
+      0 0 16px rgba(255, 119, 48, 0.8),
+      0 0 26px rgba(255, 196, 86, 0.45);
+  }
+}
+
+.report-replay-active {
+  animation: report-replay-pulse 2.2s ease-in-out infinite;
 }

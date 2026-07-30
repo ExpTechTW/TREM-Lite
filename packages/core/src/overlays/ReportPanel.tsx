@@ -8,6 +8,7 @@ import type { ReportListItem } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { useRerenderOn } from "@/hooks/useTremEvent";
 import { cn } from "@/lib/utils";
+import { ScrollbarThumb } from "@/components/ui/scroll";
 
 /** Right-side collapsible earthquake report list (ports report-wrapper). */
 export function ReportPanel() {
@@ -206,34 +207,6 @@ function CustomScrollbarPanel({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <style>{`
-        .report-list-scroll::-webkit-scrollbar {
-          width: 0;
-          height: 0;
-        }
-
-        @keyframes report-replay-pulse {
-          0%,
-          100% {
-            background-color: #5b4a25;
-            border-color: rgba(255, 208, 82, 0.55);
-            color: #ffe9aa;
-            box-shadow: 0 0 8px rgba(255, 186, 57, 0.35);
-          }
-          50% {
-            background-color: #7c2d12;
-            border-color: rgba(255, 119, 48, 0.9);
-            color: #fff2d0;
-            box-shadow:
-              0 0 16px rgba(255, 119, 48, 0.8),
-              0 0 26px rgba(255, 196, 86, 0.45);
-          }
-        }
-
-        .report-replay-active {
-          animation: report-replay-pulse 2.2s ease-in-out infinite;
-        }
-      `}</style>
       <div
         ref={scrollRef}
         onScroll={syncMetrics}
@@ -246,28 +219,14 @@ function CustomScrollbarPanel({
         {children}
       </div>
 
-      {hasOverflow && (
-        <div
-          className={cn(
-            "pointer-events-none absolute bottom-[6px] right-[4px] top-[6px] z-10 w-[8px] rounded-full bg-black/20 transition-opacity duration-150",
-            hovered ? "opacity-100" : "opacity-0",
-          )}
-        >
-          <button
-            type="button"
-            aria-label="拖曳捲動報告列表"
-            className="pointer-events-auto absolute left-0 w-full rounded-full bg-white/70 transition-colors hover:bg-white/85"
-            style={{ height: `${thumbHeight}px`, transform: `translateY(${thumbTop}px)` }}
-            onPointerDown={(event) => {
-              dragRef.current = {
-                startY: event.clientY,
-                startScrollTop: scrollRef.current?.scrollTop ?? 0,
-              };
-              event.preventDefault();
-            }}
-          />
-        </div>
-      )}
+      <ScrollbarThumb
+        hasOverflow={hasOverflow}
+        hovered={hovered}
+        thumbHeight={thumbHeight}
+        thumbTop={thumbTop}
+        scrollRef={scrollRef}
+        dragRef={dragRef}
+      />
     </div>
   );
 }

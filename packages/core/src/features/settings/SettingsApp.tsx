@@ -44,7 +44,7 @@ export function SettingsApp() {
       setConfig(c);
       setProxy(c.apiProxyDomain);
     });
-    getVersion().then(setVersion).catch(() => {});
+    getVersion().then(setVersion).catch(() => { });
   }, []);
 
   if (!config) {
@@ -76,7 +76,7 @@ export function SettingsApp() {
             <TabsTrigger value="info">關於</TabsTrigger>
           </TabsList>
 
-          <div className="mt-3 flex-1 overflow-y-auto pr-2">
+          <div className="mt-3 flex-1 pr-2">
             <TabsContent value="general">
               <Section title="視窗與功能">
                 {WINDOW_TOGGLES.map((t) => (
@@ -195,7 +195,7 @@ function ToggleRow({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent/50">
+    <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#ffffff05] hover:bg-accent/50 last:border-b-0">
       <span className="text-sm">{label}</span>
       <Switch checked={checked} disabled={disabled} onCheckedChange={onChange} />
     </div>
