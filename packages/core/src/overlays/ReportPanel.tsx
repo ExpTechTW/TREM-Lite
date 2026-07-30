@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { ChevronLeft, ExternalLink, Play } from "lucide-react";
+import { ChevronLeft, ExternalLink, Play, ScrollText, Square } from "lucide-react";
 
 import { IntensityBadge } from "@/components/IntensityBadge";
 import { formatReportTime, extractLocation } from "@/domain/utils";
@@ -35,9 +35,9 @@ export function ReportPanel() {
 
   const displayReports =
     replayRunning &&
-    activeReplayItem &&
-    activeReplayItem.time - 5000 === activeReplayStartTime &&
-    !reports.some((item) => item.id === activeReplayItem.id)
+      activeReplayItem &&
+      activeReplayItem.time - 5000 === activeReplayStartTime &&
+      !reports.some((item) => item.id === activeReplayItem.id)
       ? [activeReplayItem, ...reports]
       : reports;
 
@@ -70,9 +70,7 @@ export function ReportPanel() {
             open ? "translate-x-0 scale-x-100 opacity-100" : "translate-x-6 scale-x-95 opacity-0 pointer-events-none",
           )}
         >
-          {displayReports.length === 0 && (
-            <div className="p-3 text-sm text-muted-foreground">尚無報告</div>
-          )}
+          {displayReports.length === 0 && <EmptyReportState />}
           {displayReports.map((r, i) =>
             i === 0 ? (
               <FeaturedReportCard
@@ -97,6 +95,22 @@ export function ReportPanel() {
             ),
           )}
         </CustomScrollbarPanel>
+      </div>
+    </div>
+  );
+}
+
+function EmptyReportState() {
+  return (
+    <div className="flex min-h-full flex-col items-center justify-center px-5 py-10 text-center">
+      <div
+        className="mb-2 flex h-[72px] w-[72px] items-center justify-center "
+        style={{ color: "var(--light)" }}
+      >
+        <ScrollText className="h-9 w-9 opacity-35" strokeWidth={1.5} />
+      </div>
+      <div className="text-[15px] font-bold" style={{ color: "var(--light)" }}>
+        尚無報告
       </div>
     </div>
   );
@@ -374,7 +388,7 @@ function ReportActions({
         {item.trem ? "檢知" : "報告"}
       </button>
       <button
-        title="重播"
+        title={isReplaying ? "停止重播" : "重播"}
         onClick={onReplayToggle}
         className={cn(
           "flex h-[22px] items-center gap-1 rounded-[5px] border border-white/30 px-2 text-[13px] font-bold hover:brightness-90",
@@ -385,8 +399,12 @@ function ReportActions({
           color: isReplaying ? undefined : "var(--light)",
         }}
       >
-        <Play className="h-3.5 w-3.5" />
-        重播
+        {isReplaying ? (
+          <Square className="h-3.5 w-3.5 fill-current" />
+        ) : (
+          <Play className="h-3.5 w-3.5" />
+        )}
+        {isReplaying ? "停止重播" : "重播"}
       </button>
     </div>
   );

@@ -9,7 +9,9 @@ export function WarningBanners() {
   if (!ui.internetError && !ui.unstable) return null;
 
   return (
-    <div className="pointer-events-none absolute right-[315px] top-[30px] z-40 flex flex-col items-center gap-[5px] text-[15px]">
+    <div className="pointer-events-none absolute right-[315px] top-[5px] z-40 flex flex-col items-center gap-[5px] text-[15px] border-1 border-[#00000ab] rounded-md"
+      style={{ backgroundColor: "#000000ab" }}
+    >
       {ui.internetError && (
         <Banner
           icon={<WifiOff className="h-[25px] w-[25px]" />}
@@ -44,22 +46,16 @@ function Banner({
   const accent = tone === "warn" ? "var(--rts-trigger-middle)" : "var(--rts-trigger-high)";
   return (
     <div
-      className="min-w-[160px] rounded-[5px] border-2"
-      style={{ backgroundColor: "var(--panel-bg)", borderColor: "#000000ab" }}
+      className="flex flex-col gap-[3px] px-2.5 py-[5px] min-w-[160px]"
     >
-      <div
-        className="flex flex-col gap-[3px] rounded-[5px] px-2.5 py-[5px]"
-        style={{ backgroundColor: "#000000ab" }}
-      >
-        <div className="flex items-center gap-2 font-bold" style={{ color: accent }}>
-          {icon}
-          <span>{title}</span>
-        </div>
-        <div className="flex flex-col text-[14px]" style={{ color: "var(--light)" }}>
-          {lines.map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-        </div>
+      <div className="flex items-center gap-2 font-bold justify-center" style={{ color: accent }}>
+        {icon}
+        <span>{title}</span>
+      </div>
+      <div className="flex flex-col text-[14px] justify-center items-center" style={{ color: "var(--light)" }}>
+        {lines.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
       </div>
     </div>
   );
