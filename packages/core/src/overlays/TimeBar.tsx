@@ -18,7 +18,7 @@ export function TimeBar() {
   // so this renders as an inline pill (NavBar owns the absolute positioning).
   return (
     <div
-      className="flex min-w-[145px] items-center justify-around rounded-[5px] border-2 p-[3px]"
+      className="flex min-w-[145px] items-center justify-around rounded-[5px] border-2 px-[3px] py-[2.3px]"
       style={{
         backgroundColor: "var(--panel-bg)",
         borderColor: "#00000008",

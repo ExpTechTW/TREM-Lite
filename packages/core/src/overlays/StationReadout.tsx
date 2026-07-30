@@ -10,12 +10,12 @@ export function StationReadout() {
 
   return (
     <div
-      className="pointer-events-none absolute left-[6.9rem] top-[10rem] z-[1000] flex flex-col text-[11px] font-medium"
+      className="pointer-events-none absolute left-[6.9rem] top-[9rem] z-[1000] flex flex-col text-[11px] font-medium"
       style={{ color: "var(--light)" }}
     >
       {/* 所在地震度、加速度 + 大震度徽章 */}
       <div
-        className="mt-[5px] flex w-[224px] flex-row-reverse justify-between rounded-[5px] border p-[2px] text-center font-medium"
+        className="mt-[5px] flex w-[215px] flex-row-reverse justify-between rounded-[5px] border p-[2px] text-center font-medium"
         style={{
           backgroundColor: "var(--panel-bg)",
           borderColor: "var(--panel-border)",
@@ -26,11 +26,11 @@ export function StationReadout() {
             {s.loc || "---"}
           </div>
           <div className="flex justify-between text-[14px] font-bold">
-            <div className="flex">
+            <div className="flex gap-1">
               <span>震度</span>
               <span>{s.i}</span>
             </div>
-            <div className="flex">
+            <div className="flex gap-1">
               <span>加速度</span>
               <span>{s.pga.toFixed(1)}</span>
             </div>
@@ -44,7 +44,7 @@ export function StationReadout() {
 
       {/* level / trigger */}
       <div
-        className="mt-[3px] flex w-[65px] flex-col rounded-[5px] border text-center text-[11px] font-medium"
+        className="mt-[3px] flex w-[65px] flex-col px-1 rounded-[5px] border text-center text-[11px] font-medium"
         style={{
           backgroundColor: "var(--panel-bg)",
           borderColor: "var(--panel-border)",
