@@ -135,25 +135,29 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: "Manrope", "Noto Sans TC", sans-serif;
+  --font-sans: "Maple Mono NF CN", system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------------------
-   Fonts (subset woff2 carried over from the Electron app)
+   Font: Maple Mono NF CN, subset to only the glyphs the UI can render
+   (ASCII + all region.json place names + source strings + CWA/EEW vocab —
+   see scripts/font-glyphs.mjs). Two static weights; the weight ranges map
+   400/medium → Regular and 600+/bold → Bold. Rare dynamic CJK not in the
+   subset falls back to system-ui.
    --------------------------------------------------------------------------- */
 @font-face {
-  font-family: "Manrope";
+  font-family: "Maple Mono NF CN";
   font-style: normal;
-  font-weight: 200 800;
+  font-weight: 100 500;
   font-display: swap;
-  src: url("/src/assets/fonts/Manrope-subset.woff2") format("woff2");
+  src: url("/src/assets/fonts/MapleMonoNFCN-Regular.subset.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Noto Sans TC";
+  font-family: "Maple Mono NF CN";
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 600 900;
   font-display: swap;
-  src: url("/src/assets/fonts/NotoSansTC-subset.woff2") format("woff2");
+  src: url("/src/assets/fonts/MapleMonoNFCN-Bold.subset.woff2") format("woff2");
 }
 
 @layer base {

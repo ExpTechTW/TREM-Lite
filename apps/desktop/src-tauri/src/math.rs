@@ -8,26 +8,72 @@ use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::sync::OnceLock;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-const REGION_JSON: &str = include_str!("../region.json");
+// Shared compact binary produced by scripts/encode-data.mjs (also decoded by the
+// frontend, packages/core/src/lib/bindata.ts). Single source of truth — the old
+// duplicated src-tauri/region.json is gone. Format per region.bin:
+//   varint version | varint numCities
+//   per city: varint nameLen + utf8 | varint numTowns
+//   per town: varint nameLen + utf8 | varint code | f64 lat | f64 lon
+const REGION_BIN: &[u8] = include_bytes!("../../../../packages/core/src/data/region.bin");
 
-#[derive(Deserialize)]
 struct Town {
     code: i64,
     lat: f64,
     lon: f64,
 }
 
+/// Minimal sequential reader for region.bin (LEB128 varints, LE f64, utf8 strs).
+struct BinReader<'a> {
+    buf: &'a [u8],
+    pos: usize,
+}
+impl BinReader<'_> {
+    fn varint(&mut self) -> u64 {
+        let mut result = 0u64;
+        let mut shift = 0u32;
+        loop {
+            let b = self.buf[self.pos];
+            self.pos += 1;
+            result |= u64::from(b & 0x7f) << shift;
+            if b & 0x80 == 0 {
+                return result;
+            }
+            shift += 7;
+        }
+    }
+    fn f64(&mut self) -> f64 {
+        let mut b = [0u8; 8];
+        b.copy_from_slice(&self.buf[self.pos..self.pos + 8]);
+        self.pos += 8;
+        f64::from_le_bytes(b)
+    }
+    fn skip_str(&mut self) {
+        let len = self.varint() as usize;
+        self.pos += len;
+    }
+}
+
 fn towns() -> &'static Vec<Town> {
     static TOWNS: OnceLock<Vec<Town>> = OnceLock::new();
     TOWNS.get_or_init(|| {
-        let region: HashMap<String, HashMap<String, Town>> =
-            serde_json::from_str(REGION_JSON).expect("region.json is invalid");
-        region
-            .into_values()
-            .flat_map(|city| city.into_values())
-            .collect()
+        let mut r = BinReader { buf: REGION_BIN, pos: 0 };
+        r.varint(); // version
+        let num_cities = r.varint();
+        let mut v = Vec::with_capacity(400);
+        for _ in 0..num_cities {
+            r.skip_str(); // city name (unused by the math)
+            let num_towns = r.varint();
+            for _ in 0..num_towns {
+                r.skip_str(); // town name
+                let code = r.varint() as i64;
+                let lat = r.f64();
+                let lon = r.f64();
+                v.push(Town { code, lat, lon });
+            }
+        }
+        v
     })
 }
 

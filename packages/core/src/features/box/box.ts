@@ -4,18 +4,23 @@ import type {
   GeoJSONSource,
 } from "maplibre-gl";
 
-import boxJson from "@/data/box.json";
+import boxBinUrl from "@/data/box.bin?url";
 import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
 import { events } from "@/lib/events";
+import { type BoxFeature as BinBoxFeature, decodeBox } from "@/lib/bindata";
 import type { EewData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { distance } from "@/domain/utils";
 
-/** A single box polygon feature from box.json. */
-interface BoxJsonFeature {
-  geometry: { coordinates: number[][][] };
-  properties: { ID: number };
-}
+// Alert-box polygons, loaded async from the compact binary (out of the JS
+// bundle). Only used during an active alert, long after startup.
+let boxFeaturesData: BinBoxFeature[] = [];
+void fetch(boxBinUrl)
+  .then((r) => r.arrayBuffer())
+  .then((buf) => {
+    boxFeaturesData = decodeBox(buf).features;
+  })
+  .catch(() => {});
 
 /** Output feature pushed into the "box-geojson" source. */
 interface BoxFeature {
@@ -44,7 +49,7 @@ function getBoxSource(): GeoJSONSource | null {
  * True when the EEW S-wave has fully engulfed a box (all four corners inside
  * the S-wave radius), meaning the box should be skipped.
  */
-function checkBoxSkip(eew: EewData, area: BoxJsonFeature): boolean {
+function checkBoxSkip(eew: EewData, area: BinBoxFeature): boolean {
   if (!eew.dist) {
     return false;
   }
@@ -87,7 +92,7 @@ export function refresh_box(show: boolean): void {
   }
 
   if (show) {
-    for (const area of boxJson.features as BoxJsonFeature[]) {
+    for (const area of boxFeaturesData) {
       const id = area.properties.ID;
       const boxIntensity = rts.box[id];
       if (boxIntensity == undefined) {

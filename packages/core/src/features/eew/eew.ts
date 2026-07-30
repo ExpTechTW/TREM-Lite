@@ -16,9 +16,19 @@ import { now } from "@/lib/ntp";
 import type { Ans, EewData } from "@/lib/types";
 import { ui } from "@/lib/variable.ui";
 import { variable } from "@/lib/variable";
-import timeJson from "@/data/time.json";
+import timeBinUrl from "@/data/time.bin?url";
+import { decodeTimeTable } from "@/lib/bindata";
 
-const calculator = new EEWCalculator(timeJson as unknown as TimeTable);
+// P/S travel-time table, loaded from the compact binary (scripts/encode-data.mjs
+// + lib/bindata.ts) instead of inlining the 1 MB JSON into the bundle. Async —
+// only needed once an EEW is active, which is long after startup.
+let calculator: EEWCalculator | null = null;
+void fetch(timeBinUrl)
+  .then((r) => r.arrayBuffer())
+  .then((buf) => {
+    calculator = new EEWCalculator(decodeTimeTable(buf) as TimeTable);
+  })
+  .catch(() => {});
 
 type CachedEew = EewData & { cacheTime: number; rts?: boolean };
 
@@ -336,6 +346,7 @@ export function initEew(): void {
     if (draw_lock) return;
     const map = variable.map;
     if (!map) return;
+    if (!calculator) return; // travel-time table still loading
     draw_lock = true;
 
     const alert = variable.data.eew.some((eew) => eew.author != "trem");
