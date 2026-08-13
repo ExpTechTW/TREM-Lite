@@ -53,8 +53,7 @@ function updateAutoLaunchSetting(value) {
 }
 
 function createWindow() {
-  store.clear();
-  const winState = store.get('windowState', { width: 1280, height: 815 });
+  const winState = store.get('mainWindowWindowState', { width: 1280, height: 815 });
 
   win = new BrowserWindow({
     title: 'TREM Lite',
@@ -164,7 +163,7 @@ function createWindow() {
 
   win.on('close', (event) => {
     const bounds = win.getBounds();
-    store.set('windowState', bounds);
+    store.set('mainWindowWindowState', bounds);
 
     if (forceQuit || isQuitting) {
       win = null;
@@ -255,10 +254,14 @@ function createSettingWindow() {
     return SettingWindow.focus();
   }
 
+  const settingState = store.get('settingWindowWindowState', { width: 970, height: 590 });
+
   SettingWindow = new BrowserWindow({
     title: 'TREM-Lite Setting',
-    width: 970,
-    height: 590,
+    width: settingState.width,
+    height: settingState.height,
+    x: settingState.x,
+    y: settingState.y,
     show: false,
     frame: false,
     transparent: is_mac ? false : true,
@@ -282,6 +285,9 @@ function createSettingWindow() {
   SettingWindow.setMenu(null);
   SettingWindow.webContents.on('did-finish-load', () => SettingWindow.show());
   SettingWindow.on('close', () => {
+    if (SettingWindow) {
+      store.set('settingWindowWindowState', SettingWindow.getBounds());
+    }
     SettingWindow = null;
     if (!forceQuit) {
       win.webContents.reload();
