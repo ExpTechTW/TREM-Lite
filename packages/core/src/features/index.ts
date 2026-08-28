@@ -7,6 +7,8 @@ import { initAudio } from "@/lib/audioClient";
 import { initHealth } from "@/lib/endpoints";
 import { createLogger } from "@/lib/logger";
 import { initPipBridge } from "@/lib/pipBridge";
+import { initNotifications } from "@/lib/notificationClient";
+import { initSpeech } from "@/lib/speechClient";
 
 import { initData } from "./data/data";
 import { initResource } from "./data/resource";
@@ -34,6 +36,8 @@ function guard(name: string, fn: () => void) {
 export function initFeatures(): void {
   guard("health", initHealth);
   guard("audio", initAudio);
+  guard("notifications", initNotifications);
+  guard("speech", initSpeech);
   guard("resource", initResource);
   guard("focus", initFocus);
   guard("rts", initRts);

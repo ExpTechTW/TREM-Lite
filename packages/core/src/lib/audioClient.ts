@@ -2,23 +2,28 @@
  * Audio wiring — subscribes to domain events and forwards them to the Rust
  * audio engine (see src-tauri/src/audio.rs). Ported from the routing logic of
  * legacy/src/js/index/core/audio.js. All actual playback happens in Rust; the
- * queue/priority/volume rules also live there. TTS is intentionally dropped.
+ * queue/priority/volume rules also live there. Speech is handled separately by
+ * speechClient so native effects and system TTS retain independent queues.
  */
 import { invoke } from "@tauri-apps/api/core";
 
 import { AUDIO, SHOW_TREM_EEW } from "./constants";
 import { getConfig } from "./config";
 import { events } from "./events";
+import { inTauri } from "./env";
 
 type QueueName = "eew" | "pga" | "shindo" | "update";
 
 export function enqueue(queue: QueueName, sound: string): void {
+  if (!inTauri) return;
   void invoke("audio_enqueue", { queue, sound });
 }
 export function play(sound: string): void {
+  if (!inTauri) return;
   void invoke("audio_play", { sound });
 }
 export function clearQueue(queue: QueueName): void {
+  if (!inTauri) return;
   void invoke("audio_clear", { queue });
 }
 function sfx(key: string): boolean {
