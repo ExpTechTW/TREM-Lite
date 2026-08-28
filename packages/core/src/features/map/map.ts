@@ -19,6 +19,16 @@ import { createIntensityIcon, createIntensityIconSquare } from "@/domain/utils";
 
 const log = createLogger("map");
 
+// Keep the base map and terrain definition aligned with DPIP's shared map
+// style. The DEM tiles are native Mapbox Terrain-RGB, so MapLibre can render
+// the relief directly without an app-side elevation conversion.
+const BASEMAP_TILE_URL = "https://static.lb.exptech.dev/api/v1/map/tiles/{z}/{x}/{y}.pbf";
+const BASEMAP_SOURCE_MAX_ZOOM = 9;
+const TERRAIN_TILE_URL = "https://static.lb.exptech.dev/api/v1/map/terrain/{z}/{x}/{y}.png";
+const TERRAIN_SOURCE_MAX_ZOOM = 11;
+const TERRAIN_SOURCE_ID = "terrain";
+const TERRAIN_HILLSHADE_LAYER_ID = "terrain-hillshade";
+
 function buildMap(container: HTMLElement): MlMap {
   return new maplibregl.Map({
     container,
@@ -35,20 +45,33 @@ function buildMap(container: HTMLElement): MlMap {
           // never turns true and `MapLoad` — which gates the ENTIRE data/render
           // pipeline (dots, reports, layers) — never fires. Inlining removes
           // that blocking dependency so the style parses synchronously.
-          tiles: ["https://lb.exptech.dev/api/v1/map/tiles/{z}/{x}/{y}.pbf"],
+          tiles: [BASEMAP_TILE_URL],
           minzoom: 0,
-          maxzoom: 12,
-          // Clip tile requests to Taiwan's extent. The tile server 404s (without
-          // CORS headers) on ocean tiles outside the island, which WKWebView logs
-          // as noisy "access control checks" errors. Those tiles carry no land
-          // data, so skipping them is purely a console-noise fix, not a visual one.
-          bounds: [118.0, 21.2, 122.5, 25.75],
+          maxzoom: BASEMAP_SOURCE_MAX_ZOOM,
+        },
+        [TERRAIN_SOURCE_ID]: {
+          type: "raster-dem",
+          tiles: [TERRAIN_TILE_URL],
+          encoding: "mapbox",
+          tileSize: 512,
+          minzoom: 0,
+          maxzoom: TERRAIN_SOURCE_MAX_ZOOM,
+          // Deliberately wider than Taiwan so the edge of the DEM never appears
+          // as a hard line while the user pans around the supported viewport.
+          bounds: [110, 10, 132, 35],
         },
       },
       sprite: "",
-      glyphs: "https://glyphs.geolonia.com/{fontstack}/{range}.pbf",
+      glyphs: "https://cdn.jsdelivr.net/gh/exptechtw/map-assets/{fontstack}/{range}.pbf",
       layers: [
         { id: "background", type: "background", paint: { "background-color": COLOR.MAP.BACKGROUND } },
+        {
+          id: "global",
+          type: "fill",
+          source: "map",
+          "source-layer": "global",
+          paint: { "fill-color": COLOR.MAP.GLOBAL_FILL, "fill-opacity": 1 },
+        },
         {
           id: "county",
           type: "fill",
@@ -64,18 +87,31 @@ function buildMap(container: HTMLElement): MlMap {
           paint: { "fill-color": COLOR.MAP.TW_TOWN_FILL, "fill-opacity": 1 },
         },
         {
+          id: TERRAIN_HILLSHADE_LAYER_ID,
+          type: "hillshade",
+          source: TERRAIN_SOURCE_ID,
+          paint: {
+            "hillshade-illumination-direction": 335,
+            "hillshade-exaggeration": 0.3,
+          },
+        },
+        {
+          id: "town-outline",
+          type: "line",
+          source: "map",
+          "source-layer": "town",
+          paint: {
+            "line-color": COLOR.MAP.TW_TOWN_OUTLINE,
+            "line-width": 0.4,
+            "line-opacity": 0.7,
+          },
+        },
+        {
           id: "county-outline",
           type: "line",
           source: "map",
           "source-layer": "city",
           paint: { "line-color": COLOR.MAP.TW_COUNTY_OUTLINE },
-        },
-        {
-          id: "global",
-          type: "fill",
-          source: "map",
-          "source-layer": "global",
-          paint: { "fill-color": COLOR.MAP.GLOBAL_FILL, "fill-opacity": 1 },
         },
         {
           id: "tsunami",

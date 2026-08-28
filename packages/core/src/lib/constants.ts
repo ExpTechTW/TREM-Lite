@@ -9,6 +9,7 @@ export const COLOR = {
     TW_COUNTY_FILL: "#3F4045",
     TW_TOWN_FILL: "#3F4045",
     TW_COUNTY_OUTLINE: "#a9b4bc",
+    TW_TOWN_OUTLINE: "#6A6B72",
     GLOBAL_FILL: "#3F4045",
   },
   RTS: {
