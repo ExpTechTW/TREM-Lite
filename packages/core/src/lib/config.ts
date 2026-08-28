@@ -47,7 +47,12 @@ export async function loadConfig(force = false): Promise<TremConfig> {
   if (cache && !force) return cache;
   // Browser mode (headless WebKit debugging): no Rust backend — use defaults.
   if (!inTauri) {
-    cache = DEFAULT_CONFIG;
+    try {
+      const saved = localStorage.getItem("trem.config");
+      cache = saved ? (JSON.parse(saved) as TremConfig) : structuredClone(DEFAULT_CONFIG);
+    } catch {
+      cache = structuredClone(DEFAULT_CONFIG);
+    }
     return cache;
   }
   cache = await invoke<TremConfig>("config_get");
@@ -56,13 +61,17 @@ export async function loadConfig(force = false): Promise<TremConfig> {
 
 /** Synchronous access to the last-loaded config (falls back to defaults). */
 export function getConfig(): TremConfig {
-  if (!cache) cache = DEFAULT_CONFIG;
+  if (!cache) cache = structuredClone(DEFAULT_CONFIG);
   return cache;
 }
 
 /** Persist the whole config. Broadcasts `config-updated` from Rust. */
 export async function writeConfig(config: TremConfig): Promise<void> {
   cache = config;
+  if (!inTauri) {
+    localStorage.setItem("trem.config", JSON.stringify(config));
+    return;
+  }
   await invoke("config_set", { value: config });
 }
 
@@ -74,12 +83,18 @@ export async function setCheckbox(key: string, value: boolean): Promise<void> {
 }
 
 export async function resetConfig(): Promise<TremConfig> {
+  if (!inTauri) {
+    cache = structuredClone(DEFAULT_CONFIG);
+    localStorage.setItem("trem.config", JSON.stringify(cache));
+    return cache;
+  }
   cache = await invoke<TremConfig>("config_reset");
   return cache;
 }
 
 /** Re-read config whenever any window changes it. Returns an unlisten fn. */
 export async function onConfigUpdated(fn: (c: TremConfig) => void): Promise<() => void> {
+  if (!inTauri) return () => {};
   return listen("config-updated", async () => {
     const c = await loadConfig(true);
     fn(c);

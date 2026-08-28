@@ -35,8 +35,12 @@ export interface RtsTriggerDisplay {
 export interface TremUi {
   maxIntensity: { i: number; label: string };
   maxPga: number;
-  currentStation: { loc: string; i: number; pga: number } | null;
+  /** Legacy colors max PGA only while the RTS payload is in an alert state. */
+  maxPgaIntensity: number;
+  currentStation: { loc: string; i: number; rawI: number; pga: number } | null;
   rtsInfo: { level: number; trigger: number };
+  /** 30-second rolling peak list shown in the bottom-right RTS panel. */
+  rtsIntensityRows: RtsTriggerLocation[];
   unstable: boolean;
   internetError: boolean;
   /** Currently-shown EEW (null when the box is hidden / no EEW active). */
@@ -48,8 +52,10 @@ export interface TremUi {
 export const ui: TremUi = {
   maxIntensity: { i: 0, label: "0" },
   maxPga: 0,
+  maxPgaIntensity: 0,
   currentStation: null,
   rtsInfo: { level: 0, trigger: 0 },
+  rtsIntensityRows: [],
   unstable: false,
   internetError: false,
   currentEew: null,

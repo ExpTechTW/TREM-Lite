@@ -7,12 +7,12 @@ export function MaxIntensity() {
   useRerenderOn("DataRts");
   return (
     <div
-      className="pointer-events-none absolute left-1 top-[164px] z-[1000] flex flex-col text-center text-[11px] font-medium leading-none"
+      className="legacy-max-panel pointer-events-none absolute left-1 top-[164px] z-[1000] flex flex-col text-center text-[11px] font-medium"
       style={{ color: "var(--light)" }}
     >
       {/* 最大觀測震度 */}
       <div
-        className="flex flex-col items-center rounded-[5px] p-2"
+        className="legacy-max-intensity flex flex-col items-center rounded-[5px] p-2"
         style={{
           backgroundColor: "var(--panel-bg)",
           border: "1px solid var(--panel-border)",
@@ -22,13 +22,13 @@ export function MaxIntensity() {
         <IntensityBadge
           i={ui.maxIntensity.i}
           blankAtZero
-          className="h-[85px] w-[85px] rounded-[12px] text-[50px]"
+          className="legacy-max-intensity-badge mt-[5px] h-[85px] w-[85px] rounded-[12px] text-[50px]"
         />
       </div>
 
       {/* 最大加速度 (PGA) */}
       <div
-        className="mt-[3px] flex flex-col justify-center rounded-[5px] text-center"
+        className="legacy-max-pga mt-[3px] flex flex-col justify-center rounded-[5px] text-center"
         style={{
           backgroundColor: "var(--panel-bg)",
           border: "1px solid var(--panel-border)",
@@ -36,10 +36,10 @@ export function MaxIntensity() {
       >
         <span className="text-[14px]">最大加速度</span>
         <div
-          className="flex h-5 flex-col justify-center rounded-b-[5px] text-[12px]"
+          className="mt-[5px] flex h-5 flex-col justify-center rounded-b-[5px] text-[12px]"
           style={{
-            backgroundColor: "var(--intensity-0)",
-            color: "var(--intensity-text-0)",
+            backgroundColor: `var(--intensity-${ui.maxPgaIntensity})`,
+            color: `var(--intensity-text-${ui.maxPgaIntensity})`,
           }}
         >
           {ui.maxPga.toFixed(2)} gal

@@ -53,8 +53,10 @@ export function initRts(): void {
     Object.keys(level_list).forEach((id) => delete level_list[id]);
     ui.currentStation = null;
     ui.rtsInfo = { level: 0, trigger: 0 };
+    ui.rtsIntensityRows = [];
     ui.maxIntensity = { i: 0, label: int_to_string(0) };
     ui.maxPga = 0;
+    ui.maxPgaIntensity = 0;
     ui.unstable = false;
   });
 
@@ -246,6 +248,7 @@ export function initRts(): void {
           ui.currentStation = {
             loc: loc ? `${loc.city}${loc.town}` : "",
             i: intensity_float_to_int(I),
+            rawI: I,
             pga: st.pga,
           };
         }
@@ -442,17 +445,14 @@ export function initRts(): void {
 
     const int_list: IntEntry[] = ans.data?.int ?? [];
 
-    // Side-effect: roll the per-code intensity history cache.
-    updateIntensityHistory(int_list, ans.data?.time ?? 0);
-    // TODO(react-overlay): render the sorted top-intensity list (was #rts-intensity-list);
-    // a React component should read variable.data.rts.
+    const history = updateIntensityHistory(int_list, ans.data?.time ?? 0);
+    ui.rtsIntensityRows = getTopIntensities(history).sort((a, b) => b.i - a.i);
 
     if (int_list.length) {
-      // rts_trigger.loc holds {i,name} entries at runtime (contract types it as number[]).
       variable.cache.rts_trigger.loc = getTopIntensities(
         filterIntArray(int_list),
         8,
-      ) as unknown as number[];
+      );
       variable.cache.rts_trigger.max = int_list[0].i;
       show_eew(false);
     } else {
@@ -462,6 +462,11 @@ export function initRts(): void {
     const maxI = int_list[0]?.i ?? 0;
     ui.maxIntensity = { i: maxI, label: int_to_string(maxI) };
     ui.maxPga = pga;
+    const hasAlert = !!ans.data?.box && Object.keys(ans.data.box).length > 0;
+    ui.maxPgaIntensity =
+      hasAlert && pga >= 5
+        ? intensity_float_to_int(2 * Math.log10(pga) + 0.7)
+        : 0;
 
     for (const id of Object.keys(level_list)) {
       level += level_list[id];
@@ -489,7 +494,7 @@ function filterIntArray(data: IntEntry[] = []): IntEntry[] {
   return data;
 }
 
-function updateIntensityHistory(newData: IntEntry[], time: number): void {
+function updateIntensityHistory(newData: IntEntry[], time: number): IntEntry[] {
   const cache = variable.cache.int_cache_list as Record<string, IntCacheEntry>;
 
   for (const int of newData) {
@@ -511,6 +516,11 @@ function updateIntensityHistory(newData: IntEntry[], time: number): void {
       delete cache[code];
     }
   });
+
+  return Object.entries(cache).map(([code, data]) => ({
+    code: Number(code),
+    i: Math.max(...data.values),
+  }));
 }
 
 function getTopIntensities(intensities: IntEntry[], maxCount = 6): TopIntensity[] {

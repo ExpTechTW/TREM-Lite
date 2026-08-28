@@ -13,7 +13,7 @@ export function VersionBadge() {
 
   return (
     <div
-      className="pointer-events-none absolute right-[350px] top-[0.3em] z-40 text-[15px]"
+      className="legacy-version pointer-events-none absolute right-[350px] top-[0.3em] z-40 text-[15px]"
       style={{ color: "#ffffff4f" }}
     >
       {version}

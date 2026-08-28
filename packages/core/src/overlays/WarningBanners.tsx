@@ -9,7 +9,7 @@ export function WarningBanners() {
   if (!ui.internetError && !ui.unstable) return null;
 
   return (
-    <div className="pointer-events-none absolute right-[315px] top-[30px] z-40 flex flex-col items-center gap-[5px] text-[15px]">
+    <div className="legacy-warning-banners pointer-events-none absolute right-[315px] top-[30px] z-40 flex flex-col items-center gap-[5px] p-[5px] text-[15px]">
       {ui.internetError && (
         <Banner
           icon={<WifiOff className="h-[25px] w-[25px]" />}

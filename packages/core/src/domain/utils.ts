@@ -123,7 +123,7 @@ export function createIntensityIconSquare(
         fill="${backgroundColor}" stroke="${strokeColor}" stroke-width="3" />
       <text x="30" y="35" font-size="36" font-weight="bold" fill="${textColor}"
         text-anchor="middle" dominant-baseline="middle"
-        font-family="Maple Mono NF CN, sans-serif">${intensity}</text>
+        font-family="Manrope, Noto Sans TC, sans-serif">${intensity}</text>
     </svg>
   `);
 }
@@ -140,7 +140,7 @@ export function createIntensityIcon(
         fill="${backgroundColor}" stroke="${strokeColor}" stroke-width="3" />
       <text x="30" y="35" font-size="36" font-weight="bold" fill="${textColor}"
         text-anchor="middle" dominant-baseline="middle"
-        font-family="Maple Mono NF CN, sans-serif">${intensity}</text>
+        font-family="Manrope, Noto Sans TC, sans-serif">${intensity}</text>
     </svg>
   `);
 }

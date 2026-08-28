@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Crosshair, PictureInPicture2, Settings } from "lucide-react";
+import { Crosshair, Settings } from "lucide-react";
 
-import { openSettings, togglePip } from "@/lib/windows";
+import { openSettings } from "@/lib/windows";
 import { focus_reset, isAutoFocusLocked } from "@/features/focus/focus";
 import { useTremEvent } from "@/hooks/useTremEvent";
 
@@ -30,9 +30,6 @@ export function NavBar() {
         onClick={() => focus_reset(true)}
       >
         <Crosshair className="h-5 w-5" style={locked ? { color: "#ff4d4d" } : undefined} />
-      </NavPanelButton>
-      <NavPanelButton title="子母畫面" onClick={() => void togglePip()}>
-        <PictureInPicture2 className="h-5 w-5" />
       </NavPanelButton>
       <TimeBar />
     </div>

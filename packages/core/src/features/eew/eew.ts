@@ -1,8 +1,8 @@
 // Ported from legacy/src/js/index/core/eew.js
 /**
  * EEW map driver — draws per-EEW P/S great-circle wavefronts and feeds the
- * (now React) info box via `ui.currentEew`. Behavior preserved from the
- * Electron module; DOM writes, PiP IPC, notifications and TTS are removed.
+ * (now React) info box via `ui.currentEew`. DOM writes live in React while
+ * PiP, notifications and speech are handled by their cross-window clients.
  */
 import type { GeoJSONSource } from "maplibre-gl";
 
@@ -191,10 +191,9 @@ export function show_eew(rotation = true): void {
     count++;
   }
 
-  // TODO(react-overlay): clear the trigger-box area list (React renders it).
-
   if (count && eew_list.length) {
     variable.cache.show_eew_box = true;
+    ui.currentTrigger = null;
 
     if (eew_cache[eew_list[eew_rotation]]) {
       if (!SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == "trem") {
@@ -211,8 +210,6 @@ export function show_eew(rotation = true): void {
                 ? "eew-rts"
                 : "eew-warn";
 
-        // Old code wrote the DOM info box + sent an 'update-pip' IPC here.
-        // React reads ui.currentEew; PiP is handled natively later.
         ui.currentEew = {
           id: eew.id,
           statusClass,
@@ -226,7 +223,6 @@ export function show_eew(rotation = true): void {
           nsspe: eew.eq.mag == 1,
           time: eew.eq.time,
         };
-        // TODO(pip): forward the current EEW payload to the PiP window.
       }
       variable.last_rotation = eew_rotation;
     }
@@ -241,13 +237,13 @@ export function show_eew(rotation = true): void {
 
     const locationArray = variable.cache.rts_trigger.loc;
     if (locationArray.length) {
-      // TODO(react-overlay): render the RTS trigger area list + wrapper state
-      // (rts-trigger-high/middle/low) from variable.cache.rts_trigger.
-      // TODO(pip): forward the trigger payload to the PiP window.
+      ui.currentTrigger = {
+        max: variable.cache.rts_trigger.max,
+        locations: locationArray.slice(0, 8),
+      };
     } else {
       variable.last_rotation = 0; // was null in the Electron app
-      // TODO(react-overlay): render the "no EEW" idle state.
-      // TODO(pip): forward the noEew state to the PiP window.
+      ui.currentTrigger = null;
     }
   }
   // ui.currentEew 已更新，通知 EewInfoBox 事件驅動刷新。

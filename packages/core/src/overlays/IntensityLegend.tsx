@@ -3,9 +3,9 @@ import { INTENSITY_LIST } from "@/lib/constants";
 /** Left-side vertical intensity color scale (ports the intensity-color-list). */
 export function IntensityLegend() {
   return (
-    <div className="pointer-events-none absolute bottom-10 left-0 z-10 flex w-[45px] flex-col items-end">
+    <div className="legacy-intensity-legend pointer-events-none absolute bottom-10 left-0 z-10 flex w-[45px] flex-col items-end">
       {/* column-reverse: intensity 1 at the bottom, level 7 at the top */}
-      <ul className="flex h-[210px] flex-col-reverse">
+      <ul className="legacy-intensity-legend-list flex h-[210px] flex-col-reverse">
         {INTENSITY_LIST.map((label, i) =>
           i === 0 ? null : (
             <li

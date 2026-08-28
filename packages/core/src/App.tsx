@@ -52,8 +52,8 @@ export function App() {
       <IntensityLegend />
       <MaxIntensity />
       <StationReadout />
-      <RtsIntensityList />
       <ReportPanel />
+      <RtsIntensityList />
       <WarningBanners />
       <NavBar />
       <VersionBadge />

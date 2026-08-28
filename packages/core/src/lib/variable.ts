@@ -9,6 +9,7 @@
 import type { Map as MlMap } from "maplibre-gl";
 
 import type { EewData, RtsData, Station } from "./types";
+import type { RtsTriggerLocation } from "./variable.ui";
 
 export interface TremVariable {
   last_rotation: number;
@@ -31,7 +32,7 @@ export interface TremVariable {
     rts_alert: boolean;
     unstable: number;
     show_eew_box: boolean;
-    rts_trigger: { max: number; loc: number[] };
+    rts_trigger: { max: number; loc: RtsTriggerLocation[] };
     int_cache_list: Record<string, unknown>;
     last_report: unknown;
     eewIntensityArea: Record<string, unknown>;
@@ -73,7 +74,7 @@ export const variable: TremVariable = {
   play_mode: 0,
   replay: { start_time: 0, local_time: 0, dev: false },
   station: null,
-  tts: false, // TTS removed in the Tauri rewrite
+  tts: false, // speechClient enables this when zh-TW system speech is available
   cache: {
     rts_alert: false,
     unstable: 0,
