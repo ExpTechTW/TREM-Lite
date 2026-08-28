@@ -269,7 +269,10 @@ mod tests {
         pending.push_back("ALERT".into());
         pending.push_back("ALERT".into());
 
-        assert_eq!(pending, VecDeque::from(vec!["ALERT".to_string(), "ALERT".to_string()]));
+        assert_eq!(
+            pending,
+            VecDeque::from(vec!["ALERT".to_string(), "ALERT".to_string()])
+        );
     }
 
     #[test]
@@ -291,8 +294,18 @@ mod tests {
     #[test]
     fn every_sound_decodes() {
         for name in [
-            "ALERT", "EEW", "UPDATE", "CANCEL", "PGA1", "PGA2", "SHINDO0", "SHINDO1", "SHINDO2",
-            "INTENSITY", "REPORT", "TSUNAMI",
+            "ALERT",
+            "EEW",
+            "UPDATE",
+            "CANCEL",
+            "PGA1",
+            "PGA2",
+            "SHINDO0",
+            "SHINDO1",
+            "SHINDO2",
+            "INTENSITY",
+            "REPORT",
+            "TSUNAMI",
         ] {
             assert!(decode(name).is_some(), "failed to decode {name}");
         }

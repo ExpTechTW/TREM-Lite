@@ -52,8 +52,14 @@ fn query(server: &str) -> Result<NtpResult, String> {
 
     // Approximate local time at the midpoint of the round trip.
     let local_mid_ms = {
-        let a = t1.duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis() as i64;
-        let b = t4.duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis() as i64;
+        let a = t1
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| e.to_string())?
+            .as_millis() as i64;
+        let b = t4
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| e.to_string())?
+            .as_millis() as i64;
         (a + b) / 2
     };
 

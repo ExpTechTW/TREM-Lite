@@ -58,7 +58,10 @@ impl BinReader<'_> {
 fn towns() -> &'static Vec<Town> {
     static TOWNS: OnceLock<Vec<Town>> = OnceLock::new();
     TOWNS.get_or_init(|| {
-        let mut r = BinReader { buf: REGION_BIN, pos: 0 };
+        let mut r = BinReader {
+            buf: REGION_BIN,
+            pos: 0,
+        };
         r.varint(); // version
         let num_cities = r.varint();
         let mut v = Vec::with_capacity(400);
@@ -90,10 +93,12 @@ fn distance(lat_a: f64, lng_a: f64, lat_b: f64, lng_b: f64) -> f64 {
 fn eew_area_pgv(ep_lat: f64, ep_lon: f64, pt_lat: f64, pt_lon: f64, depth: f64, mag_w: f64) -> f64 {
     let long = 10f64.powf(0.5 * mag_w - 1.85) / 2.0;
     let epicenter_distance = distance(ep_lat, ep_lon, pt_lat, pt_lon);
-    let hypocenter_distance = (depth * depth + epicenter_distance * epicenter_distance).sqrt() - long;
+    let hypocenter_distance =
+        (depth * depth + epicenter_distance * epicenter_distance).sqrt() - long;
     let x = hypocenter_distance.max(3.0);
     let gpv600 = 10f64.powf(
-        0.58 * mag_w + 0.0038 * depth - 1.29
+        0.58 * mag_w + 0.0038 * depth
+            - 1.29
             - (x + 0.0028 * 10f64.powf(0.5 * mag_w)).log10()
             - 0.002 * x,
     );
@@ -143,7 +148,11 @@ mod tests {
 
     #[test]
     fn towns_parse() {
-        assert!(towns().len() > 300, "expected ~370 towns, got {}", towns().len());
+        assert!(
+            towns().len() > 300,
+            "expected ~370 towns, got {}",
+            towns().len()
+        );
     }
 
     #[test]
