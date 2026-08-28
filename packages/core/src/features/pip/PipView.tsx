@@ -1,57 +1,98 @@
 import { useEffect, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { ExternalLink, X } from "lucide-react";
 
-import { IntensityBadge } from "@/components/IntensityBadge";
-import { formatTimestamp } from "@/domain/utils";
-import type { EewDisplay } from "@/lib/variable.ui";
+import type { PipPayload } from "@/lib/pipBridge";
+import { inTauri } from "@/lib/env";
+import type { EewDisplay, RtsTriggerDisplay } from "@/lib/variable.ui";
+import { EewPanel } from "@/overlays/EewInfoBox";
 
-type PipPayload = ({ noEew: boolean } & Partial<EewDisplay>) | null;
-
-/** Compact always-on-top EEW window. Listens for 'update-pip-content'. */
+/** Compact always-on-top window using the exact same EEW renderer as main. */
 export function PipView() {
-  const [data, setData] = useState<PipPayload>(null);
+  const [data, setData] = useState<PipPayload>(() => previewPayload());
 
   useEffect(() => {
-    const un = listen<PipPayload>("update-pip-content", (e) => {
-      const payload = e.payload;
-      setData(payload);
-      const win = getCurrentWindow();
-      if (payload && !payload.noEew) void win.show();
-    });
+    if (!inTauri) return;
+    const listeners = Promise.all([
+      listen<PipPayload>("update-pip-content", (event) => setData(event.payload)),
+      listen("pip-sync-request", () => void emit("pip-ready")),
+    ]);
+    void listeners.then(() => emit("pip-ready"));
     return () => {
-      un.then((f) => f());
+      void listeners.then((unlisten) => unlisten.forEach((fn) => fn()));
     };
   }, []);
 
-  const eew = data && !data.noEew ? (data as EewDisplay) : null;
+  // React effects run after the payload has committed to the PiP DOM. The main
+  // window waits for this acknowledgement before revealing PiP, preventing a
+  // one-frame flash of idle or stale alert content.
+  useEffect(() => {
+    if (inTauri && data.revision) void emit("pip-rendered", { revision: data.revision });
+  }, [data]);
+
+  let eew: EewDisplay | null = null;
+  let trigger: RtsTriggerDisplay | null = null;
+  if (!data.noEew) {
+    if ("trigger" in data) trigger = data.trigger;
+    else eew = data;
+  }
 
   return (
-    <div
-      data-tauri-drag-region
-      className="flex h-screen w-screen flex-col justify-center gap-1 rounded-lg bg-card/95 px-3 py-2 text-foreground"
-    >
-      {!eew ? (
-        <div className="text-center text-xs text-muted-foreground">目前無地震速報</div>
-      ) : (
-        <>
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold">{eew.unitText}</span>
-            <span className="tabular-nums text-muted-foreground">第 {eew.serial} 報</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <IntensityBadge i={eew.max} className="h-10 w-10 text-lg" />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-bold">{eew.loc}</div>
-              <div className="flex gap-2 text-[11px] tabular-nums text-muted-foreground">
-                <span>M {eew.nsspe ? "--" : eew.mag.toFixed(1)}</span>
-                <span>{eew.depth}km</span>
-                <span>{formatTimestamp(eew.time)}</span>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+    <div data-tauri-drag-region="deep" className="legacy-pip-shell h-screen w-screen overflow-hidden">
+      <EewPanel eew={eew} trigger={trigger} variant="pip" />
+      <div className="legacy-pip-controls">
+        <button type="button" title="返回主視窗" onClick={() => {
+          if (!inTauri) return;
+          void invoke("window_focus").catch(() => {});
+          void getCurrentWindow().hide().catch(() => {});
+        }}>
+          <ExternalLink />
+        </button>
+        <button type="button" title="關閉子母畫面" onClick={() => {
+          if (inTauri) void getCurrentWindow().hide().catch(() => {});
+        }}>
+          <X />
+        </button>
+      </div>
     </div>
   );
+}
+
+/** Browser-only visual fixture; the desktop window still receives real Tauri events. */
+function previewPayload(): PipPayload {
+  if (inTauri) return { noEew: true };
+  const state = new URLSearchParams(window.location.search).get("state");
+  if (state === "trigger") {
+    return {
+      noEew: false,
+      trigger: {
+        max: 4,
+        locations: [
+          { i: 4, name: "花蓮縣秀林鄉" },
+          { i: 4, name: "花蓮縣壽豐鄉" },
+          { i: 3, name: "宜蘭縣南澳鄉" },
+          { i: 3, name: "臺東縣海端鄉" },
+        ],
+      },
+    };
+  }
+  if (state === "eew" || state === "cancel") {
+    return {
+      noEew: false,
+      id: "preview-eew",
+      statusClass: state === "cancel" ? "eew-cancel" : "eew-alert",
+      serial: 3,
+      final: false,
+      unitText: "CWA",
+      loc: "花蓮縣近海",
+      depth: 18,
+      mag: 5.8,
+      max: 6,
+      nsspe: false,
+      time: new Date("2026-08-28T07:25:29+08:00").getTime(),
+    };
+  }
+  return { noEew: true };
 }

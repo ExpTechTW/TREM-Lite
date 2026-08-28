@@ -24,6 +24,7 @@ import { initIntensity } from "./intensity/intensity";
 import { initLpgm } from "./lpgm/lpgm";
 import { initReport } from "./report/report";
 import { initLoop } from "./loop/loop";
+import { initWindowControl } from "./window/window";
 
 const log = createLogger("init");
 
@@ -54,5 +55,8 @@ export function initFeatures(): void {
   guard("report", initReport);
   guard("loop", initLoop);
   guard("pip", initPipBridge);
+  // Register the attention/PiP handlers after their data producers, matching
+  // legacy require order so content state is ready before a window is shown.
+  guard("window", initWindowControl);
   guard("data", initData);
 }
