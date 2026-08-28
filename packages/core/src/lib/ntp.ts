@@ -13,6 +13,10 @@ export function now(): number {
   // Replay modes drive time from the replay clock.
   if (v.play_mode === 2 || v.play_mode === 3) {
     if (v.replay.start_time) {
+      // Match the legacy clock: anchor elapsed real time on the first replay
+      // tick. Without this initialization `Date.now() - 0` adds an entire Unix
+      // epoch to the requested archive timestamp.
+      if (!v.replay.local_time) v.replay.local_time = Date.now();
       return v.replay.start_time + (Date.now() - v.replay.local_time);
     }
   }

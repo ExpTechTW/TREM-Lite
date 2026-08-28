@@ -99,6 +99,8 @@ export type TremEvents = {
   InternetErrorChange: boolean;
 
   DataRts: Ans<RtsData | null>;
+  /** Clears module-local RTS/UI history at a live/replay mode boundary. */
+  DataModeReset: void;
   DataEew: Ans<EewData>;
   DataIntensity: Ans<unknown>;
   DataLpgm: Ans<unknown>;
@@ -120,6 +122,8 @@ export type TremEvents = {
   ReportRelease: Ans<ReportListItem>;
   /** UI 刷新訊號：報告列表（variable.data.report）內容有更新時發出。 */
   ReportListUpdate: void;
+  /** 重播模式切換；reportId 只在由報告列啟動的 HTTP 重播存在。 */
+  ReplayStateChange: { active: boolean; reportId?: string };
 
   RtsPga1: void;
   RtsPga2: void;

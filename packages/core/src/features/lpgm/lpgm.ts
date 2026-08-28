@@ -72,8 +72,8 @@ function show_lpgm(ans: Ans<{ id: number; time: number; list: LpgmListItem[] }>)
 
   emitDataRts();
 
-  // TODO(react-overlay): render the max LPGM level and the affected city list
-  // (the legacy module computed these but had no place to display them).
+  // The legacy module computed a maximum/city list only for notifications and
+  // speech; it did not render that data in the main overlay.
 
   for (const station of ans.data.list) {
     if (!station.lpgm) {
@@ -143,6 +143,15 @@ function show_lpgm(ans: Ans<{ id: number; time: number; list: LpgmListItem[] }>)
 
 /** Register the LPGM overlay source/layer and release subscription. */
 export function initLpgm(): void {
+  events.on("DataModeReset", () => {
+    variable.cache.show_lpgm = false;
+    variable.cache.bounds.lpgm = [];
+    getSource("lpgm-markers-geojson")?.setData(EMPTY_COLLECTION);
+    const map = variable.map;
+    if (map?.getLayer("rts-layer")) map.setPaintProperty("rts-layer", "circle-opacity", 1);
+    drawEewArea();
+  });
+
   events.on("MapLoad", () => {
     const map = variable.map;
     if (!map) {

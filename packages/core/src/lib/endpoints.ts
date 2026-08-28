@@ -5,7 +5,8 @@
  * report sets. Each pool is latency-probed periodically; the active node is the
  * lowest-latency healthy one, and consecutive request failures trigger failover.
  */
-import { appFetch } from "@/lib/env";
+import { getConfig } from "@/lib/config";
+import { appFetch, inTauri } from "@/lib/env";
 import { createLogger } from "@/lib/logger";
 
 export type PoolName = "lbApi" | "coreApi";
@@ -51,8 +52,22 @@ const log = createLogger("health");
 
 /** Current active host for a service pool. */
 export function getHost(pool: PoolName): string {
+  if (pool === "lbApi") {
+    const configured = normalizeHost(getConfig().apiProxyDomain);
+    if (configured) return configured;
+  }
   const p = POOLS[pool];
   return p.nodes[p.active].host;
+}
+
+function normalizeHost(value: string | undefined): string {
+  const raw = value?.trim();
+  if (!raw) return "";
+  try {
+    return new URL(raw.includes("://") ? raw : `https://${raw}`).host;
+  } catch {
+    return raw.replace(/^https?:\/\//, "").split("/")[0];
+  }
 }
 
 /** Full URL on the active host of a pool. */
@@ -104,7 +119,7 @@ async function probeNode(pool: Pool, node: Node): Promise<void> {
     const res = await appFetch(pool.probe(node.host), {
       method: pool.method,
       signal: controller.signal,
-      headers: { "Cache-Control": "no-cache" },
+      ...(inTauri ? { headers: { "Cache-Control": "no-cache" } } : { cache: "no-cache" }),
     });
     node.ok = res.ok;
     node.latency = res.ok ? Date.now() - start : Infinity;

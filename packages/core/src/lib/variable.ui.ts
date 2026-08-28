@@ -22,6 +22,16 @@ export interface EewDisplay {
   time: number;
 }
 
+export interface RtsTriggerLocation {
+  i: number;
+  name: string;
+}
+
+export interface RtsTriggerDisplay {
+  max: number;
+  locations: RtsTriggerLocation[];
+}
+
 export interface TremUi {
   maxIntensity: { i: number; label: string };
   maxPga: number;
@@ -31,6 +41,8 @@ export interface TremUi {
   internetError: boolean;
   /** Currently-shown EEW (null when the box is hidden / no EEW active). */
   currentEew: EewDisplay | null;
+  /** RTS trigger summary shown in the EEW box when no authored EEW is active. */
+  currentTrigger: RtsTriggerDisplay | null;
 }
 
 export const ui: TremUi = {
@@ -41,4 +53,5 @@ export const ui: TremUi = {
   unstable: false,
   internetError: false,
   currentEew: null,
+  currentTrigger: null,
 };

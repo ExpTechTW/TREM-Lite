@@ -54,9 +54,7 @@ function showIntensity(ans: Ans<IntensityData>): void {
   variable.cache.intensity.time = ans.data.id;
   variable.cache.intensity.max = ans.data.max;
 
-  // TODO(react-overlay): highlight the matching report-box entry for the active intensity
-  // episode ({ time: intensity.time, intensity: intensity.max } or none) — was
-  // generateReportBoxItems(variable.data.report, ...).
+  events.emit("ReportListUpdate");
 
   const codeIntensity = convertIntensityToAreaFormat(
     ans.data.area as unknown as Record<string, number[]>,
@@ -113,6 +111,17 @@ function showIntensity(ans: Ans<IntensityData>): void {
 
 /** Register the intensity map source/layer and its domain-event subscriptions. */
 export function initIntensity(): void {
+  events.on("DataModeReset", () => {
+    variable.cache.show_intensity = false;
+    variable.cache.bounds.intensity = [];
+    const map = variable.map;
+    (map?.getSource("intensity-markers-geojson") as GeoJSONSource | undefined)?.setData(
+      EMPTY_COLLECTION,
+    );
+    if (map?.getLayer("rts-layer")) map.setPaintProperty("rts-layer", "circle-opacity", 1);
+    drawEewArea();
+  });
+
   events.on("MapLoad", () => {
     const map = variable.map;
     if (!map) {
@@ -193,8 +202,7 @@ export function initIntensity(): void {
   events.on("IntensityEnd", () => {
     variable.cache.intensity.time = 0;
     variable.cache.intensity.max = 0;
-    // TODO(react-overlay): clear the report-box active-intensity highlight — was
-    // generateReportBoxItems(variable.data.report, null).
+    events.emit("ReportListUpdate");
     drawEewArea();
   });
 }

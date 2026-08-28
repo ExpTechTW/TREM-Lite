@@ -30,12 +30,24 @@ async function updateEewArea(ans: Ans<EewData>): Promise<void> {
   }
 
   // Heavy per-town attenuation loop runs in Rust (src-tauri/src/math.rs).
-  const { area } = await eewAreaPga(
-    ans.data.eq.lat,
-    ans.data.eq.lon,
-    ans.data.eq.depth,
-    ans.data.eq.mag,
+  let area: EewArea["area"];
+  try {
+    ({ area } = await eewAreaPga(
+      ans.data.eq.lat,
+      ans.data.eq.lon,
+      ans.data.eq.depth,
+      ans.data.eq.mag,
+    ));
+  } catch {
+    return;
+  }
+
+  // Rust calculation can finish after an update, end, or replay transition.
+  // Only the still-active matching serial is allowed to repaint the new mode.
+  const stillActive = variable.data.eew.some(
+    (item) => item.id === ans.data.id && item.serial === ans.data.serial && !item.EewEnd,
   );
+  if (!stillActive) return;
 
   const mergedArea = mergeEqArea(area, ans.data.eq.area ?? {});
   variable.cache.eewIntensityArea[ans.data.id] = mergedArea;

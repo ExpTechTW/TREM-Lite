@@ -49,6 +49,15 @@ export function initRts(): void {
   if (initialized) return;
   initialized = true;
 
+  events.on("DataModeReset", () => {
+    Object.keys(level_list).forEach((id) => delete level_list[id]);
+    ui.currentStation = null;
+    ui.rtsInfo = { level: 0, trigger: 0 };
+    ui.maxIntensity = { i: 0, label: int_to_string(0) };
+    ui.maxPga = 0;
+    ui.unstable = false;
+  });
+
   events.on("MapLoad", () => {
     const map = variable.map;
     if (!map) return;

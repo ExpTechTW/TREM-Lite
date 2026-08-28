@@ -2,20 +2,21 @@
 import { events } from "@/lib/events";
 import { variable } from "@/lib/variable";
 
-import { abortAll } from "@/features/data/dataHttp";
+import { resetDataTransport } from "@/features/data/data";
 import { focus, focus_reset, isAutoFocusLocked } from "@/features/focus/focus";
 
 function clear() {
-  abortAll();
+  resetDataTransport();
   variable.cache.last_data_time = 0;
   variable.data.rts = null;
   variable.replay = { start_time: 0, local_time: 0, dev: false };
 }
 
-export function startReplay(time: number): void {
+export function startReplay(time: number, reportId?: string): void {
   clear();
   variable.replay = { start_time: Number(time), local_time: 0, dev: false };
   variable.play_mode = 2;
+  events.emit("ReplayStateChange", { active: true, ...(reportId ? { reportId } : {}) });
 }
 
 export function stopReplay(): void {
@@ -26,6 +27,7 @@ export function stopReplay(): void {
   clear();
   variable.cache.int_cache_list = {};
   variable.play_mode = 0;
+  events.emit("ReplayStateChange", { active: false });
   variable.cache.unstable = 0;
   variable.cache.intensity_last = {};
   events.emit("DataRts", { info: { type: variable.play_mode }, data: null });

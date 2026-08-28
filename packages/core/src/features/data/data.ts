@@ -9,9 +9,10 @@ import { HTTP_TIMEOUT, LAST_DATA_TIMEOUT_ERROR, EEW_AUTHOR } from "@/lib/constan
 import { events } from "@/lib/events";
 import { now } from "@/lib/ntp";
 import { variable } from "@/lib/variable";
+import { ui } from "@/lib/variable.ui";
 import type { EewData } from "@/lib/types";
 
-import { init as sseInit, getData, type SseManager } from "./dataHttp";
+import { abortAll, init as sseInit, getData, type SseManager } from "./dataHttp";
 
 let fileList: string[] = [];
 let fileIndex = 0;
@@ -59,6 +60,7 @@ class DataManager {
   private sseActive = false;
   private sseManager: SseManager | null = null;
   private sseHandled = false;
+  private transportEpoch = 0;
 
   constructor() {
     this.initialize();
@@ -77,15 +79,27 @@ class DataManager {
   }
 
   private async detectReplay() {
+    const detectionEpoch = this.transportEpoch;
+    const detectionMode = variable.play_mode;
     try {
       const entries = await readDir("replay", { baseDir: BaseDirectory.AppData });
-      const list = entries
-        .map((e) => e.name)
-        .filter((n): n is string => !!n && n !== ".DS_Store" && n.endsWith(".json"));
-      if (list.length) {
+      if (detectionEpoch !== this.transportEpoch || detectionMode !== variable.play_mode) return;
+      const frames = entries
+        .flatMap((entry) => {
+          const name = entry.name;
+          if (!name || !/^\d+\.json$/.test(name)) return [];
+          const time = Number(name.slice(0, -5));
+          return Number.isSafeInteger(time) && time > 0 ? [{ name, time }] : [];
+        })
+        .sort((a, b) => a.time - b.time);
+      if (frames.length) {
+        this.resetTransport();
+        fileList = frames.map((frame) => frame.name);
+        fileIndex = 0;
         variable.play_mode = 3;
-        variable.replay.start_time = Number(list[0].replace(".json", ""));
-        fileList = list;
+        variable.replay = { start_time: frames[0].time, local_time: 0, dev: false };
+        this.clearDomainState(3);
+        events.emit("ReplayStateChange", { active: true });
       }
     } catch {
       /* no replay dir — stay in live mode */
@@ -103,15 +117,22 @@ class DataManager {
     if (this.sseActive) return;
 
     if (variable.play_mode === 3) {
-      if (fileIndex >= fileList.length - 1) {
+      if (fileIndex >= fileList.length) {
+        this.resetTransport();
         variable.play_mode = 0;
+        variable.replay = { start_time: 0, local_time: 0, dev: false };
+        this.clearDomainState(0);
+        events.emit("ReplayStateChange", { active: false });
         return;
       }
-      fileIndex++;
+      const fileName = fileList[fileIndex++];
+      const fileEpoch = this.transportEpoch;
+      const fileMode = variable.play_mode;
       try {
-        const text = await readTextFile(`replay/${fileList[fileIndex]}`, {
+        const text = await readTextFile(`replay/${fileName}`, {
           baseDir: BaseDirectory.AppData,
         });
+        if (fileEpoch !== this.transportEpoch || fileMode !== variable.play_mode) return;
         const json = JSON.parse(text);
         variable.data.rts = json.rts;
         events.emit("DataRts", { info: { type: variable.play_mode }, data: json.rts });
@@ -128,9 +149,15 @@ class DataManager {
       return;
     }
 
+    const requestEpoch = this.transportEpoch;
+    const requestMode = variable.play_mode;
     const data = await getData(
       variable.play_mode == 0 || variable.play_mode == 1 ? undefined : now(),
     );
+
+    // A replay/live transition may occur while HTTP responses or response
+    // bodies are pending. Never process a result from the previous mode/epoch.
+    if (requestEpoch !== this.transportEpoch || requestMode !== variable.play_mode) return;
 
     if (!timeoutManager.adjustTimeouts({ eew: data.eew, rts: data.rts })) return;
 
@@ -153,7 +180,7 @@ class DataManager {
   }
 
   private startSSE() {
-    if (variable.play_mode === 1 || variable.play_mode === 3) return;
+    if (variable.play_mode !== 0) return;
     this.sseActive = true;
     if (this.sseManager) return;
 
@@ -171,6 +198,7 @@ class DataManager {
     this.sseManager = sseInit({
       reconnectDelay: 3000,
       onRts: (raw) => {
+        if (variable.play_mode !== 0) return;
         const value = norm(raw);
         if (value == null) return;
         this.sseHandled = true;
@@ -179,18 +207,21 @@ class DataManager {
         variable.cache.last_data_time = Date.now();
       },
       onEew: (raw) => {
+        if (variable.play_mode !== 0) return;
         const value = norm(raw);
         if (value == null) return;
         this.sseHandled = true;
         this.processEEWData(value as EewData[]);
       },
       onIntensity: (raw) => {
+        if (variable.play_mode !== 0) return;
         const value = norm(raw);
         if (value == null) return;
         this.sseHandled = true;
         this.processIntensityData(value as never[]);
       },
       onLpgm: (raw) => {
+        if (variable.play_mode !== 0) return;
         const value = norm(raw);
         if (value == null) return;
         this.sseHandled = true;
@@ -206,6 +237,71 @@ class DataManager {
       this.sseManager = null;
     }
     this.sseHandled = false;
+  }
+
+  /** Prevent live/replay domain objects and alert caches crossing a mode boundary. */
+  private clearDomainState(mode: number): void {
+    const eew = [...variable.data.eew];
+    const intensity = [...variable.data.intensity] as { IntensityEnd?: number }[];
+    const lpgm = [...variable.data.lpgm] as { LpgmEnd?: boolean }[];
+
+    variable.data.rts = null;
+    variable.data.eew = [];
+    variable.data.intensity = [];
+    variable.data.lpgm = [];
+
+    variable.cache.rts_alert = false;
+    variable.cache.unstable = 0;
+    variable.cache.show_eew_box = false;
+    variable.cache.rts_trigger = { max: 0, loc: [] };
+    variable.cache.int_cache_list = {};
+    variable.cache.eew_last = {};
+    variable.cache.intensity_last = {};
+    variable.cache.eewIntensityArea = {};
+    variable.cache.show_intensity = false;
+    variable.cache.show_lpgm = false;
+    variable.cache.intensity = { time: 0, max: 0 };
+    variable.cache.last_data_time = 0;
+    variable.cache.last_rts_alert = 0;
+    variable.cache.bounds.rts = [];
+    variable.cache.bounds.intensity = [];
+    variable.cache.bounds.lpgm = [];
+    variable.cache.audio = {
+      shindo: -1,
+      pga: -1,
+      status: { shindo: 0, pga: 0 },
+      count: { pga_1: 0, pga_2: 0, shindo_1: 0, shindo_2: 0 },
+    };
+
+    ui.currentEew = null;
+    ui.currentTrigger = null;
+    events.emit("EewDisplayUpdate");
+
+    eew.forEach((data) =>
+      events.emit("EewEnd", { info: { type: mode }, data: { ...data, EewEnd: true } }),
+    );
+    intensity.forEach((data) =>
+      events.emit("IntensityEnd", {
+        info: { type: mode },
+        data: { ...data, IntensityEnd: 1 },
+      }),
+    );
+    lpgm.forEach((data) =>
+      events.emit("LpgmEnd", { info: { type: mode }, data: { ...data, LpgmEnd: true } }),
+    );
+    events.emit("DataModeReset");
+    events.emit("DataRts", { info: { type: mode }, data: null });
+    events.emit("DataEew", { info: { type: mode }, data: [] as never });
+    events.emit("DataIntensity", { info: { type: mode }, data: [] as never });
+    events.emit("DataLpgm", { info: { type: mode }, data: [] as never });
+  }
+
+  /** Fully reset the live transport before entering or leaving replay. */
+  resetTransport(): void {
+    this.transportEpoch++;
+    abortAll();
+    this.stopSSE();
+    this.lastFetchTime = 0;
   }
 
   processEEWData(newData: EewData[] = []): void {
@@ -384,4 +480,9 @@ let manager: DataManager | null = null;
 export function initData(): DataManager {
   if (!manager) manager = new DataManager();
   return manager;
+}
+
+/** Drop live transport state so the next data loop follows the new play mode. */
+export function resetDataTransport(): void {
+  manager?.resetTransport();
 }

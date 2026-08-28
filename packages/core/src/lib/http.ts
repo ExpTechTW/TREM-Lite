@@ -3,7 +3,7 @@
  * replacing the undici-based legacy/src/js/core/utils/fetch.js.
  * Provides a timeout+abort wrapper and keeps a simple online/offline flag.
  */
-import { appFetch } from "./env";
+import { appFetch, inTauri } from "./env";
 
 export class FetchError extends Error {
   type: "TIMEOUT" | "NETWORK_ERROR";
@@ -33,7 +33,9 @@ export function withController(url: string, timeout = 1000): Controlled {
     try {
       const res = await appFetch(url, {
         signal: controller.signal,
-        headers: { "Cache-Control": "no-cache" },
+        // Cache-Control is not CORS-safelisted. Native Tauri fetch can send it,
+        // but browsers would preflight against endpoints that do not accept OPTIONS.
+        ...(inTauri ? { headers: { "Cache-Control": "no-cache" } } : { cache: "no-cache" }),
       });
       return res;
     } catch (err) {

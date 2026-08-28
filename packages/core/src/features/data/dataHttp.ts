@@ -2,7 +2,7 @@
  * SSE + multi-endpoint HTTP client — ported from legacy/src/js/index/data/http.js.
  * Uses tauri-plugin-http `fetch` (streaming ReadableStream) so SSE bypasses CORS.
  */
-import { appFetch } from "@/lib/env";
+import { appFetch, inTauri } from "@/lib/env";
 
 import { HTTP_TIMEOUT } from "@/lib/constants";
 import { getHost, reportFailure, reportSuccess } from "@/lib/endpoints";
@@ -13,14 +13,20 @@ import { variable } from "@/lib/variable";
 
 let sseController: AbortController | null = null;
 let requestCounter = 0;
+let transportGeneration = 0;
+const activePollingControllers = new Set<AbortController>();
 
 const log = createLogger("sse");
+const TREM_REPLAY_HOST = "api-1.exptech.dev";
 
 export function abortAll(): void {
+  transportGeneration++;
   if (sseController) {
     sseController.abort();
     sseController = null;
   }
+  activePollingControllers.forEach((controller) => controller.abort());
+  activePollingControllers.clear();
 }
 
 export interface SseHandlers {
@@ -63,8 +69,9 @@ export function init(options: SseHandlers = {}): SseManager {
   const { onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
 
   if (sseController) sseController.abort();
-  sseController = new AbortController();
-  const { signal } = sseController;
+  const controller = new AbortController();
+  sseController = controller;
+  const { signal } = controller;
 
   // Single pending reconnect timer (shared across both streams AND across rounds)
   // so a burst of instant failures schedules ONE delayed reconnect rather than
@@ -81,8 +88,9 @@ export function init(options: SseHandlers = {}): SseManager {
   function doConnect() {
     if (signal.aborted) return;
 
-    // Replay pulls historical data from a core node; live streams from the lb node.
-    const rtsDomain = variable.play_mode == 2 ? getHost("coreApi") : getHost("lbApi");
+    // The RTS archive exists on api-1 (the regional core nodes return 404 for
+    // this route); EEW history remains on the core pool.
+    const rtsDomain = variable.play_mode == 2 ? TREM_REPLAY_HOST : getHost("lbApi");
     const eewDomain = variable.play_mode == 2 ? getHost("coreApi") : getHost("lbApi");
 
     const urls = [
@@ -113,7 +121,10 @@ export function init(options: SseHandlers = {}): SseManager {
 
       appFetch(u.url, {
         signal,
-        headers: { Accept: "text/event-stream", "Cache-Control": "no-cache" },
+        headers: inTauri
+          ? { Accept: "text/event-stream", "Cache-Control": "no-cache" }
+          : { Accept: "text/event-stream" },
+        ...(!inTauri ? { cache: "no-cache" as const } : {}),
       })
         .then(async (res) => {
           if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
@@ -132,9 +143,13 @@ export function init(options: SseHandlers = {}): SseManager {
           }
         })
         .catch((e) => {
+          // Entering replay intentionally aborts both live streams. That is a
+          // mode transition, not a network failure, and must not poison the LB
+          // health score or produce a reconnect warning.
+          if (signal.aborted || (e as { name?: string })?.name === "AbortError") return;
           log.warn(`${u.type} error → reconnect`, e);
           reportFailure("lbApi");
-          if (!signal.aborted) scheduleReconnect();
+          scheduleReconnect();
         });
     }
   }
@@ -146,7 +161,10 @@ export function init(options: SseHandlers = {}): SseManager {
   void onLpgm;
 
   return {
-    abort: () => sseController?.abort(),
+    abort: () => {
+      controller.abort();
+      if (sseController === controller) sseController = null;
+    },
   };
 }
 
@@ -157,44 +175,67 @@ export interface PolledData {
   lpgm: unknown[] | null;
 }
 
+async function parseJson(response: Response | null): Promise<unknown | null> {
+  if (!response?.ok) return null;
+  try {
+    return await response.json();
+  } catch {
+    // An intentional mode-transition abort may arrive after response headers
+    // but while the body is still being consumed. Treat it as no data.
+    return null;
+  }
+}
+
 /** HTTP polling fallback — RTS/EEW always, intensity every 5th, lpgm every 7th. */
 export async function getData(time?: number): Promise<PolledData> {
+  const requestGeneration = transportGeneration;
+  const requestMode = variable.play_mode;
   const t = time ? Math.round(time / 1000) : 0;
   requestCounter++;
   const shouldFetchLPGM = requestCounter % 7 === 0;
   const shouldFetchIntensity = requestCounter % 5 === 0;
 
   const lb = getHost("lbApi");
-  const rtsDomain = variable.play_mode == 2 ? getHost("coreApi") : lb;
-  const eewDomain = variable.play_mode == 2 ? getHost("coreApi") : lb;
+  const tremDomain = requestMode == 2 ? TREM_REPLAY_HOST : lb;
+  const eewDomain = requestMode == 2 ? getHost("coreApi") : lb;
 
   const suffix = t ? `/${t}` : "";
   const reqs: (ReturnType<typeof withController> | null)[] = [
-    variable.play_mode == 1 ? null : withController(`https://${rtsDomain}/api/v2/trem/rts${suffix}`, HTTP_TIMEOUT.RTS),
-    variable.play_mode == 1 ? null : withController(`https://${eewDomain}/api/v2/eq/eew${suffix}`, HTTP_TIMEOUT.EEW),
+    requestMode == 1 ? null : withController(`https://${tremDomain}/api/v2/trem/rts${suffix}`, HTTP_TIMEOUT.RTS),
+    requestMode == 1 ? null : withController(`https://${eewDomain}/api/v2/eq/eew${suffix}`, HTTP_TIMEOUT.EEW),
   ];
 
   if (shouldFetchIntensity) {
-    reqs.push(withController(`https://${lb}/api/v2/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY));
+    reqs.push(withController(`https://${tremDomain}/api/v2/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY));
   }
   if (shouldFetchLPGM) {
-    reqs.push(withController(`https://${lb}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM));
+    reqs.push(withController(`https://${tremDomain}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM));
   }
 
-  const responses = await Promise.all(
-    reqs.map((r) => (r ? r.execute().catch(() => null) : Promise.resolve(null))),
-  );
+  const activeRequests = reqs.filter((request): request is ReturnType<typeof withController> => !!request);
+  activeRequests.forEach((request) => activePollingControllers.add(request.controller));
 
-  const out: PolledData = { rts: null, eew: null, intensity: null, lpgm: null };
-  if (responses[0]?.ok) out.rts = await responses[0].json();
-  if (responses[1]?.ok) out.eew = await responses[1].json();
-  if (shouldFetchIntensity && responses[2]?.ok) out.intensity = await responses[2].json();
-  if (shouldFetchLPGM && responses[responses.length - 1]?.ok) {
-    out.lpgm = await responses[responses.length - 1]!.json();
+  try {
+    const responses = await Promise.all(
+      reqs.map((r) => (r ? r.execute().catch(() => null) : Promise.resolve(null))),
+    );
+
+    const out: PolledData = { rts: null, eew: null, intensity: null, lpgm: null };
+    out.rts = await parseJson(responses[0]);
+    out.eew = (await parseJson(responses[1])) as unknown[] | null;
+    if (shouldFetchIntensity) {
+      out.intensity = (await parseJson(responses[2])) as unknown[] | null;
+    }
+    if (shouldFetchLPGM) {
+      out.lpgm = (await parseJson(responses[responses.length - 1])) as unknown[] | null;
+    }
+    // Archive availability must not mark a live LB node healthy/unhealthy.
+    if (requestMode == 0 && requestGeneration === transportGeneration) {
+      if (out.rts || out.eew) reportSuccess("lbApi");
+      else reportFailure("lbApi");
+    }
+    return out;
+  } finally {
+    activeRequests.forEach((request) => activePollingControllers.delete(request.controller));
   }
-  if (variable.play_mode != 1) {
-    if (out.rts || out.eew) reportSuccess("lbApi");
-    else reportFailure("lbApi");
-  }
-  return out;
 }
