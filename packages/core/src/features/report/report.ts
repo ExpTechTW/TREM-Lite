@@ -12,13 +12,16 @@ import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
 import { variable } from "@/lib/variable";
 import type { ReportListItem } from "@/lib/types";
+import { inTauri } from "@/lib/env";
 
 import { updateMapBounds } from "@/features/focus/focus";
 import { startReplay, stopReplay } from "@/features/replay/replay";
 
 let mapInitialized = false;
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
-let lastReplayTime = 0;
+let activeReplayReportId: string | null = null;
+let latestFullReportList: ReportListItem[] = [];
+let replayStateEpoch = 0;
 let seeded = false; // first (empty) fetch must NOT emit a report event
 
 const log = createLogger("report");
@@ -54,6 +57,23 @@ async function getReportById(id: string): Promise<ReportListItem | null> {
 
 function reportList(): ReportListItem[] {
   return variable.data.report as ReportListItem[];
+}
+
+/**
+ * Replay hides reports that had not happened yet, but the report used to start
+ * the replay is five seconds newer than replay.start_time. Keep that one row in
+ * the list so its yellow replay frame does not disappear on the next poll.
+ */
+function visibleReportList(list: ReportListItem[]): ReportListItem[] {
+  if (!variable.replay.start_time) return list;
+  return list.filter(
+    (item) =>
+      item.time < variable.replay.start_time || item.id === activeReplayReportId,
+  );
+}
+
+function applyVisibleReportList(list: ReportListItem[]): void {
+  variable.data.report = visibleReportList(list) as never[];
 }
 
 function initializeMapLayers() {
@@ -142,7 +162,7 @@ export function showReportPoint(data: ReportListItem | null): void {
 }
 
 async function refresh() {
-  let list = await getReportList(REPORT_LIMIT);
+  const list = await getReportList(REPORT_LIMIT);
   if (!list) {
     reportFailure("coreApi");
     return;
@@ -153,12 +173,11 @@ async function refresh() {
   else log.info("list", list.length, "(initial)");
   mark("report-loaded");
 
-  if (variable.replay.start_time) {
-    list = list.filter((item) => item.time < variable.replay.start_time);
-  }
-
-  // The list items already carry id/loc/mag/depth/int for the panel display.
-  variable.data.report = list as never[];
+  // Keep the live response separate from the replay-filtered panel. Persisting
+  // the filtered list used to discard newer reports from the cold-start cache
+  // and made them look newly released after replay ended.
+  latestFullReportList = list;
+  applyVisibleReportList(list);
   // 立即通知面板刷新，讓列表一載入就顯示（不必等 ReportPanel 的輪詢 tick）。
   events.emit("ReportListUpdate");
   // 寫入快取，供下次冷啟動秒開。
@@ -177,9 +196,11 @@ async function refresh() {
     // cache.last_report on first load WITHOUT emitting ReportRelease). Without
     // this, the idle RTS handler clears the live station dots and has no report
     // point to fall back to → a completely blank map ("沒有點").
-    if (SHOW_REPORT && list.length) {
-      const detail = await getReportById(list[0].id);
-      if (detail) {
+    const newestVisibleReport = visibleReportList(list)[0];
+    if (SHOW_REPORT && newestVisibleReport) {
+      const detailEpoch = replayStateEpoch;
+      const detail = await getReportById(newestVisibleReport.id);
+      if (detail && detailEpoch === replayStateEpoch) {
         variable.cache.last_report = detail;
         showReportPoint(detail); // no-op until the map is ready; DataRts re-plots
       }
@@ -191,11 +212,18 @@ async function refresh() {
   const fresh = list.filter((r) => r.md5 && !seenMd5.has(r.md5));
   fresh.forEach((r) => r.md5 && rememberMd5(r.md5));
 
+  // Remember live arrivals while replaying so they do not become false "new"
+  // reports afterwards, but never surface live report alerts in replay mode.
+  if (variable.replay.start_time) return;
+
   const target = fresh[0]; // list is newest-first
   if (!target || !SHOW_REPORT) return;
 
+  const detailEpoch = replayStateEpoch;
   const detail = await getReportById(target.id);
-  if (detail) events.emit("ReportRelease", { data: detail });
+  if (detail && detailEpoch === replayStateEpoch && !variable.replay.start_time) {
+    events.emit("ReportRelease", { data: detail });
+  }
 }
 
 function onReportRelease(ans: { data: ReportListItem }) {
@@ -216,19 +244,20 @@ export function openReportUrl(item: ReportListItem): void {
   const url = item.trem
     ? `https://api.exptech.dev/file/trem_info.html?id=${item.trem}`
     : `https://www.cwa.gov.tw/V8/C/E/EQ/EQ${reportId}.html`;
-  void openExternal(url);
+  if (inTauri) void openExternal(url);
+  else window.open(url, "_blank", "noopener,noreferrer");
 }
 
 /** Toggle replay of a report's time window (mirrors the list replay button). */
 export function replayReport(item: ReportListItem): void {
   const time = item.time - 5000;
+  const wasActive = activeReplayReportId === item.id && variable.replay.start_time === time;
   stopReplay();
-  if (lastReplayTime === time) {
-    lastReplayTime = 0;
-    return;
-  }
-  lastReplayTime = time;
-  startReplay(time);
+  if (!wasActive) startReplay(time, item.id);
+}
+
+export function getActiveReplayReportId(): string | null {
+  return variable.replay.start_time ? activeReplayReportId : null;
 }
 
 export function getReports(): ReportListItem[] {
@@ -243,6 +272,7 @@ export function initReport(): void {
     if (cached && !variable.data.report.length) {
       const list = JSON.parse(cached) as ReportListItem[];
       if (Array.isArray(list) && list.length) {
+        latestFullReportList = list;
         variable.data.report = list as never[];
         events.emit("ReportListUpdate");
       }
@@ -265,4 +295,11 @@ export function initReport(): void {
     initializeMapLayers();
   });
   events.on("ReportRelease", (ans) => onReportRelease(ans));
+  events.on("ReplayStateChange", ({ active, reportId }) => {
+    replayStateEpoch++;
+    activeReplayReportId = active ? (reportId ?? null) : null;
+    const source = latestFullReportList.length ? latestFullReportList : [...reportList()];
+    applyVisibleReportList(source);
+    events.emit("ReportListUpdate");
+  });
 }

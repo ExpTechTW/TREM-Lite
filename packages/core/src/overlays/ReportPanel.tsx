@@ -1,102 +1,136 @@
 import { useState } from "react";
-import { ChevronLeft, ExternalLink, Play } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 import { IntensityBadge } from "@/components/IntensityBadge";
-import { formatReportTime, extractLocation } from "@/domain/utils";
-import { getReports, openReportUrl, replayReport } from "@/features/report/report";
-import type { ReportListItem } from "@/lib/types";
+import { extractLocation, formatReportTime } from "@/domain/utils";
 import { useRerenderOn } from "@/hooks/useTremEvent";
+import {
+  getActiveReplayReportId,
+  getReports,
+  openReportUrl,
+  replayReport,
+} from "@/features/report/report";
+import type { ReportListItem } from "@/lib/types";
+import { variable } from "@/lib/variable";
 import { cn } from "@/lib/utils";
 
-/** Right-side collapsible earthquake report list (ports report-wrapper). */
+interface SurveyItem {
+  kind: "survey";
+  id: "survey-item";
+  time: number;
+  int: number;
+}
+
+type PanelItem = { kind: "report"; report: ReportListItem } | SurveyItem;
+
+/** Right-side report list, including the legacy survey and replay-highlight states. */
 export function ReportPanel() {
-  const [open, setOpen] = useState(window.innerWidth >= 1080);
-  // 列表載入/更新時立即刷新（事件驅動，不再輪詢），ReportRelease 為新報告發布。
+  // Legacy collapses the 275px panel below 1080px so it does not cover most of
+  // the map at the 900px minimum window width.
+  const [open, setOpen] = useState(() => window.innerWidth >= 1080);
   useRerenderOn("ReportListUpdate", "ReportRelease");
 
-  const reports = getReports();
+  const survey: SurveyItem | null = variable.cache.intensity.time
+    ? {
+        kind: "survey",
+        id: "survey-item",
+        time: variable.cache.intensity.time,
+        int: variable.cache.intensity.max,
+      }
+    : null;
+  const items: PanelItem[] = [
+    ...(survey ? [survey] : []),
+    ...getReports().map((report) => ({ kind: "report" as const, report })),
+  ];
 
   return (
-    <div className="absolute bottom-0 right-0 top-0 z-20 flex items-stretch">
-      {/* report-list-btn (#close-btn) — 20px light toggle tab on the panel's left edge */}
+    <div className={cn("legacy-report-panel", !open && "is-closed")}>
       <button
-        onClick={() => setOpen((o) => !o)}
+        type="button"
+        onClick={() => setOpen((value) => !value)}
         title="地震報告"
-        className="my-auto flex h-14 w-[20px] items-center justify-center rounded-l-[6px] shadow-md"
-        style={{ backgroundColor: "var(--light)", color: "var(--dark)" }}
+        className="legacy-report-toggle"
       >
-        <ChevronLeft className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+        <ChevronLeft className={cn("h-4 w-4", open && "rotate-180")} />
       </button>
 
-      {/* report-box-items — 310px translucent grey scroll container */}
-      {open && (
-        <div
-          className="flex w-[310px] flex-col gap-[4px] overflow-y-auto p-[3px] pt-[2px] shadow-xl"
-          style={{ backgroundColor: "#464646d9" }}
-        >
-          {reports.length === 0 && (
-            <div className="p-3 text-sm text-muted-foreground">尚無報告</div>
-          )}
-          {reports.map((r, i) =>
-            i === 0 ? (
-              <FeaturedReportCard key={r.id} item={r} />
-            ) : (
-              <CompactReportRow key={r.id} item={r} />
-            ),
-          )}
-        </div>
-      )}
+      <div className="legacy-report-list">
+        {items.map((item, index) =>
+          index === 0 ? (
+            <FeaturedItem key={item.kind === "survey" ? item.id : item.report.id} item={item} />
+          ) : item.kind === "report" ? (
+            <CompactReportRow key={item.report.id} item={item.report} />
+          ) : null,
+        )}
+      </div>
     </div>
   );
 }
 
-/** report-box-item-wrapper:first-child — large featured card. */
-function FeaturedReportCard({ item }: { item: ReportListItem }) {
+function FeaturedItem({ item }: { item: PanelItem }) {
+  if (item.kind === "survey") {
+    return (
+      <div className="legacy-report-card legacy-report-featured is-survey">
+        <div className="legacy-report-featured-content">
+          <div className="flex flex-col items-center">
+            <IntensityBadge i={item.int} className="legacy-report-featured-badge h-[80px] w-[80px] rounded-[12px] text-[48px]" />
+            <div className="mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
+          </div>
+          <div className="ml-2 flex min-w-0 flex-1 flex-col">
+            <div className="truncate text-[28px] font-bold leading-tight">震源調查中</div>
+            <div className="text-[13px] font-bold">{formatReportTime(item.time)}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const report = item.report;
   return (
     <div
-      className="group relative shrink-0 overflow-hidden rounded-[15px] border border-white/[0.22]"
-      style={{ backgroundColor: "#292929", color: "var(--light)" }}
+      className={cn(
+        "legacy-report-card legacy-report-featured group",
+        isReplayActive(report) && "legacy-report-flashing",
+      )}
     >
-      <div className="flex w-full gap-[8px] p-[10px]">
-        {/* report-intensity-box */}
+      <div className="legacy-report-featured-content">
         <div className="flex flex-col items-center">
-          <IntensityBadge i={item.int ?? 0} className="h-[80px] w-[80px] rounded-[12px] text-[48px]" />
+          <IntensityBadge i={report.int ?? 0} className="legacy-report-featured-badge h-[80px] w-[80px] rounded-[12px] text-[48px]" />
           <div className="mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
         </div>
 
-        {/* report-info-box (legacy: column, top-aligned with the badge) */}
-        <div className="ml-[0.5rem] flex min-w-0 flex-1 flex-col">
+        <div className="ml-2 flex min-w-0 flex-1 flex-col">
           <div className="truncate text-[28px] font-bold leading-tight">
-            {extractLocation(item.loc)}
+            {extractLocation(report.loc)}
           </div>
-          <div className="text-[13px] font-bold">{formatReportTime(item.time)}</div>
-
-          {/* report-mag-dep — mt-auto pins it to the card bottom so the 規模/深度
-              row lines up with 觀測最大震度 under the badge, as in legacy. */}
+          <div className="text-[13px] font-bold">{formatReportTime(report.time)}</div>
           <div className="mt-auto flex w-full items-baseline justify-between pt-[0.3em]">
-            <div className="-mt-[5px] text-[30px] font-bold leading-none tabular-nums">
-              <span className="mr-[4px]">𝖬</span>
-              {item.mag ? item.mag.toFixed(1) : "--"}
+            <div
+              className="-mt-[5px] text-[30px] font-bold leading-none tabular-nums"
+              style={isNumbered(report) ? { color: "var(--warning)" } : undefined}
+            >
+              <span className="mr-1">𝖬</span>
+              {report.mag ? report.mag.toFixed(1) : "--"}
             </div>
             <div className="-mt-[3px] text-[24px] font-bold leading-9 tabular-nums">
-              {item.depth}
-              <span className="ml-[4px] text-[14px] font-normal">km</span>
+              {report.depth}
+              <span className="ml-1 text-[14px] font-normal">km</span>
             </div>
           </div>
         </div>
       </div>
-
-      <ReportActions item={item} />
+      <ReportActions item={report} />
     </div>
   );
 }
 
-/** report-box-item-wrapper (rest) — compact single-line row. */
 function CompactReportRow({ item }: { item: ReportListItem }) {
   return (
     <div
-      className="group relative flex shrink-0 items-center gap-[8px] overflow-hidden rounded-[15px] border border-white/[0.22]"
-      style={{ backgroundColor: "#292929", color: "var(--light)" }}
+      className={cn(
+        "legacy-report-card group flex items-center gap-2",
+        isReplayActive(item) && "legacy-report-flashing",
+      )}
     >
       <IntensityBadge
         i={item.int ?? 0}
@@ -111,43 +145,34 @@ function CompactReportRow({ item }: { item: ReportListItem }) {
         </div>
         <div
           className="w-[60px] shrink-0 pl-2 text-right text-[20px] font-bold tabular-nums"
-          style={{ color: "var(--light)" }}
+          style={isNumbered(item) ? { color: "var(--warning)" } : undefined}
         >
-          <span className="mr-[4px]">𝖬</span>
+          <span className="mr-1">𝖬</span>
           {item.mag ? item.mag.toFixed(1) : "--"}
         </div>
       </div>
-
       <ReportActions item={item} />
     </div>
   );
 }
 
-/** report-buttons — hover overlay with web-report / replay actions. */
 function ReportActions({ item }: { item: ReportListItem }) {
   return (
-    <div
-      className="absolute inset-0 hidden items-center justify-evenly group-hover:flex"
-      style={{ backgroundColor: "#292929c4" }}
-    >
-      <button
-        title="網頁報告"
-        onClick={() => openReportUrl(item)}
-        className="flex h-[22px] items-center gap-1 rounded-[5px] border border-white/30 px-2 text-[13px] font-bold hover:brightness-90"
-        style={{ backgroundColor: "#505050", color: "var(--light)" }}
-      >
-        <ExternalLink className="h-3.5 w-3.5" />
+    <div className="legacy-report-actions">
+      <button type="button" onClick={() => openReportUrl(item)}>
         {item.trem ? "檢知" : "報告"}
       </button>
-      <button
-        title="重播"
-        onClick={() => replayReport(item)}
-        className="flex h-[22px] items-center gap-1 rounded-[5px] border border-white/30 px-2 text-[13px] font-bold hover:brightness-90"
-        style={{ backgroundColor: "#505050", color: "var(--light)" }}
-      >
-        <Play className="h-3.5 w-3.5" />
+      <button type="button" onClick={() => replayReport(item)}>
         重播
       </button>
     </div>
   );
+}
+
+function isNumbered(item: ReportListItem): boolean {
+  return !item.id.split("-")[0]?.includes("000");
+}
+
+function isReplayActive(item: ReportListItem): boolean {
+  return getActiveReplayReportId() === item.id;
 }
