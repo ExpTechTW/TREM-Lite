@@ -4,6 +4,7 @@
  * the map emits `MapLoad`, so call initFeatures() then setupMap().
  */
 import { initAudio } from "@/lib/audioClient";
+import { initAutostart } from "@/lib/autostartClient";
 import { initHealth } from "@/lib/endpoints";
 import { createLogger } from "@/lib/logger";
 import { initPipBridge } from "@/lib/pipBridge";
@@ -35,6 +36,7 @@ function guard(name: string, fn: () => void) {
 
 export function initFeatures(): void {
   guard("health", initHealth);
+  guard("autostart", initAutostart);
   guard("audio", initAudio);
   guard("notifications", initNotifications);
   guard("speech", initSpeech);
