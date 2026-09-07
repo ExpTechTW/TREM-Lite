@@ -31,4 +31,4 @@ check-box:
   sound-effects-Shindo2: true
   sound-effects-Update: true
 
-apiProxyDomain: 'api.lb.exptech.dev'
+apiProxyDomain: 'api.lb-tpe1.exptech.dev'

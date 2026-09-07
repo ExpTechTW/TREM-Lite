@@ -71,7 +71,8 @@ class PluginLoader {
 
     this.ctx = {
       TREM,
-      events: TREM.variable.events,
+      // events 用 getter 動態取得，避免在 event.js 載入前快照到 null
+      get events() { return TREM.variable.events; },
       logger,
       Logger,
       MixinManager,

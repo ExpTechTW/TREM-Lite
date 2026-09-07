@@ -28,7 +28,7 @@ setInterval(() => {
       warning_box_internet.classList.add('hide');
     }
   }
-  else if ((Date.now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) {
+  else if ((now() - TREM.variable.cache.last_data_time) > TREM.constant.LAST_DATA_TIMEOUT_ERROR) {
     time.className = 'time-error';
 
     if (warning_box_internet.classList.contains('hide')) {

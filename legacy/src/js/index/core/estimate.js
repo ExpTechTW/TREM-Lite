@@ -92,6 +92,7 @@ class EewAreaManager {
 
     if (end) {
       this.alertedCities.clear();
+      TREM.variable.map.fitBounds(TREM.constant.MAP.BOUNDS, { padding: 20 });
     }
 
     return {

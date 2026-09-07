@@ -110,9 +110,7 @@ let requestCounter = 0;
  */
 function init(options = {}) {
   const { onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
-
-  // const wasAborted = sseController?.signal.aborted;
-  // console.log(`[SSE][init] called, wasAborted=${wasAborted}, existing=${!!sseController}`);
+  // Note: onIntensity and onLpgm are currently not supported via SSE, only via Polling.
 
   // 如果 controller 已存在且未中止，先中止重連避免重複
   if (sseController) {
@@ -121,7 +119,6 @@ function init(options = {}) {
 
   // 如果 signal 已中止，等待下一次 tick 再創建新的 controller
   if (sseController && sseController.signal.aborted) {
-    // console.log('[SSE][init] signal is aborted, retrying in next tick');
     return new Promise((resolve) => {
       setTimeout(() => {
         const result = init(options);
@@ -132,32 +129,25 @@ function init(options = {}) {
 
   sseController = new AbortController();
   const { signal } = sseController;
-  // console.log('[SSE][init] new controller created, signal:', signal);
+  let reconnectionInProgress = false;
 
   function doConnect() {
     if (signal.aborted) {
       return;
     }
 
-    const apiProxyDomain = Config.getInstance().getConfig().apiProxyDomain || 'api.lb.exptech.dev';
+    const apiProxyDomain = Config.getInstance().getConfig().apiProxyDomain || 'api.lb-tpe1.exptech.dev';
     const eewDomain = TREM.variable.play_mode == 2
-      ? 'api.core.exptech.dev'
+      ? 'api.core-tnn1.exptech.dev'
       : apiProxyDomain;
     const rtsDomain = TREM.variable.play_mode == 2
       ? 'api-1.exptech.dev'
       : apiProxyDomain;
 
     const urls = [
-      { url: `https://${rtsDomain}/api/v2/trem/rts`, type: 'rts', enabled: TREM.variable.play_mode != 1 },
-      { url: `https://${eewDomain}/api/v2/eq/eew`, type: 'eew', enabled: TREM.variable.play_mode != 1 },
+      { url: `https://${rtsDomain}/api/v2/trem/rts?sse=1`, type: 'rts', enabled: TREM.variable.play_mode != 1 },
+      { url: `https://${eewDomain}/api/v2/eq/eew?sse=1`, type: 'eew', enabled: TREM.variable.play_mode != 1 },
     ];
-
-    // if (requestCounter % 5 === 0) {
-    //   urls.push({ url: `https://${TREM.constant.URL.API[0]}/api/v2/trem/intensity`, type: 'intensity' });
-    // }
-    // if (requestCounter % 7 === 0) {
-    //   urls.push({ url: `https://${TREM.constant.URL.API[0]}/api/v2/trem/lpgm`, type: 'lpgm' });
-    // }
 
     const requests = urls
       .filter((u) => u.enabled !== false)
@@ -186,18 +176,21 @@ function init(options = {}) {
       );
 
     Promise.all(requests).then((streams) => {
-      const validStreams = streams.filter(Boolean);
-      let reconnectionInProgress = false;
+      if (signal.aborted) return;
 
-      function doReconnect() {
-        if (reconnectionInProgress || signal.aborted) {
-          return;
+      const validStreams = streams.filter(Boolean);
+
+      // Fix 1: 若連線全部失敗，觸發重連
+      if (validStreams.length === 0) {
+        if (!reconnectionInProgress) {
+          reconnectionInProgress = true;
+          console.log('[SSE] All streams failed. Retrying...');
+          setTimeout(() => {
+            reconnectionInProgress = false;
+            doConnect();
+          }, reconnectDelay);
         }
-        reconnectionInProgress = true;
-        doConnect();
-        setTimeout(() => {
-          reconnectionInProgress = false;
-        }, reconnectDelay);
+        return;
       }
 
       validStreams.forEach(({ type, reader }) => {
@@ -214,40 +207,64 @@ function init(options = {}) {
               return;
             }
             if (!result || typeof result !== 'object') {
-              // reader.read() 回傳非 object（stream 結束或讀取失敗）
-              // console.log(`[SSE][${type}] reader.read() unexpected result:`, result);
-              doReconnect();
+              console.log(`[SSE] ${type} reader.read() unexpected result. Retrying...`);
+              if (!reconnectionInProgress) {
+                reconnectionInProgress = true;
+                setTimeout(() => {
+                  reconnectionInProgress = false;
+                  doConnect();
+                }, reconnectDelay);
+              }
               return;
             }
 
             const { value, done } = result;
             if (done) {
-              // console.log(`[SSE][${type}] stream done`);
-              doReconnect();
+              console.log(`[SSE] ${type} stream done. Retrying...`);
+              if (!reconnectionInProgress) {
+                reconnectionInProgress = true;
+                setTimeout(() => {
+                  reconnectionInProgress = false;
+                  doConnect();
+                }, reconnectDelay);
+              }
               return;
             }
 
-            // 修復：parser.next(value) 回傳 second yield 的結果 { value: parsed, done: false }
-            const event = parser.next(value).value;
-            if (event != null && (event.value != null || typeof event === 'object')) {
-              switch (type) {
-                case 'rts':
-                  onRts?.(event);
-                  break;
-                case 'eew':
-                  onEew?.(event);
-                  break;
-                case 'intensity':
-                  onIntensity?.(event);
-                  break;
-                case 'lpgm':
-                  onLpgm?.(event);
-                  break;
+            // Fix 2: 使用迴圈消耗該 Chunk 中所有的 event
+            let event = parser.next(value).value;
+            while (event) {
+              const evData = event.value;
+              if (evData != null && (typeof evData === 'object' || typeof evData === 'string')) {
+                const wrappedEvent = { value: evData, done: false };
+                switch (type) {
+                  case 'rts':
+                    onRts?.(wrappedEvent);
+                    break;
+                  case 'eew':
+                    onEew?.(wrappedEvent);
+                    break;
+                  case 'intensity':
+                    onIntensity?.(wrappedEvent);
+                    break;
+                  case 'lpgm':
+                    onLpgm?.(wrappedEvent);
+                    break;
+                }
               }
+              event = parser.next().value;
             }
 
-            // 繼續讀下一筆
             readLoop();
+          }).catch((err) => {
+            console.log(`[SSE] Read error (${type}): ${err.message}`);
+            if (!reconnectionInProgress) {
+              reconnectionInProgress = true;
+              setTimeout(() => {
+                reconnectionInProgress = false;
+                doConnect();
+              }, reconnectDelay);
+            }
           });
         }
 
@@ -282,10 +299,10 @@ async function getData(time) {
   //   ? TREM.constant.URL.REPLAY[Math.floor(Math.random() * TREM.constant.URL.REPLAY.length)]
   //   : TREM.constant.URL.LB[Math.floor(Math.random() * TREM.constant.URL.LB.length)];
 
-  const apiProxyDomain = Config.getInstance().getConfig().apiProxyDomain || 'api.lb.exptech.dev';
+  const apiProxyDomain = Config.getInstance().getConfig().apiProxyDomain || 'api.lb-tpe1.exptech.dev';
 
   const eewDomain = (TREM.variable.play_mode == 2)
-    ? 'api.core.exptech.dev'
+    ? 'api.core-tnn1.exptech.dev'
     : apiProxyDomain;
   const rtsDomain = (TREM.variable.play_mode == 2)
     ? 'api-1.exptech.dev'

@@ -136,14 +136,6 @@ class Config {
 
       fs.writeFileSync(this.configDir, configContent, 'utf8');
       logger.info('Config has been saved to file');
-    }
-    catch (error) {
-      logger.error('Failed to write config:', error);
-    }
-
-    try {
-      fs.writeFileSync(this.configDir, configContent, 'utf8');
-      logger.info('Config has been saved to file');
 
       if (ipcRenderer) {
         ipcRenderer.send('config-updated');

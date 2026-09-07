@@ -10,15 +10,19 @@ get_station_info();
 
 setInterval(get_station_info, 600000);
 
-async function get_station_info() {
+  async function get_station_info() {
   // 清除之前的重試 timeout
   if (retryTimeout) {
     clearTimeout(retryTimeout);
     retryTimeout = null;
   }
 
-  const url = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
-  const ans = await fetchData(`https://${url}/api/v1/trem/station`, TREM.constant.HTTP_TIMEOUT.RESOURCE);
+  const urlBase = TREM.constant.URL.API[Math.floor(Math.random() * TREM.constant.URL.API.length)];
+  const requestUrl = urlBase.startsWith('http') 
+    ? urlBase 
+    : `https://${urlBase}/api/v1/trem/station`;
+
+  const ans = await fetchData(requestUrl, TREM.constant.HTTP_TIMEOUT.RESOURCE);
 
   if (ans && ans.ok) {
     TREM.variable.station = await ans.json();

@@ -22,17 +22,17 @@ class TimeoutManager {
     this.MIN_TIMEOUT = 1000;
     this.MAX_TIMEOUT = 10000;
     this.ADJUST_STEP = 500;
-    this.lastAdjustTime = Date.now();
+    this.lastAdjustTime = now();
     this.failureCount = 0;
   }
 
   adjustTimeouts(data) {
-    const now = Date.now();
-    if (now - this.lastAdjustTime < 2000) {
+    const currentTime = now();
+    if (currentTime - this.lastAdjustTime < 2000) {
       return true;
     }
 
-    this.lastAdjustTime = now;
+    this.lastAdjustTime = currentTime;
 
     if (!data.eew && !data.rts) {
       this.failureCount = Math.min(this.failureCount + 1, 10);
@@ -85,7 +85,7 @@ class TimeoutManager {
     Object.keys(this.originalTimeouts).forEach((type) => {
       TREM.constant.HTTP_TIMEOUT[type] = this.originalTimeouts[type];
     });
-    this.lastAdjustTime = Date.now();
+    this.lastAdjustTime = now();
     this.failureCount = 0;
   }
 }
@@ -147,7 +147,7 @@ class DataManager {
   }
 
   async fetchData() {
-    const localNow = Date.now();
+    const localNow = now();
 
     if (localNow - this.lastFetchTime < TREM.constant.HTTP_TIMEOUT.LOOP) {
       return;
@@ -158,9 +158,8 @@ class DataManager {
     if (TREM.variable.play_mode === 0) {
       this.startSSE();
     }
-
-    // 進入 replay mode 時關閉 SSE
-    if (TREM.variable.play_mode === 3) {
+    else {
+      // 進入 replay / websocket 等其他 mode 時關閉 SSE，恢復 polling
       this.stopSSE();
     }
 
@@ -271,7 +270,7 @@ class DataManager {
             info: { type: TREM.variable.play_mode },
             data: value || {},
           });
-          TREM.variable.cache.last_data_time = Date.now();
+          TREM.variable.cache.last_data_time = now();
         },
         onEew: (data) => {
           if (data == null) {
@@ -343,27 +342,30 @@ class DataManager {
     const EXPIRY_TIME = 240 * 1000;
     const STATUS_3_TIMEOUT = 60 * 1000;
 
-    TREM.variable.data.eew
-      .filter((item) =>
-        item.eq?.time && (
-          currentTime - item.eq.time > EXPIRY_TIME
-          || item.EewEnd
-          || (item.status === 3 && currentTime - item.status3Time > STATUS_3_TIMEOUT)
-        ),
-      )
-      .forEach((data) => {
-        TREM.variable.events.emit('EewEnd', {
-          info: { type: TREM.variable.play_mode },
-          data: { ...data, EewEnd: true },
-        });
-      });
+    // 1. 找出需要結束的資料
+    const itemsToEnd = TREM.variable.data.eew.filter((item) =>
+      item.eq?.time && (
+        currentTime - item.eq.time > EXPIRY_TIME
+        || item.EewEnd
+        || (item.status === 3 && currentTime - item.status3Time > STATUS_3_TIMEOUT)
+      ),
+    );
 
+    // 2. 先從主陣列中移除這些資料
     TREM.variable.data.eew = TREM.variable.data.eew.filter((item) =>
       item.eq?.time
       && currentTime - item.eq.time <= EXPIRY_TIME
       && !item.EewEnd
       && !(item.status === 3 && currentTime - item.status3Time > STATUS_3_TIMEOUT),
     );
+
+    // 3. 移除後再發出 EewEnd 事件，確保 Listeners 看到的是乾淨的狀態
+    itemsToEnd.forEach((data) => {
+      TREM.variable.events.emit('EewEnd', {
+        info: { type: TREM.variable.play_mode },
+        data: { ...data, EewEnd: true },
+      });
+    });
 
     Array.from(newData || {}).forEach((data) => {
       if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) {
@@ -388,11 +390,18 @@ class DataManager {
             TREM.variable.events.emit('EewRelease', eventData);
           }
           return;
+        } else {
+          // It's in cache but not in active list. Treat as new to avoid crash.
+          const method = data.author === 'trem' ? 'nsspe' : 'eew';
+          TREM.variable.data.eew.push({ ...data, method });
+          TREM.variable.events.emit('EewRelease', eventData);
+          return;
         }
       }
 
       if (TREM.variable.cache.eew_last[data.id] && TREM.variable.cache.eew_last[data.id].serial < data.serial) {
         TREM.variable.cache.eew_last[data.id].serial = data.serial;
+        TREM.variable.cache.eew_last[data.id].last_time = currentTime;
 
         if (data.status === 3) {
           data.status3Time = currentTime;
@@ -450,27 +459,35 @@ class DataManager {
     const currentTime = now();
     const EXPIRY_TIME = 600 * 1000;
 
-    TREM.variable.data.intensity
-      .filter((item) =>
-        item.id
-        && (currentTime - item.id > EXPIRY_TIME || item.IntensityEnd),
-      )
-      .forEach((data) => {
-        TREM.variable.events.emit('IntensityEnd', {
-          info: { type: TREM.variable.play_mode },
-          data: { ...data, IntensityEnd: true },
-        });
-      });
+    // a) Find itemsToEnd (expired or have IntensityEnd set)
+    const itemsToEnd = TREM.variable.data.intensity.filter((item) => {
+      const itemTime = item.time || item.id;
+      return itemTime && (currentTime - itemTime > EXPIRY_TIME || item.IntensityEnd);
+    });
 
-    TREM.variable.data.intensity = TREM.variable.data.intensity.filter((item) =>
-      item.id
-      && currentTime - item.id <= EXPIRY_TIME
-      && !item.IntensityEnd,
-    );
+    // b) Filter the main array
+    TREM.variable.data.intensity = TREM.variable.data.intensity.filter((item) => {
+      const itemTime = item.time || item.id;
+      return itemTime && currentTime - itemTime <= EXPIRY_TIME && !item.IntensityEnd;
+    });
+
+    // c) Emit IntensityEnd
+    itemsToEnd.forEach((data) => {
+      TREM.variable.events.emit('IntensityEnd', {
+        info: { type: TREM.variable.play_mode },
+        data: { ...data, IntensityEnd: true },
+      });
+    });
 
     Array.from(newData || {}).forEach((data) => {
-      if (!data.id || currentTime - data.id > EXPIRY_TIME || data.IntensityEnd) {
+      const dataTime = Number(data.time || data.id);
+      if (!data.id || isNaN(dataTime) || currentTime - dataTime > EXPIRY_TIME || data.IntensityEnd) {
         return;
+      }
+
+      // Ensure data.time is set
+      if (data.time === undefined) {
+        data.time = dataTime;
       }
 
       const existingIndex = TREM.variable.data.intensity.findIndex((item) => item.id == data.id);
@@ -488,11 +505,18 @@ class DataManager {
           TREM.variable.data.intensity.push(data);
           TREM.variable.events.emit('IntensityRelease', eventData);
           return;
+        } else {
+          // It's in cache but not in active list. Treat as new to avoid crash.
+          TREM.variable.data.intensity.push(data);
+          TREM.variable.events.emit('IntensityRelease', eventData);
+          return;
         }
       }
 
       if (TREM.variable.cache.intensity_last[data.id] && TREM.variable.cache.intensity_last[data.id].serial < data.serial) {
         TREM.variable.cache.intensity_last[data.id].serial = data.serial;
+        TREM.variable.cache.intensity_last[data.id].last_time = currentTime;
+
         if (this.isAreaDifferent(data.area, TREM.variable.data.intensity[existingIndex].area)) {
           TREM.variable.events.emit('IntensityUpdate', eventData);
           TREM.variable.data.intensity[existingIndex] = data;
@@ -512,27 +536,35 @@ class DataManager {
     const currentTime = now();
     const EXPIRY_TIME = 600 * 1000;
 
-    TREM.variable.data.lpgm
-      .filter((item) =>
-        item.time
-        && (currentTime - item.time > EXPIRY_TIME || item.LpgmEnd),
-      )
-      .forEach((data) => {
-        TREM.variable.events.emit('LpgmEnd', {
-          info: { type: TREM.variable.play_mode },
-          data: { ...data, LpgmEnd: true },
-        });
-      });
+    // a) Find itemsToEnd (expired or have LpgmEnd set)
+    const itemsToEnd = TREM.variable.data.lpgm.filter((item) => {
+      const itemTime = item.time;
+      return itemTime && (currentTime - itemTime > EXPIRY_TIME || item.LpgmEnd);
+    });
 
-    TREM.variable.data.lpgm = TREM.variable.data.lpgm.filter((item) =>
-      item.time
-      && currentTime - item.time <= EXPIRY_TIME
-      && !item.LpgmEnd,
-    );
+    // b) Filter the main array
+    TREM.variable.data.lpgm = TREM.variable.data.lpgm.filter((item) => {
+      const itemTime = item.time;
+      return itemTime && currentTime - itemTime <= EXPIRY_TIME && !item.LpgmEnd;
+    });
+
+    // c) Emit LpgmEnd
+    itemsToEnd.forEach((data) => {
+      TREM.variable.events.emit('LpgmEnd', {
+        info: { type: TREM.variable.play_mode },
+        data: { ...data, LpgmEnd: true },
+      });
+    });
 
     Array.from(newData || {}).forEach((data) => {
-      if (!data.id || data.LpgmEnd) {
+      const dataTime = Number(data.time || data.id);
+      if (!data.id || isNaN(dataTime) || currentTime - dataTime > EXPIRY_TIME || data.LpgmEnd) {
         return;
+      }
+
+      // Ensure data.time is set
+      if (data.time === undefined) {
+        data.time = dataTime;
       }
 
       const existingIndex = TREM.variable.data.lpgm.findIndex((item) => item.id == data.id);
@@ -542,10 +574,14 @@ class DataManager {
       };
 
       if (existingIndex == -1) {
+        // New item
         data.id = Number(data.id);
-        data.time = now();
+        // data.time is already set above to dataTime
         TREM.variable.data.lpgm.push(data);
         TREM.variable.events.emit('LpgmRelease', eventData);
+      } else {
+        // Update existing item
+        TREM.variable.data.lpgm[existingIndex] = data;
       }
     });
 

@@ -126,7 +126,7 @@ class Main {
   initapiProxyDomain() {
     const input = document.getElementById('api-proxy-domain-input');
     const resetBtn = document.getElementById('api-proxy-domain-reset');
-    const DEFAULT_DOMAIN = 'api.lb.exptech.dev';
+    const DEFAULT_DOMAIN = 'api.lb-tpe1.exptech.dev';
 
     if (input && resetBtn) {
       const configInstance = Config.getInstance();

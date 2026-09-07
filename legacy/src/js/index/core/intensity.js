@@ -70,7 +70,7 @@ function show_intensity(ans) {
     data: TREM.variable.data.rts,
   });
 
-  TREM.variable.cache.intensity.time = ans.data.id;
+  TREM.variable.cache.intensity.time = ans.data.time || ans.data.id;
   TREM.variable.cache.intensity.max = ans.data.max;
 
   generateReportBoxItems(TREM.variable.data.report, TREM.variable.cache.intensity.time ? { time: TREM.variable.cache.intensity.time, intensity: TREM.variable.cache.intensity.max } : null);

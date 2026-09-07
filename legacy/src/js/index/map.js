@@ -18,7 +18,7 @@ function initMap(delay = 3000) {
           sources: {
             map: {
               type: 'vector',
-              url: 'https://api-1.exptech.dev/api/v1/map/tiles/tiles.json',
+              url: 'https://static.lb.exptech.dev/api/v1/map/tiles/tiles.json',
               tileSize: 512,
               buffer: 64,
             },

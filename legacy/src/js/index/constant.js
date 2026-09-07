@@ -85,12 +85,10 @@ const TREM = {
     SHOW_TREM_EEW: false,
 
     URL: {
-      API: ['api-1.exptech.dev', 'api-2.exptech.dev'],
+      API: ['api-1.exptech.dev', 'https://raw.githubusercontent.com/ExpTechTW/API/refs/heads/main/resource/station.json'],
       LB: [
-        'lb-1.exptech.dev',
-        'lb-2.exptech.dev',
-        'lb-3.exptech.dev',
-        'lb-4.exptech.dev',
+        'api.lb-tpe1.exptech.dev',
+        'api.lb-khh1.exptech.dev',
       ],
       REPLAY: ['api-1.exptech.dev'],
     },

@@ -337,7 +337,8 @@ class AudioManager {
 
     Object.entries(ans.data.list).forEach(([countyName, countyData]) => {
       Object.entries(countyData.town).forEach(([townName, townData]) => {
-        intensityStations[townData.int].push(`${countyName}${townName}`);
+        const stationList = intensityStations[townData.int] ?? (intensityStations[townData.int] = []);
+        stationList.push(`${countyName}${townName}`);
       });
     });
 
@@ -377,7 +378,7 @@ class AudioManager {
       TREM.constant.AUDIO.INTENSITY.play();
     }
 
-    const time = formatToChineseTime(ans.data.id);
+    const time = formatToChineseTime(ans.data.time || ans.data.id);
 
     let maxIntensity = 0;
     let maxCity = '';
@@ -446,7 +447,7 @@ class AudioManager {
 
     let ttsText = [
       '長週期第震動觀測資訊',
-      formatToChineseTime(ans.data.id),
+      formatToChineseTime(ans.data.time || ans.data.id),
       `${maxCity}觀測到最大長週期地震動階級${maxIntensity}`,
     ].join('，');
 
@@ -490,7 +491,7 @@ class AudioManager {
 
     if (TREM.variable.cache.intensity.max < ans.data.max) {
       TREM.variable.speech.speak({ text: `震度速報，震度${int_to_string(city_intensity_list.intensity).replace('級', '')}，${city_intensity_list.cities.join('、')}`, queue: true });
-      const notification = new Notification(`📨 震度速報 [${formatTimestamp(ans.data.id)}]`, {
+      const notification = new Notification(`📨 震度速報 [${formatTimestamp(ans.data.time || ans.data.id)}]`, {
         body: `震度${int_to_string(city_intensity_list.intensity).replace('級', '')} ${city_intensity_list.cities.join('、')}`,
         icon: '../TREM.ico',
       });

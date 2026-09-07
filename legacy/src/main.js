@@ -53,7 +53,7 @@ function updateAutoLaunchSetting(value) {
 }
 
 function createWindow() {
-  const winState = store.get('mainWindowWindowState', { width: 1280, height: 815 });
+  const winState = store.get('mainWindowWindowState', { width: 1280, height: 815, x: 0, y: 0 });
 
   win = new BrowserWindow({
     title: 'TREM Lite',
@@ -213,9 +213,13 @@ function createPiPWindow() {
     return;
   }
 
+  const pipState = store.get('pipWindowState', { width: 276, height: 147, x: 0, y: 0 });
+
   pipWindow = new BrowserWindow({
-    width: 276,
-    height: 147,
+    width: pipState.width,
+    height: pipState.height,
+    x: pipState.x,
+    y: pipState.y,
     minWidth: 276,
     maxWidth: 400,
     icon: 'TREM.ico',
@@ -239,8 +243,11 @@ function createPiPWindow() {
   pipWindow.setAspectRatio(1.87);
 
   pipWindow.setMaximizable(false);
-  pipWindow.setPosition(0, 0);
   pipWindow.setIgnoreMouseEvents(false);
+
+  pipWindow.on('close', () => {
+    store.set('pipWindowState', pipWindow.getBounds());
+  });
 
   pipWindow.on('closed', () => pipWindow = null);
 
@@ -254,7 +261,7 @@ function createSettingWindow() {
     return SettingWindow.focus();
   }
 
-  const settingState = store.get('settingWindowWindowState', { width: 970, height: 590 });
+  const settingState = store.get('settingWindowWindowState', { width: 970, height: 590, x: 0, y: 0 });
 
   SettingWindow = new BrowserWindow({
     title: 'TREM-Lite Setting',
@@ -632,9 +639,13 @@ function restart() {
 const pluginWindows = new Map();
 
 function createPluginWindow(pluginId, htmlPath, options = {}) {
+  const pluginState = store.get(`pluginWindowState_${pluginId}`, { width: 800, height: 600, x: 0, y: 0 });
+
   const defaultOptions = {
-    width: 800,
-    height: 600,
+    width: pluginState.width,
+    height: pluginState.height,
+    x: pluginState.x,
+    y: pluginState.y,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -660,6 +671,10 @@ function createPluginWindow(pluginId, htmlPath, options = {}) {
   };
 
   pluginWindows.set(pluginWindow.id, windowInfo);
+
+  pluginWindow.on('close', () => {
+    store.set(`pluginWindowState_${pluginId}`, pluginWindow.getBounds());
+  });
 
   pluginWindow.on('closed', () => {
     pluginWindows.delete(pluginWindow.id);
@@ -690,11 +705,6 @@ ipcMain.on('open-plugin-window', (event, data) => {
 
   try {
     const pluginWindow = createPluginWindow(pluginId, htmlPath, options);
-    pluginWindows.set(pluginId, {
-      window: pluginWindow,
-      pluginId,
-    });
-
     event.reply('plugin-window-opened', {
       success: true,
       windowId: pluginWindow.id,
@@ -724,7 +734,7 @@ ipcMain.on('close-plugin-window', (event, windowId) => {
 });
 
 ipcMain.on('close-plugin-windows', (event, pluginId) => {
-  for (const [windowInfo] of pluginWindows.entries()) {
+  for (const [windowId, windowInfo] of pluginWindows.entries()) {
     if (windowInfo.pluginId === pluginId) {
       windowInfo.window.close();
     }
@@ -737,7 +747,7 @@ ipcMain.on('close-plugin-windows', (event, pluginId) => {
 
 ipcMain.on('get-plugin-windows', (event, pluginId) => {
   const windows = Array.from(pluginWindows.entries())
-    .filter(([info]) => info.pluginId === pluginId)
+    .filter(([windowId, info]) => info.pluginId === pluginId)
     .map(([windowId, info]) => ({
       windowId,
       htmlPath: info.htmlPath,
@@ -821,9 +831,13 @@ ipcMain.on('open-yaml-editor', (event, filePath) => {
     return;
   }
 
+  const yamlState = store.get('yamlEditorWindowState', { width: 1200, height: 800, x: 0, y: 0 });
+
   yamlEditorWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: yamlState.width,
+    height: yamlState.height,
+    x: yamlState.x,
+    y: yamlState.y,
     minWidth: 800,
     minHeight: 600,
     frame: false,
@@ -843,6 +857,7 @@ ipcMain.on('open-yaml-editor', (event, filePath) => {
   });
 
   yamlEditorWindow.on('close', () => {
+    store.set('yamlEditorWindowState', yamlEditorWindow.getBounds());
     yamlEditorWindow = null;
   });
 });
