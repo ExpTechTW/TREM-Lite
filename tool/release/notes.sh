@@ -71,26 +71,35 @@ language_name() { # <locale>
   esac
 }
 
-# Platform marker.
+# Which platforms an entry applies to, always stated.
 #
-# **Deliberately narrower than DPIP's**, which draws an icon on every entry
-# because an Android/iOS split is common there and silence would be ambiguous.
-# TREM-Lite's split is web vs desktop, and nearly every change is shared — so
-# tagging all of them would put the same two words on 95% of the lines and
-# teach readers to skip the tag entirely. Here a marker means "this one is
-# narrower than usual", which is the thing worth reading. commit.md says to
-# omit the trailer when web and desktop are both affected, so an untagged entry
-# is a statement, not an omission.
+# A `Platform:` trailer narrows it; without one the change is everywhere, and
+# every marker is drawn. Marking only the narrowed entries would leave every
+# other line ambiguous — a reader cannot tell "applies to all" from "nobody
+# said", and those are different claims.
+#
+# Emoji rather than DPIP's repo-hosted SVG badges: nothing in TREM-Lite reads
+# these notes back offline, which is the constraint that made DPIP host its own
+# files, so a character that every renderer already has beats four SVGs and
+# four raw.githubusercontent requests. They also need no theme: an `<img>`
+# inherits none, and these are legible on either backdrop.
+readonly TAG_WEB='🌐'
+readonly TAG_WINDOWS='🪟'
+readonly TAG_MACOS='🍎'
+readonly TAG_LINUX='🐧'
+readonly TAG_DESKTOP="$TAG_WINDOWS$TAG_MACOS$TAG_LINUX"
+
 platform_tag() { # <sha>
   case "$(git log -1 --format=%b "$1" |
     sed -n 's/^[Pp]latform: *\([a-zA-Z]*\).*/\1/p' | head -n 1 |
     tr '[:upper:]' '[:lower:]')" in
-  web) printf '`Web` ' ;;
-  desktop) printf '`桌面` ' ;;
-  macos) printf '`macOS` ' ;;
-  windows) printf '`Windows` ' ;;
-  linux) printf '`Linux` ' ;;
-  *) ;;
+  web) printf '%s ' "$TAG_WEB" ;;
+  desktop) printf '%s ' "$TAG_DESKTOP" ;;
+  macos) printf '%s ' "$TAG_MACOS" ;;
+  windows) printf '%s ' "$TAG_WINDOWS" ;;
+  linux) printf '%s ' "$TAG_LINUX" ;;
+  # No trailer: web and every desktop OS.
+  *) printf '%s%s ' "$TAG_WEB" "$TAG_DESKTOP" ;;
   esac
 }
 

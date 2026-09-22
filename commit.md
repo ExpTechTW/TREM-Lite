@@ -174,7 +174,18 @@ Fix(en-US): desktop window capture no longer captures app sound unexpectedly
 Web 與 desktop 都受影響就不加。只改 Tauri，但三個桌面作業系統都受影響時使用
 `desktop`，不要任選其中一個 OS。
 
-trailer 的值由閘門驗證（打錯會被擋下，而不是悄悄從 release note 消失），但尚未轉成 release note 圖示。
+trailer 的值由閘門驗證 —— 打錯會被擋下，而不是悄悄從 release note 消失。
+
+**發佈說明的每一條都會標平台**，不只被收窄的那些：
+
+| trailer | 標記 |
+|---|---|
+| 不加 | 🌐🪟🍎🐧 |
+| `desktop` | 🪟🍎🐧 |
+| `web` | 🌐 |
+| `windows` / `macos` / `linux` | 🪟 / 🍎 / 🐧 |
+
+只標被收窄的那些，會讓其他每一行都變得有歧義 —— 讀的人分不出「全平台都有」和「沒人講」，而這是兩種不同的主張。
 
 ---
 
