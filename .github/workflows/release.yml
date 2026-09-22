@@ -240,3 +240,40 @@ jobs:
           fi
           cat /tmp/notes.md
           gh release edit "$TAG" --notes-file /tmp/notes.md
+
+  # A snapshot whose build failed leaves nothing behind — neither its tag nor a
+  # half-populated release.
+  #
+  # Not tidiness. The tag is pushed before the build starts, so a failed run
+  # would otherwise leave a tag no release ever pointed at, and the *next*
+  # snapshot's note is a delta from the nearest tag: it would silently leave
+  # out every entry the failed one carried. DPIP accepts that and deletes such
+  # tags by hand; here the run cleans up after itself.
+  #
+  # A release tag is never touched: a human pushed it, and a human decides.
+  discard:
+    needs: [version, build]
+    # `version` must have succeeded: that job pushes the tag, so success is what
+    # proves the tag being deleted is the one this run created. A failure
+    # earlier than that would otherwise delete a name some other run owns.
+    if: >-
+      (failure() || cancelled())
+      && needs.version.result == 'success'
+      && needs.version.outputs.is_release == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete the failed snapshot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          # With `fail-fast: false` some targets may already have uploaded,
+          # creating the release; the others then failed. Take both away.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+          else
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
+          fi
+          echo "discarded $TAG — the next snapshot reuses its name"
