@@ -133,6 +133,10 @@ scope 選填，使用小寫。常用範圍：
 使用者可見的 commit 至少要有一組 `zh-Hant` 與 `en-US`，而且兩個語言的條目數及順序
 必須一致。
 
+**這些條目會原文公開。** 推上 `main` 後大約 12 分鐘，快照發布，`zh-Hant` 條目會出現在
+GitHub release 與 Discord 公告上；正式版在人工發布時公告。沒有任何條目的快照不公告。
+條目寫的是使用者讀得懂的結果，不是給開發者看的實作筆記。
+
 ```text
 perf(map): reduce terrain redraws while panning
 
