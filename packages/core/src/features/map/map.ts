@@ -39,6 +39,10 @@ function buildMap(container: HTMLElement): MlMap {
   registerMapProtocol();
   return new maplibregl.Map({
     container,
+    // MapLibre 5 asks for the discrete GPU by default, and on a dual-GPU
+    // laptop WebKit keeps it powered for as long as the map exists, drawing or
+    // not. The integrated GPU renders this map identically.
+    canvasContextAttributes: { powerPreference: "default" },
     style: {
       version: 8,
       name: "ExpTech Studio",
