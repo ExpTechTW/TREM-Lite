@@ -21,8 +21,6 @@
  *   offer an endless stream, but the call still routes through this layer so
  *   there is exactly one place that knows how the app reaches the network.
  */
-import { invoke } from "@tauri-apps/api/core";
-
 import { inTauri } from "@/lib/env";
 
 import { tauriBackend } from "./tauriBackend";
@@ -33,12 +31,6 @@ export { HttpError, HttpResponse } from "./types";
 export type { HttpMeta, HttpMethod, HttpOptions } from "./types";
 
 const backend: HttpBackend = inTauri ? tauriBackend : webBackend;
-
-export interface HttpCacheStats {
-  entries: number;
-  bytes: number;
-  maxBytes: number;
-}
 
 export const http = {
   /** Buffered request. Throws {@link HttpError} on timeout/network failure. */
@@ -57,12 +49,6 @@ export const http = {
     }
   },
 
-  /** Buffered request as raw bytes. Throws on failure or a non-2xx status. */
-  async bytes(url: string, options: HttpOptions = {}): Promise<Uint8Array> {
-    const res = await backend.request(url, options);
-    if (!res.ok) throw new HttpError(`HTTP ${res.status}: ${url}`, "NETWORK_ERROR");
-    return res.bytes;
-  },
 
   /**
    * Long-lived response for SSE. Never cached, no timeout — the caller owns
@@ -84,24 +70,6 @@ export const http = {
     return res.bytes;
   },
 
-  /** Cache occupancy, for the settings/debug surface. `null` off-desktop. */
-  async cacheStats(): Promise<HttpCacheStats | null> {
-    if (!inTauri) return null;
-    try {
-      return await invoke<HttpCacheStats>("http_cache_stats");
-    } catch {
-      return null;
-    }
-  },
-
-  async clearCache(): Promise<void> {
-    if (!inTauri) return;
-    try {
-      await invoke("http_cache_clear");
-    } catch {
-      /* clearing a cache is best-effort */
-    }
-  },
 };
 
 /* ------------------------------------------------------------------------ *
@@ -109,11 +77,8 @@ export const http = {
  *
  * These keep the shape the call sites used before the proxy existed
  * (`fetchData` / `withController` / `fetchJson`). New code should prefer the
- * `http` object above, which exposes the cache controls.
+ * `http` object above.
  * ------------------------------------------------------------------------ */
-
-/** @deprecated Use {@link HttpError}. */
-export const FetchError = HttpError;
 
 export interface Controlled {
   execute: () => Promise<HttpResponse>;

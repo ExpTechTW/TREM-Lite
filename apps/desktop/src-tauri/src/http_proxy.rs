@@ -318,27 +318,3 @@ pub async fn http_request(
     };
     Ok(frame(&meta, &body))
 }
-
-#[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CacheStatsPayload {
-    entries: i64,
-    bytes: i64,
-    max_bytes: i64,
-}
-
-#[tauri::command]
-pub fn http_cache_stats(state: State<'_, ProxyState>) -> Result<CacheStatsPayload, String> {
-    let stats = state.cache.stats();
-    Ok(CacheStatsPayload {
-        entries: stats.entries,
-        bytes: stats.bytes,
-        max_bytes: stats.max_bytes,
-    })
-}
-
-#[tauri::command]
-pub fn http_cache_clear(state: State<'_, ProxyState>) -> Result<(), String> {
-    state.cache.clear();
-    Ok(())
-}

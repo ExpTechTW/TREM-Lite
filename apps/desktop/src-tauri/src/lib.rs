@@ -149,8 +149,6 @@ pub fn run() {
             config::config_set,
             config::config_reset,
             http_proxy::http_request,
-            http_proxy::http_cache_stats,
-            http_proxy::http_cache_clear,
             math::eew_area_pga,
             ntp::ntp_sync,
             updater::update_check,

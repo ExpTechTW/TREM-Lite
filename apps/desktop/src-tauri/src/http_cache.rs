@@ -133,17 +133,15 @@ impl StoredResponse {
     }
 }
 
+#[cfg(test)]
 pub struct CacheStats {
     pub entries: i64,
     pub bytes: i64,
-    pub max_bytes: i64,
 }
 
 enum WriteOp {
     Put(Box<PreparedWrite>),
     Touch(String),
-    /// Clear everything; the ack lets a caller wait for completion.
-    Clear(SyncSender<()>),
     /// Round-trip probe: acked once the queue ahead of it has been applied.
     Sync(SyncSender<()>),
 }
@@ -247,8 +245,9 @@ impl ReaderPool {
 pub struct HttpCache {
     readers: ReaderPool,
     writes: Sender<WriteOp>,
-    /// Running total of `bytes`, maintained by the writer and readable by
-    /// anyone without touching the database.
+    /// Running total of `bytes`, maintained by the writer. Read here only by
+    /// the tests, which check the accounting eviction depends on.
+    #[cfg_attr(not(test), allow(dead_code))]
     used: Arc<AtomicI64>,
     max_bytes: i64,
 }
@@ -366,7 +365,8 @@ impl HttpCache {
         let _ = self.writes.send(WriteOp::Put(Box::new(prepared)));
     }
 
-    pub fn stats(&self) -> CacheStats {
+    #[cfg(test)]
+    fn stats(&self) -> CacheStats {
         let entries = self
             .readers
             .with(|conn| {
@@ -377,15 +377,6 @@ impl HttpCache {
         CacheStats {
             entries,
             bytes: self.used.load(Ordering::Relaxed),
-            max_bytes: self.max_bytes,
-        }
-    }
-
-    /// Empty the cache, waiting for the writer to finish.
-    pub fn clear(&self) {
-        let (ack, done) = std::sync::mpsc::sync_channel(0);
-        if self.writes.send(WriteOp::Clear(ack)).is_ok() {
-            let _ = done.recv();
         }
     }
 
@@ -434,7 +425,6 @@ fn apply_batch(
     // of keys over and over, and one UPDATE per key per batch is enough.
     let mut touches: Vec<String> = Vec::new();
     let mut puts: Vec<Box<PreparedWrite>> = Vec::new();
-    let mut clear = false;
 
     for op in batch {
         match op {
@@ -444,10 +434,6 @@ fn apply_batch(
                     touches.push(k);
                 }
             }
-            WriteOp::Clear(ack) => {
-                clear = true;
-                acks.push(ack);
-            }
             WriteOp::Sync(ack) => acks.push(ack),
         }
     }
@@ -456,15 +442,6 @@ fn apply_batch(
         Ok(tx) => tx,
         Err(_) => return,
     };
-
-    if clear {
-        if tx.execute("DELETE FROM entries", []).is_ok() {
-            used.store(0, Ordering::Relaxed);
-        }
-        // Anything queued alongside a clear is discarded with it.
-        puts.clear();
-        touches.clear();
-    }
 
     let mut delta: i64 = 0;
     for p in &puts {
@@ -735,10 +712,6 @@ mod tests {
             "replacing a key should not double the total ({after_first} -> {after_replace})"
         );
         assert_eq!(cache.stats().entries, 1);
-
-        cache.clear();
-        assert_eq!(cache.stats().bytes, 0);
-        assert_eq!(cache.stats().entries, 0);
         cleanup(&path);
     }
 }
