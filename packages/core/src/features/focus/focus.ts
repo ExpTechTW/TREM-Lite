@@ -1,5 +1,5 @@
 // Ported from legacy/src/js/index/core/focus.js
-import maplibregl from "maplibre-gl";
+import maplibregl, { type FitBoundsOptions, type LngLatBoundsLike, type Map as MlMap } from "maplibre-gl";
 
 import { getConfig } from "@/lib/config";
 import { MAP } from "@/lib/constants";
@@ -145,7 +145,38 @@ export function focus_reset(isBtn?: boolean): void {
     setLock(false);
   }
 
-  variable.map?.fitBounds(MAP.BOUNDS, MAP.OPTIONS);
+  if (variable.map) fitBounds(variable.map, MAP.BOUNDS, MAP.OPTIONS);
+}
+
+/**
+ * `map.fitBounds`, unless the camera is already where it would go.
+ *
+ * MapLibre animates even a move of zero length: a `fitBounds` to the current
+ * camera still runs its whole `duration`, redrawing the map every frame. It was
+ * called on every RTS frame while a report was on screen and every three
+ * seconds while focusing, which kept the map rendering for half of each idle
+ * second. `fitBounds` only ever changes centre, zoom and bearing — padding is
+ * folded into those by `cameraForBounds` — so when all three are already there,
+ * skipping it leaves the screen exactly as it was. The tolerances are far below
+ * a pixel; they only absorb the rounding an animation's last frame leaves.
+ */
+function fitBounds(map: MlMap, bounds: LngLatBoundsLike, options: FitBoundsOptions): void {
+  if (!map.isMoving()) {
+    const target = map.cameraForBounds(bounds, options);
+    if (target?.center !== undefined && target.zoom !== undefined) {
+      const center = map.getCenter();
+      const want = maplibregl.LngLat.convert(target.center);
+      if (
+        Math.abs(map.getZoom() - target.zoom) < 1e-6 &&
+        Math.abs(center.lng - want.lng) < 1e-9 &&
+        Math.abs(center.lat - want.lat) < 1e-9 &&
+        map.getBearing() === (target.bearing ?? 0)
+      ) {
+        return;
+      }
+    }
+  }
+  map.fitBounds(bounds, options);
 }
 
 /** Fit the map to the given coordinates with padded framing. */
@@ -156,7 +187,8 @@ export function updateMapBounds(coordinates: Coord[], options: FitOptions = {}):
     bounds.extend([coord.lon, coord.lat]);
   });
 
-  variable.map?.fitBounds(bounds, {
+  if (!variable.map) return;
+  fitBounds(variable.map, bounds, {
     padding: {
       top: options.paddingTop || 150,
       bottom: options.paddingBottom || 150,

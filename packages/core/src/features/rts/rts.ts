@@ -1,9 +1,10 @@
 // Ported from legacy/src/js/index/core/rts.js
-import { type ExpressionSpecification, type GeoJSONSource } from "maplibre-gl";
+import { type ExpressionSpecification } from "maplibre-gl";
 
 import { COLOR, SHOW_REPORT, SHOW_TREM_EEW } from "@/lib/constants";
 import { getConfig } from "@/lib/config";
 import { events } from "@/lib/events";
+import { setPoints } from "@/lib/mapSource";
 import { variable } from "@/lib/variable";
 import { ui } from "@/lib/variable.ui";
 import type { ReportListItem, RtsStation } from "@/lib/types";
@@ -409,10 +410,7 @@ export function initRts(): void {
       ) {
         if (variable.cache.bounds.report) {
           variable.cache.bounds.report = [];
-          const reportSrc = variable.map?.getSource("report-markers-geojson") as
-            | GeoJSONSource
-            | undefined;
-          reportSrc?.setData({ type: "FeatureCollection", features: [] });
+          if (variable.map) setPoints(variable.map, "report-markers-geojson", []);
         }
       } else {
         if (SHOW_REPORT) {
@@ -428,19 +426,9 @@ export function initRts(): void {
     }
 
     if (variable.map) {
-      const map = variable.map;
-      (map.getSource("rts") as GeoJSONSource | undefined)?.setData({
-        type: "FeatureCollection",
-        features: data_list,
-      });
-      (map.getSource("markers-geojson") as GeoJSONSource | undefined)?.setData({
-        type: "FeatureCollection",
-        features: data_alert_list,
-      });
-      (map.getSource("markers-geojson-0") as GeoJSONSource | undefined)?.setData({
-        type: "FeatureCollection",
-        features: data_alert_0_list,
-      });
+      setPoints(variable.map, "rts", data_list);
+      setPoints(variable.map, "markers-geojson", data_alert_list);
+      setPoints(variable.map, "markers-geojson-0", data_alert_0_list);
     }
 
     const int_list: IntEntry[] = ans.data?.int ?? [];

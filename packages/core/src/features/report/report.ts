@@ -2,11 +2,11 @@
 // The scrollable list UI moves to a React overlay (features/report/ReportList.tsx);
 // this module keeps the data fetching, map points, and lifecycle events.
 import { openUrl as openExternal } from "@tauri-apps/plugin-opener";
-import type { GeoJSONSource } from "maplibre-gl";
 
 import { REPORT_LIMIT, HTTP_TIMEOUT, SHOW_REPORT } from "@/lib/constants";
 import { url, reportFailure, reportSuccess } from "@/lib/endpoints";
 import { events } from "@/lib/events";
+import { setPoints } from "@/lib/mapSource";
 import { fetchJson } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
@@ -134,7 +134,7 @@ export function showReportPoint(data: ReportListItem | null): void {
   if (!data || !variable.map) return;
   const map = variable.map;
 
-  const features: GeoJSON.Feature[] = [];
+  const features: GeoJSON.Feature<GeoJSON.Point>[] = [];
   variable.cache.bounds.report = [];
 
   for (const city of Object.keys(data.list ?? {})) {
@@ -157,8 +157,7 @@ export function showReportPoint(data: ReportListItem | null): void {
   });
 
   updateMapBounds(variable.cache.bounds.report as never);
-  const src = map.getSource("report-markers-geojson") as GeoJSONSource | undefined;
-  src?.setData({ type: "FeatureCollection", features });
+  setPoints(map, "report-markers-geojson", features);
 }
 
 async function refresh() {
