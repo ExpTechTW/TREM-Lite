@@ -38,7 +38,6 @@ function linkSignals(timeout: number | undefined, external: AbortSignal | undefi
 async function run(url: string, options: HttpOptions): Promise<Response> {
   const link = linkSignals(options.timeout, options.signal);
   try {
-     
     return await fetch(url, {
       method: options.method ?? "GET",
       headers: options.headers,

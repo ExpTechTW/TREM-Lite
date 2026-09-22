@@ -7,7 +7,6 @@
  * buffer, which an endless stream never produces.
  */
 import { invoke } from "@tauri-apps/api/core";
- 
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
 import { HttpError, HttpResponse, type HttpBackend, type HttpMeta } from "./types";
