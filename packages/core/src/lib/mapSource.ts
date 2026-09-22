@@ -5,24 +5,21 @@ import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 const sent = new WeakMap<GeoJSONSource, string>();
 
 /**
- * `setData` a point source, unless it would receive exactly what it holds.
+ * `setData` a source, unless it would receive exactly what it already holds.
  *
  * Every `setData` reloads the source's tiles on a worker and marks label
- * placement stale, and the RTS frame re-sent unchanged — usually empty — data
- * to four sources every second: enough on its own to keep the map redrawing
- * about eighteen frames a second while nothing happened. The signature covers
- * everything a layer can read from a point: its position and its properties.
+ * placement stale, and the RTS frame alone re-sent unchanged — usually empty —
+ * data to four sources every second: enough on its own to keep the map
+ * redrawing about eighteen frames a second while nothing happened. The
+ * serialized features are the signature, so any change at all still goes out.
  *
  * Only correct while every write to a source goes through here; one that
  * bypasses it would leave the remembered signature stale.
  */
-export function setPoints(map: MlMap, id: string, features: GeoJSON.Feature<GeoJSON.Point>[]): void {
+export function setFeatures(map: MlMap, id: string, features: GeoJSON.Feature[]): void {
   const source = map.getSource(id) as GeoJSONSource | undefined;
   if (!source) return;
-  let signature = "";
-  for (const f of features) {
-    signature += `${f.geometry.coordinates.join(",")}${JSON.stringify(f.properties)};`;
-  }
+  const signature = JSON.stringify(features);
   if (sent.get(source) === signature) return;
   sent.set(source, signature);
   source.setData({ type: "FeatureCollection", features });

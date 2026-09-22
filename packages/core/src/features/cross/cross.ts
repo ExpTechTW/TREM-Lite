@@ -167,6 +167,12 @@ export function refresh_cross(show: boolean): void {
     });
   }
 
-  map.moveLayer("cross");
-  map.moveLayer("dots");
+  // Every moveLayer forces a style update and a full label placement, and this
+  // ran every 500 ms whether or not the order had changed. Moving them only
+  // when they are not already the top two ends in the same order.
+  const order = map.getLayersOrder();
+  if (order.at(-2) !== "cross" || order.at(-1) !== "dots") {
+    map.moveLayer("cross");
+    map.moveLayer("dots");
+  }
 }

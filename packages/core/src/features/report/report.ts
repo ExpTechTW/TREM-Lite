@@ -6,7 +6,7 @@ import { openUrl as openExternal } from "@tauri-apps/plugin-opener";
 import { REPORT_LIMIT, HTTP_TIMEOUT, SHOW_REPORT } from "@/lib/constants";
 import { url, reportFailure, reportSuccess } from "@/lib/endpoints";
 import { events } from "@/lib/events";
-import { setPoints } from "@/lib/mapSource";
+import { setFeatures } from "@/lib/mapSource";
 import { fetchJson } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
@@ -134,7 +134,7 @@ export function showReportPoint(data: ReportListItem | null): void {
   if (!data || !variable.map) return;
   const map = variable.map;
 
-  const features: GeoJSON.Feature<GeoJSON.Point>[] = [];
+  const features: GeoJSON.Feature[] = [];
   variable.cache.bounds.report = [];
 
   for (const city of Object.keys(data.list ?? {})) {
@@ -157,7 +157,7 @@ export function showReportPoint(data: ReportListItem | null): void {
   });
 
   updateMapBounds(variable.cache.bounds.report as never);
-  setPoints(map, "report-markers-geojson", features);
+  setFeatures(map, "report-markers-geojson", features);
 }
 
 async function refresh() {

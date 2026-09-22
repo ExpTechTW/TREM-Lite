@@ -4,7 +4,7 @@ import { type ExpressionSpecification } from "maplibre-gl";
 import { COLOR, SHOW_REPORT, SHOW_TREM_EEW } from "@/lib/constants";
 import { getConfig } from "@/lib/config";
 import { events } from "@/lib/events";
-import { setPoints } from "@/lib/mapSource";
+import { setFeatures } from "@/lib/mapSource";
 import { variable } from "@/lib/variable";
 import { ui } from "@/lib/variable.ui";
 import type { ReportListItem, RtsStation } from "@/lib/types";
@@ -410,7 +410,7 @@ export function initRts(): void {
       ) {
         if (variable.cache.bounds.report) {
           variable.cache.bounds.report = [];
-          if (variable.map) setPoints(variable.map, "report-markers-geojson", []);
+          if (variable.map) setFeatures(variable.map, "report-markers-geojson", []);
         }
       } else {
         if (SHOW_REPORT) {
@@ -426,9 +426,9 @@ export function initRts(): void {
     }
 
     if (variable.map) {
-      setPoints(variable.map, "rts", data_list);
-      setPoints(variable.map, "markers-geojson", data_alert_list);
-      setPoints(variable.map, "markers-geojson-0", data_alert_0_list);
+      setFeatures(variable.map, "rts", data_list);
+      setFeatures(variable.map, "markers-geojson", data_alert_list);
+      setFeatures(variable.map, "markers-geojson-0", data_alert_0_list);
     }
 
     const int_list: IntEntry[] = ans.data?.int ?? [];

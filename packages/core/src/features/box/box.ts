@@ -1,8 +1,5 @@
 // Ported from legacy/src/js/index/core/box.js
-import type {
-  ExpressionSpecification,
-  GeoJSONSource,
-} from "maplibre-gl";
+import type { ExpressionSpecification } from "maplibre-gl";
 
 import boxBinUrl from "@/data/box.bin?url";
 import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
@@ -12,6 +9,7 @@ import type { EewData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { distance } from "@/domain/utils";
 import { http } from "@/lib/http";
+import { setFeatures } from "@/lib/mapSource";
 
 // Alert-box polygons, loaded async from the compact binary (out of the JS
 // bundle). Only used during an active alert, long after startup.
@@ -30,21 +28,9 @@ interface BoxFeature {
   properties: { i: number };
 }
 
-interface BoxFeatureCollection {
-  type: "FeatureCollection";
-  features: BoxFeature[];
-}
 
 let box_alert = false;
 
-/** Retrieve the "box-geojson" GeoJSON source if the map is ready. */
-function getBoxSource(): GeoJSONSource | null {
-  const map = variable.map;
-  if (!map) {
-    return null;
-  }
-  return (map.getSource("box-geojson") as GeoJSONSource | undefined) ?? null;
-}
 
 /**
  * True when the EEW S-wave has fully engulfed a box (all four corners inside
@@ -70,28 +56,27 @@ function checkBoxSkip(eew: EewData, area: BinBoxFeature): boolean {
 
 /** Rebuild the box overlay from the latest RTS box intensities. */
 export function refresh_box(show: boolean): void {
-  const boxFeatures: BoxFeature[] = [];
-  const emptyData: BoxFeatureCollection = {
-    type: "FeatureCollection",
-    features: [],
-  };
-
-  if (box_alert) {
-    box_alert = false;
-    getBoxSource()?.setData(emptyData);
-  }
-
+  // One write per tick, of the state the tick ends in. This used to empty the
+  // source first and then fill it again on every visible tick — two tile
+  // reloads every 500 ms, where the first never reached the screen.
+  const map = variable.map;
   const rts = variable.data.rts;
   if (!rts?.box || !Object.keys(rts.box).length) {
+    if (box_alert) {
+      box_alert = false;
+      if (map) setFeatures(map, "box-geojson", []);
+    }
     return;
   }
 
   const trem_alert = variable.data.eew.some((eew) => eew.author == "trem");
   if (!SHOW_TREM_EEW && trem_alert) {
-    getBoxSource()?.setData(emptyData);
+    box_alert = false;
+    if (map) setFeatures(map, "box-geojson", []);
     return;
   }
 
+  const boxFeatures: BoxFeature[] = [];
   if (show) {
     for (const area of boxFeaturesData) {
       const id = area.properties.ID;
@@ -129,10 +114,7 @@ export function refresh_box(show: boolean): void {
 
   boxFeatures.sort((a, b) => (a.properties?.i || 0) - (b.properties?.i || 0));
   box_alert = true;
-  getBoxSource()?.setData({
-    type: "FeatureCollection",
-    features: boxFeatures,
-  });
+  if (map) setFeatures(map, "box-geojson", boxFeatures as unknown as GeoJSON.Feature[]);
 }
 
 /** Register the box overlay source/layer once the map has loaded. */
