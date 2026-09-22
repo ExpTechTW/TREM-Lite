@@ -40,18 +40,16 @@ function checkBoxSkip(eew: EewData, area: BinBoxFeature): boolean {
   if (!eew.dist) {
     return false;
   }
-  let skip = 0;
+  // All four or nothing, so the first corner outside the wave settles it —
+  // which for almost every box is the first corner, not the fourth.
   const coordinates = area.geometry.coordinates[0];
   for (let i = 0; i < 4; i++) {
-    const dist = distance(eew.eq.lat, eew.eq.lon)(
-      coordinates[i][1],
-      coordinates[i][0],
-    );
-    if (eew.dist.s_dist > dist) {
-      skip++;
+    const dist = distance(eew.eq.lat, eew.eq.lon, coordinates[i][1], coordinates[i][0]);
+    if (!(eew.dist.s_dist > dist)) {
+      return false;
     }
   }
-  return skip >= 4;
+  return true;
 }
 
 /** Rebuild the box overlay from the latest RTS box intensities. */

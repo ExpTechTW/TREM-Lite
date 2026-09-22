@@ -24,9 +24,13 @@ export interface PsWaveDist {
 
 export class EEWCalculator {
   private timeTable: TimeTable;
+  /** The table's depths, in `Object.keys` order — which decides ties below. */
+  private depths: number[];
 
   constructor(timeTable: TimeTable) {
     this.timeTable = timeTable;
+    // Once, rather than on every call (every 100 ms per active EEW).
+    this.depths = Object.keys(timeTable).map(Number);
   }
 
   /** Interpolate the P/S wavefront radii (km) reached `now - time` after origin. */
@@ -37,10 +41,7 @@ export class EEWCalculator {
 
     const t = (now - time) / 1000.0;
 
-    const depthKey = this.findClosest(
-      Object.keys(this.timeTable).map(Number),
-      depth,
-    ).toString();
+    const depthKey = this.findClosest(this.depths, depth).toString();
 
     const timeTable = this.timeTable[depthKey];
     let prevTable: TimeTableRow | null = null;

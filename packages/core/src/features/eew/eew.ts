@@ -12,6 +12,7 @@ import { refresh_cross } from "@/features/cross/cross";
 import { mouseDown } from "@/features/focus/focus";
 import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
 import { events } from "@/lib/events";
+import { replaceFeatures, setFeatures } from "@/lib/mapSource";
 import { now } from "@/lib/ntp";
 import type { Ans, EewData } from "@/lib/types";
 import { ui } from "@/lib/variable.ui";
@@ -111,49 +112,55 @@ function createEewLayer(ans: Ans<EewData>): void {
   }
 }
 
-/** Build a 256-point great-circle polygon (km radius) around `center`. */
-function createCircleFeature(
-  center: [number, number],
-  radius: number,
-  steps = 256,
-): GeoJSON.Feature<GeoJSON.Polygon> {
-  const coordinates: number[][][] = [[]];
-  const km = radius;
+/** Vertices per wavefront ring. */
+const RING_STEPS = 256;
 
-  for (let i = 0; i <= steps; i++) {
-    const angle = (i * 360) / steps;
-    const rad = (angle * Math.PI) / 180;
+/**
+ * The sine and cosine of every vertex's bearing, computed once with exactly the
+ * expression the per-vertex loop used, so each value is bit-identical.
+ */
+const BEARING_SIN: number[] = [];
+const BEARING_COS: number[] = [];
+for (let i = 0; i <= RING_STEPS; i++) {
+  const rad = (((i * 360) / RING_STEPS) * Math.PI) / 180;
+  BEARING_SIN.push(Math.sin(rad));
+  BEARING_COS.push(Math.cos(rad));
+}
 
-    const delta = km / 6371;
-    const phi1 = (center[1] * Math.PI) / 180;
-    const lambda1 = (center[0] * Math.PI) / 180;
-    const theta = rad;
+/**
+ * Build a 256-point great-circle polygon (km radius) around `center`.
+ *
+ * Only the bearing changes from vertex to vertex, so everything else is
+ * computed once per ring instead of 257 times. Every expression keeps the
+ * grouping the per-vertex version had — `a + b·cos θ` is `sin φ1·cos δ +
+ * (cos φ1·sin δ)·cos θ` — so every coordinate comes out bit-identical.
+ */
+function createCircleFeature(center: [number, number], radius: number): GeoJSON.Feature<GeoJSON.Polygon> {
+  const delta = radius / 6371;
+  const phi1 = (center[1] * Math.PI) / 180;
+  const lambda1 = (center[0] * Math.PI) / 180;
+  const sinPhi1 = Math.sin(phi1);
+  const cosPhi1 = Math.cos(phi1);
+  const sinDelta = Math.sin(delta);
+  const cosDelta = Math.cos(delta);
+  const a = sinPhi1 * cosDelta;
+  const b = cosPhi1 * sinDelta;
 
-    const phi2 = Math.asin(
-      Math.sin(phi1) * Math.cos(delta) + Math.cos(phi1) * Math.sin(delta) * Math.cos(theta),
-    );
-
+  const ring: number[][] = [];
+  for (let i = 0; i <= RING_STEPS; i++) {
+    const phi2 = Math.asin(a + b * BEARING_COS[i]);
     const lambda2 =
-      lambda1 +
-      Math.atan2(
-        Math.sin(theta) * Math.sin(delta) * Math.cos(phi1),
-        Math.cos(delta) - Math.sin(phi1) * Math.sin(phi2),
-      );
-
-    const lat = (phi2 * 180) / Math.PI;
-    const lng = (lambda2 * 180) / Math.PI;
-
-    coordinates[0].push([lng, lat]);
+      lambda1 + Math.atan2(BEARING_SIN[i] * sinDelta * cosPhi1, cosDelta - sinPhi1 * Math.sin(phi2));
+    ring.push([(lambda2 * 180) / Math.PI, (phi2 * 180) / Math.PI]);
   }
-
-  coordinates[0].push(coordinates[0][0]);
+  ring.push(ring[0]);
 
   return {
     type: "Feature",
     properties: {},
     geometry: {
       type: "Polygon",
-      coordinates,
+      coordinates: [ring],
     },
   };
 }
@@ -361,13 +368,17 @@ export function initEew(): void {
           const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
 
           if (!alert && flash) {
-            sWaveSource.setData(fc([createCircleFeature(center, dist.s_dist)]));
-            sWaveSourceBg.setData(fc(isMouseDown ? [] : [createCircleFeature(center, dist.s_dist)]));
-            pWaveSource.setData(fc([createCircleFeature(center, dist.p_dist)]));
+            const sRing = createCircleFeature(center, dist.s_dist);
+            replaceFeatures(map, `${eew.id}-s-wave`, [sRing]);
+            replaceFeatures(map, `${eew.id}-s-wave-bg`, isMouseDown ? [] : [sRing]);
+            replaceFeatures(map, `${eew.id}-p-wave`, [createCircleFeature(center, dist.p_dist)]);
           } else {
-            sWaveSource.setData(fc());
-            sWaveSourceBg.setData(fc());
-            pWaveSource.setData(fc());
+            // Emptied on every tick of the hidden half of each blink, and on
+            // every tick while a CWA EEW is up; only the first one changes
+            // anything.
+            setFeatures(map, `${eew.id}-s-wave`, []);
+            setFeatures(map, `${eew.id}-s-wave-bg`, []);
+            setFeatures(map, `${eew.id}-p-wave`, []);
           }
         }
         continue;
@@ -383,9 +394,12 @@ export function initEew(): void {
         const center: [number, number] = [eew.eq.lon, eew.eq.lat];
         const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
         eew.dist = dist;
-        sWaveSource.setData(fc([createCircleFeature(center, dist.s_dist)]));
-        sWaveSourceBg.setData(fc(isMouseDown ? [] : [createCircleFeature(center, dist.s_dist)]));
-        pWaveSource.setData(fc([createCircleFeature(center, dist.p_dist)]));
+        // One S ring for both sources: it used to be built twice from the
+        // same arguments on every tick.
+        const sRing = createCircleFeature(center, dist.s_dist);
+        replaceFeatures(map, `${eew.id}-s-wave`, [sRing]);
+        replaceFeatures(map, `${eew.id}-s-wave-bg`, isMouseDown ? [] : [sRing]);
+        replaceFeatures(map, `${eew.id}-p-wave`, [createCircleFeature(center, dist.p_dist)]);
       }
     }
     draw_lock = false;

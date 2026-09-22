@@ -6,22 +6,27 @@ import { COLOR } from "@/lib/constants";
 
 import { region } from "./region";
 
-/** Curried haversine distance (km). */
-export function distance(latA: number, lngA: number) {
-  return function (latB: number, lngB: number): number {
-    latA = (latA * Math.PI) / 180;
-    lngA = (lngA * Math.PI) / 180;
-    latB = (latB * Math.PI) / 180;
-    lngB = (lngB * Math.PI) / 180;
-    const sin_latA = Math.sin(Math.atan(Math.tan(latA)));
-    const sin_latB = Math.sin(Math.atan(Math.tan(latB)));
-    const cos_latA = Math.cos(Math.atan(Math.tan(latA)));
-    const cos_latB = Math.cos(Math.atan(Math.tan(latB)));
-    return (
-      Math.acos(sin_latA * sin_latB + cos_latA * cos_latB * Math.cos(lngA - lngB)) *
-      6371.008
-    );
-  };
+/**
+ * Great-circle distance (km) by the spherical law of cosines.
+ *
+ * It used to be curried, and the returned closure converted its captured
+ * `latA`/`lngA` to radians in place, so calling one closure twice gave a wrong
+ * second answer. Nothing did — every caller built a fresh closure per point —
+ * which is exactly what a plain function does. The arithmetic is unchanged,
+ * `atan(tan(x))` included, so every result is bit-identical.
+ */
+export function distance(latA: number, lngA: number, latB: number, lngB: number): number {
+  const radLatA = (latA * Math.PI) / 180;
+  const radLngA = (lngA * Math.PI) / 180;
+  const radLatB = (latB * Math.PI) / 180;
+  const radLngB = (lngB * Math.PI) / 180;
+  const sin_latA = Math.sin(Math.atan(Math.tan(radLatA)));
+  const sin_latB = Math.sin(Math.atan(Math.tan(radLatB)));
+  const cos_latA = Math.cos(Math.atan(Math.tan(radLatA)));
+  const cos_latB = Math.cos(Math.atan(Math.tan(radLatB)));
+  return (
+    Math.acos(sin_latA * sin_latB + cos_latA * cos_latB * Math.cos(radLngA - radLngB)) * 6371.008
+  );
 }
 
 export function formatTime(timestamp: number): string {
@@ -35,15 +40,33 @@ export function formatTime(timestamp: number): string {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
+/** Town code → its city and town, built the first time region.bin is ready. */
+let townsByCode: Map<number, { city: string; town: string }> | null = null;
+
+/**
+ * The city and town a code belongs to, or null.
+ *
+ * This walked all 368 towns on every call — several times per RTS frame, and
+ * once per town when an intensity report arrives. The index keeps the first
+ * town for a code, as the scan did, and a fresh object is returned each time,
+ * as before.
+ */
 export function search_loc_name(int: number): { city: string; town: string } | null {
-  for (const city of Object.keys(region)) {
-    for (const town of Object.keys(region[city])) {
-      if (region[city][town].code == int) {
-        return { city, town };
+  if (!townsByCode) {
+    const cities = Object.keys(region);
+    // region.bin not decoded yet: the scan found nothing either. Not cached,
+    // so the index is built from the real table once it arrives.
+    if (!cities.length) return null;
+    townsByCode = new Map();
+    for (const city of cities) {
+      for (const town of Object.keys(region[city])) {
+        const code = region[city][town].code;
+        if (!townsByCode.has(code)) townsByCode.set(code, { city, town });
       }
     }
   }
-  return null;
+  const hit = townsByCode.get(Number(int));
+  return hit ? { city: hit.city, town: hit.town } : null;
 }
 
 /** Report-list timestamp — `YYYY-MM-DD HH:MM` (NO seconds), per legacy report.js. */

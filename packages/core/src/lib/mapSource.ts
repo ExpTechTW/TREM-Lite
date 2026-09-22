@@ -24,3 +24,16 @@ export function setFeatures(map: MlMap, id: string, features: GeoJSON.Feature[])
   sent.set(source, signature);
   source.setData({ type: "FeatureCollection", features });
 }
+
+/**
+ * `setData` without the comparison, for data that changes on every write —
+ * a wavefront whose radius grows each tick — where building the signature
+ * would cost more than it saves. It forgets the source's signature, so a
+ * `setFeatures` to the same source afterwards still compares correctly.
+ */
+export function replaceFeatures(map: MlMap, id: string, features: GeoJSON.Feature[]): void {
+  const source = map.getSource(id) as GeoJSONSource | undefined;
+  if (!source) return;
+  sent.delete(source);
+  source.setData({ type: "FeatureCollection", features });
+}
