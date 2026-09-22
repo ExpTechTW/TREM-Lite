@@ -24,5 +24,8 @@
     "tauri": "bun run --filter @trem/desktop tauri",
     "lint": "bun run --filter @trem/core lint",
     "typecheck": "bun run --filter @trem/core typecheck"
+  },
+  "dependencies": {
+    "maplibre-gl": "6.4.1"
   }
 }
