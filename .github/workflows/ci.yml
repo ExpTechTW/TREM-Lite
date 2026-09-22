@@ -128,6 +128,18 @@ jobs:
       - name: Typecheck (core)
         run: bun run --filter @trem/core typecheck
 
+      # The .bin files are generated from the .json beside them, and both the
+      # app and the Rust side read only the .bin. Edit a .json without
+      # re-encoding and the change never reaches anyone — which is how a
+      # region-code fix shipped in two snapshots without taking effect.
+      - name: Encoded data is up to date
+        run: |
+          bun scripts/encode-data.mjs
+          git diff --exit-code -- 'packages/core/src/data/*.bin' || {
+            echo "::error::a .bin is stale — run: bun scripts/encode-data.mjs, and commit the result"
+            exit 1
+          }
+
       - name: Build web shell
         run: bun run --filter @trem/web build
 
