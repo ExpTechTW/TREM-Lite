@@ -391,6 +391,29 @@ jobs:
           done </tmp/urls.txt
           echo "published $TAG at $SHA; all $(wc -l </tmp/urls.txt | tr -d ' ') updater URLs answer 200"
 
+      # Here rather than in a workflow listening on `release`: GitHub starts no
+      # run for an event its own GITHUB_TOKEN caused, and the snapshot was just
+      # published with exactly that token. A release is published by a human,
+      # which does start runs — announce.yml covers that case, and nothing is
+      # announced twice.
+      - name: Announce on Discord
+        if: needs.version.outputs.is_release == 'false'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          # Without it the release lookup runs unauthenticated, at 60 requests
+          # an hour shared with everything else on this runner's IP.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          if [ -z "${DISCORD_WEBHOOK:-}" ]; then
+            echo "::notice::DISCORD_WEBHOOK is not set — nothing announced"
+            exit 0
+          fi
+          # A warning, never a failure. The snapshot is public by now, and a red
+          # job here would hand it to `discard`, which deletes it.
+          python3 tool/release/discord.py "$TAG" ||
+            echo "::warning::Discord announcement failed — the release itself is fine"
+
   # A snapshot that fails anywhere — a build, the rename, the note, the check
   # after publishing — is deleted rather than left incomplete. It never got a tag (see `version`), so the
   # draft is all there is to remove, and the next snapshot reuses its name.
