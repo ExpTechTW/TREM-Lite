@@ -318,6 +318,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           RELEASE_ID: ${{ needs.version.outputs.release_id }}
+          TAG: ${{ needs.version.outputs.tag }}
           LABEL: ${{ needs.version.outputs.label }}
           CODE: ${{ needs.version.outputs.code }}
           IS_RELEASE: ${{ needs.version.outputs.is_release }}
@@ -329,19 +330,28 @@ jobs:
           fi
           cat /tmp/notes.md
           # By id: a draft cannot be looked up by its tag.
+          #
+          # `tag_name` rides along on every edit, never only the field being
+          # changed. A draft whose tag does not exist yet is renamed
+          # `untagged-…` by any PATCH that omits it, and published in that state
+          # it gets no tag at all — every updater URL in latest.json a 404. The
+          # first snapshot went out exactly that way.
           gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
-            -F body=@/tmp/notes.md >/dev/null
+            -f tag_name="$TAG" -F body=@/tmp/notes.md >/dev/null
 
       # Last, so a snapshot goes public complete: every target in, names final,
-      # note written. GitHub creates its tag at this moment.
+      # note written. GitHub creates its tag at this moment, from
+      # `target_commitish` — restated here for the same reason as above.
       - name: Publish the snapshot
         if: needs.version.outputs.is_release == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_ID: ${{ needs.version.outputs.release_id }}
+          TAG: ${{ needs.version.outputs.tag }}
+          SHA: ${{ github.sha }}
         run: |
           gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
-            -F draft=false -q .html_url
+            -f tag_name="$TAG" -f target_commitish="$SHA" -F draft=false -q .html_url
 
   # A snapshot that fails anywhere — a build, the rename, the note — is deleted
   # rather than published incomplete. It never got a tag (see `version`), so the
