@@ -7,14 +7,14 @@
     },
     "apps/desktop": {
       "name": "@trem/desktop",
-      "version": "4.0.0",
+      "version": "26.1.0-26w39a",
       "devDependencies": {
         "@tauri-apps/cli": "^2.11.4",
       },
     },
     "apps/web": {
       "name": "@trem/web",
-      "version": "4.0.0",
+      "version": "26.1.0-26w39a",
       "devDependencies": {
         "@tailwindcss/vite": "^4.3.2",
         "@vitejs/plugin-react": "^6.0.3",
@@ -23,7 +23,7 @@
     },
     "packages/core": {
       "name": "@trem/core",
-      "version": "4.0.0",
+      "version": "26.1.0-26w39a",
       "dependencies": {
         "@radix-ui/react-dropdown-menu": "^2.1.20",
         "@radix-ui/react-label": "^2.1.11",
@@ -39,8 +39,6 @@
         "@tauri-apps/plugin-notification": "^2.3.3",
         "@tauri-apps/plugin-opener": "^2.5.4",
         "@tauri-apps/plugin-os": "^2.3.2",
-        "@tauri-apps/plugin-process": "^2.3.1",
-        "@tauri-apps/plugin-updater": "^2.10.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-react": "^1.24.0",
@@ -341,10 +339,6 @@
     "@tauri-apps/plugin-opener": ["@tauri-apps/plugin-opener@2.5.4", "", { "dependencies": { "@tauri-apps/api": "^2.11.0" } }, "sha512-1HnPkb+AmgO29HBazm4uPLKB+r7zzcTBW1d0fyYp1uP+jwtpoiNDGKMMzz58SFp49nOIrxdE3aUJtT57lfO9CQ=="],
 
     "@tauri-apps/plugin-os": ["@tauri-apps/plugin-os@2.3.2", "", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-n+nXWeuSeF9wcEsSPmRnBEGrRgOy6jjkSU+UVCOV8YUGKb2erhDOxis7IqRXiRVHhY8XMKks00BJ0OAdkpf6+A=="],
-
-    "@tauri-apps/plugin-process": ["@tauri-apps/plugin-process@2.3.1", "", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-nCa4fGVaDL/B9ai03VyPOjfAHRHSBz5v6F/ObsB73r/dA3MHHhZtldaDMIc0V/pnUw9ehzr2iEG+XkSEyC0JJA=="],
-
-    "@tauri-apps/plugin-updater": ["@tauri-apps/plugin-updater@2.10.1", "", { "dependencies": { "@tauri-apps/api": "^2.10.1" } }, "sha512-NFYMg+tWOZPJdzE/PpFj2qfqwAWwNS3kXrb1tm1gnBJ9mYzZ4WDRrwy8udzWoAnfGCHLuePNLY1WVCNHnh3eRA=="],
 
     "@trem/core": ["@trem/core@workspace:packages/core"],
 

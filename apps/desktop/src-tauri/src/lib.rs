@@ -5,6 +5,16 @@ mod http_proxy;
 mod logging;
 mod math;
 mod ntp;
+#[cfg(desktop)]
+mod updater;
+#[cfg(not(desktop))]
+mod updater {
+    // OTA is desktop-only, but `generate_handler!` cannot take a `#[cfg]`.
+    #[tauri::command]
+    pub fn update_check() -> Result<(), String> {
+        Err("updates are desktop-only".into())
+    }
+}
 mod window;
 
 use audio::AudioEngine;
@@ -40,7 +50,7 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder
-            .plugin(tauri_plugin_process::init())
+            .manage(updater::UpdaterState::default())
             .plugin(tauri_plugin_updater::Builder::new().build())
             .plugin(tauri_plugin_autostart::init(
                 tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -63,13 +73,19 @@ pub fn run() {
             }
             config::ensure_initialized(app.handle());
             let start_hidden = std::env::args_os().any(|arg| arg == "--start");
-            if let Some(window) = app.get_webview_window("main") {
-                if start_hidden {
-                    let _ = window.hide();
-                } else {
-                    let _ = window.show();
+            let reveal = move |app: &tauri::AppHandle| {
+                if let Some(window) = app.get_webview_window("main") {
+                    if start_hidden {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.show();
+                    }
                 }
-            }
+            };
+            #[cfg(desktop)]
+            updater::start(app.handle(), reveal);
+            #[cfg(not(desktop))]
+            reveal(app.handle());
             #[cfg(desktop)]
             {
                 let version = MenuItem::with_id(
@@ -137,6 +153,7 @@ pub fn run() {
             http_proxy::http_cache_clear,
             math::eew_area_pga,
             ntp::ntp_sync,
+            updater::update_check,
             window::window_focus,
             window::window_request_attention,
             window::window_hide,

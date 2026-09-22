@@ -27,7 +27,6 @@ tauri-plugin-fs = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-os = "2"
 tauri-plugin-opener = "2"
-tauri-plugin-process = "2"
 tauri-plugin-log = "2"
 # `log` facade (level filters + macros) and `time` for logging.rs's custom
 # local-timezone millisecond timestamp format.
@@ -49,6 +48,12 @@ flate2 = "1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
+# OTA (src/updater.rs): re-verifying a staged package's signature before it is
+# installed, and the timer between checks. All three are already in the tree
+# through the updater plugin and tauri; naming them costs no build time.
+minisign-verify = "0.2"
+base64 = "0.22"
+tokio = { version = "1", features = ["time"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 

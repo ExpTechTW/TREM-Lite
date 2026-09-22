@@ -23,8 +23,6 @@
     "opener:default",
     "notification:default",
     "os:default",
-    "process:default",
-    "updater:default",
     "autostart:default",
     "log:default",
     {

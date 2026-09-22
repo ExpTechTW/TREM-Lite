@@ -22,7 +22,6 @@ export const DEFAULT_CONFIG: TremConfig = {
     "early-warning-trem-eew": false,
     "other-auto-start": true,
     "other-tts": true,
-    "ota-auto-update": true,
     "graphics-block-auto-zoom": false,
     "graphics-show-fault": false,
     "sound-effects-dong": true,

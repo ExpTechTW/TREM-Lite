@@ -10,7 +10,6 @@ import { createLogger } from "@/lib/logger";
 import { initPipBridge } from "@/lib/pipBridge";
 import { initNotifications } from "@/lib/notificationClient";
 import { initSpeech } from "@/lib/speechClient";
-import { initUpdater } from "@/lib/updaterClient";
 
 import { initData } from "./data/data";
 import { initResource } from "./data/resource";
@@ -42,7 +41,6 @@ export function initFeatures(): void {
   guard("audio", initAudio);
   guard("notifications", initNotifications);
   guard("speech", initSpeech);
-  guard("updater", initUpdater);
   guard("resource", initResource);
   guard("focus", initFocus);
   guard("rts", initRts);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   disable as disableAutostart,
@@ -7,8 +8,6 @@ import {
   isEnabled as isAutostartEnabled,
 } from "@tauri-apps/plugin-autostart";
 import { arch, type as osType, version as osVersion } from "@tauri-apps/plugin-os";
-import { relaunch } from "@tauri-apps/plugin-process";
-import { check } from "@tauri-apps/plugin-updater";
 import { ChevronDown, Copy, Minus, X } from "lucide-react";
 
 import { IntensityBadge } from "@/components/IntensityBadge";
@@ -181,24 +180,21 @@ export function SettingsApp() {
     }
     setUpdateStatus("正在檢查更新…");
     try {
-      const update = await check();
-      if (!update) {
-        setUpdateStatus(`目前已是最新版本（${appVersion}）`);
-        return;
-      }
-      let downloaded = 0;
-      let total = 0;
-      setUpdateStatus(`發現新版本 ${update.version}，準備下載…`);
-      await update.downloadAndInstall((event) => {
-        if (event.event === "Started") total = event.data.contentLength ?? 0;
-        if (event.event === "Progress") {
-          downloaded += event.data.chunkLength;
-          const progress = total ? ` ${Math.round((downloaded / total) * 100)}%` : "";
-          setUpdateStatus(`下載更新中…${progress}`);
-        }
-        if (event.event === "Finished") setUpdateStatus("更新已安裝，3 秒後重新啟動…");
-      });
-      window.setTimeout(() => void relaunch(), 3000);
+      // The same check the background timer runs (src-tauri/src/updater.rs): a
+      // download is staged and applied on the next launch, never mid-session.
+      const onProgress = new Channel<{ downloaded: number; total: number | null }>();
+      onProgress.onmessage = ({ downloaded, total }) => {
+        const percent = total ? ` ${Math.round((downloaded / total) * 100)}%` : "";
+        setUpdateStatus(`下載更新中…${percent}`);
+      };
+      const result = await invoke<
+        { status: "upToDate"; current: string } | { status: "staged"; version: string }
+      >("update_check", { onProgress });
+      setUpdateStatus(
+        result.status === "staged"
+          ? `已下載 ${result.version}，將在下次啟動時更新`
+          : `目前已是最新版本（${result.current}）`,
+      );
     } catch (error) {
       setUpdateStatus(`檢查更新失敗：${String(error)}`);
     }
@@ -302,8 +298,7 @@ export function SettingsApp() {
                 </div>
               </SettingSection>
 
-              <SettingSection title="檢查更新" description="檢查是否有新版本可用，並自動下載安裝。">
-                <ToggleRow label="啟用 OTA（自動更新）" checked={!!config["check-box"]["ota-auto-update"]} onChange={(value) => setCheck("ota-auto-update", value)} />
+              <SettingSection title="檢查更新" description="有新版本時會在背景自動下載，下次啟動時套用。">
                 <ActionRow label="檢查軟體更新" action="檢查更新" onClick={() => void runUpdate()} />
               </SettingSection>
 
