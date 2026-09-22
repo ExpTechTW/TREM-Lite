@@ -6,29 +6,105 @@ on:
   pull_request:
     branches: [main]
 
+# One in-flight run per ref; a new push cancels the previous run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # The commit gate. Runs before the build matrix: a message cannot be repaired
-  # after a push without a force-push, so failing fast is what keeps that repair
-  # small. See commit.md.
-  commits:
+  # The commit gate, and the two structural gates that go with it. All of them
+  # run before the build matrix: a commit message cannot be repaired after a
+  # push without a force-push, so failing fast is what keeps that repair small.
+  # See commit.md.
+  gates:
     runs-on: ubuntu-latest
+    # Naming any permission sets every one not listed to none.
+    permissions:
+      contents: read
     steps:
+      # Full history: these gates walk the range this push or pull request
+      # adds, and a shallow clone has no base to compare against.
       - uses: actions/checkout@v4
         with:
-          # The gate walks a range, so it needs both ends of it.
           fetch-depth: 0
 
-      - name: Check commit messages
+      - name: Commit message gate
+        # Through the environment, never interpolated into the script. GitHub
+        # substitutes `${{ }}` textually before bash sees the line, and on a
+        # fork's pull request the base ref is a branch name whoever opened it
+        # chose — so an inline expansion is a shell injection with extra steps.
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          if [ "$EVENT" = pull_request ]; then
+            # The branch's own tip, not the checked-out merge commit: a pull
+            # request builds a synthetic merge of the branch into the base, and
+            # every commit this gate judges has to be one somebody wrote.
+            git fetch --quiet origin "$BASE_REF"
+            range="$(git rev-parse "origin/$BASE_REF")..$HEAD_SHA"
           else
-            range="${{ github.event.before }}..${{ github.sha }}"
+            # A push names what it replaced. On the first push to a new branch
+            # that is all zeroes, so fall back to the last commit alone.
+            case "$BEFORE" in
+            '' | 0000000000000000000000000000000000000000) range="HEAD~1..HEAD" ;;
+            *) range="$BEFORE..HEAD" ;;
+            esac
           fi
-          tool/check/commits.sh "$range"
+          echo "checking $range"
+          bash tool/check/commits.sh "$range"
+
+      # Rebased, not merged, and not behind.
+      #
+      # Neither reason is taste. A merge commit is invisible to the gate above
+      # — it walks with `--no-merges`, because a merge message is generated
+      # rather than written — so anything arriving through one is never judged.
+      # And a branch that is behind was tested against a main that no longer
+      # exists: the gates that passed describe a tree nobody will ever have.
+      - name: Branch is rebased on the base
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --quiet origin "$BASE_REF"
+          base="$(git rev-parse "origin/$BASE_REF")"
+
+          if merges="$(git rev-list --merges "$base..$HEAD_SHA")" && [ -n "$merges" ]; then
+            echo "::error::this branch merges $BASE_REF instead of rebasing onto it"
+            git --no-pager log --format='  %h %s' --merges "$base..$HEAD_SHA"
+            printf '\n  git rebase origin/%s\n  git push --force-with-lease\n' "$BASE_REF"
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$base" "$HEAD_SHA"; then
+            echo "::error::this branch is behind $BASE_REF; rebase before merging"
+            printf '  %s is %s commit(s) ahead of this branch\n' \
+              "$BASE_REF" "$(git rev-list --count "$HEAD_SHA..$base")"
+            printf '\n  git fetch origin\n  git rebase origin/%s\n  git push --force-with-lease\n' "$BASE_REF"
+            exit 1
+          fi
+
+          echo "branch gate: rebased on $BASE_REF, no merge commits"
+
+      # The workflows themselves, because a broken one does not fail — it is
+      # *refused*. GitHub interpolates a `run` block whole before bash sees it,
+      # so an expression error anywhere in it, comment included, kills the run
+      # before a job exists: no failing step, and a file path where the job
+      # name should be. Nothing else here could catch that.
+      - name: Workflow gate
+        run: |
+          bash <(curl -sSf https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null
+          ./actionlint -shellcheck= .github/workflows/*.yml
 
   # Fast, platform-independent checks — run once before spending the build matrix.
   check:
+    # Behind the gates: a rejected commit message or an unrebased branch is
+    # going to be force-pushed anyway, so compiling seven desktop targets first
+    # spends runner time on a tree that is about to be rewritten.
+    needs: gates
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
