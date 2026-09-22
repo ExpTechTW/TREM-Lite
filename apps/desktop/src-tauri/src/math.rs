@@ -165,9 +165,10 @@ mod tests {
     #[test]
     fn area_result_is_populated_and_bounded() {
         let r = eew_area_pga(23.5, 121.5, 10.0, 6.0);
-        // Keyed by town code, which dedups a couple of shared codes (368 towns → 367 codes),
-        // exactly like the JS `result[info.code] = ...` did.
-        assert!(r.area.len() > 350, "got {}", r.area.len());
+        // Keyed by town code, one entry per town. Exact rather than a floor: a
+        // stale region.bin once gave two towns the same code, which a floor let
+        // through while one of them silently lost its estimate.
+        assert_eq!(r.area.len(), 368);
         assert!(r.max_i > 0.0 && r.max_i < 12.0, "max_i={}", r.max_i);
     }
 }
