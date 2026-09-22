@@ -34,26 +34,6 @@
    legacy/src/js/index/constant.js COLOR.*
    --------------------------------------------------------------------------- */
 :root {
-  /* map */
-  --map-background: #1f2025;
-  --map-county-fill: #3f4045;
-  --map-town-fill: #3f4045;
-  --map-county-outline: #a9b4bc;
-  --map-global-fill: #3f4045;
-
-  /* RTS realtime intensities */
-  --rts-intensity-m3: #0005d0;
-  --rts-intensity-m2: #004bf8;
-  --rts-intensity-m1: #009ef8;
-  --rts-intensity-0: #79e5fd;
-  --rts-intensity-1: #49e9ad;
-  --rts-intensity-2: #44fa34;
-  --rts-intensity-3: #beff0c;
-  --rts-intensity-4: #fff000;
-  --rts-intensity-5: #ff9300;
-  --rts-intensity-6: #fc5235;
-  --rts-intensity-7: #b720e9;
-
   /* CWA intensity scale 0..9 (0,1,2,3,4,5-,5+,6-,6+,7) */
   --intensity-0: #202020;
   --intensity-1: #003264;
@@ -77,25 +57,11 @@
   --intensity-text-8: #ffffff;
   --intensity-text-9: #ffffff;
 
-  /* long-period ground motion */
-  --lpgm-1: #0040ff;
-  --lpgm-2: #ffe600;
-  --lpgm-3: #ff2800;
-  --lpgm-4: #a50021;
-
   /* EEW */
   --eew-warn: #ffaa00;
   --eew-alert: #ff0000;
   --eew-cancel: #000000;
-  --eew-p: #00caca;
   --eew-s-rts: #0005d0;
-  --trem-s: #beff0c;
-  --trem-p: #beff0c;
-
-  /* detection box */
-  --box-0: #00db00;
-  --box-1: #eac100;
-  --box-2: #ff0000;
 
   /* legacy-compatible aliases (names used by the old lang.js CSS-var injection) */
   --eew-s-warn: var(--eew-warn);
@@ -1116,11 +1082,6 @@
   font-size: 15px;
 }
 
-.legacy-extended-note {
-  color: #ababab;
-  font-size: 14px;
-  font-weight: 400;
-}
 
 .legacy-extended-section a {
   color: aqua;
