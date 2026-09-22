@@ -38,11 +38,16 @@ function stringify(v: unknown): string {
   }
 }
 
-function emit(level: Level, scope: string, args: unknown[]): void {
-  const msg = `[${scope}] ${args.map(stringify).join(" ")}`;
+// release build 的 Rust 端只收 Info 以上（logging.rs），trace/debug 送過去也會被丟棄，
+// 所以不必付出 stringify 與每行一次 IPC 的成本；寫進檔案的內容完全相同。
+const DROPPED_BY_RUST: ReadonlySet<Level> = new Set(DEV ? [] : ["trace", "debug"]);
 
+function emit(level: Level, scope: string, args: unknown[]): void {
   // 寫檔（經 Rust）。即使 sink 尚未載入完成，也會在載入後補寫。
-  if (inTauri) void sinkReady.then(() => sink?.[level]?.(msg));
+  if (inTauri && !DROPPED_BY_RUST.has(level)) {
+    const msg = `[${scope}] ${args.map(stringify).join(" ")}`;
+    void sinkReady.then(() => sink?.[level]?.(msg));
+  }
 
   // dev / 瀏覽器：同步輸出 console（帶毫秒時間戳）。
   if (DEV || !inTauri) {

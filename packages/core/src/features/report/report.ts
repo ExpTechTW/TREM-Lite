@@ -7,7 +7,7 @@ import { REPORT_LIMIT, HTTP_TIMEOUT, SHOW_REPORT } from "@/lib/constants";
 import { url, reportFailure, reportSuccess } from "@/lib/endpoints";
 import { events } from "@/lib/events";
 import { setFeatures } from "@/lib/mapSource";
-import { fetchJson } from "@/lib/http";
+import { fetchJson, http } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
 import { variable } from "@/lib/variable";
@@ -44,12 +44,20 @@ function rememberMd5(md5: string): void {
   }
 }
 
-async function getReportList(limit: number): Promise<ReportListItem[] | null> {
-  return fetchJson<ReportListItem[]>(
-    url("coreApi", `/api/v2/eq/report?limit=${limit}`),
-    HTTP_TIMEOUT.REPORT,
-  );
+/** The report list's body, verbatim, or null on any failure. */
+async function getReportListText(limit: number): Promise<string | null> {
+  try {
+    const res = await http.request(url("coreApi", `/api/v2/eq/report?limit=${limit}`), {
+      timeout: HTTP_TIMEOUT.REPORT,
+    });
+    return res.ok ? await res.text() : null;
+  } catch {
+    return null;
+  }
 }
+
+/** The list `refresh` last acted on, verbatim. */
+let lastListText = "";
 
 async function getReportById(id: string): Promise<ReportListItem | null> {
   return fetchJson<ReportListItem>(url("coreApi", `/api/v2/eq/report/${id}`), HTTP_TIMEOUT.REPORT);
@@ -161,11 +169,29 @@ export function showReportPoint(data: ReportListItem | null): void {
 }
 
 async function refresh() {
-  const list = await getReportList(REPORT_LIMIT);
+  const text = await getReportListText(REPORT_LIMIT);
+
+  // An unchanged list is the usual answer — the proxy revalidates it with an
+  // ETag every ten seconds and the server says 304 — and nothing below does
+  // anything with one: the panel gets the rows it already shows, the cache the
+  // bytes it already holds, and every md5 in it has been seen. Stopping here
+  // skips re-parsing 35 KB, re-rendering 150 rows and re-writing localStorage.
+  if (seeded && text !== null && text === lastListText) {
+    reportSuccess("coreApi");
+    return;
+  }
+
+  let list: ReportListItem[] | null;
+  try {
+    list = text === null ? null : (JSON.parse(text) as ReportListItem[] | null);
+  } catch {
+    list = null;
+  }
   if (!list) {
     reportFailure("coreApi");
     return;
   }
+  lastListText = text!;
   reportSuccess("coreApi");
   // 首次載入用 info（里程碑）；之後每 10s 的輪詢降為 debug，避免洗版日誌檔。
   if (seeded) log.debug("list", list.length);

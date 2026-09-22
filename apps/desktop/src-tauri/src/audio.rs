@@ -17,7 +17,7 @@ use std::collections::{HashMap, VecDeque};
 use std::io::Cursor;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 
@@ -64,6 +64,15 @@ fn preempts(sound: &str) -> &'static [&'static str] {
 }
 
 const QUEUES: [&str; 4] = ["eew", "pga", "shindo", "update"];
+
+/// How often a queue with a clip waiting checks whether the one ahead of it
+/// has finished.
+const PUMP: Duration = Duration::from_millis(30);
+
+/// Commands that arrive within this long of each other are handled together,
+/// up to [`BATCH_MAX`] after the first. See `run_audio_thread`.
+const BATCH_QUIET: Duration = Duration::from_millis(10);
+const BATCH_MAX: Duration = Duration::from_millis(30);
 
 enum AudioCommand {
     /// Add a clip to a named serial queue (with priority preemption).
@@ -150,12 +159,39 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
     }
 
     loop {
-        // Drain any pending commands without blocking the pump loop.
-        loop {
-            match rx.try_recv() {
-                Ok(cmd) => handle_command(cmd, &handle, &mut queues),
-                Err(mpsc::TryRecvError::Empty) => break,
-                Err(mpsc::TryRecvError::Disconnected) => return,
+        // Wait for the next command — indefinitely while no clip is waiting on
+        // another to finish, since then there is nothing to pump. This thread
+        // used to wake every 30 ms for the life of the app, clip or no clip.
+        let waiting = queues.values().any(|q| !q.pending.is_empty());
+        let first = if waiting {
+            match rx.recv_timeout(PUMP) {
+                Ok(cmd) => Some(cmd),
+                Err(mpsc::RecvTimeoutError::Timeout) => None,
+                Err(mpsc::RecvTimeoutError::Disconnected) => return,
+            }
+        } else {
+            match rx.recv() {
+                Ok(cmd) => Some(cmd),
+                Err(_) => return,
+            }
+        };
+
+        if let Some(cmd) = first {
+            handle_command(cmd, &handle, &mut queues);
+            // Commands sent together are handled together, so a later one can
+            // still evict an earlier one before it starts — RtsShindo2 dropping
+            // RtsShindo1 from the same RTS frame. The 30 ms poll this replaces
+            // did that by accident, for commands inside one tick; this gathers
+            // until the channel has been quiet for BATCH_QUIET, never past the
+            // old poll's worst case.
+            let until = Instant::now() + BATCH_MAX;
+            loop {
+                let left = until.saturating_duration_since(Instant::now());
+                match rx.recv_timeout(BATCH_QUIET.min(left)) {
+                    Ok(cmd) => handle_command(cmd, &handle, &mut queues),
+                    Err(mpsc::RecvTimeoutError::Timeout) => break,
+                    Err(mpsc::RecvTimeoutError::Disconnected) => return,
+                }
             }
         }
 
@@ -167,8 +203,6 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
                 }
             }
         }
-
-        thread::sleep(Duration::from_millis(30));
     }
 }
 
