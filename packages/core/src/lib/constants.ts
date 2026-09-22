@@ -65,13 +65,6 @@ export const COLOR = {
     S: {
       WARN: "#ffaa00",
       ALERT: "#ff0000",
-      CANCEL: "#000",
-      RTS: "#0005d0",
-    },
-    TRIGGER: {
-      LOW: "#1e9632",
-      MIDDLE: "#ffc800",
-      HIGH: "#c00000",
     },
     P: "#00CACA",
   },
@@ -116,7 +109,6 @@ export const HTTP_TIMEOUT = {
   REPORT: 5000,
   INTENSITY: 1000,
   LPGM: 1000,
-  NTP: 1000,
 } as const;
 
 export const LAST_DATA_TIMEOUT_ERROR = 3000;

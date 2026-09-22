@@ -243,7 +243,6 @@ class DataManager {
   private clearDomainState(mode: number): void {
     const eew = [...variable.data.eew];
     const intensity = [...variable.data.intensity] as { IntensityEnd?: number }[];
-    const lpgm = [...variable.data.lpgm] as { LpgmEnd?: boolean }[];
 
     variable.data.rts = null;
     variable.data.eew = [];
@@ -286,14 +285,8 @@ class DataManager {
         data: { ...data, IntensityEnd: 1 },
       }),
     );
-    lpgm.forEach((data) =>
-      events.emit("LpgmEnd", { info: { type: mode }, data: { ...data, LpgmEnd: true } }),
-    );
     events.emit("DataModeReset");
     events.emit("DataRts", { info: { type: mode }, data: null });
-    events.emit("DataEew", { info: { type: mode }, data: [] as never });
-    events.emit("DataIntensity", { info: { type: mode }, data: [] as never });
-    events.emit("DataLpgm", { info: { type: mode }, data: [] as never });
   }
 
   /** Fully reset the live transport before entering or leaving replay. */
@@ -369,7 +362,6 @@ class DataManager {
     });
 
     this.cleanupCache("eew_last");
-    events.emit("DataEew", { info: { type: variable.play_mode }, data: variable.data.eew as never });
   }
 
   private isAreaDifferent(
@@ -430,7 +422,6 @@ class DataManager {
     });
 
     this.cleanupCache("intensity_last");
-    events.emit("DataIntensity", { info: { type: variable.play_mode }, data: variable.data.intensity as never });
   }
 
   processLpgmData(newData: unknown[] = []): void {
@@ -438,12 +429,6 @@ class DataManager {
     const EXPIRY_TIME = 600 * 1000;
     type LpgmItem = { id: number; time: number; LpgmEnd?: boolean };
     const list = variable.data.lpgm as LpgmItem[];
-
-    list
-      .filter((item) => item.time && (currentTime - item.time > EXPIRY_TIME || item.LpgmEnd))
-      .forEach((data) => {
-        events.emit("LpgmEnd", { info: { type: variable.play_mode }, data: { ...data, LpgmEnd: true } });
-      });
 
     variable.data.lpgm = list.filter(
       (item) => item.time && currentTime - item.time <= EXPIRY_TIME && !item.LpgmEnd,
@@ -461,8 +446,6 @@ class DataManager {
         events.emit("LpgmRelease", eventData as never);
       }
     });
-
-    events.emit("DataLpgm", { info: { type: variable.play_mode }, data: variable.data.lpgm as never });
   }
 
   private cleanupCache(cacheKey: "eew_last" | "intensity_last"): void {

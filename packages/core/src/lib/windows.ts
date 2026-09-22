@@ -1,7 +1,6 @@
 /** Create/focus the secondary Tauri windows (settings, pip). */
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import type { BackgroundThrottlingPolicy } from "@tauri-apps/api/window";
-import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "./env";
 
 // Legacy main.js used `transparent: is_mac ? false : true` for the settings window
@@ -92,10 +91,4 @@ export async function ensurePipWindow(): Promise<WebviewWindow> {
   } finally {
     pipWindowPromise = null;
   }
-}
-
-export async function togglePip(): Promise<void> {
-  if (!inTauri) return;
-  await ensurePipWindow();
-  await invoke("pip_show");
 }

@@ -101,9 +101,6 @@ export type TremEvents = {
   DataRts: Ans<RtsData | null>;
   /** Clears module-local RTS/UI history at a live/replay mode boundary. */
   DataModeReset: void;
-  DataEew: Ans<EewData>;
-  DataIntensity: Ans<unknown>;
-  DataLpgm: Ans<unknown>;
 
   EewRelease: Ans<EewData>;
   EewUpdate: Ans<EewData>;
@@ -117,7 +114,6 @@ export type TremEvents = {
   IntensityEnd: Ans<unknown>;
 
   LpgmRelease: Ans<{ id: number; time: number; list: { id: number; lpgm: number }[] }>;
-  LpgmEnd: Ans<unknown>;
 
   ReportRelease: Ans<ReportListItem>;
   /** UI 刷新訊號：報告列表（variable.data.report）內容有更新時發出。 */

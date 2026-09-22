@@ -34,9 +34,6 @@ class Reader {
     this.pos += len;
     return s;
   }
-  get done(): boolean {
-    return this.pos >= this.buf.length;
-  }
 }
 
 const bytes = (buf: ArrayBuffer | Uint8Array): Uint8Array =>

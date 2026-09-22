@@ -74,13 +74,6 @@ export async function writeConfig(config: TremConfig): Promise<void> {
   await invoke("config_set", { value: config });
 }
 
-/** Convenience: toggle/patch a check-box key and persist. */
-export async function setCheckbox(key: string, value: boolean): Promise<void> {
-  const cfg = getConfig();
-  cfg["check-box"][key] = value;
-  await writeConfig(cfg);
-}
-
 export async function resetConfig(): Promise<TremConfig> {
   if (!inTauri) {
     cache = structuredClone(DEFAULT_CONFIG);
