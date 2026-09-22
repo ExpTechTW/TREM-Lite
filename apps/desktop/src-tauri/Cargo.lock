@@ -5564,7 +5564,7 @@ dependencies = [
 
 [[package]]
 name = "trem-lite"
-version = "4.0.0"
+version = "26.1.0-26w39a"
 dependencies = [
  "flate2",
  "log",

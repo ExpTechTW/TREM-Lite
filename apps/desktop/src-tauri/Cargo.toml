@@ -1,6 +1,6 @@
 [package]
 name = "trem-lite"
-version = "4.0.0"
+version = "26.1.0-26w39a"
 description = "Taiwan Real-time Earthquake Monitoring"
 authors = ["ExpTechTW <ExpTech.tw@gmail.com>"]
 edition = "2021"
