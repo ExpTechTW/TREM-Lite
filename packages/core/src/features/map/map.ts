@@ -11,6 +11,7 @@ import cross2Png from "@/assets/map/cross2.png";
 import cross3Png from "@/assets/map/cross3.png";
 import cross4Png from "@/assets/map/cross4.png";
 import { COLOR, MAP } from "@/lib/constants";
+import { proxied, registerMapProtocol } from "@/lib/http/mapProtocol";
 import { events } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
@@ -22,14 +23,20 @@ const log = createLogger("map");
 // Keep the base map and terrain definition aligned with DPIP's shared map
 // style. The DEM tiles are native Mapbox Terrain-RGB, so MapLibre can render
 // the relief directly without an app-side elevation conversion.
-const BASEMAP_TILE_URL = "https://static.lb.exptech.dev/api/v1/map/tiles/{z}/{x}/{y}.pbf";
+// Tile/glyph traffic is rewritten onto the `trem://` protocol so it goes
+// through the HTTP proxy instead of the WebView's own network stack. Tiles
+// are the biggest winner from the 250 MB ETag LRU: large, near-static, and
+// re-requested every launch.
+const BASEMAP_TILE_URL = proxied("https://static.lb.exptech.dev/api/v1/map/tiles/{z}/{x}/{y}.pbf");
 const BASEMAP_SOURCE_MAX_ZOOM = 9;
-const TERRAIN_TILE_URL = "https://static.lb.exptech.dev/api/v1/map/terrain/{z}/{x}/{y}.png";
+const TERRAIN_TILE_URL = proxied("https://static.lb.exptech.dev/api/v1/map/terrain/{z}/{x}/{y}.png");
 const TERRAIN_SOURCE_MAX_ZOOM = 11;
 const TERRAIN_SOURCE_ID = "terrain";
 const TERRAIN_HILLSHADE_LAYER_ID = "terrain-hillshade";
 
 function buildMap(container: HTMLElement): MlMap {
+  // Must happen before the Map is constructed — the style references trem:// URLs.
+  registerMapProtocol();
   return new maplibregl.Map({
     container,
     style: {
@@ -62,7 +69,7 @@ function buildMap(container: HTMLElement): MlMap {
         },
       },
       sprite: "",
-      glyphs: "https://cdn.jsdelivr.net/gh/exptechtw/map-assets/{fontstack}/{range}.pbf",
+      glyphs: proxied("https://cdn.jsdelivr.net/gh/exptechtw/map-assets/{fontstack}/{range}.pbf"),
       layers: [
         { id: "background", type: "background", paint: { "background-color": COLOR.MAP.BACKGROUND } },
         {
