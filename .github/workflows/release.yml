@@ -13,8 +13,9 @@ name: Release
 # waits as a draft for a human to publish.
 #
 # Every release starts as a draft, snapshots included, so a snapshot is either
-# complete or invisible: `version` creates the draft, the builds fill it,
-# `publish` finishes it, and `discard` deletes it if anything failed.
+# complete or invisible: `version` creates the draft (and a snapshot's tag), the
+# builds fill it, `publish` finishes it, and `discard` deletes both if anything
+# failed.
 on:
   push:
     branches: [main]
@@ -80,13 +81,6 @@ jobs:
       # the collision: two targets that finish together both see "absent", both
       # create, and the second dies on `already_exists` with its artifacts built
       # and signed. The first snapshot lost its arm64 build exactly that way.
-      #
-      # A snapshot's tag is not pushed here. A draft does not need its tag to
-      # exist — GitHub creates it at `target_commitish` when the draft is
-      # published — so a snapshot that never publishes never has a tag. That
-      # matters beyond tidiness: the next snapshot's note is a delta from the
-      # nearest tag, and an orphaned one would silently swallow every entry it
-      # carried.
       - name: Create the draft release
         id: release
         env:
@@ -110,6 +104,29 @@ jobs:
           fi
           echo "id=$id" >>"$GITHUB_OUTPUT"
           echo "draft $id for $TAG"
+
+      # A snapshot's tag, pushed now — seconds after the push that started this
+      # run — rather than when the snapshot publishes.
+      #
+      # GITHUB_TOKEN may not create a ref whose workflow files differ from the
+      # default branch's; it takes the `workflows` permission, which that token
+      # cannot hold. Now, main is this commit, so they cannot differ. At publish
+      # time, twelve minutes later, main may have moved on to a commit that
+      # changes a workflow, and the publish is refused with "Resource not
+      # accessible by integration" (HTTP 403) — which is how 26w39c died.
+      #
+      # Last in this job, deliberately. If it fails there is no tag to orphan —
+      # an orphaned tag would make the next snapshot's note, a delta from the
+      # nearest tag, silently drop every entry it carried — only an empty
+      # draft, which the next run finds and reuses. Once it exists, `discard`
+      # owns deleting it.
+      - name: Tag the snapshot
+        if: steps.derive.outputs.is_release == 'false'
+        env:
+          TAG: ${{ steps.derive.outputs.tag }}
+        run: |
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
 
   build:
     needs: version
@@ -148,7 +165,6 @@ jobs:
       # The commit this run was started for, not the branch: a push to main that
       # lands while this matrix is running would otherwise have some targets
       # build a different tree than the others, all attached to one release.
-      # Not the tag either — a snapshot does not have one until it publishes.
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -340,18 +356,16 @@ jobs:
             -f tag_name="$TAG" -F body=@/tmp/notes.md >/dev/null
 
       # Last, so a snapshot goes public complete: every target in, names final,
-      # note written. GitHub creates its tag at this moment, from
-      # `target_commitish` — restated here for the same reason as above.
+      # note written. Its tag has existed since `version`.
       - name: Publish the snapshot
         if: needs.version.outputs.is_release == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_ID: ${{ needs.version.outputs.release_id }}
           TAG: ${{ needs.version.outputs.tag }}
-          SHA: ${{ github.sha }}
         run: |
           gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
-            -f tag_name="$TAG" -f target_commitish="$SHA" -F draft=false -q .html_url
+            -f tag_name="$TAG" -F draft=false -q .html_url
 
       # A green run is not a published release. The first snapshot passed every
       # step above and still went out untagged, with every updater URL a 404,
@@ -415,8 +429,8 @@ jobs:
             echo "::warning::Discord announcement failed — the release itself is fine"
 
   # A snapshot that fails anywhere — a build, the rename, the note, the check
-  # after publishing — is deleted rather than left incomplete. It never got a tag (see `version`), so the
-  # draft is all there is to remove, and the next snapshot reuses its name.
+  # after publishing — is deleted rather than left incomplete, tag and all, and
+  # the next snapshot reuses its name.
   #
   # A release is never touched: a human pushed its tag, and a human decides
   # what happens to its draft.
@@ -439,9 +453,10 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
         run: |
           gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID"
-          # A tag exists only if publication itself went through and something
-          # after it failed. Nothing else can own the name: it was free when
-          # `version` computed it, and release runs never overlap.
+          # The tag was pushed by `version`, as its last step, and nothing else
+          # can own the name: it was free when `version` computed it, and release
+          # runs never overlap. Checked rather than assumed, so a discard is
+          # still clean if that step is what failed.
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
           fi
