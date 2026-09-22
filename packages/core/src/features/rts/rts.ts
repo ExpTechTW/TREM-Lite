@@ -7,17 +7,11 @@ import { events } from "@/lib/events";
 import { setFeatures } from "@/lib/mapSource";
 import { variable } from "@/lib/variable";
 import { ui } from "@/lib/variable.ui";
-import type { ReportListItem, RtsStation } from "@/lib/types";
+import type { ReportListItem } from "@/lib/types";
 import { intensity_float_to_int, int_to_string, search_loc_name } from "@/domain/utils";
 import { show_eew } from "@/features/eew/eew";
 import { isAutoFocusLocked } from "@/features/focus/focus";
 import { showReportPoint } from "@/features/report/report";
-
-/**
- * Dev "no-strong-shaking / phantom" override table. Ported from
- * `TREM.constant.DEV_NSSPE` (constant.js). Empty station list = disabled.
- */
-const DEV_NSSPE = { STATION: [] as string[], PGA_LEVEL: 8 };
 
 /** Per-station rolling trigger peak (persists across DataRts frames). */
 const level_list: Record<string, number> = {};
@@ -174,31 +168,14 @@ export function initRts(): void {
 
     if (ans.data) {
       const rts = ans.data;
-      let alert: number | boolean = rts.box ? Object.keys(rts.box).length : 0;
-
-      let maxPgaKey: string | null = null;
-      let maxPgaValue = -Infinity;
-      let maxPgaStationData: RtsStation | null = null;
-
-      for (const [key, station] of Object.entries(rts.station || {})) {
-        if (station.pga > maxPgaValue) {
-          maxPgaValue = station.pga;
-          maxPgaKey = key;
-          maxPgaStationData = station;
-        }
-      }
-
-      if (!maxPgaStationData) {
+      // A frame without a single station reading is ignored.
+      if (!Object.values(rts.station || {}).some((station) => station.pga > -Infinity)) {
         return;
       }
-
-      alert = alert
-        ? true
-        : maxPgaStationData.pga > DEV_NSSPE.PGA_LEVEL &&
-            (DEV_NSSPE.STATION.includes("all") ||
-              (maxPgaKey !== null && DEV_NSSPE.STATION.includes(maxPgaKey)))
-          ? true
-          : false;
+      // Legacy also raised the alert from a dev override table of "phantom"
+      // stations (DEV_NSSPE); it was ported empty and never filled, so only
+      // the box list decides.
+      const alert = !!(rts.box && Object.keys(rts.box).length);
 
       if (!alert) {
         variable.cache.rts_alert = false;
@@ -227,12 +204,7 @@ export function initRts(): void {
         }
 
         const st = rts.station[id];
-        st.alert = st.alert
-          ? true
-          : st.pga > DEV_NSSPE.PGA_LEVEL &&
-              (DEV_NSSPE.STATION.includes("all") || DEV_NSSPE.STATION.includes(id))
-            ? true
-            : false;
+        st.alert = !!st.alert;
 
         const station_location = station_info.info.at(-1);
         if (!station_location) {
