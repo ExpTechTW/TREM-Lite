@@ -1,11 +1,11 @@
 // Renames a GitHub release's Tauri-default asset names to the friendly, industry
-// convention `TREM-Lite-<version>-<os>-<arch>.<ext>` (arm64 / x64 / ia32), and
-// patches latest.json's URLs to match. Updater signatures are embedded INLINE in
-// latest.json (not the .sig files), and depend on file CONTENT not name — so
-// renaming never invalidates them.
+// convention `TREM-Lite-<version>-<os>-<arch>.<ext>` (arm64 / x64 / ia32).
+// Updater signatures depend on file content, not name, so renaming never
+// invalidates them. latest.json is written afterwards, from the final names, by
+// tool/release/manifest.py.
 //
 // CI usage (release.yml):  bun scripts/rename-release-assets.mjs
-//   env: GH_TOKEN, GITHUB_REPOSITORY (owner/repo), TAG (e.g. v4.0.0)
+//   env: GH_TOKEN, GITHUB_REPOSITORY (owner/repo), TAG (e.g. v26.2 or 26w39a)
 // Self-test (no network):  bun scripts/rename-release-assets.mjs --selftest
 
 /** Normalize any arch spelling to the user-facing set. Order matters. */
@@ -108,45 +108,14 @@ async function main() {
   const release = releases.find((r) => r.tag_name === tag);
   if (!release) throw new Error(`release for tag ${tag} not found`);
 
-  // Build old→new map + rename each asset.
-  const renames = {};
   for (const a of release.assets) {
     const nn = friendly(a.name, version);
     if (!nn || nn === a.name) continue;
-    renames[a.name] = nn;
     const res = await gh(`/repos/${repo}/releases/assets/${a.id}`, {
       method: "PATCH",
       body: JSON.stringify({ name: nn }),
     });
     console.log(`${res.ok ? "renamed" : "FAILED " + res.status} ${a.name} → ${nn}`);
-  }
-
-  // Patch latest.json's url filenames (signatures are inline → still valid).
-  const latest = release.assets.find((a) => a.name === "latest.json");
-  if (latest) {
-    const raw = await (
-      await gh(`/repos/${repo}/releases/assets/${latest.id}`, {
-        headers: { Accept: "application/octet-stream" },
-      })
-    ).text();
-    let patched = raw;
-    // Longest names first so a shorter name can't clobber a longer superstring.
-    for (const [oldN, newN] of Object.entries(renames).sort((a, b) => b[0].length - a[0].length))
-      patched = patched.split(oldN).join(newN);
-    if (patched !== raw) {
-      await gh(`/repos/${repo}/releases/assets/${latest.id}`, { method: "DELETE" });
-      const uploadUrl = release.upload_url.replace(/\{.*\}$/, "") + "?name=latest.json";
-      const up = await fetch(uploadUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-        body: patched,
-      });
-      console.log(`${up.ok ? "patched" : "FAILED " + up.status} latest.json (${Object.keys(renames).length} urls)`);
-    }
   }
 }
 

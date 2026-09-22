@@ -234,11 +234,13 @@ jobs:
         with:
           projectPath: apps/desktop
           # Into the draft `version` created — see there for why no build may
-          # create a release itself. `tagName` still matters alongside the id:
-          # a draft's download URLs read `untagged-…` until it is published, and
-          # tauri-action rewrites them to this tag when it writes latest.json.
+          # create a release itself.
           releaseId: ${{ needs.version.outputs.release_id }}
           tagName: ${{ needs.version.outputs.tag }}
+          # latest.json is written once, by `publish` (tool/release/manifest.py).
+          # Left to tauri-action, every build rewrites it at once with no lock,
+          # and 26w39c lost its Windows arm64 build to the collision.
+          includeUpdaterJson: false
           args: ${{ matrix.args }}
 
   # Finish the draft, once, after every target has uploaded: friendly asset
@@ -262,23 +264,27 @@ jobs:
           bun-version: latest
 
       # Rename the assets to TREM-Lite-<version>-<os>-<arch>.<ext> (arm64 / x64 /
-      # ia32) and patch latest.json's URLs to match. Updater signatures are
-      # embedded in latest.json and depend on file content, so renaming keeps
-      # OTA valid.
-      - name: Rename assets + patch latest.json
+      # ia32). Before the manifest, so it only ever names final URLs.
+      - name: Rename assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           TAG: ${{ needs.version.outputs.tag }}
         run: bun scripts/rename-release-assets.mjs
 
+      - name: Write the updater manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.version.outputs.release_id }}
+          TAG: ${{ needs.version.outputs.tag }}
+          SEMVER: ${{ needs.version.outputs.semver }}
+        run: python3 tool/release/manifest.py "$RELEASE_ID" "$TAG" "$SEMVER"
+
       # latest.json is the one artifact nothing else checks, and it fails
       # silently: a platform missing from it is a platform that never updates,
-      # and a URL naming a file the rename moved is a 404 on every installed
-      # copy. tauri-action writes it from every build at once with no lock —
-      # each reads it, merges its own platform, deletes it and uploads it again
-      # — so two builds that finish together can drop each other's entry, and
-      # no step reports it.
+      # and a URL naming a file that is not there is a 404 on every installed
+      # copy. A build that uploaded nothing, or a rename that went wrong, would
+      # otherwise reach users as exactly that.
       #
       # WANT follows the build matrix; the universal macOS build answers for
       # both darwin keys.
