@@ -353,8 +353,46 @@ jobs:
           gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
             -f tag_name="$TAG" -f target_commitish="$SHA" -F draft=false -q .html_url
 
-  # A snapshot that fails anywhere — a build, the rename, the note — is deleted
-  # rather than published incomplete. It never got a tag (see `version`), so the
+      # A green run is not a published release. The first snapshot passed every
+      # step above and still went out untagged, with every updater URL a 404,
+      # because nothing looked at the result. This does: the tag, where it
+      # points, and every URL an installed copy will actually fetch. A failure
+      # here hands the release to `discard`.
+      - name: Verify the published snapshot
+        if: needs.version.outputs.is_release == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.version.outputs.release_id }}
+          TAG: ${{ needs.version.outputs.tag }}
+          SHA: ${{ github.sha }}
+        run: |
+          got="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -q .tag_name)"
+          if [ "$got" != "$TAG" ]; then
+            echo "::error::published as '$got', not '$TAG'"
+            exit 1
+          fi
+          at="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" -q .object.sha)"
+          if [ "$at" != "$SHA" ]; then
+            echo "::error::tag $TAG points at '$at', not $SHA"
+            exit 1
+          fi
+
+          # The manifest as the world now serves it, not the copy checked above.
+          curl -sfL -o /tmp/published.json \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/latest.json"
+          python3 -c 'import json; [print(e["url"]) for e in json.load(open("/tmp/published.json"))["platforms"].values()]' |
+            sort -u >/tmp/urls.txt
+          while read -r url; do
+            code="$(curl -sIL -o /dev/null -w '%{http_code}' "$url")"
+            if [ "$code" != 200 ]; then
+              echo "::error::$code for $url"
+              exit 1
+            fi
+          done </tmp/urls.txt
+          echo "published $TAG at $SHA; all $(wc -l </tmp/urls.txt | tr -d ' ') updater URLs answer 200"
+
+  # A snapshot that fails anywhere — a build, the rename, the note, the check
+  # after publishing — is deleted rather than left incomplete. It never got a tag (see `version`), so the
   # draft is all there is to remove, and the next snapshot reuses its name.
   #
   # A release is never touched: a human pushed its tag, and a human decides
