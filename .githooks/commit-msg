@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Judges the message being written, before the commit exists.
+#
+# This is the cheapest place to catch a bad message: nothing has been recorded
+# yet, so the fix is editing the buffer rather than a rebase and a force-push.
+#
+#     git commit --no-verify        # the escape hatch, when you mean it
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+
+# Mid-rebase, mid-merge, mid-cherry-pick: the message being replayed was
+# already judged when it was first written, and a `reword` is precisely how a
+# rejected message gets repaired — failing here would make that impossible.
+git_dir="$(git rev-parse --git-dir)"
+for state in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD; do
+  [ -e "$git_dir/$state" ] && exit 0
+done
+
+exec "$root/tool/check/commits.sh" --message "$1"

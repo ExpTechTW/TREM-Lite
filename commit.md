@@ -6,9 +6,15 @@ React/TypeScript 共用核心、Web shell、Tauri/Rust 桌面程式與 legacy �
 
 這份格式自文件加入後適用於新 commit，不回頭改寫既有歷史。
 
-> 目前 CI 會檢查 TypeScript、Web build 與各桌面平台編譯，**尚未自動檢查 commit
-> 訊息格式，也沒有 `tool/commit.sh` 或 Git hook**。以下訊息格式與提交邊界目前靠作者及
-> review 遵守；不要把「本機沒有擋」理解成格式正確。
+> 訊息格式由 `tool/check/commits.sh` 機械強制執行 —— 那支腳本才是規格，本文件是
+> 它的說明。`.githooks/commit-msg` 在寫訊息時就擋，`.githooks/pre-push` 在推之前
+> 再走一次整個 range，CI 的 `commits` job 是最後一道。啟用 hook：
+>
+> ```sh
+> git config core.hooksPath .githooks
+> ```
+>
+> 閘門只能判斷格式。提交邊界、驗證矩陣與「這個描述是否誠實」仍然靠作者與 review。
 
 ---
 
@@ -168,7 +174,7 @@ Fix(en-US): desktop window capture no longer captures app sound unexpectedly
 Web 與 desktop 都受影響就不加。只改 Tauri，但三個桌面作業系統都受影響時使用
 `desktop`，不要任選其中一個 OS。
 
-目前 trailer 尚未由 CI 驗證，也尚未轉成 release note 圖示。
+trailer 的值由閘門驗證（打錯會被擋下，而不是悄悄從 release note 消失），但尚未轉成 release note 圖示。
 
 ---
 
@@ -285,15 +291,40 @@ CI 會在 macOS arm64/x64、Linux arm64/x64、Windows arm64/x64/ia32 編譯桌�
 
 ## 版本與 release
 
-版本更新必須同步檢查：
+**版本不用手改。** `tool/release/version.sh` 從 git 狀態推導出所有值，
+`--write` 會把它蓋進所有帶版本號的檔案：根目錄、`packages/core`、`apps/web`、
+`apps/desktop` 的 `package.json`，加上 `apps/desktop/src-tauri/Cargo.toml` 與
+`tauri.conf.json`。檔案裡當下那個值是佔位用的，release 流程會重新蓋。
 
-- 根目錄 `package.json`。
-- `packages/core/package.json`。
-- `apps/web/package.json`。
-- `apps/desktop/package.json`。
-- `apps/desktop/src-tauri/Cargo.toml`。
-- `apps/desktop/src-tauri/tauri.conf.json`。
-- 受相依解析影響時的 `bun.lock` 與 `apps/desktop/src-tauri/Cargo.lock`。
+命名照搬 DPIP（Minecraft 式），四個值刻意互不相關：
+
+| 值 | 意義 | 發布版 | 快照版 |
+|---|---|---|---|
+| `label` | 人看的名字 | `26.2` | `26w39a` |
+| `train` | 這個快照在往哪個發布版走 | `26.2` | `26.2` |
+| `semver` | updater 拿來比大小的 | `26.2.0` | `26.2.0-26w39a` |
+| `code` | 單調遞增的建置序號 | `426000312` | `426000313` |
+
+- 發布版 tag 是 `v<yy>.<n>`（例：`v26.2`）。**`v` 前綴是唯一讓一個建置成為發布版
+  的東西**，也是唯一需要人手動打的部分。支援 `v26.2.1` 這種修補形式。
+- 快照 tag 是裸的 `<yy>w<week><letter>`（例：`26w39a`），沒有 `v`。週次是 ISO 週
+  且不補前導零，字母數的是這週**已發布**的快照數。
+- 週次用 **Asia/Taipei** 算。用 UTC 算的話，每個台北時間週一 00:00–08:00 都會落在
+  前一個 ISO 週。
+- `semver` 存在是因為 Tauri updater 是用 `tauri.conf.json` 的版本做 semver 比較，
+  而 `26.2` 不是合法 semver。快照是其 train 的 **pre-release**，semver 排序會把它
+  排在正式版**之前** —— 這正是正確的順序，也讓 updater 不會把快照推給已經在正式版
+  的人。
+
+```sh
+tool/release/version.sh           # 印出 TREM_LABEL / TREM_TRAIN / TREM_SEMVER / …
+tool/release/version.sh --json
+tool/release/version.sh --write   # 蓋進上面那些檔案
+```
+
+`code` 是 `4 | yy | 今年的 commit 數`：`426000312` 讀作「第 4 代、2026 年、今年第
+312 個 commit」。開頭那個世代數字是用來蓋過 app 已經發過的 `4.0.0` 以前的版本，讓
+任何舊版都不會排在新版前面。
 
 Release workflow 由 tag 觸發並建立 draft release。建立 tag 前必須確認 tag 名稱與應用版本
 一致、CI 綠燈、桌面簽章／updater 所需 secrets 可用，以及 draft 的各平台產物名稱正確。
@@ -320,7 +351,11 @@ git rev-list --count HEAD..origin/main
 
 ## 禁止
 
-- `Co-Authored-By:` 或任何工具、agent、模型署名。
+- `Co-Authored-By:` / `Signed-off-by:` 中出現工具、agent 或模型（claude、copilot、
+  cursor、gpt、codex、gemini、`[bot]`…）。**人類的 `Co-authored-by:` 是允許的** ——
+  GitHub squash 一個多作者 PR 時會自己寫這個 trailer，而那是唯一還留著的「誰寫的」
+  紀錄，一刀切禁掉反而會摧毀它本來要保護的東西。閘門判斷的是這個 trailer **掛誰的
+  名**，不是它存不存在。
 - `Generated with`、機器人 emoji 或宣傳文字。
 - `fix: update`、`feat: stuff`、`misc changes` 等無法判斷行為的摘要。
 - 把無關修改、格式化整個 repo 或臨時偵錯檔混入功能 commit。

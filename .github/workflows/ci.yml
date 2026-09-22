@@ -7,6 +7,26 @@ on:
     branches: [main]
 
 jobs:
+  # The commit gate. Runs before the build matrix: a message cannot be repaired
+  # after a push without a force-push, so failing fast is what keeps that repair
+  # small. See commit.md.
+  commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The gate walks a range, so it needs both ends of it.
+          fetch-depth: 0
+
+      - name: Check commit messages
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            range="${{ github.event.before }}..${{ github.sha }}"
+          fi
+          tool/check/commits.sh "$range"
+
   # Fast, platform-independent checks — run once before spending the build matrix.
   check:
     runs-on: ubuntu-latest

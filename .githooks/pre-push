@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Walks every commit about to be pushed through the gate.
+#
+# commit-msg already judged each message as it was written, but a rebase, an
+# amend or a `--no-verify` can put something else on the branch. This is the
+# last point where the repair is still a local rebase rather than a force-push
+# over published history.
+#
+#     git push --no-verify          # the escape hatch, when you mean it
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+status=0
+
+# stdin: <local-ref> <local-sha> <remote-ref> <remote-sha>, one line per ref.
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  # All-zero local sha means the ref is being deleted; nothing to check.
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac
+
+  case "$remote_sha" in
+  *[!0]*) range="$remote_sha..$local_sha" ;;
+  # A new branch: judge it against the default branch rather than walking the
+  # entire history back to the root commit.
+  *) range="$(git merge-base origin/main "$local_sha" 2>/dev/null || echo "$local_sha~1")..$local_sha" ;;
+  esac
+
+  "$root/tool/check/commits.sh" "$range" || status=1
+done
+
+exit "$status"
