@@ -32,6 +32,7 @@ jobs:
     outputs:
       label: ${{ steps.derive.outputs.label }}
       semver: ${{ steps.derive.outputs.semver }}
+      msi: ${{ steps.derive.outputs.msi }}
       code: ${{ steps.derive.outputs.code }}
       tag: ${{ steps.derive.outputs.tag }}
       is_release: ${{ steps.derive.outputs.is_release }}
@@ -58,6 +59,7 @@ jobs:
           {
             echo "label=$TREM_LABEL"
             echo "semver=$TREM_SEMVER"
+            echo "msi=$TREM_MSI"
             echo "code=$TREM_CODE"
             echo "tag=$tag"
             echo "is_release=$is_release"
@@ -149,12 +151,14 @@ jobs:
         run: bun install
 
       # Stamp the version this run was named for. `--write` takes it from the
-      # environment rather than recomputing, because the snapshot tag now
-      # exists and a fresh computation would step to the next letter.
+      # environment rather than recomputing: the snapshot tag now exists, so a
+      # fresh computation would step to the next letter, and this checkout is
+      # shallow, so the commit count behind the MSI version would read 1.
       - name: Stamp the version
         shell: bash
         env:
           TREM_SEMVER: ${{ needs.version.outputs.semver }}
+          TREM_MSI: ${{ needs.version.outputs.msi }}
         run: bash tool/release/version.sh --write
 
       - name: Build & publish (tauri-action)

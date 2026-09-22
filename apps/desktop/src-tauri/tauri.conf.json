@@ -42,7 +42,12 @@
     "resources": [],
     "category": "Utility",
     "shortDescription": "Taiwan Real-time Earthquake Monitoring",
-    "longDescription": "TREM (Taiwan Real-time Earthquake Monitoring) provides real-time earthquake information and earthquake early warnings."
+    "longDescription": "TREM (Taiwan Real-time Earthquake Monitoring) provides real-time earthquake information and earthquake early warnings.",
+    "windows": {
+      "wix": {
+        "version": "26.1.0.83"
+      }
+    }
   },
   "plugins": {
     "updater": {

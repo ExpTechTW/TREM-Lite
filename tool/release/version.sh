@@ -6,11 +6,12 @@
 # Google, so the store-specific parts are replaced by `semver`, which is what
 # the updater compares.
 #
-# Five values, deliberately unrelated to each other:
+# Six values, deliberately unrelated to each other:
 #
 #   label   what a human sees                26.2        26w39a
 #   train   the release being worked toward  26.2        26.2
 #   semver  what the updater compares        26.2.0      26.2.0-26w39a
+#   msi     what Windows Installer reads     26.2.0.312  26.2.0.313
 #   code    a monotonic build ordinal        426000312   426000313
 #   date    the day the build was cut        26-09-22    26-09-22
 #
@@ -27,6 +28,16 @@
 #     there must parse as semver — `26.2` does not. A snapshot becomes a
 #     PRE-RELEASE of its train (`26.2.0-26w39a`), which semver orders *before*
 #     `26.2.0`: exactly right, since the snapshot comes first.
+#
+#   * `msi` exists because Windows Installer reads neither of the above. It
+#     takes `major.minor.build.revision`, all numeric — the first two at most
+#     255, the last two at most 65535 — so a snapshot's `-26w39a` is not a
+#     version it can express, and Tauri refuses to build the MSI at all. (The
+#     first snapshot run failed on all three Windows targets exactly there.)
+#     The semver core plus this year's commit count, the same ordinal `code`
+#     carries. Tauri's `allowDowngrades` is on by default, so the order of these
+#     numbers never blocks an install; they only have to be valid, and to tell
+#     one build from another in Apps & Features.
 #
 #   * `code` only has to go up. It is not used by the updater; it is the
 #     legible ordinal for support conversations and CI bookkeeping.
@@ -136,15 +147,29 @@ else
   semver="${train}.0-${label}"
 fi
 
+core="${semver%%-*}"
+v_major="${core%%.*}"
+v_rest="${core#*.}"
+v_minor="${v_rest%%.*}"
+v_patch="${v_rest#*.}"
+msi="${v_major}.${v_minor}.${v_patch}.${commits}"
+# Out of range is a hard stop rather than a wrap or a clamp: Tauri would only
+# refuse it on the Windows runners, minutes into the build.
+if [ "$v_major" -gt 255 ] || [ "$v_minor" -gt 255 ] ||
+  [ "$v_patch" -gt 65535 ] || [ "$commits" -gt 65535 ]; then
+  echo "version.sh: $msi is not a Windows Installer version" \
+    "(major and minor at most 255, the other two at most 65535)" >&2
+  exit 1
+fi
+
 if [ "${1:-}" = "--write" ]; then
   # A build runner must stamp the version the release was *named* for, not one
-  # it recomputes. Recomputing is actively wrong for a snapshot: the release
-  # job has already created `26w39a`, so a fresh run here would count it and
-  # produce `26w39b` — the artifacts would disagree with the tag they are
-  # attached to. The release workflow therefore passes the value down.
-  if [ -n "${TREM_SEMVER:-}" ]; then
-    semver="$TREM_SEMVER"
-  fi
+  # it recomputes. Recomputing is wrong twice over: the release job has already
+  # created `26w39a`, so a fresh run would count it and produce `26w39b`; and
+  # the runner's checkout is shallow, so this year's commit count reads 1. The
+  # release workflow therefore passes both values down.
+  semver="${TREM_SEMVER:-$semver}"
+  msi="${TREM_MSI:-$msi}"
   # Every file that carries a version, stamped from the one source above.
   # `code` and `label` are not written anywhere: nothing in the build reads
   # them, and a value with no reader is a value that goes stale.
@@ -155,19 +180,28 @@ if [ "${1:-}" = "--write" ]; then
     # these files — a blind global replace would rewrite dependency ranges.
     perl -0pi -e 's/^(\s*"version":\s*)"[^"]*"/${1}"'"$semver"'"/m' "$f"
   done
-  perl -0pi -e 's/^(\s*"version":\s*)"[^"]*"/${1}"'"$semver"'"/m' \
-    "$root/apps/desktop/src-tauri/tauri.conf.json"
+  # tauri.conf.json carries two versions at different depths — the app's and
+  # the MSI's — so it is edited as JSON rather than by pattern: a first-match
+  # regex rewrites whichever `"version"` happens to come first in the file.
+  # Serialising with two-space indent reproduces the file byte for byte.
+  CONF="$root/apps/desktop/src-tauri/tauri.conf.json" SEMVER="$semver" MSI="$msi" bun -e '
+    const f = process.env.CONF;
+    const c = JSON.parse(await Bun.file(f).text());
+    c.version = process.env.SEMVER;
+    ((c.bundle.windows ??= {}).wix ??= {}).version = process.env.MSI;
+    await Bun.write(f, JSON.stringify(c, null, 2) + "\n");
+  '
   # Cargo: the package version, which is the first `version =` in the file.
   perl -0pi -e 's/^version = "[^"]*"/version = "'"$semver"'"/m' \
     "$root/apps/desktop/src-tauri/Cargo.toml"
-  echo "stamped $semver (label $label, code $code)"
+  echo "stamped $semver (msi $msi, label $label, code $code)"
   exit 0
 fi
 
 if [ "${1:-}" = "--json" ]; then
-  printf '{"label":"%s","train":"%s","semver":"%s","code":%s,"date":"%s"}\n' \
-    "$label" "$train" "$semver" "$code" "$date"
+  printf '{"label":"%s","train":"%s","semver":"%s","msi":"%s","code":%s,"date":"%s"}\n' \
+    "$label" "$train" "$semver" "$msi" "$code" "$date"
 else
-  printf 'TREM_LABEL=%s\nTREM_TRAIN=%s\nTREM_SEMVER=%s\nTREM_CODE=%s\nTREM_DATE=%s\n' \
-    "$label" "$train" "$semver" "$code" "$date"
+  printf 'TREM_LABEL=%s\nTREM_TRAIN=%s\nTREM_SEMVER=%s\nTREM_MSI=%s\nTREM_CODE=%s\nTREM_DATE=%s\n' \
+    "$label" "$train" "$semver" "$msi" "$code" "$date"
 fi
