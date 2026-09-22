@@ -21,7 +21,8 @@
         "visible": false,
         "resizable": true,
         "fullscreen": false,
-        "maximizable": true
+        "maximizable": true,
+        "backgroundThrottling": "disabled"
       }
     ],
     "security": {

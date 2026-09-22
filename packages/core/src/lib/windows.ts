@@ -1,5 +1,6 @@
 /** Create/focus the secondary Tauri windows (settings, pip). */
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import type { BackgroundThrottlingPolicy } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "./env";
 
@@ -52,6 +53,11 @@ async function createPipWindow(): Promise<WebviewWindow> {
     // the shared EEW renderer.
     resizable: false,
     visible: false,
+    // It renders an alert while still hidden and is shown once that is done
+    // (see pipBridge). WKWebView's default is to suspend a web view that is
+    // not on screen, which would stall exactly that render. The main window
+    // opts out the same way, in tauri.conf.json.
+    backgroundThrottling: "disabled" as BackgroundThrottlingPolicy,
   });
 
   return new Promise<WebviewWindow>((resolve, reject) => {

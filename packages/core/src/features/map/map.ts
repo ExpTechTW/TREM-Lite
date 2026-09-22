@@ -139,13 +139,40 @@ function buildMap(container: HTMLElement): MlMap {
   });
 }
 
+/**
+ * Lets the map finish loading in a window that starts hidden.
+ *
+ * MapLibre processes its style — and renders — on animation frames, and a
+ * hidden WKWebView fires none. A window autostarted into the tray therefore
+ * never loaded its map, and everything waiting on `MapLoad`, the data pipeline
+ * included, waited with it. Until the map has loaded, a hidden page gets
+ * timer-driven frames; after that the native ones are restored, and renders
+ * simply pause for as long as nothing is on screen.
+ *
+ * Timer frames get negative ids. A frame requested before the restore and
+ * cancelled after it then reaches the native `cancelAnimationFrame`, which
+ * ignores a negative id rather than cancelling some unrelated frame.
+ */
+function framesUntilLoaded(): () => void {
+  if (document.visibilityState !== "hidden") return () => {};
+  const { requestAnimationFrame: raf, cancelAnimationFrame: caf } = window;
+  window.requestAnimationFrame = (cb) => -window.setTimeout(() => cb(performance.now()), 16);
+  window.cancelAnimationFrame = (id) => (id < 0 ? window.clearTimeout(-id) : caf.call(window, id));
+  return () => {
+    window.requestAnimationFrame = raf;
+    window.cancelAnimationFrame = caf;
+  };
+}
+
 function initMap(container: HTMLElement): Promise<MlMap> {
   return new Promise((resolve) => {
+    const restoreFrames = framesUntilLoaded();
     const map = buildMap(container);
     let done = false;
     const finish = (why: string) => {
       if (done) return;
       done = true;
+      restoreFrames();
       log.info("ready:", why);
       resolve(map);
     };
