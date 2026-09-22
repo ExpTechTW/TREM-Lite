@@ -256,6 +256,59 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
         run: bun scripts/rename-release-assets.mjs
 
+      # latest.json is the one artifact nothing else checks, and it fails
+      # silently: a platform missing from it is a platform that never updates,
+      # and a URL naming a file the rename moved is a 404 on every installed
+      # copy. tauri-action writes it from every build at once with no lock —
+      # each reads it, merges its own platform, deletes it and uploads it again
+      # — so two builds that finish together can drop each other's entry, and
+      # no step reports it.
+      #
+      # WANT follows the build matrix; the universal macOS build answers for
+      # both darwin keys.
+      - name: Check the updater manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.version.outputs.release_id }}
+          TAG: ${{ needs.version.outputs.tag }}
+          WANT: >-
+            darwin-aarch64 darwin-x86_64 linux-x86_64 linux-aarch64
+            windows-x86_64 windows-aarch64 windows-i686
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?per_page=100" \
+            -q '.[] | "\(.id)\t\(.name)"' >/tmp/assets.tsv
+          id="$(awk -F'\t' '$2 == "latest.json" { print $1 }' /tmp/assets.tsv)"
+          if [ -z "$id" ]; then
+            echo "::error::the release has no latest.json"
+            exit 1
+          fi
+          gh api -H 'Accept: application/octet-stream' \
+            "repos/$GITHUB_REPOSITORY/releases/assets/$id" >/tmp/latest.json
+          python3 - <<'PY'
+          import json, os, sys
+
+          tag = os.environ["TAG"]
+          names = {line.rstrip("\n").split("\t", 1)[1] for line in open("/tmp/assets.tsv")}
+          platforms = json.load(open("/tmp/latest.json"))["platforms"]
+
+          bad = [f"no entry for {p}" for p in os.environ["WANT"].split() if p not in platforms]
+          for key, entry in sorted(platforms.items()):
+              url = entry.get("url", "")
+              name = url.rsplit("/", 1)[-1]
+              if f"/releases/download/{tag}/" not in url:
+                  bad.append(f"{key} is not under this tag: {url}")
+              elif name not in names:
+                  bad.append(f"{key} points at {name}, which is not on the release")
+              if not entry.get("signature"):
+                  bad.append(f"{key} has no signature")
+
+          for b in bad:
+              print(f"::error::latest.json: {b}")
+          if bad:
+              sys.exit(1)
+          print(f"latest.json: {len(platforms)} entries, every target present, every URL resolves")
+          PY
+
       # The note is built from the changelog lines the commits declare — see
       # commit.md and tool/release/notes.sh. Written after the rename so the
       # body and the asset names describe the same release.
