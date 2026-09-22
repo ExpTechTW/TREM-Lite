@@ -4,7 +4,8 @@
  * The imperative data/feature layer (DataManager, rts/eew/… map drivers) reads
  * and writes this object directly, exactly like the Electron app did. React
  * overlays stay reactive by subscribing to the `events` bus (see hooks/useTremEvent)
- * and pulling from here, plus a small Zustand `useUiStore` for shared UI values.
+ * and pulling from here, plus the mutable `ui` object (variable.ui.ts) for shared
+ * UI values.
  */
 import type { Map as MlMap } from "maplibre-gl";
 
@@ -23,7 +24,7 @@ export interface TremVariable {
     eew: EewData[];
     lpgm: unknown[];
   };
-  /** 0 realtime(http) | 1 realtime(ws) | 2 replay(http) | 3 replay(file) */
+  /** 0 realtime (SSE) | 2 replay (HTTP) | 3 replay (file). 1, legacy's WebSocket mode, is never set. */
   play_mode: number;
   replay: { start_time: number; local_time: number; dev: boolean };
   station: Record<string, Station> | null;

@@ -8,7 +8,7 @@
 //!
 //! ```text
 //!   blocking-pool tasks --+
-//!   (one per request)     +--> ReaderPool ---> N read-only connections (parallel)
+//!   (one per request)     +--> ReaderPool ---> N reader connections  (parallel)
 //!                         |                    WAL snapshot reads, never blocked
 //!                         |
 //!                         +--> mpsc channel --> writer thread --> 1 read-write conn
@@ -179,7 +179,8 @@ fn tune(conn: &Connection, page_cache_kib: i64) -> Result<(), String> {
     .map_err(|e| e.to_string())
 }
 
-/// Fixed-size pool of read-only connections.
+/// Fixed-size pool of reader connections: they only ever SELECT, though they
+/// are opened read-write (see `open`).
 ///
 /// Reads run on tokio's bounded blocking pool, so a checkout blocks only when
 /// every connection is already busy, and then only until one is returned.
@@ -271,7 +272,7 @@ impl HttpCache {
         let page_cache_kib = TOTAL_PAGE_CACHE_KIB / (reader_count as i64 + 1);
 
         // The writer opens first: it creates the file, sets WAL (a persistent
-        // property of the database) and builds the schema, so the read-only
+        // property of the database) and builds the schema, so the reader
         // connections below always find a valid database.
         let writer_conn = Connection::open(path).map_err(|e| e.to_string())?;
         tune(&writer_conn, page_cache_kib)?;

@@ -1,7 +1,6 @@
 /**
- * EEW intensity attenuation — delegated to Rust (see src-tauri/src/math.rs) for
- * speed. Equivalent to EEWCalculator.eewAreaPga but runs the ~370-town loop
- * natively. Kept here as a thin typed wrapper so callers stay clean.
+ * EEW intensity attenuation — computed in Rust (src-tauri/src/math.rs), which
+ * runs the ~370-town loop natively. This is the thin typed wrapper around it.
  */
 import { invoke } from "@tauri-apps/api/core";
 

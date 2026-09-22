@@ -40,9 +40,6 @@ export default defineConfig({
           port: 1421,
         }
       : undefined,
-    watch: {
-      ignored: ["**/src-tauri/**", "**/legacy/**"],
-    },
   },
 
   // Env vars starting with these are exposed to the client.

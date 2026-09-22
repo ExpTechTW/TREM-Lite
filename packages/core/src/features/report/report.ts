@@ -1,5 +1,5 @@
 // Ported from legacy/src/js/index/core/report.js
-// The scrollable list UI moves to a React overlay (features/report/ReportList.tsx);
+// The scrollable list UI moves to a React overlay (overlays/ReportPanel.tsx);
 // this module keeps the data fetching, map points, and lifecycle events.
 import { openUrl as openExternal } from "@tauri-apps/plugin-opener";
 

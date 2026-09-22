@@ -1,8 +1,8 @@
 /**
  * SSE + multi-endpoint HTTP client — ported from legacy/src/js/index/data/http.js.
  *
- * Everything here is realtime: the SSE streams never end, and the polling
- * fallback asks for a new second of data each time. Both therefore run with
+ * Everything here is realtime: the SSE streams never end, and the polling path
+ * (used by HTTP replay) asks for a different second each time. Both run with
  * `store: false` — an ETag could never match, and writing 1 Hz payloads into
  * the 250 MB LRU would evict the station/report/tile entries that do benefit
  * from it. They still go through `@/lib/http` so timeouts, gzip and transport
