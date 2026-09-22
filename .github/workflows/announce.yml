@@ -1,0 +1,39 @@
+name: Announce
+
+# A release is published by a human — release.yml leaves it as a draft, because
+# it drives OTA to every installed copy — so its announcement cannot ride along
+# in release.yml the way a snapshot's does. A human's publish starts runs; the
+# workflow's own publish (with GITHUB_TOKEN) does not, so this never fires for a
+# snapshot and nothing is announced twice.
+#
+# `published` only: publishing a pre-release fires `published` *and*
+# `prereleased`, so listening for both would announce it twice.
+on:
+  release:
+    types: [published]
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # The default branch, not the release's tag: the announcer is tooling,
+      # and an older tag may predate it or carry an older copy.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Announce on Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -z "${DISCORD_WEBHOOK:-}" ]; then
+            echo "::notice::DISCORD_WEBHOOK is not set — nothing announced"
+            exit 0
+          fi
+          # Red when it fails, unlike the snapshot path: nothing here can be
+          # deleted over it, and a red run is what tells someone to re-run it.
+          python3 tool/release/discord.py "$TAG"
