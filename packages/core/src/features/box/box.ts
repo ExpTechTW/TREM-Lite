@@ -11,12 +11,13 @@ import { type BoxFeature as BinBoxFeature, decodeBox } from "@/lib/bindata";
 import type { EewData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { distance } from "@/domain/utils";
+import { http } from "@/lib/http";
 
 // Alert-box polygons, loaded async from the compact binary (out of the JS
 // bundle). Only used during an active alert, long after startup.
 let boxFeaturesData: BinBoxFeature[] = [];
-void fetch(boxBinUrl)
-  .then((r) => r.arrayBuffer())
+void http
+  .asset(boxBinUrl)
   .then((buf) => {
     boxFeaturesData = decodeBox(buf).features;
   })

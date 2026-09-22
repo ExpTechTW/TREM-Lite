@@ -18,7 +18,11 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
-tauri-plugin-http = "2"
+# `gzip` is required: the HTTP proxy (http_proxy.rs) forces `Accept-Encoding:
+# gzip` on every outbound request and relies on reqwest's transparent decoding.
+# We re-use the plugin's re-exported reqwest so the TLS backend and the crate
+# version stay in lockstep with the plugin's own client.
+tauri-plugin-http = { version = "2", features = ["gzip"] }
 tauri-plugin-fs = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-os = "2"
@@ -36,6 +40,12 @@ serde_yaml = "0.9"
 
 # Audio playback lives entirely in Rust (rodio) so OBS window capture works.
 rodio = "0.20"
+
+# HTTP proxy cache: SQLite holds the ETag/body store (bundled so no system
+# libsqlite3 is needed on any build host), flate2 does the max-level gzip that
+# every cached body is stored under.
+rusqlite = { version = "0.37", features = ["bundled"] }
+flate2 = "1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

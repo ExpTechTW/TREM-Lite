@@ -1,14 +1,11 @@
 /**
- * Runtime environment detection. Lets the app degrade gracefully when it runs in
- * a plain browser (headless WebKit for UI screenshots / debugging) instead of the
- * Tauri webview: HTTP falls back to native fetch, config to defaults, etc.
+ * Runtime environment detection. Lets the app degrade gracefully when it runs
+ * in a plain browser (the web build, or headless WebKit for UI screenshots /
+ * debugging) instead of the Tauri webview: config falls back to defaults, the
+ * HTTP layer swaps its backend, native features no-op.
+ *
+ * Network access is NOT exposed here. Everything goes through `@/lib/http`,
+ * which picks its backend from `inTauri` — see that module's header.
  */
-import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
-
 export const inTauri =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in (window as object);
-
-/** fetch that works in both Tauri (plugin-http, CORS-free) and a plain browser. */
-export const appFetch = (
-  inTauri ? tauriFetch : window.fetch.bind(window)
-) as typeof window.fetch;

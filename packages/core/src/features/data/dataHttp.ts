@@ -1,12 +1,17 @@
 /**
  * SSE + multi-endpoint HTTP client — ported from legacy/src/js/index/data/http.js.
- * Uses tauri-plugin-http `fetch` (streaming ReadableStream) so SSE bypasses CORS.
+ *
+ * Everything here is realtime: the SSE streams never end, and the polling
+ * fallback asks for a new second of data each time. Both therefore run with
+ * `store: false` — an ETag could never match, and writing 1 Hz payloads into
+ * the 250 MB LRU would evict the station/report/tile entries that do benefit
+ * from it. They still go through `@/lib/http` so timeouts, gzip and transport
+ * selection stay in one place.
  */
-import { appFetch, inTauri } from "@/lib/env";
 
 import { HTTP_TIMEOUT } from "@/lib/constants";
 import { getHost, reportFailure, reportSuccess } from "@/lib/endpoints";
-import { withController } from "@/lib/http";
+import { http, withController, type HttpResponse } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
 import { variable } from "@/lib/variable";
@@ -18,6 +23,9 @@ const activePollingControllers = new Set<AbortController>();
 
 const log = createLogger("sse");
 const TREM_REPLAY_HOST = "api-1.exptech.dev";
+
+/** Realtime payloads are never the same twice — keep them out of the LRU. */
+const NO_STORE = { store: false } as const;
 
 export function abortAll(): void {
   transportGeneration++;
@@ -119,13 +127,11 @@ export function init(options: SseHandlers = {}): SseManager {
       };
       const feed = makeSseReader(dispatch);
 
-      appFetch(u.url, {
-        signal,
-        headers: inTauri
-          ? { Accept: "text/event-stream", "Cache-Control": "no-cache" }
-          : { Accept: "text/event-stream" },
-        ...(!inTauri ? { cache: "no-cache" as const } : {}),
-      })
+      http
+        .stream(u.url, {
+          signal,
+          headers: { Accept: "text/event-stream", "Cache-Control": "no-cache" },
+        })
         .then(async (res) => {
           if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
           log.info(`${u.type} connected (${res.status}), streaming…`);
@@ -175,7 +181,7 @@ export interface PolledData {
   lpgm: unknown[] | null;
 }
 
-async function parseJson(response: Response | null): Promise<unknown | null> {
+async function parseJson(response: HttpResponse | null): Promise<unknown | null> {
   if (!response?.ok) return null;
   try {
     return await response.json();
@@ -201,15 +207,15 @@ export async function getData(time?: number): Promise<PolledData> {
 
   const suffix = t ? `/${t}` : "";
   const reqs: (ReturnType<typeof withController> | null)[] = [
-    requestMode == 1 ? null : withController(`https://${tremDomain}/api/v2/trem/rts${suffix}`, HTTP_TIMEOUT.RTS),
-    requestMode == 1 ? null : withController(`https://${eewDomain}/api/v2/eq/eew${suffix}`, HTTP_TIMEOUT.EEW),
+    requestMode == 1 ? null : withController(`https://${tremDomain}/api/v2/trem/rts${suffix}`, HTTP_TIMEOUT.RTS, NO_STORE),
+    requestMode == 1 ? null : withController(`https://${eewDomain}/api/v2/eq/eew${suffix}`, HTTP_TIMEOUT.EEW, NO_STORE),
   ];
 
   if (shouldFetchIntensity) {
-    reqs.push(withController(`https://${tremDomain}/api/v2/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY));
+    reqs.push(withController(`https://${tremDomain}/api/v2/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY, NO_STORE));
   }
   if (shouldFetchLPGM) {
-    reqs.push(withController(`https://${tremDomain}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM));
+    reqs.push(withController(`https://${tremDomain}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM, NO_STORE));
   }
 
   const activeRequests = reqs.filter((request): request is ReturnType<typeof withController> => !!request);

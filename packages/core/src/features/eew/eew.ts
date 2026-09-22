@@ -18,13 +18,14 @@ import { ui } from "@/lib/variable.ui";
 import { variable } from "@/lib/variable";
 import timeBinUrl from "@/data/time.bin?url";
 import { decodeTimeTable } from "@/lib/bindata";
+import { http } from "@/lib/http";
 
 // P/S travel-time table, loaded from the compact binary (scripts/encode-data.mjs
 // + lib/bindata.ts) instead of inlining the 1 MB JSON into the bundle. Async —
 // only needed once an EEW is active, which is long after startup.
 let calculator: EEWCalculator | null = null;
-void fetch(timeBinUrl)
-  .then((r) => r.arrayBuffer())
+void http
+  .asset(timeBinUrl)
   .then((buf) => {
     calculator = new EEWCalculator(decodeTimeTable(buf) as TimeTable);
   })

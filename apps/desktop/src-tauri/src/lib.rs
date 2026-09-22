@@ -1,11 +1,14 @@
 mod audio;
 mod config;
+mod http_cache;
+mod http_proxy;
 mod logging;
 mod math;
 mod ntp;
 mod window;
 
 use audio::AudioEngine;
+use http_proxy::ProxyState;
 #[cfg(desktop)]
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
@@ -49,6 +52,15 @@ pub fn run() {
         .manage(AudioEngine::new())
         .setup(|app| {
             logging::prune_old_logs(app.handle());
+            // Every buffered HTTP request in the app goes through this proxy
+            // (ETag revalidation + gzip + 250 MB SQLite LRU). If it can't open
+            // its database the app must still run, so failure only logs.
+            match ProxyState::new(app.handle()) {
+                Ok(proxy) => {
+                    app.manage(proxy);
+                }
+                Err(e) => log::error!("http proxy unavailable: {e}"),
+            }
             config::ensure_initialized(app.handle());
             let start_hidden = std::env::args_os().any(|arg| arg == "--start");
             if let Some(window) = app.get_webview_window("main") {
@@ -120,6 +132,9 @@ pub fn run() {
             config::config_get,
             config::config_set,
             config::config_reset,
+            http_proxy::http_request,
+            http_proxy::http_cache_stats,
+            http_proxy::http_cache_clear,
             math::eew_area_pga,
             ntp::ntp_sync,
             window::window_focus,

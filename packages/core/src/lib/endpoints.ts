@@ -6,7 +6,7 @@
  * lowest-latency healthy one, and consecutive request failures trigger failover.
  */
 import { getConfig } from "@/lib/config";
-import { appFetch, inTauri } from "@/lib/env";
+import { http } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 
 export type PoolName = "lbApi" | "coreApi";
@@ -112,14 +112,15 @@ export function reportFailure(pool: PoolName): void {
 }
 
 async function probeNode(pool: Pool, node: Node): Promise<void> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT);
   const start = Date.now();
   try {
-    const res = await appFetch(pool.probe(node.host), {
+    // `store: false` — a probe measures the live round trip, so it must never
+    // be answered from the cache, and its body is discarded anyway.
+    const res = await http.request(pool.probe(node.host), {
       method: pool.method,
-      signal: controller.signal,
-      ...(inTauri ? { headers: { "Cache-Control": "no-cache" } } : { cache: "no-cache" }),
+      timeout: PROBE_TIMEOUT,
+      store: false,
+      headers: { "Cache-Control": "no-cache" },
     });
     node.ok = res.ok;
     node.latency = res.ok ? Date.now() - start : Infinity;
@@ -127,8 +128,6 @@ async function probeNode(pool: Pool, node: Node): Promise<void> {
   } catch {
     node.ok = false;
     node.latency = Infinity;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
