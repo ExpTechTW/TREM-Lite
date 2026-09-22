@@ -2,14 +2,19 @@ name: Release
 
 # Two kinds of build, one pipeline — the naming scheme is in commit.md.
 #
-#   push to main   a snapshot: tagged `26w39a`, published as a PRE-release.
-#   push of `v*`   a release:  tagged `v26.2`, published as a DRAFT.
+#   push to main   a snapshot: `26w39a`, published as a PRE-release once every
+#                  target is in.
+#   push of `v*`   a release:  `v26.2`, left as a DRAFT for a human.
 #
 # The asymmetry is deliberate. GitHub's "latest" release never points at a
 # prerelease, and `latest.json` — what the Tauri updater reads — is served from
 # `releases/latest`, so a snapshot cannot reach anyone running a release. A real
 # release does become "latest" and drives OTA to every installed copy, so it
 # waits as a draft for a human to publish.
+#
+# Every release starts as a draft, snapshots included, so a snapshot is either
+# complete or invisible: `version` creates the draft, the builds fill it,
+# `publish` finishes it, and `discard` deletes it if anything failed.
 on:
   push:
     branches: [main]
@@ -36,6 +41,7 @@ jobs:
       code: ${{ steps.derive.outputs.code }}
       tag: ${{ steps.derive.outputs.tag }}
       is_release: ${{ steps.derive.outputs.is_release }}
+      release_id: ${{ steps.release.outputs.id }}
     steps:
       # Full history: the label counts this year's commits and this week's tags.
       - uses: actions/checkout@v4
@@ -64,17 +70,46 @@ jobs:
             echo "tag=$tag"
             echo "is_release=$is_release"
           } >>"$GITHUB_OUTPUT"
-          echo "$tag → $TREM_SEMVER (code $TREM_CODE)"
+          echo "$tag → $TREM_SEMVER (msi $TREM_MSI, code $TREM_CODE)"
 
-      # The snapshot tag has to exist before the build jobs attach artifacts to
-      # it. A release tag was pushed by a human and already does.
-      - name: Tag the snapshot
-        if: steps.derive.outputs.is_release == 'false'
+      # The release exists, as a draft, before any build starts, and every build
+      # uploads into it by id.
+      #
+      # Left to the builds, each target looks the release up by tag and creates
+      # it when absent (tauri-action's create-release.ts), with nothing to catch
+      # the collision: two targets that finish together both see "absent", both
+      # create, and the second dies on `already_exists` with its artifacts built
+      # and signed. The first snapshot lost its arm64 build exactly that way.
+      #
+      # A snapshot's tag is not pushed here. A draft does not need its tag to
+      # exist — GitHub creates it at `target_commitish` when the draft is
+      # published — so a snapshot that never publishes never has a tag. That
+      # matters beyond tidiness: the next snapshot's note is a delta from the
+      # nearest tag, and an orphaned one would silently swallow every entry it
+      # carried.
+      - name: Create the draft release
+        id: release
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.derive.outputs.tag }}
+          LABEL: ${{ steps.derive.outputs.label }}
+          PRERELEASE: ${{ steps.derive.outputs.is_release == 'false' }}
+          SHA: ${{ github.sha }}
         run: |
-          git tag "$TAG"
-          git push origin "$TAG"
+          # A re-run finds the draft its first attempt created. Drafts only: a
+          # published release under this tag is live, and uploading into it
+          # would rewrite what users are downloading. Creating a second one
+          # fails instead, which is the right outcome.
+          id="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            -q '.[] | select(.tag_name == env.TAG and .draft) | .id' | head -n 1)"
+          if [ -z "$id" ]; then
+            id="$(gh api "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" -f target_commitish="$SHA" \
+              -f name="TREM-Lite $LABEL" \
+              -F draft=true -F prerelease="$PRERELEASE" -q .id)"
+          fi
+          echo "id=$id" >>"$GITHUB_OUTPUT"
+          echo "draft $id for $TAG"
 
   build:
     needs: version
@@ -110,12 +145,13 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      # The tag, not the branch: a push to main that lands while this matrix is
-      # running would otherwise have some targets build a different tree than
-      # the others, all attached to one release.
+      # The commit this run was started for, not the branch: a push to main that
+      # lands while this matrix is running would otherwise have some targets
+      # build a different tree than the others, all attached to one release.
+      # Not the tag either — a snapshot does not have one until it publishes.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.version.outputs.tag }}
+          ref: ${{ github.sha }}
 
       # xdg-utils: the AppImage carries its own copy of `xdg-open` (what the
       # opener plugin launches on Linux), taken from the build host. The x64
@@ -155,9 +191,9 @@ jobs:
         run: bun install
 
       # Stamp the version this run was named for. `--write` takes it from the
-      # environment rather than recomputing: the snapshot tag now exists, so a
-      # fresh computation would step to the next letter, and this checkout is
-      # shallow, so the commit count behind the MSI version would read 1.
+      # environment rather than recomputing: this checkout is shallow, so it can
+      # count neither this week's snapshots nor the year's commits, and both the
+      # label and the MSI version would come out wrong.
       - name: Stamp the version
         shell: bash
         env:
@@ -165,7 +201,7 @@ jobs:
           TREM_MSI: ${{ needs.version.outputs.msi }}
         run: bash tool/release/version.sh --write
 
-      - name: Build & publish (tauri-action)
+      - name: Build & upload (tauri-action)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -176,36 +212,32 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Tauri updater signing (optional)
+          # Tauri updater signing
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
+          # Into the draft `version` created — see there for why no build may
+          # create a release itself. `tagName` still matters alongside the id:
+          # a draft's download URLs read `untagged-…` until it is published, and
+          # tauri-action rewrites them to this tag when it writes latest.json.
+          releaseId: ${{ needs.version.outputs.release_id }}
           tagName: ${{ needs.version.outputs.tag }}
-          releaseName: "TREM-Lite ${{ needs.version.outputs.label }}"
-          # A release becomes GitHub's "latest" and drives OTA to everyone, so
-          # it waits for a human. A snapshot is a prerelease, which "latest"
-          # never points at, so nothing reaches a release user and it can
-          # publish itself.
-          releaseDraft: ${{ needs.version.outputs.is_release == 'true' }}
-          prerelease: ${{ needs.version.outputs.is_release == 'false' }}
           args: ${{ matrix.args }}
 
-  # Rename the draft release's assets to TREM-Lite-<version>-<os>-<arch>.<ext>
-  # (arm64 / x64 / ia32) and patch latest.json's URLs to match. Runs once after
-  # all matrix builds have uploaded. Updater signatures are embedded in
-  # latest.json and depend on file content, so renaming keeps OTA valid.
+  # Finish the draft, once, after every target has uploaded: friendly asset
+  # names, the release note, and — for a snapshot — publication.
   publish:
     needs: [version, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      # Full history at the tag: the note walks back to the previous tag, and
-      # for a release back to the previous *release* tag.
+      # Full history: the note walks back to the previous tag, and for a release
+      # back to the previous *release* tag.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.version.outputs.tag }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Setup Bun
@@ -213,6 +245,10 @@ jobs:
         with:
           bun-version: latest
 
+      # Rename the assets to TREM-Lite-<version>-<os>-<arch>.<ext> (arm64 / x64 /
+      # ia32) and patch latest.json's URLs to match. Updater signatures are
+      # embedded in latest.json and depend on file content, so renaming keeps
+      # OTA valid.
       - name: Rename assets + patch latest.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -228,7 +264,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          TAG: ${{ needs.version.outputs.tag }}
+          RELEASE_ID: ${{ needs.version.outputs.release_id }}
           LABEL: ${{ needs.version.outputs.label }}
           CODE: ${{ needs.version.outputs.code }}
           IS_RELEASE: ${{ needs.version.outputs.is_release }}
@@ -239,23 +275,31 @@ jobs:
             bash tool/release/notes.sh "$LABEL" "$CODE" >/tmp/notes.md
           fi
           cat /tmp/notes.md
-          gh release edit "$TAG" --notes-file /tmp/notes.md
+          # By id: a draft cannot be looked up by its tag.
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            -F body=@/tmp/notes.md >/dev/null
 
-  # A snapshot whose build failed leaves nothing behind — neither its tag nor a
-  # half-populated release.
+      # Last, so a snapshot goes public complete: every target in, names final,
+      # note written. GitHub creates its tag at this moment.
+      - name: Publish the snapshot
+        if: needs.version.outputs.is_release == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.version.outputs.release_id }}
+        run: |
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            -F draft=false -q .html_url
+
+  # A snapshot that fails anywhere — a build, the rename, the note — is deleted
+  # rather than published incomplete. It never got a tag (see `version`), so the
+  # draft is all there is to remove, and the next snapshot reuses its name.
   #
-  # Not tidiness. The tag is pushed before the build starts, so a failed run
-  # would otherwise leave a tag no release ever pointed at, and the *next*
-  # snapshot's note is a delta from the nearest tag: it would silently leave
-  # out every entry the failed one carried. DPIP accepts that and deletes such
-  # tags by hand; here the run cleans up after itself.
-  #
-  # A release tag is never touched: a human pushed it, and a human decides.
+  # A release is never touched: a human pushed its tag, and a human decides
+  # what happens to its draft.
   discard:
-    needs: [version, build]
-    # `version` must have succeeded: that job pushes the tag, so success is what
-    # proves the tag being deleted is the one this run created. A failure
-    # earlier than that would otherwise delete a name some other run owns.
+    needs: [version, build, publish]
+    # `version` must have succeeded: it created the draft this deletes, so its
+    # success is what proves the id names this run's release.
     if: >-
       (failure() || cancelled())
       && needs.version.result == 'success'
@@ -264,16 +308,17 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Delete the failed snapshot
+      - name: Delete the unfinished snapshot
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.version.outputs.release_id }}
           TAG: ${{ needs.version.outputs.tag }}
         run: |
-          # With `fail-fast: false` some targets may already have uploaded,
-          # creating the release; the others then failed. Take both away.
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
-          else
+          gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID"
+          # A tag exists only if publication itself went through and something
+          # after it failed. Nothing else can own the name: it was free when
+          # `version` computed it, and release runs never overlap.
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
           fi
-          echo "discarded $TAG — the next snapshot reuses its name"
+          echo "discarded $TAG; the next snapshot reuses the name"

@@ -164,10 +164,9 @@ fi
 
 if [ "${1:-}" = "--write" ]; then
   # A build runner must stamp the version the release was *named* for, not one
-  # it recomputes. Recomputing is wrong twice over: the release job has already
-  # created `26w39a`, so a fresh run would count it and produce `26w39b`; and
-  # the runner's checkout is shallow, so this year's commit count reads 1. The
-  # release workflow therefore passes both values down.
+  # it recomputes: its checkout is shallow, so it can count neither this week's
+  # snapshots nor this year's commits, and both the label and the MSI version
+  # would come out wrong. The release workflow therefore passes both down.
   semver="${TREM_SEMVER:-$semver}"
   msi="${TREM_MSI:-$msi}"
   # Every file that carries a version, stamped from the one source above.
