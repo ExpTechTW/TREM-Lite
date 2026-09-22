@@ -137,6 +137,14 @@ else
 fi
 
 if [ "${1:-}" = "--write" ]; then
+  # A build runner must stamp the version the release was *named* for, not one
+  # it recomputes. Recomputing is actively wrong for a snapshot: the release
+  # job has already created `26w39a`, so a fresh run here would count it and
+  # produce `26w39b` — the artifacts would disagree with the tag they are
+  # attached to. The release workflow therefore passes the value down.
+  if [ -n "${TREM_SEMVER:-}" ]; then
+    semver="$TREM_SEMVER"
+  fi
   # Every file that carries a version, stamped from the one source above.
   # `code` and `label` are not written anywhere: nothing in the build reads
   # them, and a value with no reader is a value that goes stale.

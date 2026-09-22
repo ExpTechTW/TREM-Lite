@@ -1,12 +1,81 @@
 name: Release
 
+# Two kinds of build, one pipeline — the naming scheme is in commit.md.
+#
+#   push to main   a snapshot: tagged `26w39a`, published as a PRE-release.
+#   push of `v*`   a release:  tagged `v26.2`, published as a DRAFT.
+#
+# The asymmetry is deliberate. GitHub's "latest" release never points at a
+# prerelease, and `latest.json` — what the Tauri updater reads — is served from
+# `releases/latest`, so a snapshot cannot reach anyone running a release. A real
+# release does become "latest" and drives OTA to every installed copy, so it
+# waits as a draft for a human to publish.
 on:
   push:
-    tags: ["*"]
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
+# Never two release runs at once: both would compute a snapshot letter from the
+# same set of tags and hand out the same one twice.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  release:
+  # The one place the version is decided; every job below reads it from here.
+  # Recomputing it on a build runner would be wrong — see tool/release/version.sh.
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      label: ${{ steps.derive.outputs.label }}
+      semver: ${{ steps.derive.outputs.semver }}
+      code: ${{ steps.derive.outputs.code }}
+      tag: ${{ steps.derive.outputs.tag }}
+      is_release: ${{ steps.derive.outputs.is_release }}
+    steps:
+      # Full history: the label counts this year's commits and this week's tags.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive the version
+        id: derive
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          eval "$(tool/release/version.sh)"
+          if [ "$REF_TYPE" = tag ]; then
+            is_release=true
+            tag="$REF_NAME"
+          else
+            is_release=false
+            tag="$TREM_LABEL"
+          fi
+          {
+            echo "label=$TREM_LABEL"
+            echo "semver=$TREM_SEMVER"
+            echo "code=$TREM_CODE"
+            echo "tag=$tag"
+            echo "is_release=$is_release"
+          } >>"$GITHUB_OUTPUT"
+          echo "$tag → $TREM_SEMVER (code $TREM_CODE)"
+
+      # The snapshot tag has to exist before the build jobs attach artifacts to
+      # it. A release tag was pushed by a human and already does.
+      - name: Tag the snapshot
+        if: steps.derive.outputs.is_release == 'false'
+        env:
+          TAG: ${{ steps.derive.outputs.tag }}
+        run: |
+          git tag "$TAG"
+          git push origin "$TAG"
+
+  build:
+    needs: version
     permissions:
       contents: write
     strategy:
@@ -39,7 +108,12 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
+      # The tag, not the branch: a push to main that lands while this matrix is
+      # running would otherwise have some targets build a different tree than
+      # the others, all attached to one release.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
 
       - name: Install Linux dependencies
         if: startsWith(matrix.platform, 'ubuntu')
@@ -74,6 +148,15 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      # Stamp the version this run was named for. `--write` takes it from the
+      # environment rather than recomputing, because the snapshot tag now
+      # exists and a fresh computation would step to the next letter.
+      - name: Stamp the version
+        shell: bash
+        env:
+          TREM_SEMVER: ${{ needs.version.outputs.semver }}
+        run: bash tool/release/version.sh --write
+
       - name: Build & publish (tauri-action)
         uses: tauri-apps/tauri-action@v0
         env:
@@ -90,30 +173,62 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
-          tagName: ${{ github.ref_name }}
-          releaseName: "TREM-Lite ${{ github.ref_name }}"
-          releaseDraft: true
-          prerelease: false
+          tagName: ${{ needs.version.outputs.tag }}
+          releaseName: "TREM-Lite ${{ needs.version.outputs.label }}"
+          # A release becomes GitHub's "latest" and drives OTA to everyone, so
+          # it waits for a human. A snapshot is a prerelease, which "latest"
+          # never points at, so nothing reaches a release user and it can
+          # publish itself.
+          releaseDraft: ${{ needs.version.outputs.is_release == 'true' }}
+          prerelease: ${{ needs.version.outputs.is_release == 'false' }}
           args: ${{ matrix.args }}
 
   # Rename the draft release's assets to TREM-Lite-<version>-<os>-<arch>.<ext>
   # (arm64 / x64 / ia32) and patch latest.json's URLs to match. Runs once after
   # all matrix builds have uploaded. Updater signatures are embedded in
   # latest.json and depend on file content, so renaming keeps OTA valid.
-  rename-assets:
-    needs: release
+  publish:
+    needs: [version, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      # Full history at the tag: the note walks back to the previous tag, and
+      # for a release back to the previous *release* tag.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+          fetch-depth: 0
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
       - name: Rename assets + patch latest.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ needs.version.outputs.tag }}
         run: bun scripts/rename-release-assets.mjs
+
+      # The note is built from the changelog lines the commits declare — see
+      # commit.md and tool/release/notes.sh. Written after the rename so the
+      # body and the asset names describe the same release.
+      - name: Write the release note
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+          LABEL: ${{ needs.version.outputs.label }}
+          CODE: ${{ needs.version.outputs.code }}
+          IS_RELEASE: ${{ needs.version.outputs.is_release }}
+        run: |
+          if [ "$IS_RELEASE" = true ]; then
+            bash tool/release/notes.sh "$LABEL" "$CODE" --release >/tmp/notes.md
+          else
+            bash tool/release/notes.sh "$LABEL" "$CODE" >/tmp/notes.md
+          fi
+          cat /tmp/notes.md
+          gh release edit "$TAG" --notes-file /tmp/notes.md
