@@ -28,17 +28,13 @@ use tauri_plugin_http::reqwest;
 
 use crate::http_cache::{gunzip, CacheEntry, HttpCache, StoredResponse};
 
-/// Hosts the proxy is willing to talk to. Mirrors the `http:default` scope in
-/// `capabilities/default.json` (this command bypasses that scope, so the
-/// allowlist has to be restated here) plus the map glyph CDN.
-const ALLOWED_HOSTS: &[&str] = &[
-    "*.exptech.dev",
-    "*.exptech.com.tw",
-    "raw.githubusercontent.com",
-    "www.cwa.gov.tw",
-    "cdn.jsdelivr.net",
-    "contrib.rocks",
-];
+/// Hosts the proxy is willing to talk to. This command bypasses the
+/// `http:default` scope in `capabilities/default.json`, so the allowlist is
+/// restated here — and kept to what the app actually requests through it: the
+/// ExpTech APIs and map tiles, and the map glyph CDN. (A CWA report page is
+/// opened in the browser and the contributors image is an `<img>`; neither
+/// comes through here.)
+const ALLOWED_HOSTS: &[&str] = &["*.exptech.dev", "*.exptech.com.tw", "cdn.jsdelivr.net"];
 
 /// Response headers worth carrying back to the renderer / storing. Keeping the
 /// set small stops per-connection noise (`set-cookie`, `date`, `server`, …)
@@ -195,7 +191,7 @@ pub async fn http_request(
     let store = req.store.unwrap_or(true) && (method == "GET" || method == "HEAD");
     let key = format!("{method} {}", req.url);
 
-    // Read the validator, then release the lock before touching the network.
+    // The stored validator, read before touching the network.
     let cached = if store {
         cache_get(&state.cache, key.clone()).await
     } else {
