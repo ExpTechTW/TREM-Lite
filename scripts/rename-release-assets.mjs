@@ -10,7 +10,6 @@
 
 /** Normalize any arch spelling to the user-facing set. Order matters. */
 function normArch(s) {
-  if (/universal/i.test(s)) return "universal";
   if (/aarch64|arm64/i.test(s)) return "arm64";
   if (/x86_64|amd64|x64/i.test(s)) return "x64";
   if (/i686|i386|ia32|x86/i.test(s)) return "ia32";
@@ -44,10 +43,9 @@ export function friendly(name, version) {
   const os = OS_BY_EXT[ext];
   // arch token lives in the part before the extension.
   const stem = base.slice(0, base.length - ext.length - 1);
-  let arch = normArch(stem);
-  // macOS updater tarball ("TREM-Lite.app.tar.gz") carries no arch → it's the
-  // universal build.
-  if (!arch && os === "mac") arch = "universal";
+  // No arch → left as-is rather than guessed, so the manifest check in
+  // release.yml fails on the platform it cannot find.
+  const arch = normArch(stem);
   if (!arch) return null;
 
   return `TREM-Lite-${version}-${os}-${arch}.${ext}${isSig ? ".sig" : ""}`;
@@ -57,9 +55,11 @@ export function friendly(name, version) {
 function selftest() {
   const v = "4.0.0";
   const cases = {
-    "TREM-Lite_4.0.0_universal.dmg": "TREM-Lite-4.0.0-mac-universal.dmg",
-    "TREM-Lite.app.tar.gz": "TREM-Lite-4.0.0-mac-universal.app.tar.gz",
-    "TREM-Lite.app.tar.gz.sig": "TREM-Lite-4.0.0-mac-universal.app.tar.gz.sig",
+    "TREM-Lite_4.0.0_aarch64.dmg": "TREM-Lite-4.0.0-mac-arm64.dmg",
+    "TREM-Lite_4.0.0_x64.dmg": "TREM-Lite-4.0.0-mac-x64.dmg",
+    "TREM-Lite_aarch64.app.tar.gz": "TREM-Lite-4.0.0-mac-arm64.app.tar.gz",
+    "TREM-Lite_x64.app.tar.gz.sig": "TREM-Lite-4.0.0-mac-x64.app.tar.gz.sig",
+    "TREM-Lite.app.tar.gz": null,
     "TREM-Lite_4.0.0_amd64.deb": "TREM-Lite-4.0.0-linux-x64.deb",
     "TREM-Lite_4.0.0_arm64.deb": "TREM-Lite-4.0.0-linux-arm64.deb",
     "TREM-Lite-4.0.0-1.x86_64.rpm": "TREM-Lite-4.0.0-linux-x64.rpm",

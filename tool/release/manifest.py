@@ -17,8 +17,7 @@ It reproduces tauri-action's manifest entry for entry (checked against the one
 it wrote for 26w39b): for every updater artifact with a `.sig` beside it, an
 `{os}-{arch}-{installer}` key, plus a plain `{os}-{arch}` key for the preferred
 installer — the MSI on Windows (tauri-action's `updaterJsonPreferNsis`
-default), the AppImage on Linux, the app bundle on macOS. The universal macOS
-bundle answers for both darwin architectures.
+default), the AppImage on Linux, the app bundle on macOS.
 """
 
 import datetime
@@ -34,7 +33,7 @@ REPO = os.environ.get("GITHUB_REPOSITORY", "ExpTechTW/TREM-Lite")
 # The friendly names scripts/rename-release-assets.mjs gives the assets:
 # TREM-Lite-<label>-<os>-<arch>.<ext>
 NAME = re.compile(
-    r"^TREM-Lite-.+-(?P<os>mac|linux|win)-(?P<arch>universal|x64|arm64|ia32)"
+    r"^TREM-Lite-.+-(?P<os>mac|linux|win)-(?P<arch>x64|arm64|ia32)"
     r"\.(?P<ext>app\.tar\.gz|AppImage|deb|rpm|msi|exe)$"
 )
 OS = {"mac": "darwin", "linux": "linux", "win": "windows"}
@@ -92,18 +91,15 @@ def build(tag: str, version: str, listed: list[dict]) -> dict:
         if not match or not sig:
             continue  # not an updater artifact (a .dmg, a .sig itself)
         os_ = OS[match["os"]]
+        arch = ARCH[match["arch"]]
         installer = INSTALLER[match["ext"]]
-        arches = (
-            ["aarch64", "x86_64"] if match["arch"] == "universal" else [ARCH[match["arch"]]]
-        )
         entry = {
             "signature": signature(sig),
             "url": f"https://github.com/{REPO}/releases/download/{tag}/{name}",
         }
-        for arch in arches:
-            platforms[f"{os_}-{arch}-{installer}"] = entry
-            if installer == PREFERRED[os_]:
-                platforms[f"{os_}-{arch}"] = entry
+        platforms[f"{os_}-{arch}-{installer}"] = entry
+        if installer == PREFERRED[os_]:
+            platforms[f"{os_}-{arch}"] = entry
     return {
         "version": version,
         "notes": "",

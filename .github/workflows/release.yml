@@ -136,12 +136,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # macOS — universal (one .dmg + one updater artifact for both Apple
-          # Silicon & Intel). Per-arch mac builds would collide on the arch-less
-          # `TREM-Lite.app.tar.gz` updater artifact when uploaded to one release.
+          # macOS — one build per architecture. A universal app carries a whole
+          # copy of the program for each, so every Mac downloaded and installed
+          # twice what it runs: 20 MB installed, against 10–11 MB for either
+          # half. tauri-action names each updater tarball after its target
+          # (`TREM-Lite_aarch64.app.tar.gz`), so the two do not collide in one
+          # release. Intel cross-compiles on the arm64 runner, as ci.yml does.
           - platform: macos-latest
-            target: aarch64-apple-darwin,x86_64-apple-darwin
-            args: "--target universal-apple-darwin"
+            target: aarch64-apple-darwin
+            args: "--target aarch64-apple-darwin"
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            args: "--target x86_64-apple-darwin"
           # Linux — x86_64 (amd64) + arm64. arm64 uses a GitHub-hosted ARM runner.
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
@@ -286,8 +292,7 @@ jobs:
       # copy. A build that uploaded nothing, or a rename that went wrong, would
       # otherwise reach users as exactly that.
       #
-      # WANT follows the build matrix; the universal macOS build answers for
-      # both darwin keys.
+      # WANT follows the build matrix, one key per target.
       - name: Check the updater manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
