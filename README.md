@@ -40,9 +40,11 @@ TREM（Taiwan Real-time Earthquake Monitoring，臺灣即時地震監測）是�
 |---|---|
 | Windows | x64、arm64、32 位元（ia32）的安裝程式（`.exe`） |
 | macOS | Apple Silicon（`arm64`）與 Intel（`x64`）各自的 `.dmg` |
-| Linux | x64、arm64 的 `.AppImage`、`.deb`、`.rpm` |
+| Linux | x64、arm64 的 `.deb`（Debian、Ubuntu）、`.rpm`（Fedora、openSUSE），其他發行版用 `.AppImage` |
 
 不確定 Mac 是哪一種：從「蘋果」選單打開「關於這台 Mac」，顯示「晶片」項目的是 Apple Silicon，下載 `arm64`；顯示「處理器」項目的是 Intel，下載 `x64`（[Apple 說明](https://support.apple.com/zh-tw/116943)）。
+
+結尾是 `.sig` 或 `.app.tar.gz` 的檔案是自動更新用的，不需要下載。
 
 不想安裝的話，可以直接用 **[網頁版](https://exptechtw.github.io/TREM-Lite/)**。網頁版有地圖、即時震度、強震即時警報、地震報告和語音播報；音效、系統通知、子母畫面、系統匣常駐與自動更新只有桌面版提供。
 
