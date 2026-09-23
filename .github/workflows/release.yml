@@ -427,8 +427,10 @@ jobs:
           # announcing to its own server falls back to unicode instead of
           # referencing emoji it does not have. Unset, a platform keeps its
           # unicode mark.
-          TREM_EMOJI_WINDOWS: "<:Windows:1302898878667821058>"
-          TREM_EMOJI_MACOS: "<:MacOS:1302898671641170012>"
+          TREM_EMOJI_WEB: "<:trem_web:1552130635928313977>"
+          TREM_EMOJI_WINDOWS: "<:trem_windows:1552130602348707880>"
+          TREM_EMOJI_MACOS: "<:trem_macos:1552130669940052019>"
+          TREM_EMOJI_LINUX: "<:trem_linux:1552130706698670184>"
           # Without it the release lookup runs unauthenticated, at 60 requests
           # an hour shared with everything else on this runner's IP.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
