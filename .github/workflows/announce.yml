@@ -27,6 +27,15 @@ jobs:
       - name: Announce on Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          # The server's own platform emoji (see PLATFORM_EMOJI in
+          # tool/release/discord.py). Not secrets: an emoji's id is visible to
+          # everyone who can see the server, and useless without the webhook
+          # that is. Here rather than as defaults in the script, so a fork
+          # announcing to its own server falls back to unicode instead of
+          # referencing emoji it does not have. Unset, a platform keeps its
+          # unicode mark.
+          TREM_EMOJI_WINDOWS: "<:Windows:1302898878667821058>"
+          TREM_EMOJI_MACOS: "<:MacOS:1302898671641170012>"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.release.tag_name }}
         run: |
