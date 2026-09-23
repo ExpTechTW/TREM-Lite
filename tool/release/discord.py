@@ -19,10 +19,10 @@ and why:
   * the commit links. The short hash stays, the URL goes: the release page is
     one click from every commit.
 
-The platform marks tool/release/notes.sh writes are unicode emoji. Where the
-server has its own emoji for a platform — configured per workflow, see
-`PLATFORM_EMOJI` — the mark is swapped for that; otherwise it stays as it is,
-which Discord renders too.
+  * the platform badges, which are `![Windows](https://…svg)` image links —
+    Discord renders no images inside a description, so they would arrive as
+    literal Markdown. Each becomes the server's own emoji for that platform
+    (see `PLATFORM_EMOJI`), or a unicode stand-in where none is configured.
 
 **Unlike DPIP, a snapshot with nothing user-visible is not announced.** Every
 push to main publishes one, and most are CI or tooling; a channel told "no
@@ -47,21 +47,23 @@ DESCRIPTION_LIMIT = int(os.environ.get("TREM_DISCORD_LIMIT", 4096))
 PRERELEASE_COLOUR = 0xE8A33D
 RELEASE_COLOUR = 0x3BA55D
 
-# The server's own emoji for a platform, replacing notes.sh's unicode mark.
+# The server's own emoji for each platform badge notes.sh writes.
 #
 # A guild emoji only renders from its numeric id — `:windows:` stays literal
 # text in a webhook message — and that id cannot be read through a webhook
 # token (guilds/{id}/emojis answers 401), so it is configuration rather than
-# something this script can discover. Unset, the unicode mark stays: a fork
+# something this script can discover. Unset, a unicode stand-in is used: a fork
 # announcing to its own server then shows 🪟 rather than an emoji it lacks.
 PLATFORM_EMOJI = {
-    "🪟": os.environ.get("TREM_EMOJI_WINDOWS"),
-    "🍎": os.environ.get("TREM_EMOJI_MACOS"),
+    "Web": os.environ.get("TREM_EMOJI_WEB") or "🌐",
+    "Windows": os.environ.get("TREM_EMOJI_WINDOWS") or "🪟",
+    "macOS": os.environ.get("TREM_EMOJI_MACOS") or "🍎",
+    "Linux": os.environ.get("TREM_EMOJI_LINUX") or "🐧",
 }
 
-# The run of platform marks notes.sh puts at the start of every entry. Only
-# that run is rewritten, so an emoji inside an entry's own text is left alone.
-LEADING_MARKS = re.compile(r"^- ((?:🌐|🪟|🍎|🐧)+) ", re.M)
+# One badge, and the run of them notes.sh puts before an entry's text.
+BADGE = re.compile(r"!\[(Web|Windows|macOS|Linux)\]\([^)]*\)")
+BADGE_RUN = re.compile(r"(?:!\[(?:Web|Windows|macOS|Linux)\]\([^)]*\) *)+")
 
 
 def api(path: str) -> dict:
@@ -105,8 +107,8 @@ def to_discord(body: str) -> str:
     body = re.split(r"^<details>|^---$", body, maxsplit=1, flags=re.M)[0]
     body = re.sub(r"\(\[`([0-9a-f]{7,8})`\]\([^)]*\)\)", r"`\1`", body)
     body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
-    body = LEADING_MARKS.sub(
-        lambda m: "- " + "".join(PLATFORM_EMOJI.get(c) or c for c in m.group(1)) + " ",
+    body = BADGE_RUN.sub(
+        lambda m: "".join(PLATFORM_EMOJI[name] for name in BADGE.findall(m.group(0))) + " ",
         body,
     )
     return re.sub(r"\n{3,}", "\n\n", body).strip()

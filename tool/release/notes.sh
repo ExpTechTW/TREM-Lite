@@ -78,16 +78,20 @@ language_name() { # <locale>
 # other line ambiguous — a reader cannot tell "applies to all" from "nobody
 # said", and those are different claims.
 #
-# Emoji rather than DPIP's repo-hosted SVG badges: nothing in TREM-Lite reads
-# these notes back offline, which is the constraint that made DPIP host its own
-# files, so a character that every renderer already has beats four SVGs and
-# four raw.githubusercontent requests. They also need no theme: an `<img>`
-# inherits none, and these are legible on either backdrop.
-readonly TAG_WEB='🌐'
-readonly TAG_WINDOWS='🪟'
-readonly TAG_MACOS='🍎'
-readonly TAG_LINUX='🐧'
-readonly TAG_DESKTOP="$TAG_WINDOWS$TAG_MACOS$TAG_LINUX"
+# The marks are 14 px SVGs kept in this repository, as in DPIP. Markdown image
+# syntax rather than an `<img>` tag, and a repo-hosted file rather than a badge
+# service: `raw.githubusercontent.com` serves `.svg` as `image/svg+xml`
+# (checked — most file types come back as `text/plain`, which GitHub would not
+# render), and the 14 px size in each file keeps it inline with the text. The
+# colours hold on both a light and a dark backdrop, since an image inherits no
+# theme. Discord renders no images in an embed, so tool/release/discord.py
+# swaps each one for the server's own emoji.
+readonly ASSETS='https://raw.githubusercontent.com/ExpTechTW/TREM-Lite/main/.github/assets'
+readonly TAG_WEB="![Web]($ASSETS/web.svg)"
+readonly TAG_WINDOWS="![Windows]($ASSETS/windows.svg)"
+readonly TAG_MACOS="![macOS]($ASSETS/macos.svg)"
+readonly TAG_LINUX="![Linux]($ASSETS/linux.svg)"
+readonly TAG_DESKTOP="$TAG_WINDOWS $TAG_MACOS $TAG_LINUX"
 
 platform_tag() { # <sha>
   case "$(git log -1 --format=%b "$1" |
@@ -99,7 +103,7 @@ platform_tag() { # <sha>
   windows) printf '%s ' "$TAG_WINDOWS" ;;
   linux) printf '%s ' "$TAG_LINUX" ;;
   # No trailer: web and every desktop OS.
-  *) printf '%s%s ' "$TAG_WEB" "$TAG_DESKTOP" ;;
+  *) printf '%s %s ' "$TAG_WEB" "$TAG_DESKTOP" ;;
   esac
 }
 

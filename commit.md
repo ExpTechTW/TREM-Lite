@@ -184,10 +184,10 @@ trailer 的值由閘門驗證 —— 打錯會被擋下，而不是悄悄從 rel
 
 | trailer | 標記 |
 |---|---|
-| 不加 | 🌐🪟🍎🐧 |
-| `desktop` | 🪟🍎🐧 |
-| `web` | 🌐 |
-| `windows` / `macos` / `linux` | 🪟 / 🍎 / 🐧 |
+| 不加 | ![Web](.github/assets/web.svg) ![Windows](.github/assets/windows.svg) ![macOS](.github/assets/macos.svg) ![Linux](.github/assets/linux.svg) |
+| `desktop` | ![Windows](.github/assets/windows.svg) ![macOS](.github/assets/macos.svg) ![Linux](.github/assets/linux.svg) |
+| `web` | ![Web](.github/assets/web.svg) |
+| `windows` / `macos` / `linux` | ![Windows](.github/assets/windows.svg) / ![macOS](.github/assets/macos.svg) / ![Linux](.github/assets/linux.svg) |
 
 只標被收窄的那些，會讓其他每一行都變得有歧義 —— 讀的人分不出「全平台都有」和「沒人講」，而這是兩種不同的主張。
 
