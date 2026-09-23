@@ -38,7 +38,7 @@ TREM（Taiwan Real-time Earthquake Monitoring，臺灣即時地震監測）是�
 
 | 系統 | 檔案 |
 |---|---|
-| Windows | x64、arm64、32 位元（ia32）的安裝程式（`.exe`）或 `.msi` |
+| Windows | x64、arm64、32 位元（ia32）的安裝程式（`.exe`） |
 | macOS | Apple Silicon（`arm64`）與 Intel（`x64`）各自的 `.dmg` |
 | Linux | x64、arm64 的 `.AppImage`、`.deb`、`.rpm` |
 

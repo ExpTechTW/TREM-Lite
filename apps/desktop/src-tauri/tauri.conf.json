@@ -32,7 +32,14 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
-    "targets": "all",
+    "targets": [
+      "nsis",
+      "app",
+      "dmg",
+      "appimage",
+      "deb",
+      "rpm"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -43,12 +50,7 @@
     "resources": [],
     "category": "Utility",
     "shortDescription": "Taiwan Real-time Earthquake Monitoring",
-    "longDescription": "TREM (Taiwan Real-time Earthquake Monitoring) provides real-time earthquake information and earthquake early warnings.",
-    "windows": {
-      "wix": {
-        "version": "26.1.0.83"
-      }
-    }
+    "longDescription": "TREM (Taiwan Real-time Earthquake Monitoring) provides real-time earthquake information and earthquake early warnings."
   },
   "plugins": {
     "updater": {

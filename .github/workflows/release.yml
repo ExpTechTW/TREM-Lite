@@ -38,7 +38,6 @@ jobs:
     outputs:
       label: ${{ steps.derive.outputs.label }}
       semver: ${{ steps.derive.outputs.semver }}
-      msi: ${{ steps.derive.outputs.msi }}
       code: ${{ steps.derive.outputs.code }}
       tag: ${{ steps.derive.outputs.tag }}
       is_release: ${{ steps.derive.outputs.is_release }}
@@ -66,12 +65,11 @@ jobs:
           {
             echo "label=$TREM_LABEL"
             echo "semver=$TREM_SEMVER"
-            echo "msi=$TREM_MSI"
             echo "code=$TREM_CODE"
             echo "tag=$tag"
             echo "is_release=$is_release"
           } >>"$GITHUB_OUTPUT"
-          echo "$tag → $TREM_SEMVER (msi $TREM_MSI, code $TREM_CODE)"
+          echo "$tag → $TREM_SEMVER (code $TREM_CODE)"
 
       # The release exists, as a draft, before any build starts, and every build
       # uploads into it by id.
@@ -213,14 +211,12 @@ jobs:
         run: bun install
 
       # Stamp the version this run was named for. `--write` takes it from the
-      # environment rather than recomputing: this checkout is shallow, so it can
-      # count neither this week's snapshots nor the year's commits, and both the
-      # label and the MSI version would come out wrong.
+      # environment rather than recomputing: this checkout is shallow, so it
+      # cannot count this week's snapshots, and the label would come out wrong.
       - name: Stamp the version
         shell: bash
         env:
           TREM_SEMVER: ${{ needs.version.outputs.semver }}
-          TREM_MSI: ${{ needs.version.outputs.msi }}
         run: bash tool/release/version.sh --write
 
       - name: Build & upload (tauri-action)

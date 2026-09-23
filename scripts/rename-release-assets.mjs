@@ -16,14 +16,13 @@ function normArch(s) {
   return null;
 }
 
-const EXTS = ["app.tar.gz", "AppImage", "dmg", "deb", "rpm", "msi", "exe"];
+const EXTS = ["app.tar.gz", "AppImage", "dmg", "deb", "rpm", "exe"];
 const OS_BY_EXT = {
   "app.tar.gz": "mac",
   dmg: "mac",
   AppImage: "linux",
   deb: "linux",
   rpm: "linux",
-  msi: "win",
   exe: "win",
 };
 
@@ -71,7 +70,6 @@ function selftest() {
     "TREM-Lite_4.0.0_arm64-setup.exe": "TREM-Lite-4.0.0-win-arm64.exe",
     "TREM-Lite_4.0.0_x86-setup.exe": "TREM-Lite-4.0.0-win-ia32.exe",
     "TREM-Lite_4.0.0_x64-setup.exe.sig": "TREM-Lite-4.0.0-win-x64.exe.sig",
-    "TREM-Lite_4.0.0_x64_en-US.msi": "TREM-Lite-4.0.0-win-x64.msi",
     "latest.json": null,
   };
   let ok = true;

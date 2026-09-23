@@ -13,11 +13,11 @@ a 404 there. So the builds are told not to (`includeUpdaterJson: false`) and
 this runs once, in `publish`, after every build has uploaded and every asset
 has its final name.
 
-It reproduces tauri-action's manifest entry for entry (checked against the one
-it wrote for 26w39b): for every updater artifact with a `.sig` beside it, an
+It follows tauri-action's layout (checked against the one it wrote for
+26w39b): for every updater artifact with a `.sig` beside it, an
 `{os}-{arch}-{installer}` key, plus a plain `{os}-{arch}` key for the preferred
-installer — the MSI on Windows (tauri-action's `updaterJsonPreferNsis`
-default), the AppImage on Linux, the app bundle on macOS.
+installer — the NSIS installer on Windows, the only one built there; the
+AppImage on Linux; the app bundle on macOS.
 """
 
 import datetime
@@ -34,7 +34,7 @@ REPO = os.environ.get("GITHUB_REPOSITORY", "ExpTechTW/TREM-Lite")
 # TREM-Lite-<label>-<os>-<arch>.<ext>
 NAME = re.compile(
     r"^TREM-Lite-.+-(?P<os>mac|linux|win)-(?P<arch>x64|arm64|ia32)"
-    r"\.(?P<ext>app\.tar\.gz|AppImage|deb|rpm|msi|exe)$"
+    r"\.(?P<ext>app\.tar\.gz|AppImage|deb|rpm|exe)$"
 )
 OS = {"mac": "darwin", "linux": "linux", "win": "windows"}
 ARCH = {"x64": "x86_64", "arm64": "aarch64", "ia32": "i686"}
@@ -43,10 +43,9 @@ INSTALLER = {
     "AppImage": "appimage",
     "deb": "deb",
     "rpm": "rpm",
-    "msi": "msi",
     "exe": "nsis",
 }
-PREFERRED = {"darwin": "app", "linux": "appimage", "windows": "msi"}
+PREFERRED = {"darwin": "app", "linux": "appimage", "windows": "nsis"}
 
 
 def api(method: str, path: str, **kwargs) -> urllib.request.Request:
