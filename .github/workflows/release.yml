@@ -173,6 +173,12 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
+      # libayatana-appindicator3-dev, not libappindicator3-dev: the Tauri CLI
+      # makes the .deb depend on whichever of the two the build host has, and
+      # Debian 12 and later carry only the ayatana one, so a .deb that depends
+      # on libappindicator3-1 cannot be installed there at all. Ubuntu's desktop
+      # installs already ship the ayatana one. The app loads either at runtime.
+      #
       # xdg-utils: the AppImage carries its own copy of `xdg-open` (what the
       # opener plugin launches on Linux), taken from the build host. The x64
       # runner image happens to ship it; the arm64 one does not, and the first
@@ -181,7 +187,7 @@ jobs:
         if: startsWith(matrix.platform, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev xdg-utils
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libasound2-dev xdg-utils
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
