@@ -1,11 +1,11 @@
 //! Over-the-air updates: downloaded in the background whenever one exists,
 //! applied the next time the app starts — never while it is running.
 //!
-//! Installing is not the same act on every platform. For a macOS bundle or an
-//! AppImage it swaps files under the running app, which is harmless until it
-//! needs an administrator password; on Windows the plugin hands over to the
-//! installer and calls `exit(0)`; a deb or rpm asks for a password through
-//! pkexec. So nothing is installed mid-session anywhere: a download is staged
+//! Installing is not the same act on every platform. For the macOS bundle it
+//! swaps files under the running app, which is harmless until it needs an
+//! administrator password; on Windows the plugin hands over to the installer
+//! and calls `exit(0)`; the Linux .deb asks for a password through pkexec. So
+//! nothing is installed mid-session anywhere: a download is staged
 //! on disk and installed at the next launch, before the main window is shown.
 
 use std::path::{Path, PathBuf};

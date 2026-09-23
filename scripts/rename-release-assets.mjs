@@ -16,13 +16,11 @@ function normArch(s) {
   return null;
 }
 
-const EXTS = ["app.tar.gz", "AppImage", "dmg", "deb", "rpm", "exe"];
+const EXTS = ["app.tar.gz", "dmg", "deb", "exe"];
 const OS_BY_EXT = {
   "app.tar.gz": "mac",
   dmg: "mac",
-  AppImage: "linux",
   deb: "linux",
-  rpm: "linux",
   exe: "win",
 };
 
@@ -61,11 +59,7 @@ function selftest() {
     "TREM-Lite.app.tar.gz": null,
     "TREM-Lite_4.0.0_amd64.deb": "TREM-Lite-4.0.0-linux-x64.deb",
     "TREM-Lite_4.0.0_arm64.deb": "TREM-Lite-4.0.0-linux-arm64.deb",
-    "TREM-Lite-4.0.0-1.x86_64.rpm": "TREM-Lite-4.0.0-linux-x64.rpm",
-    "TREM-Lite-4.0.0-1.aarch64.rpm": "TREM-Lite-4.0.0-linux-arm64.rpm",
-    "TREM-Lite_4.0.0_amd64.AppImage": "TREM-Lite-4.0.0-linux-x64.AppImage",
-    "TREM-Lite_4.0.0_aarch64.AppImage": "TREM-Lite-4.0.0-linux-arm64.AppImage",
-    "TREM-Lite_4.0.0_aarch64.AppImage.sig": "TREM-Lite-4.0.0-linux-arm64.AppImage.sig",
+    "TREM-Lite_4.0.0_arm64.deb.sig": "TREM-Lite-4.0.0-linux-arm64.deb.sig",
     "TREM-Lite_4.0.0_x64-setup.exe": "TREM-Lite-4.0.0-win-x64.exe",
     "TREM-Lite_4.0.0_arm64-setup.exe": "TREM-Lite-4.0.0-win-arm64.exe",
     "TREM-Lite_4.0.0_x86-setup.exe": "TREM-Lite-4.0.0-win-ia32.exe",

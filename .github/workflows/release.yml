@@ -178,16 +178,11 @@ jobs:
       # Debian 12 and later carry only the ayatana one, so a .deb that depends
       # on libappindicator3-1 cannot be installed there at all. Ubuntu's desktop
       # installs already ship the ayatana one. The app loads either at runtime.
-      #
-      # xdg-utils: the AppImage carries its own copy of `xdg-open` (what the
-      # opener plugin launches on Linux), taken from the build host. The x64
-      # runner image happens to ship it; the arm64 one does not, and the first
-      # snapshot's arm64 build died there.
       - name: Install Linux dependencies
         if: startsWith(matrix.platform, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libasound2-dev xdg-utils
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -294,14 +289,15 @@ jobs:
       # copy. A build that uploaded nothing, or a rename that went wrong, would
       # otherwise reach users as exactly that.
       #
-      # WANT follows the build matrix, one key per target.
+      # WANT follows the build matrix, one key per target. Linux has only the
+      # `-deb` key, never a plain one: see PREFERRED in tool/release/manifest.py.
       - name: Check the updater manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_ID: ${{ needs.version.outputs.release_id }}
           TAG: ${{ needs.version.outputs.tag }}
           WANT: >-
-            darwin-aarch64 darwin-x86_64 linux-x86_64 linux-aarch64
+            darwin-aarch64 darwin-x86_64 linux-x86_64-deb linux-aarch64-deb
             windows-x86_64 windows-aarch64 windows-i686
         run: |
           gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?per_page=100" \

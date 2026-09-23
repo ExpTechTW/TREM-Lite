@@ -16,8 +16,8 @@ has its final name.
 It follows tauri-action's layout (checked against the one it wrote for
 26w39b): for every updater artifact with a `.sig` beside it, an
 `{os}-{arch}-{installer}` key, plus a plain `{os}-{arch}` key for the preferred
-installer — the NSIS installer on Windows, the only one built there; the
-AppImage on Linux; the app bundle on macOS.
+installer — the NSIS installer on Windows and the app bundle on macOS, the only
+ones built there. Linux gets no plain key; see PREFERRED.
 """
 
 import datetime
@@ -34,18 +34,22 @@ REPO = os.environ.get("GITHUB_REPOSITORY", "ExpTechTW/TREM-Lite")
 # TREM-Lite-<label>-<os>-<arch>.<ext>
 NAME = re.compile(
     r"^TREM-Lite-.+-(?P<os>mac|linux|win)-(?P<arch>x64|arm64|ia32)"
-    r"\.(?P<ext>app\.tar\.gz|AppImage|deb|rpm|exe)$"
+    r"\.(?P<ext>app\.tar\.gz|deb|exe)$"
 )
 OS = {"mac": "darwin", "linux": "linux", "win": "windows"}
 ARCH = {"x64": "x86_64", "arm64": "aarch64", "ia32": "i686"}
 INSTALLER = {
     "app.tar.gz": "app",
-    "AppImage": "appimage",
     "deb": "deb",
-    "rpm": "rpm",
     "exe": "nsis",
 }
-PREFERRED = {"darwin": "app", "linux": "appimage", "windows": "nsis"}
+# What a plain `{os}-{arch}` key points at: the updater's fallback when no key
+# names its own installer. Linux is left out on purpose. An AppImage from an
+# earlier snapshot would fall back to that key, and the plugin writes whatever
+# it downloads over the AppImage without checking that it is one, so a .deb
+# there would replace the app with a file that cannot run. With no key, those
+# installs find no update and keep working.
+PREFERRED = {"darwin": "app", "windows": "nsis"}
 
 
 def api(method: str, path: str, **kwargs) -> urllib.request.Request:
@@ -97,7 +101,7 @@ def build(tag: str, version: str, listed: list[dict]) -> dict:
             "url": f"https://github.com/{REPO}/releases/download/{tag}/{name}",
         }
         platforms[f"{os_}-{arch}-{installer}"] = entry
-        if installer == PREFERRED[os_]:
+        if installer == PREFERRED.get(os_):
             platforms[f"{os_}-{arch}"] = entry
     return {
         "version": version,
