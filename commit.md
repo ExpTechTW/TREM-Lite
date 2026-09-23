@@ -58,9 +58,9 @@ Fix(zh-Hant): 震度速報會念出最高震度地區的縣市名稱
 Fix(en-US): intensity alerts now announce the counties at the maximum intensity
 ```
 
-第一行給 `git log` 與開發者閱讀；分類條目描述使用者實際感受到的結果。TREM-Lite
-目前尚未從這些條目自動產生 GitHub Release notes，但先維持可機器解析的格式，避免之後
-導入產生器時還要猜測舊 commit 的語意。
+第一行給 `git log` 與開發者閱讀；分類條目描述使用者實際感受到的結果，由
+`tool/release/notes.sh` 原文組成 GitHub 發佈說明，再由 `tool/release/discord.py` 轉成
+Discord 公告。
 
 純內部變更不需要硬寫更新日誌條目：
 
