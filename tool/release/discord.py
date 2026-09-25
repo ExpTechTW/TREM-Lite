@@ -180,20 +180,6 @@ def fit(text: str, room: int) -> str:
     return text[: cut if cut > 0 else room - 20].rstrip() + "\n…"
 
 
-def budget(body: str, hashes: bool) -> str:
-    """Drops the short commit hashes, from entries only.
-
-    Line by line rather than over the whole note: the snapshot notice at the top
-    names the commit it was cut from, and a blanket substitution would eat it.
-    """
-    if hashes:
-        return body
-    return "\n".join(
-        re.sub(r"\s*`[0-9a-f]{7,8}`", "", line) if line.startswith("- ") else line
-        for line in body.splitlines()
-    )
-
-
 def main() -> int:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     dry_run = "--dry-run" in sys.argv
@@ -217,38 +203,33 @@ def main() -> int:
     footer = "測試版" if release["prerelease"] else "正式版"
     heading = f"# {title_text}"
 
-    # The hashes go before any entry does. Losing a hash costs a click on the
-    # release page linked at the bottom; losing an entry means a change shipped
-    # and nobody was told, which is the one thing this message exists to prevent.
-    for hashes in (True, False):
-        parts = sections(budget(body, hashes))
-        # The untitled block before the first heading is the note's preamble:
-        # its first line becomes the subtext under the title, anything after it
-        # an ordinary paragraph. Line by line, because joining them first leaves
-        # the Markdown italics of one line glued to the next.
-        lines = []
-        if parts and not parts[0][0]:
-            lines = [ln.strip().strip("_").strip() for ln in parts[0][1]]
-            parts = parts[1:]
-        header = heading
-        if lines:
-            header += f"\n-# {lines[0]}"
-        if len(lines) > 1:
-            header += "\n\n" + "\n".join(lines[1:])
+    parts = sections(body)
+    # The untitled block before the first heading is the note's preamble:
+    # its first line becomes the subtext under the title, anything after it
+    # an ordinary paragraph. Line by line, because joining them first leaves
+    # the Markdown italics of one line glued to the next.
+    lines = []
+    if parts and not parts[0][0]:
+        lines = [ln.strip().strip("_").strip() for ln in parts[0][1]]
+        parts = parts[1:]
+    header = heading
+    if lines:
+        header += f"\n-# {lines[0]}"
+    if len(lines) > 1:
+        header += "\n\n" + "\n".join(lines[1:])
 
-        # One embed, so the ceiling is a description's 4,096 and not a message's
-        # 6,000. Measured from the strings rather than reserved as a round
-        # number, so nothing is cut to pay for overhead that is not there.
-        overhead = (
-            len(header)
-            + len(link)
-            + sum(len(f"\n\n### {name}\n") for name, _ in parts)
-        )
-        room = DESCRIPTION_LIMIT - overhead
-        if sum(len(i) + 1 for _, items in parts for i in items) <= room:
-            break
-
-    kept = share(parts, room)
+    # One embed, so the ceiling is a description's 4,096 and not a message's
+    # 6,000. Measured from the strings rather than reserved as a round
+    # number, so nothing is cut to pay for overhead that is not there.
+    overhead = (
+        len(header)
+        + len(link)
+        + sum(len(f"\n\n### {name}\n") for name, _ in parts)
+    )
+    # When the note does not fit, only entries are cut, evenly between the
+    # categories; every entry that is posted keeps its short commit hash, so
+    # each one still leads to the change it describes.
+    kept = share(parts, DESCRIPTION_LIMIT - overhead)
 
     blocks = [header]
     for (name, items), shown in zip(parts, kept):
@@ -275,7 +256,7 @@ def main() -> int:
         total = sum(len(items) for _, items in parts)
         print(
             f"\n描述 {len(embed['description'])} / {DESCRIPTION_LIMIT}"
-            f"，條目 {shown}/{total}，commit hash {'保留' if hashes else '捨棄'}",
+            f"，條目 {shown}/{total}",
             file=sys.stderr,
         )
         return 0
