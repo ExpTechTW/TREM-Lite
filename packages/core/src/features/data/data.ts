@@ -135,7 +135,12 @@ class DataManager {
     }
     if (variable.play_mode === 3) this.stopSSE();
 
-    if (this.sseActive) return;
+    if (this.sseActive) {
+      // A shake report ends by age, but the stream sends one only when it is
+      // issued, never when it expires: age them here, as every poll does.
+      this.processIntensityData([]);
+      return;
+    }
 
     if (variable.play_mode === 3) {
       if (fileIndex >= fileList.length) {
