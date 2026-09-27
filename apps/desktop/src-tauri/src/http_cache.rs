@@ -81,6 +81,7 @@ const BUSY_TIMEOUT_MS: u64 = 1_000;
 const MAX_BATCH: usize = 256;
 
 /// A single row, already decoded for the proxy's use.
+#[derive(Clone)]
 pub struct CacheEntry {
     pub status: u16,
     pub etag: Option<String>,
@@ -395,7 +396,7 @@ impl HttpCache {
 
     /// Block until everything queued so far has been applied. Test helper.
     #[cfg(test)]
-    fn drain(&self) {
+    pub(crate) fn drain(&self) {
         let (ack, done) = std::sync::mpsc::sync_channel(0);
         if self.writes.send(WriteOp::Sync(ack)).is_ok() {
             let _ = done.recv();

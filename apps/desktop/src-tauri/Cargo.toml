@@ -47,8 +47,9 @@ rusqlite = { version = "0.37", features = ["bundled"] }
 flate2 = "1"
 
 # The timer between update checks (src/updater.rs) and between endpoint probes
-# (src/endpoints.rs). Already in the tree through tauri.
-tokio = { version = "1", features = ["time"] }
+# (src/endpoints.rs); the HTTP proxy's per-host gates and single flight
+# (src/http_proxy.rs). Already in the tree through tauri.
+tokio = { version = "1", features = ["time", "sync"] }
 # Checks the downloaded intensity model (ml_intensity.rs). Already in the tree.
 sha2 = "0.10"
 

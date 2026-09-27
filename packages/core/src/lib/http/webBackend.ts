@@ -97,25 +97,62 @@ async function attempt(r: Route, options: HttpOptions): Promise<Response> {
   }
 }
 
+/** Tries per request, the first included — the proxy's rule (http_proxy.rs). */
+const MAX_ATTEMPTS = 3;
+/** The first backoff; each retry on the same node waits twice the last. */
+const BACKOFF_BASE_MS = 300;
+const MAX_RETRY_AFTER_MS = 60_000;
+
+const retryable = (status: number) => status >= 500 || status === 429;
+
+const sleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        reject(new HttpError("Aborted", "ABORTED"));
+      },
+      { once: true },
+    );
+  });
+
 /**
- * Retried once on the next healthy node when the first gives no answer or a
- * 5xx, as the Rust proxy does on desktop.
+ * As the desktop's proxy does: no answer, a 5xx or a 429 is tried again, up to
+ * MAX_ATTEMPTS times within the caller's timeout — at once on another healthy
+ * node when there is one, else after an exponential backoff, or the server's
+ * Retry-After.
  */
 async function send(url: string, options: HttpOptions): Promise<Response> {
-  const first = route(url);
-  let failure: Response | unknown;
-  try {
-    const res = await attempt(first, options);
-    if (res.status < 500) return res;
-    failure = res;
-  } catch (err) {
-    if (aborted(err)) throw err;
-    failure = err;
+  const deadline = options.timeout == null ? Infinity : performance.now() + options.timeout;
+  let target = route(url);
+  let last: Response | unknown = null;
+  for (let tries = 1; tries <= MAX_ATTEMPTS; tries++) {
+    const left = deadline - performance.now();
+    if (left <= 0) break;
+    let wait = BACKOFF_BASE_MS * 2 ** (tries - 1) * (0.9 + Math.random() * 0.2);
+    try {
+      const res = await attempt(target, { ...options, timeout: Number.isFinite(left) ? left : undefined });
+      if (!retryable(res.status)) return res;
+      last = res;
+      const after = Number(res.headers.get("retry-after"));
+      if (res.status === 429 && after > 0) wait = Math.min(after * 1000, MAX_RETRY_AFTER_MS);
+    } catch (err) {
+      if (aborted(err)) throw err;
+      last = err;
+    }
+    if (tries === MAX_ATTEMPTS) break;
+    const next = alternative(target);
+    if (next) {
+      target = next;
+      continue;
+    }
+    if (performance.now() + wait >= deadline) break;
+    await sleep(wait, options.signal);
   }
-  const next = alternative(first);
-  if (next) return attempt(next, options);
-  if (failure instanceof Response) return failure;
-  throw failure;
+  if (last instanceof Response) return last;
+  throw last ?? new HttpError(`Request timed out: ${url}`, "TIMEOUT");
 }
 
 export const webBackend: HttpBackend = {
