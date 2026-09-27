@@ -43,6 +43,13 @@ function buildMap(container: HTMLElement): MlMap {
     // laptop WebKit keeps it powered for as long as the map exists, drawing or
     // not. The integrated GPU renders this map identically.
     canvasContextAttributes: { powerPreference: "default" },
+    // No symbol fade. Every icon here allows overlap, so nothing is ever hidden
+    // by a collision; the 300 ms fade only animated icons appearing and going,
+    // and it kept the map redrawing while it ran — for the EEW cross, which
+    // appears twice a second, for 300 ms of every flash. With the cross the
+    // only thing changing, the map drew 17.7 frames a second with the fade
+    // and 7 without. Icons now appear at once, as the lines already did.
+    fadeDuration: 0,
     style: {
       version: 8,
       name: "ExpTech Studio",
