@@ -1,13 +1,19 @@
 // Ported from legacy/src/js/index/core/box.js
 //
-// What flashes on the map while stations are triggered. Two ways, by whether
-// the RTS feed lists an earthquake (rts.v1 `eq`, see data/rtsV1.ts):
+// What flashes on the map while stations are triggered — that is, while there
+// are boxes to show. Two ways, by whether the RTS feed lists an earthquake
+// (rts.v1 `eq`, see data/rtsV1.ts):
 //
 // * none listed — the detection boxes the triggered stations stand in;
 // * any listed  — no boxes at all. Each listed earthquake's S wavefront and a
-//   small dot on its epicentre flash instead, fainter than an EEW's rings, on
-//   the same beat and in the same colours as the boxes. An earthquake with an
-//   EEW on screen within 50 km is left out: that EEW's own rings already show it.
+//   small dot on its epicentre flash in their place, fainter than an EEW's
+//   rings, on the same beat and in the same colours as the boxes. An
+//   earthquake with an EEW within 50 km is left out: that EEW's own rings
+//   already show it.
+//
+// The wavefronts only stand in for the boxes: they flash while there are
+// boxes to replace, and stop when the boxes would — even though the feed keeps
+// an earthquake listed for 240 s after its origin.
 import type { ExpressionSpecification } from "maplibre-gl";
 
 import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
@@ -84,16 +90,12 @@ function clearEqWaves(): void {
 }
 
 /**
- * Whether an EEW on screen lies within EEW_NEAR_KM of the point. `!(d > km)`
+ * Whether an EEW lies within EEW_NEAR_KM of the point. `!(d > km)`
  * rather than `d <= km`: distance() takes an arccosine, which is NaN for two
  * identical points, and an EEW right on the earthquake is the nearest of all.
  */
 function nearEew(lat: number, lon: number): boolean {
-  return variable.data.eew.some(
-    (eew) =>
-      (SHOW_TREM_EEW || eew.author != "trem") &&
-      !(distance(lat, lon, eew.eq.lat, eew.eq.lon) > EEW_NEAR_KM),
-  );
+  return variable.data.eew.some((eew) => !(distance(lat, lon, eew.eq.lat, eew.eq.lon) > EEW_NEAR_KM));
 }
 
 /**
@@ -162,24 +164,28 @@ export function refresh_box(show: boolean): void {
   const map = variable.map;
   const rts = variable.data.rts;
 
-  if (rts?.eq?.length) {
+  // No boxes to show, so nothing to stand in for them either.
+  if (!rts?.box || !Object.keys(rts.box).length) {
+    clearBoxes();
+    clearEqWaves();
+    return;
+  }
+
+  // A TREM EEW flashes its own faint rings (eew.ts) while its display is off.
+  const trem_alert = variable.data.eew.some((eew) => eew.author == "trem");
+  if (!SHOW_TREM_EEW && trem_alert) {
+    box_alert = false;
+    if (map) setFeatures(map, "box-geojson", []);
+    clearEqWaves();
+    return;
+  }
+
+  if (rts.eq?.length) {
     clearBoxes();
     refreshEqWaves(rts, rts.eq, show);
     return;
   }
   clearEqWaves();
-
-  if (!rts?.box || !Object.keys(rts.box).length) {
-    clearBoxes();
-    return;
-  }
-
-  const trem_alert = variable.data.eew.some((eew) => eew.author == "trem");
-  if (!SHOW_TREM_EEW && trem_alert) {
-    box_alert = false;
-    if (map) setFeatures(map, "box-geojson", []);
-    return;
-  }
 
   const boxFeatures: BoxFeature[] = [];
   if (show) {
