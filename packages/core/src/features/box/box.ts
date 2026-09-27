@@ -89,13 +89,9 @@ function clearEqWaves(): void {
   if (variable.map) setFeatures(variable.map, "eq-waves", []);
 }
 
-/**
- * Whether an EEW lies within EEW_NEAR_KM of the point. `!(d > km)`
- * rather than `d <= km`: distance() takes an arccosine, which is NaN for two
- * identical points, and an EEW right on the earthquake is the nearest of all.
- */
+/** Whether an EEW lies within EEW_NEAR_KM of the point. */
 function nearEew(lat: number, lon: number): boolean {
-  return variable.data.eew.some((eew) => !(distance(lat, lon, eew.eq.lat, eew.eq.lon) > EEW_NEAR_KM));
+  return variable.data.eew.some((eew) => distance(lat, lon, eew.eq.lat, eew.eq.lon) <= EEW_NEAR_KM);
 }
 
 /**
