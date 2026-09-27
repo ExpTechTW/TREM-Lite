@@ -50,7 +50,7 @@ export function App() {
   return (
     <>
       <div
-        className="relative h-full w-full overflow-hidden bg-background text-foreground"
+        className="app-shell relative h-full w-full overflow-hidden bg-background text-foreground"
         inert={!welcomed}
       >
         <MapView />

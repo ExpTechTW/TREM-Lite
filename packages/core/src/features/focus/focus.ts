@@ -146,14 +146,8 @@ export function focus_reset(isBtn?: boolean): void {
   }
 
   if (!variable.map) return;
-  // On a phone the panels take the top and bottom of the screen; Taiwan is
-  // framed in what is left.
-  const phone = window.matchMedia("(max-width: 640px)").matches;
-  fitBounds(
-    variable.map,
-    MAP.BOUNDS,
-    phone ? { ...MAP.OPTIONS, padding: { top: 210, bottom: 150, left: 8, right: 8 } } : MAP.OPTIONS,
-  );
+  const phone = phonePadding();
+  fitBounds(variable.map, MAP.BOUNDS, phone ? { ...MAP.OPTIONS, padding: phone } : MAP.OPTIONS);
 }
 
 /**
@@ -188,13 +182,22 @@ function fitBounds(map: MlMap, bounds: LngLatBoundsLike, options: FitBoundsOptio
 }
 
 /**
+ * On a phone held upright the map is the top of the screen, under the EEW
+ * card and nothing else: a fit clears the card, and little more.
+ */
+function phonePadding(): { top: number; bottom: number; left: number; right: number } | null {
+  if (!window.matchMedia("(max-width: 640px)").matches) return null;
+  const card = document.querySelector(".legacy-eew-panel:not(.is-pip)")?.getBoundingClientRect();
+  return { top: Math.round((card?.bottom ?? 0) + 12), bottom: 16, left: 16, right: 16 };
+}
+
+/**
  * The padding a fit keeps clear on each side: 150 px on a desktop, less on a
- * phone, where 150 on both sides would leave the map no room at all. In phone
- * portrait the panels sit above and below the map, so that is where the room
- * goes.
+ * phone, where 150 on both sides would leave the map no room at all.
  */
 function defaultPadding(): { top: number; bottom: number; left: number; right: number } {
-  if (window.matchMedia("(max-width: 640px)").matches) return { top: 150, bottom: 150, left: 24, right: 24 };
+  const phone = phonePadding();
+  if (phone) return phone;
   if (window.matchMedia("(max-height: 500px)").matches) return { top: 30, bottom: 30, left: 150, right: 60 };
   return { top: 150, bottom: 150, left: 150, right: 150 };
 }

@@ -74,11 +74,11 @@ function FeaturedItem({ item }: { item: PanelItem }) {
         <div className="legacy-report-featured-content">
           <div className="flex flex-col items-center">
             <IntensityBadge i={item.int} className="legacy-report-featured-badge h-[80px] w-[80px] rounded-[12px] text-[48px]" />
-            <div className="mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
+            <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
           </div>
           <div className="ml-2 flex min-w-0 flex-1 flex-col">
-            <div className="truncate text-[28px] font-bold leading-tight">震源調查中</div>
-            <div className="text-[13px] font-bold">{formatReportTime(item.time)}</div>
+            <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">震源調查中</div>
+            <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(item.time)}</div>
           </div>
         </div>
       </div>
@@ -96,23 +96,23 @@ function FeaturedItem({ item }: { item: PanelItem }) {
       <div className="legacy-report-featured-content">
         <div className="flex flex-col items-center">
           <IntensityBadge i={report.int ?? 0} className="legacy-report-featured-badge h-[80px] w-[80px] rounded-[12px] text-[48px]" />
-          <div className="mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
+          <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
         </div>
 
         <div className="ml-2 flex min-w-0 flex-1 flex-col">
-          <div className="truncate text-[28px] font-bold leading-tight">
+          <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">
             {extractLocation(report.loc)}
           </div>
-          <div className="text-[13px] font-bold">{formatReportTime(report.time)}</div>
+          <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(report.time)}</div>
           <div className="mt-auto flex w-full items-baseline justify-between pt-[0.3em]">
             <div
-              className="-mt-[5px] text-[30px] font-bold leading-none tabular-nums"
+              className="legacy-report-featured-mag -mt-[5px] text-[30px] font-bold leading-none tabular-nums"
               style={isNumbered(report) ? { color: "var(--warning)" } : undefined}
             >
               <span className="mr-1">𝖬</span>
               {report.mag ? report.mag.toFixed(1) : "--"}
             </div>
-            <div className="-mt-[3px] text-[24px] font-bold leading-9 tabular-nums">
+            <div className="legacy-report-featured-depth -mt-[3px] text-[24px] font-bold leading-9 tabular-nums">
               {report.depth}
               <span className="ml-1 text-[14px] font-normal">km</span>
             </div>
@@ -134,17 +134,17 @@ function CompactReportRow({ item }: { item: ReportListItem }) {
     >
       <IntensityBadge
         i={item.int ?? 0}
-        className="h-[50px] w-[55px] shrink-0 rounded-[12px] text-[30px]"
+        className="legacy-report-row-badge h-[50px] w-[55px] shrink-0 rounded-[12px] text-[30px]"
       />
       <div className="flex min-w-0 flex-1 items-center justify-between pr-[0.3em]">
         <div className="min-w-0">
-          <div className="max-w-[180px] truncate text-[21px] font-bold leading-tight">
+          <div className="legacy-report-row-loc max-w-[180px] truncate text-[21px] font-bold leading-tight">
             {extractLocation(item.loc)}
           </div>
-          <div className="text-[13px] font-bold">{formatReportTime(item.time)}</div>
+          <div className="legacy-report-row-time text-[13px] font-bold">{formatReportTime(item.time)}</div>
         </div>
         <div
-          className="w-[60px] shrink-0 pl-2 text-right text-[20px] font-bold tabular-nums"
+          className="legacy-report-row-mag w-[60px] shrink-0 pl-2 text-right text-[20px] font-bold tabular-nums"
           style={isNumbered(item) ? { color: "var(--warning)" } : undefined}
         >
           <span className="mr-1">𝖬</span>

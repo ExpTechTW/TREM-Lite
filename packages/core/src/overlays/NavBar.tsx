@@ -23,7 +23,7 @@ export function NavBar() {
 
   return (
     <div
-      className="absolute bottom-[5px] left-[3px] z-30 flex flex-row items-center gap-[3px] text-[15px] font-medium"
+      className="legacy-nav absolute bottom-[5px] left-[3px] z-30 flex flex-row items-center gap-[3px] text-[15px] font-medium"
       style={{ color: "var(--light)" }}
     >
       <NavPanelButton title="設定" onClick={() => (inTauri ? void openSettings() : setSettingsOpen(true))}>

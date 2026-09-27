@@ -22,5 +22,5 @@ export function MapView() {
     setupMap(ref.current).catch((e) => log.error("boot failed", e));
   }, []);
 
-  return <div ref={ref} className="absolute inset-0 h-full w-full" />;
+  return <div ref={ref} className="legacy-map absolute inset-0 h-full w-full" />;
 }

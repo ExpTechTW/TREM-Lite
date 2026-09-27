@@ -794,20 +794,49 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Phones (portrait). The desktop arranges its panels around the map's edges;
-   a 390 px screen has no edges to spare, so the panels stack in two compact
-   strips — the EEW card and the readouts along the top, the ranking along the
-   bottom — and the report list becomes a drawer. Every rule is !important: the
-   components carry the desktop layout in inline utility classes.
+   Phones held upright: the map on top, and under it two columns — the
+   readings on the left, the report list on the right — above a bar with the
+   settings, the locate button and the clock. The root becomes a grid and each
+   panel takes a grid area; the DOM stays as it is, since the desktop rules pair
+   panels as siblings (.legacy-report-panel.is-closed ~ …). Rules are
+   !important wherever the desktop ones are (the ≤980 px block, and the
+   components' utility classes).
    --------------------------------------------------------------------------- */
 @media (max-width: 640px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 6px minmax(0, 44fr) 6px minmax(0, 56fr) 6px;
+    grid-template-rows: 55% 6px auto auto minmax(0, 1fr) 6px auto calc(6px + env(safe-area-inset-bottom));
+    grid-template-areas:
+      "map map map map map"
+      ". . . . ."
+      ". station . reports ."
+      ". max . reports ."
+      ". list . reports ."
+      ". . . . ."
+      ". nav nav nav ."
+      ". . . . .";
+  }
+
+  /* The map, and what floats on it: the EEW card, the warnings. */
+  .legacy-map {
+    grid-area: map;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
   .legacy-eew-panel:not(.is-pip) {
+    grid-area: map;
     right: 0 !important;
-    margin: 6px !important;
-    padding: 6px !important;
     min-width: 0 !important;
     max-height: none !important;
+    margin: 6px !important;
+    padding: 6px !important;
     gap: 4px !important;
+  }
+
+  /* Idle, the card is its title line: the map gets the rest. */
+  .legacy-eew-panel.is-idle:not(.is-pip) > .legacy-eew-body {
+    display: none !important;
   }
 
   .legacy-eew-panel:not(.is-pip) .legacy-eew-title {
@@ -816,19 +845,14 @@
 
   .legacy-eew-panel:not(.is-pip) > .legacy-eew-body {
     min-width: 0 !important;
-    min-height: 64px !important;
-    max-height: none !important;
+    min-height: 0 !important;
     padding: 6px !important;
   }
 
-  .legacy-eew-panel:not(.is-pip) .legacy-eew-details {
-    height: auto !important;
-  }
-
   .legacy-eew-panel:not(.is-pip) .legacy-eew-intensity {
-    width: 52px !important;
-    height: 52px !important;
-    font-size: 32px !important;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 30px !important;
   }
 
   .legacy-eew-panel:not(.is-pip) .legacy-eew-intensity-label {
@@ -840,7 +864,7 @@
   }
 
   .legacy-eew-panel:not(.is-pip) .legacy-eew-measure-label {
-    font-size: 17px !important;
+    font-size: 16px !important;
   }
 
   .legacy-eew-panel:not(.is-pip) .legacy-eew-measure-value {
@@ -848,19 +872,33 @@
     font-size: 17px !important;
   }
 
-  /* The station and the two maxima share one row under the EEW card. */
-  .legacy-station-readout {
+  .legacy-warning-banners,
+  .legacy-report-panel.is-closed ~ .legacy-warning-banners {
+    grid-area: map;
     top: auto !important;
-    left: 6px !important;
-    right: 6px;
-    bottom: calc(46px + env(safe-area-inset-bottom)) !important;
-    flex-direction: row !important;
-    align-items: stretch;
+    right: 0 !important;
+    bottom: 6px !important;
+    left: 0 !important;
+    width: auto !important;
+    transform: none !important;
+  }
+
+  .legacy-intensity-legend,
+  .legacy-version,
+  .legacy-report-panel.is-closed ~ .legacy-version {
+    display: none !important;
+  }
+
+  /* Left column: my station, the maxima, the ranking. */
+  .legacy-station-readout {
+    grid-area: station;
+    position: static !important;
+    flex-direction: column !important;
     gap: 4px;
+    margin-bottom: 6px;
   }
 
   .legacy-current-station {
-    flex: 1;
     width: auto !important;
     height: auto !important;
     margin-top: 0 !important;
@@ -875,13 +913,19 @@
 
   .legacy-current-station-loc {
     overflow: hidden;
-    font-size: 14px !important;
+    font-size: 15px !important;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
+  /* 震度 and 加速度 on a line each: side by side they do not fit. */
   .legacy-current-station-info > div:last-child {
+    flex-direction: column;
     font-size: 12px !important;
+  }
+
+  .legacy-current-station-info > div:last-child > div {
+    white-space: nowrap;
   }
 
   .legacy-current-station-intensity {
@@ -891,111 +935,181 @@
   }
 
   .legacy-rts-info {
-    width: 64px !important;
+    width: auto !important;
     height: auto !important;
     margin-top: 0 !important;
-    justify-content: center;
+    padding: 2px 0;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+  }
+
+  .legacy-rts-info > div {
+    gap: 6px;
   }
 
   .legacy-max-panel {
-    top: auto !important;
-    left: 6px !important;
-    right: 6px;
-    bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+    grid-area: max;
+    position: static !important;
     width: auto !important;
     flex-direction: row !important;
     gap: 4px;
+    margin-bottom: 6px;
   }
 
-  .legacy-max-intensity {
-    flex-direction: row !important;
-    gap: 6px;
+  .legacy-max-intensity,
+  .legacy-max-pga {
+    flex: 1 1 0;
+    min-width: 0;
+    box-sizing: border-box !important;
     width: auto !important;
     height: auto !important;
     margin-top: 0 !important;
-    padding: 3px 6px !important;
+  }
+
+  .legacy-max-intensity {
+    padding: 4px !important;
   }
 
   .legacy-max-intensity > span,
   .legacy-max-pga > span {
-    font-size: 12px !important;
+    font-size: 11px !important;
   }
 
   .legacy-max-intensity-badge {
     width: 30px !important;
     height: 30px !important;
-    margin-top: 0 !important;
+    margin-top: 3px !important;
     border-radius: 7px !important;
     font-size: 18px !important;
   }
 
   .legacy-max-pga {
     position: static !important;
-    flex: 1;
-    flex-direction: row !important;
-    align-items: center;
+    left: auto !important;
     justify-content: space-between !important;
+    padding-top: 4px;
+  }
+
+  .legacy-rts-list,
+  .legacy-report-panel.is-closed ~ .legacy-rts-list {
+    grid-area: list;
+    position: static !important;
     width: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-right: 0 !important;
+    overflow: hidden;
+    pointer-events: auto;
+    transform: none !important;
+  }
+
+  .legacy-rts-list > div {
+    justify-content: flex-start !important;
+  }
+
+  .legacy-rts-list-scroll {
+    max-height: none !important;
+    overflow-y: auto !important;
+  }
+
+  .legacy-nav {
+    grid-area: nav;
+    position: static !important;
+  }
+
+  /* Right column: the report list, always open. */
+  .legacy-report-panel,
+  .legacy-report-panel.is-closed {
+    grid-area: reports;
+    position: relative !important;
+    inset: auto !important;
+    width: auto !important;
+    max-width: none !important;
     height: auto !important;
-    margin-top: 0 !important;
-    padding-left: 6px;
+    translate: none !important;
   }
 
-  .legacy-max-pga > div {
-    height: 100% !important;
-    margin-top: 0 !important;
-    padding: 0 8px;
-    border-radius: 0 5px 5px 0 !important;
-  }
-
-  /* The legend and the ranking would sit on the map's only open space. */
-  .legacy-intensity-legend,
-  .legacy-rts-list {
+  .legacy-report-toggle {
     display: none !important;
   }
 
-  /* The report list: a drawer over the map, closed by default. */
-  .legacy-report-panel {
-    top: 0 !important;
-    width: min(300px, 86vw) !important;
-    max-width: none !important;
-    height: auto !important;
-    bottom: 0 !important;
-    z-index: 3000 !important;
-  }
-
-  .legacy-report-panel.is-closed {
-    translate: calc(100% - 22px) !important;
-  }
-
   .legacy-report-list {
-    right: 0 !important;
-    width: calc(100% - 24px) !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    border-radius: 8px;
+    background: transparent !important;
+    scrollbar-width: none;
   }
 
   .legacy-report-card {
     width: 100% !important;
+    margin-bottom: 5px;
+    border-radius: 10px;
+  }
+
+  .legacy-report-featured-content {
+    gap: 6px !important;
+    padding: 6px !important;
   }
 
   .legacy-report-featured-badge {
-    width: 64px !important;
-    height: 64px !important;
-    font-size: 36px !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 10px !important;
+    font-size: 30px !important;
   }
 
-  .legacy-version,
-  .legacy-report-panel.is-closed ~ .legacy-version {
-    display: none !important;
+  .legacy-report-featured-label {
+    font-size: 10px !important;
   }
 
-  .legacy-warning-banners,
-  .legacy-report-panel.is-closed ~ .legacy-warning-banners {
-    top: auto !important;
-    right: 0 !important;
-    left: 0 !important;
-    bottom: calc(140px + env(safe-area-inset-bottom)) !important;
+  .legacy-report-featured-loc {
+    font-size: 17px !important;
+  }
+
+  .legacy-report-featured-time,
+  .legacy-report-row-time {
+    font-size: 11px !important;
+  }
+
+  .legacy-report-featured-mag {
+    margin-top: 0 !important;
+    font-size: 19px !important;
+  }
+
+  .legacy-report-featured-depth {
+    margin-top: 0 !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+  }
+
+  .legacy-report-featured-depth > span {
+    font-size: 11px !important;
+  }
+
+  .legacy-report-card:not(.legacy-report-featured) {
+    gap: 6px !important;
+  }
+
+  .legacy-report-row-badge {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 9px !important;
+    font-size: 21px !important;
+  }
+
+  .legacy-report-row-loc {
+    max-width: none !important;
+    font-size: 14px !important;
+  }
+
+  .legacy-report-row-mag {
     width: auto !important;
-    transform: none !important;
+    padding-left: 4px !important;
+    font-size: 14px !important;
   }
 }
 
