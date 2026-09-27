@@ -43,6 +43,11 @@ export interface TremUi {
   rtsIntensityRows: RtsTriggerLocation[];
   unstable: boolean;
   internetError: boolean;
+  /**
+   * Whether the realtime station stream can be opened: it needs an ExpTech
+   * API token, and the server can refuse one. `reason` is the server's word.
+   */
+  rtsAccess: { state: "ok" | "missing" | "rejected"; reason: string };
   /** Currently-shown EEW (null when the box is hidden / no EEW active). */
   currentEew: EewDisplay | null;
   /** RTS trigger summary shown in the EEW box when no authored EEW is active. */
@@ -58,6 +63,7 @@ export const ui: TremUi = {
   rtsIntensityRows: [],
   unstable: false,
   internetError: false,
+  rtsAccess: { state: "ok", reason: "" },
   currentEew: null,
   currentTrigger: null,
 };

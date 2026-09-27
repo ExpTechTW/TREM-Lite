@@ -5,6 +5,7 @@
  */
 import { readDir, readTextFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 
+import { getConfig } from "@/lib/config";
 import { HTTP_TIMEOUT, LAST_DATA_TIMEOUT_ERROR, EEW_AUTHOR } from "@/lib/constants";
 import { events } from "@/lib/events";
 import { now } from "@/lib/ntp";
@@ -53,6 +54,9 @@ class TimeoutManager {
 
 const timeoutManager = new TimeoutManager();
 
+/** The ExpTech API token the realtime station stream is opened with. */
+const apiToken = () => getConfig().apiToken?.trim() ?? "";
+
 class DataManager {
   private lastFetchTime = 0;
   private fetchInterval: ReturnType<typeof setInterval> | null = null;
@@ -60,6 +64,8 @@ class DataManager {
   private sseActive = false;
   private sseManager: SseManager | null = null;
   private sseHandled = false;
+  /** The token the open streams were started with. */
+  private sseToken = "";
   private transportEpoch = 0;
 
   constructor() {
@@ -111,7 +117,11 @@ class DataManager {
     if (localNow - this.lastFetchTime < TIMEOUT.LOOP) return;
     this.lastFetchTime = localNow;
 
-    if (variable.play_mode === 0) this.startSSE();
+    if (variable.play_mode === 0) {
+      // A token saved in settings, or pasted on the web, reopens the streams with it.
+      if (this.sseManager && this.sseToken !== apiToken()) this.stopSSE();
+      this.startSSE();
+    }
     if (variable.play_mode === 3) this.stopSSE();
 
     if (this.sseActive) return;
@@ -195,7 +205,9 @@ class DataManager {
       return v;
     };
 
+    this.sseToken = apiToken();
     this.sseManager = sseInit({
+      token: this.sseToken,
       reconnectDelay: 3000,
       onRts: (raw) => {
         if (variable.play_mode !== 0) return;
@@ -253,7 +265,6 @@ class DataManager {
     variable.cache.unstable = 0;
     variable.cache.show_eew_box = false;
     variable.cache.rts_trigger = { max: 0, loc: [] };
-    variable.cache.int_cache_list = {};
     variable.cache.eew_last = {};
     variable.cache.intensity_last = {};
     variable.cache.eewIntensityArea = {};

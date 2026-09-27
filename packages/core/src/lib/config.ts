@@ -12,7 +12,7 @@ import type { TremConfig } from "./types";
 export const DEFAULT_CONFIG: TremConfig = {
   ver: 5,
   "location-code": 711,
-  "realtime-station-id": 6732340,
+  "realtime-station-id": "1C10848",
   "alert-level": { "rts-intensity": 0, "eew-intensity": 0 },
   "check-box": {
     "show-window-eew": true,
@@ -37,6 +37,7 @@ export const DEFAULT_CONFIG: TremConfig = {
     "sound-effects-Update": true,
   },
   apiProxyDomain: "api.lb.exptech.dev",
+  apiToken: "",
 };
 
 let cache: TremConfig | null = null;

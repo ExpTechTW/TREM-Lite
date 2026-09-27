@@ -25,7 +25,6 @@ export function stopReplay(): void {
   });
   (variable.data.intensity as { IntensityEnd?: number }[]).forEach((d) => (d.IntensityEnd = 1));
   clear();
-  variable.cache.int_cache_list = {};
   variable.play_mode = 0;
   events.emit("ReplayStateChange", { active: false });
   variable.cache.unstable = 0;

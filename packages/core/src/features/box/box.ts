@@ -1,25 +1,15 @@
 // Ported from legacy/src/js/index/core/box.js
 import type { ExpressionSpecification } from "maplibre-gl";
 
-import boxBinUrl from "@/data/box.bin?url";
 import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
 import { events } from "@/lib/events";
-import { type BoxFeature as BinBoxFeature, decodeBox } from "@/lib/bindata";
+import type { BoxFeature as BinBoxFeature } from "@/lib/bindata";
 import type { EewData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { distance } from "@/domain/utils";
-import { http } from "@/lib/http";
 import { setFeatures } from "@/lib/mapSource";
 
-// Alert-box polygons, loaded async from the compact binary (out of the JS
-// bundle). Only used during an active alert, long after startup.
-let boxFeaturesData: BinBoxFeature[] = [];
-void http
-  .asset(boxBinUrl)
-  .then((buf) => {
-    boxFeaturesData = decodeBox(buf).features;
-  })
-  .catch(() => {});
+import { getBoxes } from "./polygons";
 
 /** Output feature pushed into the "box-geojson" source. */
 interface BoxFeature {
@@ -76,7 +66,7 @@ export function refresh_box(show: boolean): void {
 
   const boxFeatures: BoxFeature[] = [];
   if (show) {
-    for (const area of boxFeaturesData) {
+    for (const area of getBoxes()) {
       const id = area.properties.ID;
       const boxIntensity = rts.box[id];
       if (boxIntensity == undefined) {

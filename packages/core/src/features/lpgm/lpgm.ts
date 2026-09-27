@@ -80,7 +80,7 @@ function show_lpgm(ans: Ans<{ id: number; time: number; list: LpgmListItem[] }>)
       continue;
     }
 
-    const station_info = variable.station?.[station.id];
+    const station_info = variable.legacyStation?.[station.id];
     if (!station_info) {
       continue;
     }

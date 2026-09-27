@@ -27,14 +27,16 @@ export interface TremVariable {
   /** 0 realtime (SSE) | 2 replay (HTTP) | 3 replay (file). 1, legacy's WebSocket mode, is never set. */
   play_mode: number;
   replay: { start_time: number; local_time: number; dev: boolean };
+  /** Hex-id stations of the rts.v1 feed (see features/data/resource.ts). */
   station: Record<string, Station> | null;
+  /** Decimal-id stations of the older network, still named by lpgm reports. */
+  legacyStation: Record<string, Station> | null;
   tts: boolean;
   cache: {
     rts_alert: boolean;
     unstable: number;
     show_eew_box: boolean;
     rts_trigger: { max: number; loc: RtsTriggerLocation[] };
-    int_cache_list: Record<string, unknown>;
     last_report: unknown;
     eewIntensityArea: Record<string, unknown>;
     show_intensity: boolean;
@@ -75,13 +77,13 @@ export const variable: TremVariable = {
   play_mode: 0,
   replay: { start_time: 0, local_time: 0, dev: false },
   station: null,
+  legacyStation: null,
   tts: false, // speechClient enables this when zh-TW system speech is available
   cache: {
     rts_alert: false,
     unstable: 0,
     show_eew_box: false,
     rts_trigger: { max: 0, loc: [] },
-    int_cache_list: {},
     last_report: null,
     eewIntensityArea: {},
     show_intensity: false,

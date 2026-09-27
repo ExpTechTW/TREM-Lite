@@ -2,7 +2,7 @@ import { IntensityBadge } from "@/components/IntensityBadge";
 import { useRerenderOn } from "@/hooks/useTremEvent";
 import { ui } from "@/lib/variable.ui";
 
-/** Bottom-right rolling 30-second peak ranking, matching legacy rts.js. */
+/** Bottom-right ranking of each town's 60-second peak (see features/data/rtsV1.ts). */
 export function RtsIntensityList() {
   useRerenderOn("DataRts");
   const rows = ui.rtsIntensityRows;

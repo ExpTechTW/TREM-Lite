@@ -29,7 +29,6 @@ export interface EewData {
 export interface RtsStation {
   pga: number;
   i: number;
-  I: number;
   alert: boolean;
 }
 
@@ -77,13 +76,16 @@ export interface Ans<T = unknown> {
 export interface TremConfig {
   ver: number;
   "location-code": number;
-  "realtime-station-id": number;
+  /** A hex device id of the rts.v1 station list. */
+  "realtime-station-id": string;
   "alert-level": {
     "rts-intensity": number;
     "eew-intensity": number;
   };
   "check-box": Record<string, boolean>;
   apiProxyDomain: string;
+  /** ExpTech API token (`et_…`). The realtime station stream needs one. */
+  apiToken?: string;
 }
 
 /** mitt event map — event names preserved from the Electron app. */
@@ -97,6 +99,8 @@ export type TremEvents = {
   EewDisplayUpdate: void;
   /** 斷線旗標（ui.internetError）改變，供 WarningBanners 事件驅動刷新。 */
   InternetErrorChange: boolean;
+  /** The realtime station stream's access changed (see ui.rtsAccess). */
+  RtsAccessChange: void;
 
   DataRts: Ans<RtsData | null>;
   /** Clears module-local RTS/UI history at a live/replay mode boundary. */

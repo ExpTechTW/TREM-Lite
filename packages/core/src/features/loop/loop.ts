@@ -16,10 +16,12 @@ let mapLoopInterval: ReturnType<typeof setInterval> | null = null;
 
 export function initLoop(): void {
   // 1s 斷線偵測（沒有資料事件可依賴，故仍需週期檢查）；只有旗標改變時才發事件。
+  // 即時測站串流因缺少或被拒的 API 權杖而沒有開啟時，沒資料不代表斷線——權杖橫幅已說明原因。
   setInterval(() => {
     const err =
       variable.play_mode !== 2 &&
       variable.play_mode !== 3 &&
+      ui.rtsAccess.state === "ok" &&
       Date.now() - variable.cache.last_data_time > LAST_DATA_TIMEOUT_ERROR;
     if (err !== ui.internetError) {
       ui.internetError = err;

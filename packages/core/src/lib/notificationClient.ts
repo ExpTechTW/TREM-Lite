@@ -102,7 +102,7 @@ export function initNotifications(): void {
     let city = "";
     for (const item of data.list) {
       if (item.lpgm <= max) continue;
-      const station = variable.station?.[item.id]?.info.at(-1);
+      const station = variable.legacyStation?.[item.id]?.info.at(-1);
       const location = station ? search_loc_name(station.code) : null;
       max = item.lpgm;
       city = location?.city ?? city;

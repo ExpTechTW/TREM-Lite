@@ -28,11 +28,6 @@ interface TopIntensity {
   name: string;
 }
 
-interface IntCacheEntry {
-  values: number[];
-  lastUpdate: number;
-}
-
 interface RtsPointFeature {
   type: "Feature";
   geometry: { type: "Point"; coordinates: [number, number] };
@@ -215,13 +210,13 @@ export function initRts(): void {
           pga = st.pga;
         }
 
-        if (Number(id) === config["realtime-station-id"]) {
-          const I = alert && st.alert ? st.I : st.i;
+        // String(): YAML reads an all-digit hex id back as a number.
+        if (id === String(config["realtime-station-id"])) {
           const loc = search_loc_name(station_location.code);
           ui.currentStation = {
             loc: loc ? `${loc.city}${loc.town}` : "",
-            i: intensity_float_to_int(I),
-            rawI: I,
+            i: intensity_float_to_int(st.i),
+            rawI: st.i,
             pga: st.pga,
           };
         }
@@ -236,7 +231,7 @@ export function initRts(): void {
         }
 
         if (alert && st.alert) {
-          const I = intensity_float_to_int(st.I);
+          const I = intensity_float_to_int(st.i);
 
           if (variable.cache.show_intensity || variable.cache.show_lpgm) {
             data_list.push({
@@ -403,10 +398,9 @@ export function initRts(): void {
       setFeatures(variable.map, "markers-geojson-0", data_alert_0_list);
     }
 
+    // Each town's peak over the last 60 s, highest first (see data/rtsV1.ts).
     const int_list: IntEntry[] = ans.data?.int ?? [];
-
-    const history = updateIntensityHistory(int_list, ans.data?.time ?? 0);
-    ui.rtsIntensityRows = getTopIntensities(history).sort((a, b) => b.i - a.i);
+    ui.rtsIntensityRows = getTopIntensities(int_list).sort((a, b) => b.i - a.i);
 
     if (int_list.length) {
       variable.cache.rts_trigger.loc = getTopIntensities(
@@ -452,35 +446,6 @@ function filterIntArray(data: IntEntry[] = []): IntEntry[] {
   }
 
   return data;
-}
-
-function updateIntensityHistory(newData: IntEntry[], time: number): IntEntry[] {
-  const cache = variable.cache.int_cache_list as Record<string, IntCacheEntry>;
-
-  for (const int of newData) {
-    if (!cache[int.code]) {
-      cache[int.code] = { values: [], lastUpdate: time };
-    }
-
-    cache[int.code].values.push(int.i);
-    cache[int.code].lastUpdate = time;
-
-    if (cache[int.code].values.length > 45) {
-      cache[int.code].values.shift();
-    }
-  }
-
-  const cutoff = time - 30000;
-  Object.keys(cache).forEach((code) => {
-    if (cache[code].lastUpdate < cutoff) {
-      delete cache[code];
-    }
-  });
-
-  return Object.entries(cache).map(([code, data]) => ({
-    code: Number(code),
-    i: Math.max(...data.values),
-  }));
 }
 
 function getTopIntensities(intensities: IntEntry[], maxCount = 6): TopIntensity[] {

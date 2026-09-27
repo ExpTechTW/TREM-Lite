@@ -89,7 +89,7 @@ function announceLpgm(data: { id: number; time: number; list: { id: number; lpgm
   let maxCity = "";
   for (const item of data.list) {
     if (!item.lpgm) continue;
-    const station = variable.station?.[item.id]?.info.at(-1);
+    const station = variable.legacyStation?.[item.id]?.info.at(-1);
     const location = station ? search_loc_name(station.code) : null;
     if (!location) continue;
     (stations[item.lpgm] ??= []).push(`${location.city}${location.town}`);

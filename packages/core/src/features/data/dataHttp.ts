@@ -7,24 +7,67 @@
  * the 250 MB LRU would evict the station/report/tile entries that do benefit
  * from it. They still go through `@/lib/http` so timeouts, gzip and transport
  * selection stay in one place.
+ *
+ * Two live streams, each connecting and reconnecting on its own:
+ *
+ *   rts  api/v1/trem/sse/rts?mode=live — the rts.v1 feed, about 2 Hz, each
+ *        frame base64(gzip(JSON)) (see rtsV1.ts). It needs the user's ExpTech
+ *        API token: without one it is not opened, and a token the server
+ *        refuses stops it until the token changes (see ui.rtsAccess).
+ *   eew  api/v2/eq/eew — public, plain JSON.
  */
 
+import { search_loc_name } from "@/domain/utils";
+import { boxOf } from "@/features/box/polygons";
 import { HTTP_TIMEOUT } from "@/lib/constants";
 import { HOST, lbApiHost } from "@/lib/endpoints";
+import { events } from "@/lib/events";
 import { http, withController, type HttpResponse } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
+import type { RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
+import { ui } from "@/lib/variable.ui";
+
+import { decodePayload, RtsV1Reader, type RtsV1 } from "./rtsV1";
 
 let sseController: AbortController | null = null;
 let requestCounter = 0;
 const activePollingControllers = new Set<AbortController>();
 
 const log = createLogger("sse");
-const TREM_REPLAY_HOST = "api-1.exptech.dev";
+/** The intensity and lpgm archives are served only by api-1; the core nodes answer 401. */
+const TREM_ARCHIVE_HOST = "api-1.exptech.dev";
 
 /** Realtime payloads are never the same twice — keep them out of the LRU. */
 const NO_STORE = { store: false } as const;
+
+/**
+ * The server comments `: ping` into every stream each 60 s. Silence for one
+ * and a half of those means the connection is dead even if it looks open.
+ */
+const STALE_MS = 90_000;
+/**
+ * Reconnect delays double from `reconnectDelay` up to this. Kept short: the
+ * eew stream is the early-warning path, and a node that comes back must not
+ * sit unused for a minute.
+ */
+const BACKOFF_MAX_MS = 15_000;
+
+const rtsReader = new RtsV1Reader({
+  station: (id) => {
+    const at = variable.station?.[id]?.info.at(-1);
+    return at ? { lon: at.lon, lat: at.lat, code: at.code } : null;
+  },
+  boxOf,
+  townOf: search_loc_name,
+});
+
+function setRtsAccess(state: typeof ui.rtsAccess.state, reason = ""): void {
+  if (ui.rtsAccess.state === state && ui.rtsAccess.reason === reason) return;
+  ui.rtsAccess = { state, reason };
+  events.emit("RtsAccessChange");
+}
 
 export function abortAll(): void {
   if (sseController) {
@@ -33,10 +76,14 @@ export function abortAll(): void {
   }
   activePollingControllers.forEach((controller) => controller.abort());
   activePollingControllers.clear();
+  // A live/replay boundary: the 60 s int window must not span it.
+  rtsReader.reset();
 }
 
 export interface SseHandlers {
-  onRts?: (v: unknown) => void;
+  /** The ExpTech API token for the rts stream; empty leaves it closed. */
+  token?: string;
+  onRts?: (v: RtsData) => void;
   onEew?: (v: unknown) => void;
   onIntensity?: (v: unknown) => void;
   onLpgm?: (v: unknown) => void;
@@ -47,117 +94,183 @@ export interface SseManager {
   abort: () => void;
 }
 
-/** Parse an SSE chunk buffer, invoking `emit` for each complete `data:` JSON. */
-function makeSseReader(onEvent: (parsed: unknown) => void) {
+interface SseFrame {
+  event?: string;
+  data: string;
+}
+
+/** One SSE block. `:` comments (the server's `: ping`) carry no data. */
+function parseFrame(block: string): SseFrame {
+  let event: string | undefined;
+  const data: string[] = [];
+  for (const line of block.split("\n")) {
+    if (!line || line.startsWith(":")) continue;
+    const colon = line.indexOf(":");
+    const field = colon === -1 ? line : line.slice(0, colon);
+    let value = colon === -1 ? "" : line.slice(colon + 1);
+    if (value.startsWith(" ")) value = value.slice(1);
+    if (field === "event") event = value;
+    else if (field === "data") data.push(value);
+  }
+  return { event, data: data.join("\n") };
+}
+
+/** Splits a byte stream into SSE frames, holding a partial one for the next chunk. */
+function frameReader() {
   let buffer = "";
   const decoder = new TextDecoder();
-  return (chunk: Uint8Array) => {
-    buffer += decoder.decode(chunk, { stream: true });
-    const blocks = buffer.split(/\n\n/);
+  return (chunk: Uint8Array): SseFrame[] => {
+    buffer += decoder.decode(chunk, { stream: true }).replace(/\r/g, "");
+    const blocks = buffer.split("\n\n");
     buffer = blocks.pop() ?? "";
-    for (const block of blocks) {
-      const trimmed = block.trim();
-      if (!trimmed) continue;
-      const m = trimmed.match(/^data:\s*(.+)$/m);
-      if (!m) continue;
-      try {
-        const parsed = JSON.parse(m[1]);
-        if (parsed != null) onEvent(parsed);
-      } catch {
-        /* skip invalid JSON */
-      }
-    }
+    return blocks.map(parseFrame);
   };
 }
 
-/** Open live SSE streams for rts + eew and dispatch parsed events. */
+interface Stream {
+  name: "rts" | "eew";
+  url: string;
+  token?: string;
+  onData: (data: string) => void;
+  /** The server refused the token: stop, and do not reconnect with it. */
+  onRefused?: (reason: string) => void;
+}
+
+/** Keep one stream open until `signal` aborts, reconnecting with backoff. */
+function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): void {
+  let failures = 0;
+  let frames = 0;
+
+  const connect = () => {
+    if (signal.aborted) return;
+    // The attempt's own controller, so the stale watchdog can end it alone.
+    const attempt = new AbortController();
+    const end = () => attempt.abort();
+    signal.addEventListener("abort", end, { once: true });
+    let stale: ReturnType<typeof setTimeout> | undefined;
+    const alive = () => {
+      clearTimeout(stale);
+      stale = setTimeout(() => {
+        log.warn(`${s.name}: nothing for ${STALE_MS / 1000} s → reconnect`);
+        attempt.abort();
+      }, STALE_MS);
+    };
+    const retry = () => {
+      if (signal.aborted) return;
+      setTimeout(connect, Math.min(reconnectDelay * 2 ** failures, BACKOFF_MAX_MS));
+      failures++;
+    };
+
+    http
+      .stream(s.url, {
+        signal: attempt.signal,
+        token: s.token,
+        headers: { Accept: "text/event-stream", "Cache-Control": "no-cache" },
+      })
+      .then(async (res) => {
+        if (s.onRefused && (res.status === 401 || res.status === 403)) {
+          const reason = (await res.text().catch(() => "")).trim() || `HTTP ${res.status}`;
+          log.error(`${s.name} refused: ${reason}`);
+          s.onRefused(reason);
+          return;
+        }
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        log.info(`${s.name} connected (${res.status}), streaming…`);
+        mark(`sse-${s.name}-connected`);
+        failures = 0;
+        alive();
+        const reader = res.body.getReader();
+        const split = frameReader();
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) {
+            log.warn(`${s.name} stream ended → reconnect`);
+            break;
+          }
+          alive();
+          for (const frame of split(value)) {
+            // Sent when the token is revoked, just before the server hangs up.
+            if (frame.event === "close" && s.onRefused) {
+              log.error(`${s.name} closed by the server: ${frame.data || "token revoked"}`);
+              s.onRefused(frame.data || "token revoked");
+              attempt.abort();
+              return;
+            }
+            if (!frame.data || frame.event === "info") continue;
+            if (frames++ % 40 === 0) log.debug(`${s.name} data #${frames}`);
+            s.onData(frame.data);
+          }
+        }
+        retry();
+      })
+      .catch((e) => {
+        // Entering replay aborts both streams on purpose. That is a mode
+        // transition, not a failure: no warning, no reconnect. (Node health is
+        // the HTTP layer's; it ignores aborts too.)
+        if (signal.aborted) return;
+        if (!attempt.signal.aborted) log.warn(`${s.name} error → reconnect`, e);
+        retry();
+      })
+      .finally(() => {
+        clearTimeout(stale);
+        signal.removeEventListener("abort", end);
+      });
+  };
+
+  connect();
+}
+
+/** Open the live streams and dispatch parsed events. */
 export function init(options: SseHandlers = {}): SseManager {
-  const { onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
+  const { token = "", onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
 
   if (sseController) sseController.abort();
   const controller = new AbortController();
   sseController = controller;
   const { signal } = controller;
 
-  // Single pending reconnect timer (shared across both streams AND across rounds)
-  // so a burst of instant failures schedules ONE delayed reconnect rather than
-  // tight-looping — important when a proxy refuses the connection immediately.
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  function scheduleReconnect() {
-    if (signal.aborted || reconnectTimer) return;
-    reconnectTimer = setTimeout(() => {
-      reconnectTimer = null;
-      doConnect();
-    }, reconnectDelay);
-  }
-
-  function doConnect() {
-    if (signal.aborted) return;
-
-    // The RTS archive exists on api-1 (the regional core nodes return 404 for
-    // this route); EEW history remains on the core pool.
-    const rtsDomain = variable.play_mode == 2 ? TREM_REPLAY_HOST : lbApiHost();
-    const eewDomain = variable.play_mode == 2 ? HOST.coreApi : lbApiHost();
-
-    const urls = [
-      { url: `https://${rtsDomain}/api/v2/trem/rts`, type: "rts" as const, enabled: variable.play_mode != 1 },
-      { url: `https://${eewDomain}/api/v2/eq/eew`, type: "eew" as const, enabled: variable.play_mode != 1 },
-    ].filter((u) => u.enabled);
-
-    for (const u of urls) {
-      let eventCount = 0;
-      const dispatch = (v: unknown) => {
-        if (eventCount++ % 40 === 0) {
-          const summary =
-            u.type === "rts" && v && typeof v === "object" && "station" in v
-              ? `${Object.keys((v as { station?: object }).station ?? {}).length} stations`
-              : "event";
-          log.debug(`${u.type} data #${eventCount} (${summary})`);
-        }
-        switch (u.type) {
-          case "rts":
-            onRts?.(v);
-            break;
-          case "eew":
-            onEew?.(v);
-            break;
-        }
-      };
-      const feed = makeSseReader(dispatch);
-
-      http
-        .stream(u.url, {
-          signal,
-          headers: { Accept: "text/event-stream", "Cache-Control": "no-cache" },
-        })
-        .then(async (res) => {
-          if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
-          log.info(`${u.type} connected (${res.status}), streaming…`);
-          mark(`sse-${u.type}-connected`);
-          const reader = res.body.getReader();
-          while (!signal.aborted) {
-            const { value, done } = await reader.read();
-            if (done) {
-              log.warn(`${u.type} stream ended → reconnect`);
-              scheduleReconnect();
-              return;
-            }
-            if (value) feed(value);
+  if (token) {
+    setRtsAccess("ok");
+    openStream(
+      {
+        name: "rts",
+        url: `https://${lbApiHost()}/api/v1/trem/sse/rts?mode=live`,
+        token,
+        onData: (data) => {
+          let payload: RtsV1;
+          try {
+            payload = JSON.parse(decodePayload(data)) as RtsV1;
+          } catch {
+            return; // not a frame this client understands
           }
-        })
-        .catch((e) => {
-          // Entering replay intentionally aborts both live streams. That is a
-          // mode transition, not a network failure, and must not produce a
-          // reconnect warning. (Node health is the HTTP layer's; it ignores
-          // aborts too.)
-          if (signal.aborted || (e as { name?: string })?.name === "AbortError") return;
-          log.warn(`${u.type} error → reconnect`, e);
-          scheduleReconnect();
-        });
-    }
+          const rts = rtsReader.read(payload);
+          if (rts) onRts?.(rts);
+        },
+        onRefused: (reason) => setRtsAccess("rejected", reason),
+      },
+      signal,
+      reconnectDelay,
+    );
+  } else {
+    setRtsAccess("missing");
   }
 
-  doConnect();
+  openStream(
+    {
+      name: "eew",
+      url: `https://${lbApiHost()}/api/v2/eq/eew`,
+      onData: (data) => {
+        try {
+          const parsed: unknown = JSON.parse(data);
+          if (parsed != null) onEew?.(parsed);
+        } catch {
+          /* skip invalid JSON */
+        }
+      },
+    },
+    signal,
+    reconnectDelay,
+  );
 
   // Unused onIntensity/onLpgm are kept for parity with the polling path.
   void onIntensity;
@@ -172,7 +285,7 @@ export function init(options: SseHandlers = {}): SseManager {
 }
 
 export interface PolledData {
-  rts: unknown | null;
+  rts: RtsData | null;
   eew: unknown[] | null;
   intensity: unknown[] | null;
   lpgm: unknown[] | null;
@@ -189,7 +302,11 @@ async function parseJson(response: HttpResponse | null): Promise<unknown | null>
   }
 }
 
-/** HTTP polling fallback — RTS/EEW always, intensity every 5th, lpgm every 7th. */
+/**
+ * HTTP polling — replay's transport. RTS comes from the rts.v1 archive, and
+ * only in replay: live station data is the stream's alone. EEW always,
+ * intensity every 5th call, lpgm every 7th.
+ */
 export async function getData(time?: number): Promise<PolledData> {
   const requestMode = variable.play_mode;
   const t = time ? Math.round(time / 1000) : 0;
@@ -198,20 +315,20 @@ export async function getData(time?: number): Promise<PolledData> {
   const shouldFetchIntensity = requestCounter % 5 === 0;
 
   const lb = lbApiHost();
-  const tremDomain = requestMode == 2 ? TREM_REPLAY_HOST : lb;
+  const archiveDomain = requestMode == 2 ? TREM_ARCHIVE_HOST : lb;
   const eewDomain = requestMode == 2 ? HOST.coreApi : lb;
 
   const suffix = t ? `/${t}` : "";
   const reqs: (ReturnType<typeof withController> | null)[] = [
-    requestMode == 1 ? null : withController(`https://${tremDomain}/api/v2/trem/rts${suffix}`, HTTP_TIMEOUT.RTS, NO_STORE),
+    requestMode == 2 ? withController(`https://${HOST.coreApi}/api/v3/trem/rts${suffix}`, HTTP_TIMEOUT.RTS, NO_STORE) : null,
     requestMode == 1 ? null : withController(`https://${eewDomain}/api/v2/eq/eew${suffix}`, HTTP_TIMEOUT.EEW, NO_STORE),
   ];
 
   if (shouldFetchIntensity) {
-    reqs.push(withController(`https://${tremDomain}/api/v2/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY, NO_STORE));
+    reqs.push(withController(`https://${archiveDomain}/api/v2/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY, NO_STORE));
   }
   if (shouldFetchLPGM) {
-    reqs.push(withController(`https://${tremDomain}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM, NO_STORE));
+    reqs.push(withController(`https://${archiveDomain}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM, NO_STORE));
   }
 
   const activeRequests = reqs.filter((request): request is ReturnType<typeof withController> => !!request);
@@ -223,7 +340,8 @@ export async function getData(time?: number): Promise<PolledData> {
     );
 
     const out: PolledData = { rts: null, eew: null, intensity: null, lpgm: null };
-    out.rts = await parseJson(responses[0]);
+    const rts = (await parseJson(responses[0])) as RtsV1 | null;
+    out.rts = rts ? rtsReader.read(rts) : null;
     out.eew = (await parseJson(responses[1])) as unknown[] | null;
     if (shouldFetchIntensity) {
       out.intensity = (await parseJson(responses[2])) as unknown[] | null;

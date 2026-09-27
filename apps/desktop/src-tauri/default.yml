@@ -2,7 +2,7 @@ ver: 5
 
 location-code: 711
 
-realtime-station-id: 6732340
+realtime-station-id: "1C10848"
 
 alert-level:
   rts-intensity: 0 # 任意即時站震度
@@ -31,3 +31,4 @@ check-box:
   sound-effects-Update: true
 
 apiProxyDomain: 'api.lb.exptech.dev'
+apiToken: ''

@@ -13,6 +13,7 @@ import { ChevronDown, Copy, Minus, X } from "lucide-react";
 import { IntensityBadge } from "@/components/IntensityBadge";
 import { region, regionReady } from "@/domain/region";
 import { search_loc_name } from "@/domain/utils";
+import { STATION_CACHE_KEY } from "@/features/data/resource";
 import { DEFAULT_API_PROXY_DOMAIN, INTENSITY_LIST } from "@/lib/constants";
 import { loadConfig, resetConfig, writeConfig } from "@/lib/config";
 import { inTauri } from "@/lib/env";
@@ -42,8 +43,8 @@ const SOUND_EFFECTS = [
   ["sound-effects-Update", "UPDATE（地震預警更正時播放）"],
 ] as const;
 
-interface Choice {
-  value: number;
+interface Choice<T extends string | number = number> {
+  value: T;
   label: string;
 }
 
@@ -56,6 +57,7 @@ export function SettingsApp() {
   const [stationData] = useState<Record<string, Station>>(loadCachedStations);
   const [regionRevision, setRegionRevision] = useState(0);
   const [proxy, setProxy] = useState(DEFAULT_API_PROXY_DOMAIN);
+  const [token, setToken] = useState("");
   const [updateStatus, setUpdateStatus] = useState("");
 
   useEffect(() => {
@@ -74,6 +76,7 @@ export function SettingsApp() {
       }
       setConfig(value);
       setProxy(value.apiProxyDomain || DEFAULT_API_PROXY_DOMAIN);
+      setToken(value.apiToken ?? "");
     });
     void regionReady.then(() => setRegionRevision((value) => value + 1));
 
@@ -101,7 +104,7 @@ export function SettingsApp() {
       .sort((a, b) => a.value - b.value);
   }, [regionRevision]);
 
-  const stations = useMemo<Choice[]>(
+  const stations = useMemo<Choice<string>[]>(
     () => {
       void regionRevision;
       return Object.entries(stationData)
@@ -109,8 +112,9 @@ export function SettingsApp() {
           const latest = station.info.at(-1);
           if (!latest?.code) return [];
           const location = search_loc_name(latest.code);
-          const net = station.net ? `${station.net} ` : "";
-          return [{ value: Number(id), label: `${net}${location ? `${location.city}${location.town}` : latest.code}-${id}` }];
+          // The hex-id network's `net` is a bare number, which means nothing to a reader.
+          const net = station.net && !/^\d+$/.test(station.net) ? `${station.net} ` : "";
+          return [{ value: id, label: `${net}${location ? `${location.city}${location.town}` : latest.code}-${id}` }];
         })
         .sort((a, b) => a.label.localeCompare(b.label, "zh-Hant"));
     },
@@ -238,7 +242,7 @@ export function SettingsApp() {
 
               <SettingSection title="即時測站" description="顯示於主畫面左上方的即時測站。">
                 <SelectRow
-                  value={config["realtime-station-id"]}
+                  value={String(config["realtime-station-id"])}
                   options={stations}
                   placeholder="未設定"
                   onChange={(value) => save({ ...config, "realtime-station-id": value })}
@@ -282,6 +286,22 @@ export function SettingsApp() {
                 <ToggleRow label="開機自動啟動" checked={!!config["check-box"]["other-auto-start"]} onChange={(value) => void toggleAutostart(value)} />
               </SettingSection>
 
+              <SettingSection title="ExpTech API 權杖" description="即時測站資料需要 ExpTech 帳號的 API 權杖（et_ 開頭）；沒有權杖時不會顯示即時測站。">
+                <div className="legacy-setting-row legacy-proxy-row">
+                  <input type="password" value={token} placeholder="et_…" spellCheck={false} autoComplete="off" onChange={(event) => setToken(event.target.value)} onBlur={() => {
+                    const value = token.trim();
+                    setToken(value);
+                    if (value !== (config.apiToken ?? "")) save({ ...config, apiToken: value });
+                  }} onKeyDown={(event) => {
+                    if (event.key === "Enter") event.currentTarget.blur();
+                  }} />
+                  <button type="button" onClick={() => {
+                    setToken("");
+                    save({ ...config, apiToken: "" });
+                  }}>清除</button>
+                </div>
+              </SettingSection>
+
               <SettingSection title="API 代理網域" description="設定備援 API 代理網域；清空時自動使用預設網域。">
                 <div className="legacy-setting-row legacy-proxy-row">
                   <input value={proxy} spellCheck={false} onChange={(event) => setProxy(event.target.value)} onBlur={() => {
@@ -306,6 +326,7 @@ export function SettingsApp() {
                 <ActionRow label="重置所有設定" action="重設" danger onClick={() => void resetConfig().then((value) => {
                   setConfig(value);
                   setProxy(value.apiProxyDomain);
+                  setToken(value.apiToken ?? "");
                   setUpdateStatus("已重設所有設定");
                 })} />
               </SettingSection>
@@ -407,13 +428,19 @@ function SettingSection({ title, description, children }: { title: string; descr
   );
 }
 
-function SelectRow({ value, options, placeholder, onChange }: { value: number; options: Choice[]; placeholder: string; onChange: (value: number) => void }) {
-  const current = options.find((option) => option.value === Number(value));
+function SelectRow<T extends string | number>({ value, options, placeholder, onChange }: { value: T; options: Choice<T>[]; placeholder: string; onChange: (value: T) => void }) {
+  const current = options.find((option) => String(option.value) === String(value));
   return (
     <label className="legacy-setting-row legacy-select-row">
       <span>{current?.label ?? placeholder}</span>
       <ChevronDown />
-      <select value={value || ""} onChange={(event) => onChange(Number(event.target.value))}>
+      <select
+        value={value || ""}
+        onChange={(event) => {
+          const picked = options.find((option) => String(option.value) === event.target.value);
+          if (picked) onChange(picked.value);
+        }}
+      >
         <option value="" disabled>{placeholder}</option>
         {options.map((option) => <option key={`${option.value}-${option.label}`} value={option.value}>{option.label}</option>)}
       </select>
@@ -469,7 +496,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function loadCachedStations(): Record<string, Station> {
   try {
-    const cached = localStorage.getItem("cache.station");
+    const cached = localStorage.getItem(STATION_CACHE_KEY);
     return cached ? (JSON.parse(cached) as Record<string, Station>) : {};
   } catch {
     return {};
