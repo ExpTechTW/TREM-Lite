@@ -9,6 +9,9 @@
 //!   response. Bodies are then re-compressed at maximum level for storage.
 //! * **ETag revalidation** — a stored validator is replayed as `If-None-Match`
 //!   / `If-Modified-Since`; a 304 costs one set of headers instead of a body.
+//! * **Freshness** — while a stored copy is younger than the server's
+//!   `max-age`, or the caller's `max_age_ms` for content it knows does not
+//!   change, it is served without asking the server at all.
 //! * **LRU persistence** — see [`crate::http_cache`].
 //! * **Stale-on-error** — if the network fails outright but we hold a cached
 //!   body, the app gets the stale copy rather than nothing.
@@ -31,7 +34,7 @@ use tauri::{Manager, State};
 use tauri_plugin_http::reqwest;
 
 use crate::endpoints::{Endpoints, Target};
-use crate::http_cache::{gunzip, CacheEntry, HttpCache, StoredResponse};
+use crate::http_cache::{gunzip, now_ms, CacheEntry, HttpCache, StoredResponse};
 
 /// Hosts the proxy is willing to talk to. This command bypasses the
 /// `http:default` scope in `capabilities/default.json`, so the allowlist is
@@ -50,6 +53,7 @@ const KEPT_HEADERS: &[&str] = &[
     "etag",
     "last-modified",
     "cache-control",
+    "age",
     "content-encoding",
 ];
 
@@ -70,6 +74,13 @@ pub struct ProxyRequest {
     /// churn the budget.
     #[serde(default)]
     store: Option<bool>,
+    /// Serve a stored copy without asking the server while it is younger than
+    /// this — for content known not to change, whatever its headers say. The
+    /// map tiles are the case: sent `no-store`, with a Last-Modified that moves
+    /// forward every minute or so, they would otherwise download afresh on
+    /// every use.
+    #[serde(default)]
+    max_age_ms: Option<u64>,
 }
 
 #[derive(serde::Serialize)]
@@ -157,6 +168,41 @@ fn at(url: &reqwest::Url, target: Option<Target>) -> reqwest::Url {
     url
 }
 
+/// `max-age` from a stored Cache-Control, in ms. Zero without one, or when the
+/// server asks for every use to be checked (`no-cache`, `no-store`).
+fn server_max_age_ms(headers: &HashMap<String, String>) -> u64 {
+    let Some(cc) = headers.get("cache-control") else {
+        return 0;
+    };
+    let mut max_age: u64 = 0;
+    for directive in cc.split(',').map(|d| d.trim().to_ascii_lowercase()) {
+        if directive == "no-cache" || directive == "no-store" {
+            return 0;
+        }
+        if let Some(value) = directive.strip_prefix("max-age=") {
+            max_age = value.trim_matches('"').parse().unwrap_or(0);
+        }
+    }
+    max_age.saturating_mul(1000)
+}
+
+/// Whether `entry` may be served as it is: its age — upstream caches' `Age`
+/// when it was stored, plus the time since — within the longer of the
+/// caller's `max_age_ms` and the server's `max-age`. A row stored "in the
+/// future" (the clock went back) is not trusted to be fresh.
+fn fresh(entry: &CacheEntry, max_age_ms: Option<u64>, now: i64) -> bool {
+    let lifetime = max_age_ms
+        .unwrap_or(0)
+        .max(server_max_age_ms(&entry.headers));
+    let upstream = entry
+        .headers
+        .get("age")
+        .and_then(|a| a.trim().parse::<u64>().ok())
+        .unwrap_or(0);
+    let resident = u64::try_from(now - entry.stored_at).unwrap_or(u64::MAX);
+    upstream.saturating_mul(1000).saturating_add(resident) < lifetime
+}
+
 /// No answer, or the node answered that it cannot serve right now. A 4xx is a
 /// working node saying no, and does not count.
 fn node_failed(result: &Result<reqwest::Response, reqwest::Error>) -> bool {
@@ -224,6 +270,27 @@ pub async fn http_request(
         cache_get(&state.cache, key.clone()).await
     } else {
         None
+    };
+
+    // Still fresh: no request at all. A row that fails to decode is treated
+    // as absent.
+    let cached = match cached {
+        Some(entry) if fresh(&entry, req.max_age_ms, now_ms()) => {
+            let (status, headers) = (entry.status, entry.headers);
+            if let Some(body) = cache_replay(&state.cache, key.clone(), entry.body_gz).await {
+                let meta = ProxyMeta {
+                    status,
+                    ok: (200..300).contains(&status),
+                    url: req.url.clone(),
+                    headers,
+                    from_cache: true,
+                    stale: false,
+                };
+                return Ok(frame(&meta, &body));
+            }
+            None
+        }
+        other => other,
     };
 
     let http_method =
@@ -303,9 +370,11 @@ pub async fn http_request(
         }
     }
 
-    // 304: the stored body is still current. Bump its LRU position and replay.
+    // 304: the stored body is still current. Its freshness starts over; bump
+    // its LRU position and replay it.
     if status == 304 {
         if let Some(entry) = cached {
+            state.cache.validated(&key);
             if let Some(body) = cache_replay(&state.cache, key.clone(), entry.body_gz).await {
                 let meta = ProxyMeta {
                     status: entry.status,
@@ -389,6 +458,56 @@ pub fn http_report(state: State<'_, ProxyState>, url: String, ok: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn entry(headers: &[(&str, &str)], stored_at: i64) -> CacheEntry {
+        CacheEntry {
+            status: 200,
+            etag: None,
+            last_modified: None,
+            headers: headers
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
+            body_gz: Vec::new(),
+            stored_at,
+        }
+    }
+
+    #[test]
+    fn a_stored_copy_is_fresh_for_the_longer_of_the_two_lifetimes() {
+        let now = 1_000_000_000;
+        let min = 60_000;
+        // The caller's hint alone: tiles sent no-store.
+        let tile = entry(&[("cache-control", "no-store")], now - 5 * min);
+        assert!(fresh(&tile, Some(10 * min as u64), now));
+        assert!(!fresh(&tile, Some(4 * min as u64), now));
+        assert!(!fresh(&tile, None, now));
+        // The server's max-age alone, less what upstream caches had used.
+        let glyph = entry(
+            &[("cache-control", "public, max-age=600"), ("age", "240")],
+            now - 5 * min,
+        );
+        assert!(fresh(&glyph, None, now)); // 240 s + 300 s < 600 s
+        let older = entry(
+            &[("cache-control", "public, max-age=600"), ("age", "240")],
+            now - 7 * min,
+        );
+        assert!(!fresh(&older, None, now)); // 240 s + 420 s ≥ 600 s
+    }
+
+    #[test]
+    fn nothing_without_a_lifetime_is_fresh() {
+        let now = 1_000_000_000;
+        for cc in ["no-cache, max-age=600", "max-age=600, no-store", ""] {
+            assert!(
+                !fresh(&entry(&[("cache-control", cc)], now - 1), None, now),
+                "{cc}"
+            );
+        }
+        assert!(!fresh(&entry(&[], now), None, now));
+        // A clock that went backwards does not make anything fresher.
+        assert!(!fresh(&entry(&[], now + 5_000), Some(1_000), now));
+    }
 
     #[test]
     fn balanced_names_go_to_the_active_node_and_nothing_else_moves() {

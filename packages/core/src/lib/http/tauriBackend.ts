@@ -52,6 +52,7 @@ export const tauriBackend: HttpBackend = {
         headers: options.headers ?? {},
         timeoutMs: options.timeout,
         store: options.store ?? true,
+        maxAgeMs: options.maxAge,
       },
     });
 

@@ -88,6 +88,9 @@ pub struct CacheEntry {
     pub headers: HashMap<String, String>,
     /// Still gzip'd; call [`gunzip`] to materialise it.
     pub body_gz: Vec<u8>,
+    /// When the server last vouched for this body (ms): stored from a 200, or
+    /// confirmed by a 304. How fresh it is counts from here.
+    pub stored_at: i64,
 }
 
 /// A response on its way into the cache, before compression.
@@ -142,6 +145,8 @@ pub struct CacheStats {
 enum WriteOp {
     Put(Box<PreparedWrite>),
     Touch(String),
+    /// A 304 confirmed the stored body: its freshness starts over.
+    Validated(String),
     /// Round-trip probe: acked once the queue ahead of it has been applied.
     Sync(SyncSender<()>),
 }
@@ -159,7 +164,7 @@ pub fn gunzip(body_gz: &[u8]) -> Option<Vec<u8>> {
     dec.finish().ok()
 }
 
-fn now_ms() -> i64 {
+pub(crate) fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
@@ -331,7 +336,7 @@ impl HttpCache {
     pub fn get(&self, key: &str) -> Option<CacheEntry> {
         self.readers.with(|conn| {
             conn.query_row(
-                "SELECT status, etag, last_modified, headers, body FROM entries WHERE key = ?1",
+                "SELECT status, etag, last_modified, headers, body, created_at FROM entries WHERE key = ?1",
                 params![key],
                 |row| {
                     let headers_json: String = row.get(3)?;
@@ -341,6 +346,7 @@ impl HttpCache {
                         last_modified: row.get(2)?,
                         headers: serde_json::from_str(&headers_json).unwrap_or_default(),
                         body_gz: row.get(4)?,
+                        stored_at: row.get(5)?,
                     })
                 },
             )
@@ -354,6 +360,12 @@ impl HttpCache {
     /// immediately; the row is updated by the writer thread.
     pub fn touch(&self, key: &str) {
         let _ = self.writes.send(WriteOp::Touch(key.to_string()));
+    }
+
+    /// Record that the server confirmed an entry (a 304): it counts as stored
+    /// now, and is freshly used. Returns immediately.
+    pub fn validated(&self, key: &str) {
+        let _ = self.writes.send(WriteOp::Validated(key.to_string()));
     }
 
     /// Queue an already-compressed row. Returns immediately.
@@ -425,6 +437,7 @@ fn apply_batch(
     // Collapse repeated touches of the same key -- the 1 Hz paths hit a handful
     // of keys over and over, and one UPDATE per key per batch is enough.
     let mut touches: Vec<String> = Vec::new();
+    let mut validated: Vec<String> = Vec::new();
     let mut puts: Vec<Box<PreparedWrite>> = Vec::new();
 
     for op in batch {
@@ -433,6 +446,11 @@ fn apply_batch(
             WriteOp::Touch(k) => {
                 if !touches.contains(&k) {
                     touches.push(k);
+                }
+            }
+            WriteOp::Validated(k) => {
+                if !validated.contains(&k) {
+                    validated.push(k);
                 }
             }
             WriteOp::Sync(ack) => acks.push(ack),
@@ -491,6 +509,12 @@ fn apply_batch(
     for key in &touches {
         let _ = tx.execute(
             "UPDATE entries SET accessed_at = ?2 WHERE key = ?1",
+            params![key, now],
+        );
+    }
+    for key in &validated {
+        let _ = tx.execute(
+            "UPDATE entries SET created_at = ?2, accessed_at = ?2 WHERE key = ?1",
             params![key, now],
         );
     }

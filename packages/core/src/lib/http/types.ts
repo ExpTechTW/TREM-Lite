@@ -20,6 +20,12 @@ export interface HttpOptions {
    * be revalidated and would only evict entries that can.
    */
   store?: boolean;
+  /**
+   * Serve a stored copy without asking the server while it is younger than
+   * this many ms — for content known not to change, whatever its headers say
+   * (the map tiles). A server's own `max-age` is honoured without it.
+   */
+  maxAge?: number;
 }
 
 /** Metadata the Rust proxy frames ahead of the response body. */
@@ -28,7 +34,7 @@ export interface HttpMeta {
   ok: boolean;
   url: string;
   headers: Record<string, string>;
-  /** Body was replayed from the cache (304 revalidation, or stale-on-error). */
+  /** Body was replayed from the cache (fresh, 304 revalidation, or stale-on-error). */
   fromCache: boolean;
   /** Served without a successful revalidation — may be out of date. */
   stale: boolean;

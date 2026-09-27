@@ -3,10 +3,12 @@
  *
  * Without this the tiles are fetched by MapLibre itself — on desktop that means
  * the WebView's own network stack, which bypasses every guarantee this layer
- * makes. Tiles are also the single biggest beneficiary of the 250 MB ETag LRU:
- * they are large, essentially static, and re-requested on every launch, so
- * after the first run they revalidate as 304s (or are replayed outright when
- * offline).
+ * makes. Tiles are also the biggest beneficiary of the cache: large,
+ * essentially static, and wanted again at every launch. They cannot be
+ * revalidated — the tile server sends `no-store` and a Last-Modified that moves
+ * forward every minute or so, so a conditional request downloads them afresh —
+ * so they are kept for TILE_FRESH_MS and served from the cache meanwhile
+ * without a request at all.
  *
  * Registering on the main thread is enough. Vector tiles are parsed on worker
  * threads, but MapLibre forwards a request whose protocol is unknown to the
@@ -21,6 +23,8 @@ import { http } from "./index";
 
 const SCHEME = "trem";
 const TILE_TIMEOUT = 15_000;
+/** How long a tile, glyph range or terrain tile is served from the cache. */
+const TILE_FRESH_MS = 7 * 24 * 60 * 60 * 1000;
 
 const log = createLogger("map-proto");
 let registered = false;
@@ -42,6 +46,7 @@ export function registerMapProtocol(): void {
     const res = await http.request(url, {
       timeout: TILE_TIMEOUT,
       store: true,
+      maxAge: TILE_FRESH_MS,
       signal: abortController.signal,
     });
 

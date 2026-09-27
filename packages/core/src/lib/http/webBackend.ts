@@ -5,7 +5,9 @@
  * There is no SQLite here, so ETag revalidation and gzip are delegated to the
  * browser's own HTTP cache: `cache: "default"` lets it send `If-None-Match`
  * and handle the 304, and `Accept-Encoding` is set by the browser itself and
- * is not settable from script.
+ * is not settable from script. That cache obeys `no-store`, which the map
+ * tiles are sent with, so a request with `maxAge` is kept in Cache Storage
+ * instead, as the proxy keeps it on desktop.
  */
 import { alternative, report, route, type Route } from "./regions";
 import { HttpError, HttpResponse, type HttpBackend, type HttpOptions } from "./types";
@@ -57,6 +59,32 @@ async function run(url: string, options: HttpOptions): Promise<Response> {
 
 const aborted = (err: unknown) => err instanceof HttpError && err.type === "ABORTED";
 
+const FRESH_CACHE = "trem-fresh";
+/** When a kept copy was stored (ms), on the copy itself. */
+const STORED_AT = "x-trem-stored-at";
+
+/** A kept copy of `url` younger than `maxAge`, if there is one. */
+async function freshCopy(url: string, maxAge: number): Promise<Response | null> {
+  try {
+    const hit = await (await caches.open(FRESH_CACHE)).match(url);
+    const age = Date.now() - Number(hit?.headers.get(STORED_AT));
+    return hit && age >= 0 && age < maxAge ? hit : null;
+  } catch {
+    return null; // no Cache Storage (an insecure origin, a private window)
+  }
+}
+
+async function keep(url: string, res: Response): Promise<void> {
+  try {
+    const headers = new Headers(res.headers);
+    headers.set(STORED_AT, String(Date.now()));
+    const copy = new Response(await res.arrayBuffer(), { status: res.status, headers });
+    await (await caches.open(FRESH_CACHE)).put(url, copy);
+  } catch {
+    /* not kept: fetched again next time */
+  }
+}
+
 /** One attempt at a route, its outcome told to the node's health. */
 async function attempt(r: Route, options: HttpOptions): Promise<Response> {
   try {
@@ -92,7 +120,9 @@ async function send(url: string, options: HttpOptions): Promise<Response> {
 
 export const webBackend: HttpBackend = {
   async request(url, options) {
-    const res = await send(url, options);
+    const kept = options.maxAge ? await freshCopy(url, options.maxAge) : null;
+    const res = kept ?? (await send(url, options));
+    if (!kept && options.maxAge && res.status === 200) void keep(url, res.clone());
     const headers: Record<string, string> = {};
     res.headers.forEach((value, name) => {
       headers[name.toLowerCase()] = value;
@@ -104,9 +134,9 @@ export const webBackend: HttpBackend = {
         ok: res.ok,
         url: res.url || url,
         headers,
-        // The browser cache is opaque to us; it may well have served this from
-        // disk, but it never tells us so.
-        fromCache: false,
+        // A kept copy is ours to know about. The browser cache is opaque: it
+        // may well have served the rest from disk, but it never says so.
+        fromCache: !!kept,
         stale: false,
       },
       bytes,
