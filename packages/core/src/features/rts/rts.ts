@@ -13,6 +13,8 @@ import { show_eew } from "@/features/eew/eew";
 import { isAutoFocusLocked } from "@/features/focus/focus";
 import { showReportPoint } from "@/features/report/report";
 
+import { rtsColor } from "./palette";
+
 /** Per-station rolling trigger peak (persists across DataRts frames). */
 const level_list: Record<string, number> = {};
 
@@ -78,20 +80,7 @@ export function initRts(): void {
       type: "circle",
       source: "rts",
       paint: {
-        "circle-color": [
-          "interpolate", ["linear"], ["get", "i"],
-          -3, COLOR.RTS.intensity_3,
-          -2, COLOR.RTS.intensity_2,
-          -1, COLOR.RTS.intensity_1,
-          0, COLOR.RTS.intensity0,
-          1, COLOR.RTS.intensity1,
-          2, COLOR.RTS.intensity2,
-          3, COLOR.RTS.intensity3,
-          4, COLOR.RTS.intensity4,
-          5, COLOR.RTS.intensity5,
-          6, COLOR.RTS.intensity6,
-          7, COLOR.RTS.intensity7,
-        ] as unknown as ExpressionSpecification,
+        "circle-color": rtsColor(),
         "circle-radius": circleRadius,
       },
     });
