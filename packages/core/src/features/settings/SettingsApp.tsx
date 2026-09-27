@@ -17,6 +17,8 @@ import { inTauri } from "@/lib/env";
 import type { Station, TremConfig } from "@/lib/types";
 import { versionLabel } from "@/lib/version";
 
+import { StationPicker, type CityStations } from "./StationPicker";
+
 /**
  * The settings window. Four pages, each only what is used:
  *
@@ -455,16 +457,6 @@ function PreviewButton({ sound }: { sound: string }) {
   );
 }
 
-interface TownStations {
-  town: string;
-  ids: string[];
-}
-
-interface CityStations {
-  city: string;
-  towns: TownStations[];
-}
-
 /**
  * The stations to choose from, by city and town in the region table's order
  * (north to south). Only those the server takes data from (`work`): a station
@@ -488,93 +480,6 @@ function stationsByPlace(stations: Record<string, Station>, chosen: string, regi
     });
     return towns.length ? [{ city, towns }] : [];
   });
-}
-
-/**
- * City, then town, then — only where a town has several — the station. A
- * town with one station is that station, chosen as soon as the town is.
- */
-function StationPicker({
-  tree,
-  value,
-  onPick,
-}: {
-  tree: CityStations[];
-  value: string;
-  onPick: (id: string) => void;
-}) {
-  // A city picked whose towns are not yet chosen from; null follows `value`.
-  const [draftCity, setDraftCity] = useState<string | null>(null);
-  const current = tree.flatMap((c) => c.towns.map((t) => ({ city: c.city, ...t }))).find((t) => t.ids.includes(value));
-  const city = draftCity ?? current?.city ?? "";
-  const town = draftCity === null ? (current?.town ?? "") : "";
-  const towns = tree.find((c) => c.city === city)?.towns ?? [];
-  const ids = towns.find((t) => t.town === town)?.ids ?? [];
-
-  if (!tree.length) {
-    return (
-      <div className="settings-row">
-        <span className="settings-label">測站清單載入中，請稍後再開啟設定</span>
-      </div>
-    );
-  }
-
-  const pickCity = (next: string) => {
-    const choice = tree.find((c) => c.city === next);
-    if (!choice) return;
-    if (next === current?.city) return setDraftCity(null);
-    if (choice.towns.length === 1) {
-      setDraftCity(null);
-      return onPick(choice.towns[0].ids[0]);
-    }
-    setDraftCity(next);
-  };
-  const pickTown = (next: string) => {
-    const choice = towns.find((t) => t.town === next);
-    if (!choice) return;
-    setDraftCity(null);
-    if (!choice.ids.includes(value)) onPick(choice.ids[0]);
-  };
-
-  return (
-    <>
-      <Row label="縣市">
-        <select value={city} onChange={(event) => pickCity(event.target.value)}>
-          <option value="" disabled>
-            請選擇
-          </option>
-          {tree.map((c) => (
-            <option key={c.city} value={c.city}>
-              {c.city}
-            </option>
-          ))}
-        </select>
-      </Row>
-      <Row label="鄉鎮市區">
-        <select value={town} onChange={(event) => pickTown(event.target.value)} disabled={!towns.length}>
-          <option value="" disabled>
-            請選擇
-          </option>
-          {towns.map((t) => (
-            <option key={t.town} value={t.town}>
-              {t.ids.length > 1 ? `${t.town}（${t.ids.length} 站）` : t.town}
-            </option>
-          ))}
-        </select>
-      </Row>
-      {ids.length > 1 && (
-        <Row label="測站">
-          <select value={value} onChange={(event) => onPick(event.target.value)}>
-            {ids.map((id) => (
-              <option key={id} value={id}>
-                {id}
-              </option>
-            ))}
-          </select>
-        </Row>
-      )}
-    </>
-  );
 }
 
 function Toggle({

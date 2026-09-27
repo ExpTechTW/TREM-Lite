@@ -1386,28 +1386,147 @@
   fill: currentColor;
 }
 
-.settings-row select:disabled {
-  opacity: 0.5;
-}
-
 .settings-value {
   color: #a1a1aa;
   text-align: right;
 }
 
-.settings-row select {
-  max-width: 62%;
+.settings-row a {
+  color: var(--primary, #beff0c);
+  font-weight: 600;
+}
+
+/* The station field and its cascading menu (StationPicker.tsx). The menu is
+   portalled to <body>, so it sits above the web's settings modal (4000). The
+   field's label is two characters: the path takes the rest of the row. */
+.station-row .settings-label {
+  flex-shrink: 0;
+}
+
+.settings-row .station-field {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
   padding: 7px 10px;
   border: 1px solid #ffffff1f;
   border-radius: 8px;
   color: #f4f4f5;
   background: #1c1c1f;
   font: inherit;
+  cursor: pointer;
 }
 
-.settings-row a {
-  color: var(--primary, #beff0c);
-  font-weight: 600;
+.settings-row .station-field:hover {
+  border-color: #ffffff38;
+}
+
+.settings-row .station-field[aria-expanded="true"] {
+  border-color: #beff0c80;
+}
+
+.station-field span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.station-field svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: #a1a1aa;
+}
+
+.station-menu {
+  position: fixed;
+  z-index: 4100;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid #ffffff24;
+  border-radius: 10px;
+  color: #f4f4f5;
+  background: #26262a;
+  box-shadow: 0 12px 32px #000a;
+  font-size: 14px;
+  user-select: none;
+}
+
+.station-menu-column {
+  width: var(--station-column);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.station-menu-column + .station-menu-column {
+  border-left: 1px solid #ffffff12;
+}
+
+.station-menu-column h3 {
+  position: sticky;
+  top: 0;
+  margin: 0;
+  padding: 8px 12px 6px;
+  color: #8b8b94;
+  background: #26262a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.station-menu-column button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 8px 8px 12px;
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.station-menu-column button:hover {
+  background: #ffffff0d;
+}
+
+.station-menu-column button.is-open {
+  background: #ffffff1a;
+}
+
+.station-menu-column button[aria-current="true"] {
+  color: #beff0c;
+  font-weight: 700;
+}
+
+.station-menu-column button:focus-visible {
+  outline: 2px solid #beff0c;
+  outline-offset: -2px;
+}
+
+.station-menu-column button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.station-menu-column small {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  color: #8b8b94;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.station-menu-column svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: #8b8b94;
 }
 
 .settings-switch {
@@ -1554,10 +1673,6 @@
 
   .settings-row {
     padding: 10px 14px;
-  }
-
-  .settings-row select {
-    max-width: 58%;
   }
 }
 
