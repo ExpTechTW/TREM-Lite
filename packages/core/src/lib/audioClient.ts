@@ -1,9 +1,10 @@
 /**
  * Audio wiring — subscribes to domain events and forwards them to the Rust
  * audio engine (see src-tauri/src/audio.rs). Ported from the routing logic of
- * legacy/src/js/index/core/audio.js. All actual playback happens in Rust; the
- * queue/priority/volume rules also live there. Speech is handled separately by
- * speechClient so native effects and system TTS retain independent queues.
+ * legacy/src/js/index/core/audio.js. On desktop all playback happens in Rust,
+ * with the queue/priority/volume rules; on the web, webAudio.ts plays the same
+ * clips by the same rules. Speech is handled separately by speechClient so
+ * effects and speech keep independent queues.
  */
 import { invoke } from "@tauri-apps/api/core";
 
@@ -11,25 +12,24 @@ import { AUDIO, SHOW_TREM_EEW } from "./constants";
 import { getConfig } from "./config";
 import { events } from "./events";
 import { inTauri } from "./env";
-
-type QueueName = "eew" | "pga" | "shindo" | "update";
+import { webAudio, type QueueName } from "./webAudio";
 
 export function enqueue(queue: QueueName, sound: string): void {
-  if (!inTauri) return;
+  if (!inTauri) return webAudio.enqueue(queue, sound);
   void invoke("audio_enqueue", { queue, sound });
 }
 export function play(sound: string): void {
-  if (!inTauri) return;
+  if (!inTauri) return webAudio.play(sound);
   void invoke("audio_play", { sound });
 }
 export function clearQueue(queue: QueueName): void {
-  if (!inTauri) return;
+  if (!inTauri) return webAudio.clear(queue);
   void invoke("audio_clear", { queue });
 }
 
 /** Silence everything playing or queued — at a live/replay boundary. */
 export function stopAll(): void {
-  if (!inTauri) return;
+  if (!inTauri) return webAudio.stopAll();
   void invoke("audio_stop_all");
 }
 function sfx(key: string): boolean {

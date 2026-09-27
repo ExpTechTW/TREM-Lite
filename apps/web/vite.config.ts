@@ -19,6 +19,10 @@ export default defineConfig({
   // GitHub Pages project site is served under /<repo>/. Override via base if you
   // later use a custom domain or user/organization page.
   base: "/TREM-Lite/",
+  // The sound effects the desktop embeds in its binary (src-tauri/audio), served
+  // as files for the web's player (packages/core/src/lib/webAudio.ts). Only this
+  // build copies them: the desktop frontend never loads them.
+  publicDir: resolve(__dirname, "../desktop/src-tauri/audio"),
   build: {
     target: "es2022",
     outDir: resolve(__dirname, "dist"),

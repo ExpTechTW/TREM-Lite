@@ -39,6 +39,14 @@ function speak(text: string, queue = true, onEnd?: () => void): void {
   window.speechSynthesis.speak(utterance);
 }
 
+/**
+ * A browser speaks nothing a page asks for before it has been interacted
+ * with. Saying nothing, inside a click, lifts that for the page's lifetime.
+ */
+export function unlockSpeech(): void {
+  if (available()) window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+}
+
 /** Drop what is being said and what is queued — at a live/replay boundary. */
 export function stopSpeech(): void {
   if (available()) window.speechSynthesis.cancel();

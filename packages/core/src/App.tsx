@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { inTauri } from "@/lib/env";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
 import { loadConfig, onConfigUpdated } from "@/lib/config";
@@ -13,12 +14,15 @@ import { RtsIntensityList } from "@/overlays/RtsIntensityList";
 import { StationReadout } from "@/overlays/StationReadout";
 import { VersionBadge } from "@/overlays/VersionBadge";
 import { WarningBanners } from "@/overlays/WarningBanners";
+import { WebWelcome } from "@/overlays/WebWelcome";
 
 const log = createLogger("app");
 
 /** Main window. Loads config before booting the map + data + audio pipeline. */
 export function App() {
   const [ready, setReady] = useState(false);
+  // The web asks for a click first, without which it could play no sound.
+  const [welcomed, setWelcomed] = useState(inTauri);
 
   useEffect(() => {
     let un: (() => void) | undefined;
@@ -44,19 +48,25 @@ export function App() {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-background text-foreground">
-      <MapView />
+    <>
+      <div
+        className="relative h-full w-full overflow-hidden bg-background text-foreground"
+        inert={!welcomed}
+      >
+        <MapView />
 
-      {/* overlays */}
-      <EewInfoBox />
-      <IntensityLegend />
-      <MaxIntensity />
-      <StationReadout />
-      <ReportPanel />
-      <RtsIntensityList />
-      <WarningBanners />
-      <NavBar />
-      <VersionBadge />
-    </div>
+        {/* overlays */}
+        <EewInfoBox />
+        <IntensityLegend />
+        <MaxIntensity />
+        <StationReadout />
+        <ReportPanel />
+        <RtsIntensityList />
+        <WarningBanners />
+        <NavBar />
+        <VersionBadge />
+      </div>
+      {!welcomed && <WebWelcome onStart={() => setWelcomed(true)} />}
+    </>
   );
 }
