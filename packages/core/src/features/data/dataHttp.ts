@@ -95,7 +95,6 @@ export interface SseHandlers {
   onRts?: (v: RtsData) => void;
   onEew?: (v: unknown) => void;
   onIntensity?: (v: IntensityReport[]) => void;
-  onLpgm?: (v: unknown) => void;
   reconnectDelay?: number;
   /** Start asleep: RTS alert frames only (see the top of this file). */
   background?: boolean;
@@ -263,7 +262,7 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
 
 /** Open the live streams and dispatch parsed events. */
 export function init(options: SseHandlers = {}): SseManager {
-  const { onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
+  const { onRts, onEew, onIntensity, reconnectDelay = 3000 } = options;
   let background = !!options.background;
 
   if (sseController) sseController.abort();
@@ -332,9 +331,6 @@ export function init(options: SseHandlers = {}): SseManager {
     reconnectDelay,
   );
 
-  // Unused onLpgm is kept for parity with the polling path.
-  void onLpgm;
-
   return {
     abort: () => {
       controller.abort();
@@ -368,41 +364,32 @@ async function parseJson(response: HttpResponse | null): Promise<unknown | null>
 }
 
 /**
- * HTTP polling — replay's transport. RTS and intensity come from the v3
- * archives (rts.v1, intensity.v1), and RTS only in replay: live station data
- * is the stream's alone. EEW always, intensity every 5th call, lpgm every 7th.
+ * HTTP polling — the transport of an HTTP replay, the one mode that polls: the
+ * archives at the replay clock's second. RTS and intensity from the v3
+ * archives (rts.v1, intensity.v1), EEW every call, intensity every 5th call,
+ * lpgm every 7th.
  */
-export async function getData(time?: number): Promise<PolledData> {
-  const requestMode = variable.play_mode;
-  const t = time ? Math.round(time / 1000) : 0;
+export async function getData(time: number): Promise<PolledData> {
+  const suffix = `/${Math.round(time / 1000)}`;
   requestCounter++;
   const shouldFetchLPGM = requestCounter % 7 === 0;
   const shouldFetchIntensity = requestCounter % 5 === 0;
 
-  const lb = lbApiHost();
-  const archiveDomain = requestMode == 2 ? TREM_ARCHIVE_HOST : lb;
-  const eewDomain = requestMode == 2 ? HOST.coreApi : lb;
-
-  const suffix = t ? `/${t}` : "";
-  const reqs: (ReturnType<typeof withController> | null)[] = [
-    requestMode == 2 ? withController(`https://${HOST.coreApi}/api/v3/trem/rts${suffix}`, HTTP_TIMEOUT.RTS, NO_STORE) : null,
-    requestMode == 1 ? null : withController(`https://${eewDomain}/api/v2/eq/eew${suffix}`, HTTP_TIMEOUT.EEW, NO_STORE),
+  const reqs = [
+    withController(`https://${HOST.coreApi}/api/v3/trem/rts${suffix}`, HTTP_TIMEOUT.RTS, NO_STORE),
+    withController(`https://${HOST.coreApi}/api/v2/eq/eew${suffix}`, HTTP_TIMEOUT.EEW, NO_STORE),
   ];
-
   if (shouldFetchIntensity) {
     reqs.push(withController(`https://${HOST.coreApi}/api/v3/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY, NO_STORE));
   }
   if (shouldFetchLPGM) {
-    reqs.push(withController(`https://${archiveDomain}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM, NO_STORE));
+    reqs.push(withController(`https://${TREM_ARCHIVE_HOST}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM, NO_STORE));
   }
 
-  const activeRequests = reqs.filter((request): request is ReturnType<typeof withController> => !!request);
-  activeRequests.forEach((request) => activePollingControllers.add(request.controller));
+  reqs.forEach((request) => activePollingControllers.add(request.controller));
 
   try {
-    const responses = await Promise.all(
-      reqs.map((r) => (r ? r.execute().catch(() => null) : Promise.resolve(null))),
-    );
+    const responses = await Promise.all(reqs.map((r) => r.execute().catch(() => null)));
 
     const out: PolledData = { rts: null, eew: null, intensity: null, lpgm: null };
     const rts = (await parseJson(responses[0])) as RtsV1 | null;
@@ -416,6 +403,6 @@ export async function getData(time?: number): Promise<PolledData> {
     }
     return out;
   } finally {
-    activeRequests.forEach((request) => activePollingControllers.delete(request.controller));
+    reqs.forEach((request) => activePollingControllers.delete(request.controller));
   }
 }

@@ -20,41 +20,38 @@ import { abortAll, init as sseInit, getData, type SseManager } from "./dataHttp"
 let fileList: string[] = [];
 let fileIndex = 0;
 
-const ORIGINAL: Record<string, number> = { LOOP: HTTP_TIMEOUT.LOOP, RTS: HTTP_TIMEOUT.RTS, EEW: HTTP_TIMEOUT.EEW };
-// Mutable copy — the adaptive timeout manager tunes these at runtime.
-const TIMEOUT: Record<string, number> = { ...HTTP_TIMEOUT };
-
-class TimeoutManager {
-  private MAX = 10000;
-  private STEP = 500;
+/**
+ * The data loop's pace: HTTP_TIMEOUT.LOOP, slowed while the replay archive
+ * answers nothing and eased back once it answers, adjusted at most every 2 s.
+ * (It once tuned the RTS and EEW request timeouts as well; nothing read them.)
+ */
+class LoopPace {
+  private readonly MAX = 10_000;
+  private readonly STEP = 500;
   private lastAdjust = performance.now();
-  private failureCount = 0;
+  private failures = 0;
+  /** ms between runs of the loop. */
+  interval: number = HTTP_TIMEOUT.LOOP;
 
-  adjustTimeouts(data: { eew: unknown; rts: unknown }): boolean {
+  /** Record a poll's outcome; false when it brought nothing and is skipped. */
+  record(got: boolean): boolean {
     const t = performance.now();
     if (t - this.lastAdjust < 2000) return true;
     this.lastAdjust = t;
-
-    if (!data.eew && !data.rts) {
-      this.failureCount = Math.min(this.failureCount + 1, 10);
-      const inc = this.STEP * this.failureCount;
-      (["LOOP", "RTS", "EEW"] as const).forEach((type) => {
-        TIMEOUT[type] = Math.min(TIMEOUT[type] + inc, this.MAX);
-      });
+    if (!got) {
+      this.failures = Math.min(this.failures + 1, 10);
+      this.interval = Math.min(this.interval + this.STEP * this.failures, this.MAX);
       return false;
     }
-
-    this.failureCount = Math.max(0, Math.floor(this.failureCount / 2));
-    if (TIMEOUT.LOOP <= ORIGINAL.LOOP) return true;
-    const dec = this.STEP * (this.failureCount + 1);
-    (["LOOP", "RTS", "EEW"] as const).forEach((type) => {
-      TIMEOUT[type] = Math.max(ORIGINAL[type], TIMEOUT[type] - dec);
-    });
+    this.failures = Math.max(0, Math.floor(this.failures / 2));
+    if (this.interval > HTTP_TIMEOUT.LOOP) {
+      this.interval = Math.max(HTTP_TIMEOUT.LOOP, this.interval - this.STEP * (this.failures + 1));
+    }
     return true;
   }
 }
 
-const timeoutManager = new TimeoutManager();
+const pace = new LoopPace();
 
 /**
  * How long the main window stays hidden before the RTS stream sleeps. Waking
@@ -68,7 +65,6 @@ class DataManager {
   private mapInitialized = false;
   private sseActive = false;
   private sseManager: SseManager | null = null;
-  private sseHandled = false;
   /** The main window is hidden, so RTS may sleep (see dataHttp.ts). */
   private background = false;
   /** Whether the stream has actually been put to sleep. */
@@ -127,7 +123,7 @@ class DataManager {
 
   async fetchData(): Promise<void> {
     const tick = performance.now();
-    if (tick - this.lastFetchTime < TIMEOUT.LOOP) return;
+    if (tick - this.lastFetchTime < pace.interval) return;
     this.lastFetchTime = tick;
 
     if (variable.play_mode === 0) {
@@ -167,35 +163,27 @@ class DataManager {
       return;
     }
 
-    if (this.sseHandled) {
-      this.sseHandled = false;
-      return;
-    }
-
+    // Live data is the stream's (above), a file replay reads its frames
+    // (above): what is left is an HTTP replay, polled at its replay clock.
     const requestEpoch = this.transportEpoch;
-    const requestMode = variable.play_mode;
-    const data = await getData(
-      variable.play_mode == 0 || variable.play_mode == 1 ? undefined : now(),
-    );
+    const data = await getData(now());
 
     // A replay/live transition may occur while HTTP responses or response
     // bodies are pending. Never process a result from the previous mode/epoch.
-    if (requestEpoch !== this.transportEpoch || requestMode !== variable.play_mode) return;
+    if (requestEpoch !== this.transportEpoch || variable.play_mode !== 2) return;
 
-    if (!timeoutManager.adjustTimeouts({ eew: data.eew, rts: data.rts })) return;
+    if (!pace.record(!!(data.eew || data.rts))) return;
 
-    if (variable.play_mode == 0 || variable.play_mode == 2) {
-      const rts = data.rts as { time?: number } | null;
-      if (
-        !variable.data.rts ||
-        (!data.rts && realNow() - variable.cache.last_data_time > LAST_DATA_TIMEOUT_ERROR) ||
-        (variable.data.rts.time ?? 0) < (rts?.time ?? 0)
-      ) {
-        variable.data.rts = data.rts as never;
-        events.emit("DataRts", { info: { type: variable.play_mode }, data: data.rts as never });
-      }
-      this.processEEWData((data.eew as EewData[]) || []);
+    const rts = data.rts as { time?: number } | null;
+    if (
+      !variable.data.rts ||
+      (!data.rts && realNow() - variable.cache.last_data_time > LAST_DATA_TIMEOUT_ERROR) ||
+      (variable.data.rts.time ?? 0) < (rts?.time ?? 0)
+    ) {
+      variable.data.rts = data.rts as never;
+      events.emit("DataRts", { info: { type: variable.play_mode }, data: data.rts as never });
     }
+    this.processEEWData((data.eew as EewData[]) || []);
 
     if (data.intensity) this.processIntensityData(data.intensity as never[]);
     if (data.lpgm) this.processLpgmData(data.lpgm as never[]);
@@ -207,49 +195,22 @@ class DataManager {
     this.sseActive = true;
     if (this.sseManager) return;
 
-    const norm = (v: unknown): unknown => {
-      if (v instanceof Uint8Array) {
-        try {
-          return JSON.parse(new TextDecoder().decode(v));
-        } catch {
-          return null;
-        }
-      }
-      return v;
-    };
-
     this.sseManager = sseInit({
       background: this.asleep,
       reconnectDelay: 3000,
-      onRts: (raw) => {
+      onRts: (rts) => {
         if (variable.play_mode !== 0) return;
-        const value = norm(raw);
-        if (value == null) return;
-        this.sseHandled = true;
-        variable.data.rts = value as never;
-        events.emit("DataRts", { info: { type: variable.play_mode }, data: (value || {}) as never });
+        variable.data.rts = rts as never;
+        events.emit("DataRts", { info: { type: variable.play_mode }, data: rts as never });
         variable.cache.last_data_time = realNow();
       },
-      onEew: (raw) => {
+      onEew: (eew) => {
         if (variable.play_mode !== 0) return;
-        const value = norm(raw);
-        if (value == null) return;
-        this.sseHandled = true;
-        this.processEEWData(value as EewData[]);
+        this.processEEWData(eew as EewData[]);
       },
-      onIntensity: (raw) => {
+      onIntensity: (reports) => {
         if (variable.play_mode !== 0) return;
-        const value = norm(raw);
-        if (value == null) return;
-        this.sseHandled = true;
-        this.processIntensityData(value as never[]);
-      },
-      onLpgm: (raw) => {
-        if (variable.play_mode !== 0) return;
-        const value = norm(raw);
-        if (value == null) return;
-        this.sseHandled = true;
-        this.processLpgmData(value as never[]);
+        this.processIntensityData(reports as never[]);
       },
     });
   }
@@ -288,7 +249,6 @@ class DataManager {
       this.sseManager.abort();
       this.sseManager = null;
     }
-    this.sseHandled = false;
   }
 
   /** Prevent live/replay domain objects and alert caches crossing a mode boundary. */
