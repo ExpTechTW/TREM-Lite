@@ -19,6 +19,30 @@ function enabled(key: string): boolean {
   return !!getConfig()["check-box"][key];
 }
 
+/**
+ * Every event the main window can be brought forward for. Each also hides the
+ * settings window — whatever the four settings say, since what is on the map
+ * then matters more than the page on top of it. It reopens from the nav bar.
+ */
+const MAIN_EVENTS = [
+  "EewRelease",
+  "EewAlert",
+  "EewNewAreaAlert",
+  "RtsPga2",
+  "RtsPga1",
+  "RtsShindo2",
+  "RtsShindo1",
+  "RtsShindo0",
+  "ReportRelease",
+  "IntensityRelease",
+  "LpgmRelease",
+  "TsunamiRelease",
+] as const;
+
+function hideSettings(): void {
+  void invoke("window_hide", { label: "settings" }).catch(() => {});
+}
+
 function focusMain(critical = false): void {
   if (!inTauri) return;
   void invoke("window_request_attention", { critical }).catch(() => {});
@@ -118,6 +142,8 @@ export function initWindowControl(): void {
 
   // Legacy always surfaced tsunami alerts, independent of the four toggles.
   events.on("TsunamiRelease", () => surfaceAlert(true, true));
+
+  if (inTauri) for (const name of MAIN_EVENTS) events.on(name, hideSettings);
 
   if (inTauri) {
     void isMainUnavailable()
