@@ -10,15 +10,18 @@
  *    "stations":{"117825C":{"i":-0.3,"pga":0.47,"alert":1}, …}}
  *
  * The v2 feed it replaces also carried `box` and `int`, computed on the
- * server. They are computed here instead, from the stations whose `alert` is
- * set — which the server does only for a station taking part in an earthquake
- * event it is tracking, so nothing further is filtered:
+ * server. They are computed here instead, from this frame's stations whose
+ * `alert` is set — which the server does only for a station taking part in an
+ * earthquake event it is tracking, so nothing further is filtered:
  *
  *   box  per detection box, the highest intensity level among the alerting
  *        stations inside it;
- *   int  per town (city + town), the highest `i` its alerting stations
- *        reported in the last 60 s, so a town does not drop off the list
- *        between two frames. Sorted highest first, as the v2 list was.
+ *   int  per town (city + town), the highest level among its alerting
+ *        stations, sorted highest first, as the v2 list was.
+ *
+ * Both describe this frame alone. The bottom-right ranking holds each town's
+ * peak for 60 s; that is its own (features/rts/townPeaks.ts), and nothing
+ * else reads it.
  *
  * v2's `I` (the intensity while triggered) is gone; `i` stands in for it.
  */
@@ -43,8 +46,6 @@ export interface RtsV1Lookups {
   townOf: (code: number) => { city: string; town: string } | null;
 }
 
-const WINDOW_MS = 60_000;
-
 /**
  * An SSE data field of the rts.v1 stream: base64 of gzip of the JSON. A field
  * that is not — the `info` greeting, a plain-JSON archive — comes back as is.
@@ -66,59 +67,33 @@ export function decodePayload(data: string): string {
 /** The server writes `"alert":1`; other clients have been lenient about 1 vs "1". */
 const alerting = (value: unknown) => value === 1 || value === "1" || value === true;
 
-export class RtsV1Reader {
-  /** Per town, keyed city + town: its code and the samples still in the window. */
-  private towns = new Map<string, { code: number; samples: { time: number; i: number }[] }>();
+export function readRtsV1(payload: RtsV1, lookups: RtsV1Lookups): RtsData | null {
+  if (!payload.stations) return null;
+  const station: Record<string, RtsStation> = {};
+  const box: Record<string, number> = {};
+  const towns = new Map<string, { code: number; level: number }>();
 
-  constructor(private readonly lookups: RtsV1Lookups) {}
+  for (const [id, s] of Object.entries(payload.stations)) {
+    if (typeof s.i !== "number") continue;
+    const alert = alerting(s.alert);
+    // pga is omitted until a station's first measurement; 0 adds nothing to
+    // the maxima and level sums that read it.
+    station[id] = { i: s.i, pga: s.pga ?? 0, alert };
+    if (!alert) continue;
 
-  /** Forget the window — at a live/replay boundary, where time jumps. */
-  reset(): void {
-    this.towns.clear();
+    const at = lookups.station(id);
+    if (!at) continue;
+    const level = intensity_float_to_int(s.i);
+    const boxId = lookups.boxOf(at.lon, at.lat);
+    if (boxId !== null && (box[boxId] ?? -1) < level) box[boxId] = level;
+
+    const name = lookups.townOf(at.code);
+    if (!name) continue;
+    const key = `${name.city}${name.town}`;
+    const town = towns.get(key);
+    if (!town || town.level < level) towns.set(key, { code: at.code, level });
   }
 
-  read(payload: RtsV1): RtsData | null {
-    if (!payload.stations) return null;
-    const time = payload.ts ?? 0;
-    const station: Record<string, RtsStation> = {};
-    const box: Record<string, number> = {};
-
-    for (const [id, s] of Object.entries(payload.stations)) {
-      if (typeof s.i !== "number") continue;
-      const alert = alerting(s.alert);
-      // pga is omitted until a station's first measurement; 0 adds nothing to
-      // the maxima and level sums that read it.
-      station[id] = { i: s.i, pga: s.pga ?? 0, alert };
-      if (!alert) continue;
-
-      const at = this.lookups.station(id);
-      if (!at) continue;
-      const level = intensity_float_to_int(s.i);
-      const boxId = this.lookups.boxOf(at.lon, at.lat);
-      if (boxId !== null && (box[boxId] ?? -1) < level) box[boxId] = level;
-
-      const name = this.lookups.townOf(at.code);
-      if (!name) continue;
-      const key = `${name.city}${name.town}`;
-      let town = this.towns.get(key);
-      if (!town) this.towns.set(key, (town = { code: at.code, samples: [] }));
-      town.samples.push({ time, i: s.i });
-    }
-
-    return { station, box, int: this.int(time), time };
-  }
-
-  /** Each town's highest `i` in the window ending at `now`, as a level. */
-  private int(now: number): RtsData["int"] {
-    const peaks: { code: number; i: number }[] = [];
-    for (const [key, town] of this.towns) {
-      town.samples = town.samples.filter((s) => s.time <= now && now - s.time < WINDOW_MS);
-      if (!town.samples.length) {
-        this.towns.delete(key);
-        continue;
-      }
-      peaks.push({ code: town.code, i: Math.max(...town.samples.map((s) => s.i)) });
-    }
-    return peaks.sort((a, b) => b.i - a.i).map((p) => ({ code: p.code, i: intensity_float_to_int(p.i) }));
-  }
+  const int = [...towns.values()].sort((a, b) => b.level - a.level).map((t) => ({ code: t.code, i: t.level }));
+  return { station, box, int, time: payload.ts ?? 0 };
 }

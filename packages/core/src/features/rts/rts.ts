@@ -14,11 +14,15 @@ import { isAutoFocusLocked } from "@/features/focus/focus";
 import { showReportPoint } from "@/features/report/report";
 
 import { rtsColor } from "./palette";
+import { TownPeaks } from "./townPeaks";
 
 /** Per-station rolling trigger peak (persists across DataRts frames). */
 const level_list: Record<string, number> = {};
 
 let initialized = false;
+
+/** The bottom-right ranking's 60 s memory; everything else reads each frame as it comes. */
+const townPeaks = new TownPeaks(search_loc_name);
 
 interface IntEntry {
   code: number;
@@ -46,6 +50,7 @@ export function initRts(): void {
     ui.currentStation = null;
     ui.rtsInfo = { level: 0, trigger: 0 };
     ui.rtsIntensityRows = [];
+    townPeaks.clear();
     ui.maxIntensity = { i: 0, label: int_to_string(0) };
     ui.maxPga = 0;
     ui.maxPgaIntensity = 0;
@@ -387,9 +392,16 @@ export function initRts(): void {
       setFeatures(variable.map, "markers-geojson-0", data_alert_0_list);
     }
 
-    // Each town's peak over the last 60 s, highest first (see data/rtsV1.ts).
+    // This frame's highest level per town. The maximum intensity and the
+    // trigger box read it as is; only the bottom-right ranking holds each
+    // town's peak for 60 s. A frame without data (a lost connection, a mode
+    // boundary) leaves the ranking as it was.
     const int_list: IntEntry[] = ans.data?.int ?? [];
-    ui.rtsIntensityRows = getTopIntensities(int_list).sort((a, b) => b.i - a.i);
+    if (ans.data) {
+      ui.rtsIntensityRows = getTopIntensities(townPeaks.update(int_list, ans.data.time ?? 0)).sort(
+        (a, b) => b.i - a.i,
+      );
+    }
 
     if (int_list.length) {
       variable.cache.rts_trigger.loc = getTopIntensities(

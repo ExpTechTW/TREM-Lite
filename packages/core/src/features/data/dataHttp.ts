@@ -29,7 +29,7 @@ import type { RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { ui } from "@/lib/variable.ui";
 
-import { decodePayload, RtsV1Reader, type RtsV1 } from "./rtsV1";
+import { decodePayload, readRtsV1, type RtsV1, type RtsV1Lookups } from "./rtsV1";
 
 let sseController: AbortController | null = null;
 let requestCounter = 0;
@@ -54,14 +54,14 @@ const STALE_MS = 90_000;
  */
 const BACKOFF_MAX_MS = 15_000;
 
-const rtsReader = new RtsV1Reader({
+const lookups: RtsV1Lookups = {
   station: (id) => {
     const at = variable.station?.[id]?.info.at(-1);
     return at ? { lon: at.lon, lat: at.lat, code: at.code } : null;
   },
   boxOf,
   townOf: search_loc_name,
-});
+};
 
 function setRtsAccess(state: typeof ui.rtsAccess.state, reason = ""): void {
   if (ui.rtsAccess.state === state && ui.rtsAccess.reason === reason) return;
@@ -76,8 +76,6 @@ export function abortAll(): void {
   }
   activePollingControllers.forEach((controller) => controller.abort());
   activePollingControllers.clear();
-  // A live/replay boundary: the 60 s int window must not span it.
-  rtsReader.reset();
 }
 
 export interface SseHandlers {
@@ -243,7 +241,7 @@ export function init(options: SseHandlers = {}): SseManager {
           } catch {
             return; // not a frame this client understands
           }
-          const rts = rtsReader.read(payload);
+          const rts = readRtsV1(payload, lookups);
           if (rts) onRts?.(rts);
         },
         onRefused: (reason) => setRtsAccess("rejected", reason),
@@ -341,7 +339,7 @@ export async function getData(time?: number): Promise<PolledData> {
 
     const out: PolledData = { rts: null, eew: null, intensity: null, lpgm: null };
     const rts = (await parseJson(responses[0])) as RtsV1 | null;
-    out.rts = rts ? rtsReader.read(rts) : null;
+    out.rts = rts ? readRtsV1(rts, lookups) : null;
     out.eew = (await parseJson(responses[1])) as unknown[] | null;
     if (shouldFetchIntensity) {
       out.intensity = (await parseJson(responses[2])) as unknown[] | null;
