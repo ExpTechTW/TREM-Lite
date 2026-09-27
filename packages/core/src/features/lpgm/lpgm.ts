@@ -7,7 +7,8 @@ import type {
 import { events } from "@/lib/events";
 import type { Ans, RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
-import { generateMapStyle } from "@/domain/utils";
+import { townColors } from "@/domain/utils";
+import { paintTowns } from "@/lib/mapSource";
 import { drawEewArea } from "@/features/estimate/estimate";
 import { focus, isAutoFocusLocked } from "@/features/focus/focus";
 
@@ -108,12 +109,7 @@ function show_lpgm(ans: Ans<{ id: number; time: number; list: LpgmListItem[] }>)
     });
   }
 
-  const mapStyle = generateMapStyle(code_intensity, false, true);
-  map.setPaintProperty(
-    "town",
-    "fill-color",
-    mapStyle as unknown as ExpressionSpecification,
-  );
+  paintTowns(map, townColors(code_intensity, true));
   map.setPaintProperty("rts-layer", "circle-opacity", 0.2);
 
   variable.cache.bounds.lpgm = bounds as never;

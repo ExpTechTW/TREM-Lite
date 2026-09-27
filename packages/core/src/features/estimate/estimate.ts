@@ -1,13 +1,12 @@
 // Ported from legacy/src/js/index/core/estimate.js
-import type { ExpressionSpecification } from "maplibre-gl";
 
-import { COLOR } from "@/lib/constants";
 import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
 import type { Ans, EewData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { eewAreaIntensity, prepareIntensityModel, type EewArea } from "@/domain/eewMath";
-import { generateMapStyle, search_loc_name } from "@/domain/utils";
+import { search_loc_name, townColors } from "@/domain/utils";
+import { paintTowns } from "@/lib/mapSource";
 
 /** Predicted level for one town after merging the eq's reported area. */
 interface MergedTown {
@@ -62,7 +61,7 @@ export function drawEewArea(end = false): void {
   }
 
   if (!Object.keys(variable.cache.eewIntensityArea).length) {
-    map.setPaintProperty("town", "fill-color", COLOR.MAP.TW_TOWN_FILL);
+    paintTowns(map, null);
     return;
   }
 
@@ -94,8 +93,8 @@ export function drawEewArea(end = false): void {
     newHighIntensityCities.forEach((city) => alertedCities.add(city));
   }
 
-  const mapStyle = generateMapStyle(eewArea, !variable.data.eew.length && end);
-  map.setPaintProperty("town", "fill-color", mapStyle as unknown as ExpressionSpecification);
+  // The last EEW ending returns the towns to the base colour.
+  paintTowns(map, !variable.data.eew.length && end ? null : townColors(eewArea));
 
   if (end) {
     alertedCities.clear();

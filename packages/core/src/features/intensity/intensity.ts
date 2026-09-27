@@ -5,7 +5,8 @@ import { events } from "@/lib/events";
 import type { Ans } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { region } from "@/domain/region";
-import { convertIntensityToAreaFormat, generateMapStyle, search_loc_name } from "@/domain/utils";
+import { convertIntensityToAreaFormat, search_loc_name, townColors } from "@/domain/utils";
+import { paintTowns } from "@/lib/mapSource";
 import { drawEewArea } from "@/features/estimate/estimate";
 import { focus, isAutoFocusLocked } from "@/features/focus/focus";
 
@@ -60,8 +61,7 @@ function showIntensity(ans: Ans<IntensityData>): void {
     ans.data.area as unknown as Record<string, number[]>,
   );
 
-  const mapStyle = generateMapStyle(codeIntensity as Record<string, number>);
-  map.setPaintProperty("town", "fill-color", mapStyle as unknown as ExpressionSpecification);
+  paintTowns(map, townColors(codeIntensity));
   map.setPaintProperty("rts-layer", "circle-opacity", 0.2);
 
   for (const code of Object.keys(codeIntensity)) {

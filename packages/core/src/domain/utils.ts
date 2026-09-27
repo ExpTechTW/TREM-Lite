@@ -168,36 +168,13 @@ export function createIntensityIcon(
   `);
 }
 
-type MatchExpression = (string | number | string[])[];
-
-/** Build a MapLibre `match` expression coloring towns by intensity/lpgm. */
-export function generateMapStyle(
-  eewArea: Record<string, number>,
-  end = false,
-  lpgm = false,
-): string | MatchExpression {
-  if (end) {
-    return COLOR.MAP.TW_COUNTY_FILL;
+/** Each town's colour for its level: intensity's or long-period's palette, 0 unlit. */
+export function townColors(area: Record<string, number>, lpgm = false): Record<number, string> {
+  const colors: Record<number, string> = {};
+  for (const [code, level] of Object.entries(area)) {
+    colors[parseInt(code)] = level ? (lpgm ? COLOR.LPGM[level] : COLOR.INTENSITY[level]) : COLOR.MAP.TW_COUNTY_FILL;
   }
-
-  const matchExpression: MatchExpression = ["match", ["get", "CODE"]];
-
-  if (Object.keys(eewArea).length > 0) {
-    Object.entries(eewArea).forEach(([code, intensity]) => {
-      matchExpression.push(parseInt(code));
-      matchExpression.push(
-        intensity
-          ? lpgm
-            ? COLOR.LPGM[intensity]
-            : COLOR.INTENSITY[intensity]
-          : COLOR.MAP.TW_COUNTY_FILL,
-      );
-    });
-  }
-
-  matchExpression.push(COLOR.MAP.TW_TOWN_FILL);
-
-  return matchExpression;
+  return colors;
 }
 
 export function convertIntensityToAreaFormat(

@@ -1,6 +1,30 @@
 /** GeoJSON source writes that skip the ones that would change nothing. */
 import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 
+const TOWNS = { source: "map", sourceLayer: "town" } as const;
+/** The towns paintTowns last coloured, so an unchanged colouring costs nothing. */
+let painted = "";
+
+/**
+ * Colour towns by code — the EEW's predicted area, an intensity or a
+ * long-period report — or, with null, return them all to the base colour.
+ *
+ * Feature state, not a new `fill-color` expression: a data-driven paint
+ * property changed makes MapLibre re-tile the whole basemap source on its
+ * workers (every layer of it, not only the towns), where feature state only
+ * updates the colours of the tiles already loaded. The town layer reads the
+ * state (map.ts, `promoteId` on the town code).
+ */
+export function paintTowns(map: MlMap, colors: Record<number, string> | null): void {
+  const signature = colors ? JSON.stringify(colors) : "";
+  if (signature === painted) return;
+  painted = signature;
+  map.removeFeatureState(TOWNS);
+  for (const [code, color] of Object.entries(colors ?? {})) {
+    map.setFeatureState({ ...TOWNS, id: Number(code) }, { color });
+  }
+}
+
 /** What each source was last given, keyed by the source object itself. */
 const sent = new WeakMap<GeoJSONSource, string>();
 

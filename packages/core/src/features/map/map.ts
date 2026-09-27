@@ -59,6 +59,8 @@ function buildMap(container: HTMLElement): MlMap {
           tiles: [BASEMAP_TILE_URL],
           minzoom: 0,
           maxzoom: BASEMAP_SOURCE_MAX_ZOOM,
+          // Towns are coloured by feature state, keyed by town code (paintTowns).
+          promoteId: { town: "CODE" },
         },
         [TERRAIN_SOURCE_ID]: {
           type: "raster-dem",
@@ -95,7 +97,10 @@ function buildMap(container: HTMLElement): MlMap {
           type: "fill",
           source: "map",
           "source-layer": "town",
-          paint: { "fill-color": COLOR.MAP.TW_TOWN_FILL, "fill-opacity": 1 },
+          paint: {
+            "fill-color": ["coalesce", ["feature-state", "color"], COLOR.MAP.TW_TOWN_FILL],
+            "fill-opacity": 1,
+          },
         },
         {
           id: TERRAIN_HILLSHADE_LAYER_ID,
