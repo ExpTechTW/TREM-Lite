@@ -79,15 +79,9 @@ export interface Ans<T = unknown> {
 /** Config shape mirrors default.yml. */
 export interface TremConfig {
   ver: number;
-  "location-code": number;
   /** A hex device id of the rts.v1 station list. */
   "realtime-station-id": string;
-  "alert-level": {
-    "rts-intensity": number;
-    "eew-intensity": number;
-  };
   "check-box": Record<string, boolean>;
-  apiProxyDomain: string;
 }
 
 /** mitt event map — event names preserved from the Electron app. */

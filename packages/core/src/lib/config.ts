@@ -11,9 +11,7 @@ import type { TremConfig } from "./types";
 /** Mirrors src-tauri/default.yml — used as the browser-mode / fallback config. */
 export const DEFAULT_CONFIG: TremConfig = {
   ver: 5,
-  "location-code": 711,
   "realtime-station-id": "1C10848",
-  "alert-level": { "rts-intensity": 0, "eew-intensity": 0 },
   "check-box": {
     "show-window-eew": true,
     "show-window-report": true,
@@ -22,8 +20,6 @@ export const DEFAULT_CONFIG: TremConfig = {
     "other-auto-start": true,
     "other-tts": true,
     "graphics-block-auto-zoom": false,
-    "graphics-show-fault": false,
-    "sound-effects-dong": true,
     "sound-effects-EEW": true,
     "sound-effects-EEW2": true,
     "sound-effects-PAlert": true,
@@ -35,7 +31,6 @@ export const DEFAULT_CONFIG: TremConfig = {
     "sound-effects-Shindo2": true,
     "sound-effects-Update": true,
   },
-  apiProxyDomain: "api.lb.exptech.dev",
 };
 
 let cache: TremConfig | null = null;

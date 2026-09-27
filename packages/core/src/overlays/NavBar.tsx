@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Crosshair, Settings } from "lucide-react";
 
+import { SettingsModal } from "@/features/settings/SettingsApp";
+import { inTauri } from "@/lib/env";
 import { openSettings } from "@/lib/windows";
 import { focus_reset, isAutoFocusLocked } from "@/features/focus/focus";
 import { useTremEvent } from "@/hooks/useTremEvent";
@@ -15,6 +17,8 @@ import { TimeBar } from "./TimeBar";
 export function NavBar() {
   // 自動聚焦被使用者手動操作鎖定時，定位鈕變紅（對應舊版 #focus 紅/白）。
   const [locked, setLocked] = useState(isAutoFocusLocked());
+  // The web opens settings over the map; the desktop has a window for it.
+  const [settingsOpen, setSettingsOpen] = useState(false);
   useTremEvent("FocusLockChange", (v) => setLocked(v));
 
   return (
@@ -22,7 +26,7 @@ export function NavBar() {
       className="absolute bottom-[5px] left-[3px] z-30 flex flex-row items-center gap-[3px] text-[15px] font-medium"
       style={{ color: "var(--light)" }}
     >
-      <NavPanelButton title="設定" onClick={() => void openSettings()}>
+      <NavPanelButton title="設定" onClick={() => (inTauri ? void openSettings() : setSettingsOpen(true))}>
         <Settings className="h-5 w-5" />
       </NavPanelButton>
       <NavPanelButton
@@ -32,6 +36,7 @@ export function NavBar() {
         <Crosshair className="h-5 w-5" style={locked ? { color: "#ff4d4d" } : undefined} />
       </NavPanelButton>
       <TimeBar />
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

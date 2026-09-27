@@ -6,8 +6,6 @@
  * on the web. Letting DNS pick the region per lookup is what once caused the
  * "phantom drift" between two regions' report sets.
  */
-import { getConfig } from "@/lib/config";
-
 export const HOST = {
   lbApi: "api.lb.exptech.dev",
   lbStatic: "static.lb.exptech.dev",
@@ -16,20 +14,11 @@ export const HOST = {
 } as const;
 
 /**
- * The realtime API's host: the proxy domain set under 設定 → API 代理網域, or
- * the balanced LB name by default. The default is routed like any balanced
- * name; a proxy of the user's own is used as given.
+ * The realtime API's host: the balanced LB name, routed to a healthy regional
+ * node like any other. (It was once a setting, 設定 → API 代理網域; the
+ * regional failover made it redundant, and any host outside ExpTech's broke
+ * the realtime data, the proxy only speaking to ExpTech.)
  */
 export function lbApiHost(): string {
-  return normalizeHost(getConfig().apiProxyDomain) || HOST.lbApi;
-}
-
-function normalizeHost(value: string | undefined): string {
-  const raw = value?.trim();
-  if (!raw) return "";
-  try {
-    return new URL(raw.includes("://") ? raw : `https://${raw}`).host;
-  } catch {
-    return raw.replace(/^https?:\/\//, "").split("/")[0];
-  }
+  return HOST.lbApi;
 }

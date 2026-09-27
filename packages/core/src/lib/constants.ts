@@ -106,4 +106,3 @@ export const SHOW_REPORT = true;
 /** CWA intensity labels 0..9. */
 export const INTENSITY_LIST = ["0", "1", "2", "3", "4", "5⁻", "5⁺", "6⁻", "6⁺", "7"];
 
-export const DEFAULT_API_PROXY_DOMAIN = "api.lb.exptech.dev";
