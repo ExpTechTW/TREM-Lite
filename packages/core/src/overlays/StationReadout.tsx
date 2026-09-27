@@ -25,11 +25,11 @@ export function StationReadout() {
             {s?.loc || "---"}
           </div>
           <div className="flex justify-between text-[14px] font-bold">
-            <div className="flex">
+            <div className="flex gap-1">
               <span>震度</span>
               <span>{s ? s.rawI.toFixed(1) : "---"}</span>
             </div>
-            <div className="flex">
+            <div className="flex gap-1">
               <span>加速度</span>
               <span>{s ? s.pga.toFixed(2) : "---"}</span>
             </div>
