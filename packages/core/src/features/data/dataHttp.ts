@@ -309,7 +309,7 @@ export function init(options: SseHandlers = {}): SseManager {
     reconnectDelay,
   );
 
-  openStream(
+  const eew = openStream(
     {
       name: "eew",
       url: () => `https://${lbApiHost()}/api/v2/eq/eew?sse=1`,
@@ -330,6 +330,20 @@ export function init(options: SseHandlers = {}): SseManager {
     signal,
     reconnectDelay,
   );
+
+  // A network that comes back (another Wi-Fi, the machine waking) can leave
+  // a connection that looks open and is dead, which STALE_MS takes a minute
+  // and a half to notice, or one still waiting out its backoff. Both streams
+  // take a fresh connection at once, each keeping the old until it is up.
+  if (typeof window !== "undefined") {
+    const renew = () => {
+      log.info("network back → fresh connections");
+      trem.handover();
+      eew.handover();
+    };
+    window.addEventListener("online", renew);
+    signal.addEventListener("abort", () => window.removeEventListener("online", renew), { once: true });
+  }
 
   return {
     abort: () => {
