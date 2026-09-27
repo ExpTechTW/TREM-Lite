@@ -29,6 +29,7 @@ import type { RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { ui } from "@/lib/variable.ui";
 
+import { readIntensityV1 } from "./intensityV1";
 import { decodePayload, readRtsV1, type RtsV1, type RtsV1Lookups } from "./rtsV1";
 
 let sseController: AbortController | null = null;
@@ -36,7 +37,7 @@ let requestCounter = 0;
 const activePollingControllers = new Set<AbortController>();
 
 const log = createLogger("sse");
-/** The intensity and lpgm archives are served only by api-1; the core nodes answer 401. */
+/** The lpgm archive is served only by api-1; the core nodes answer 401. */
 const TREM_ARCHIVE_HOST = "api-1.exptech.dev";
 
 /** Realtime payloads are never the same twice — keep them out of the LRU. */
@@ -301,9 +302,9 @@ async function parseJson(response: HttpResponse | null): Promise<unknown | null>
 }
 
 /**
- * HTTP polling — replay's transport. RTS comes from the rts.v1 archive, and
- * only in replay: live station data is the stream's alone. EEW always,
- * intensity every 5th call, lpgm every 7th.
+ * HTTP polling — replay's transport. RTS and intensity come from the v3
+ * archives (rts.v1, intensity.v1), and RTS only in replay: live station data
+ * is the stream's alone. EEW always, intensity every 5th call, lpgm every 7th.
  */
 export async function getData(time?: number): Promise<PolledData> {
   const requestMode = variable.play_mode;
@@ -323,7 +324,7 @@ export async function getData(time?: number): Promise<PolledData> {
   ];
 
   if (shouldFetchIntensity) {
-    reqs.push(withController(`https://${archiveDomain}/api/v2/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY, NO_STORE));
+    reqs.push(withController(`https://${HOST.coreApi}/api/v3/trem/intensity${suffix}`, HTTP_TIMEOUT.INTENSITY, NO_STORE));
   }
   if (shouldFetchLPGM) {
     reqs.push(withController(`https://${archiveDomain}/api/v2/trem/lpgm${suffix}`, HTTP_TIMEOUT.LPGM, NO_STORE));
@@ -342,7 +343,7 @@ export async function getData(time?: number): Promise<PolledData> {
     out.rts = rts ? readRtsV1(rts, lookups) : null;
     out.eew = (await parseJson(responses[1])) as unknown[] | null;
     if (shouldFetchIntensity) {
-      out.intensity = (await parseJson(responses[2])) as unknown[] | null;
+      out.intensity = readIntensityV1(await parseJson(responses[2]));
     }
     if (shouldFetchLPGM) {
       out.lpgm = (await parseJson(responses[responses.length - 1])) as unknown[] | null;
