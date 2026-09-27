@@ -63,6 +63,14 @@ base64 = "0.22"
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 
+# awake.rs: keeping the app out of App Nap (macOS) and EcoQoS (Windows).
+# Both crates are already in the tree through tauri.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-foundation = { version = "0.3", features = ["NSProcessInfo", "NSString"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading"] }
+
 [profile.release]
 panic = "abort"
 codegen-units = 1

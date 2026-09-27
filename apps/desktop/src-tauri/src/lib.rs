@@ -1,4 +1,5 @@
 mod audio;
+mod awake;
 mod config;
 mod endpoints;
 mod http_cache;
@@ -37,6 +38,7 @@ use tauri::{Manager, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    awake::keep_awake();
     let mut builder = tauri::Builder::default();
 
     // Single-instance must be registered first (desktop only).

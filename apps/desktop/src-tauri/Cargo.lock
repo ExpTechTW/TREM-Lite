@@ -5560,6 +5560,7 @@ dependencies = [
  "flate2",
  "log",
  "minisign-verify",
+ "objc2-foundation",
  "rodio",
  "rusqlite",
  "serde",
@@ -5579,6 +5580,7 @@ dependencies = [
  "tauri-plugin-updater",
  "time",
  "tokio",
+ "windows 0.61.3",
 ]
 
 [[package]]
