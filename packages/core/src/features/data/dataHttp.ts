@@ -16,8 +16,10 @@
  *         (intensityV1.ts). Both public, so no token. The server also carries
  *         trem.eew.v1, TREM's own EEW, which is not this app's business and is
  *         never asked for.
- *   eew   api/v2/eq/eew — public, plain JSON: the agencies' EEWs, of which the
- *         app shows CWA's (EEW_AUTHOR).
+ *   eew   api/v2/eq/eew?sse=1 — public, plain JSON: the agencies' EEWs, of
+ *         which the app shows CWA's (EEW_AUTHOR). The same path answers a
+ *         plain GET with the current list; `sse=1` (or an Accept of
+ *         text/event-stream, which is also sent) makes it the stream.
  *
  * `mode=live` asks for every RTS frame, about 2 Hz; without it the server
  * sends only frames with a triggered station (intensity is never filtered). While the main window is hidden the stream sleeps, as
@@ -311,7 +313,7 @@ export function init(options: SseHandlers = {}): SseManager {
   openStream(
     {
       name: "eew",
-      url: () => `https://${lbApiHost()}/api/v2/eq/eew`,
+      url: () => `https://${lbApiHost()}/api/v2/eq/eew?sse=1`,
       onFrame: (frame) => {
         if (frame.event) {
           // The `info` greeting names the node that answered; EEWs come unnamed.
