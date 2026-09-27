@@ -5,9 +5,11 @@
  *   * 4 independent serial queues: `eew`, `pga`, `shindo`, `update`. Each
  *     plays one clip at a time, in order; different queues overlap.
  *   * A clip queued removes the lower-priority clips still waiting in its
- *     queue (`PREEMPTS`). Clips queued within BATCH_MS of each other are
- *     settled together before any starts, as the Rust engine batches them:
- *     SHINDO0, 1 and 2 from one RTS frame play SHINDO2 alone.
+ *     queue (`PREEMPTS`). Clips queued in one task are settled together
+ *     before any starts, as the Rust engine batches them: SHINDO0, 1 and 2
+ *     from one RTS frame play SHINDO2 alone. A microtask, not a timer: a
+ *     hidden tab runs its timers once a second at best, and the first alert
+ *     must not wait for that.
  *   * REPORT, INTENSITY and TSUNAMI bypass the queues and may overlap.
  *   * `ALERT` plays twice.
  *   * Per-clip volume: SHINDO0 0.4, UPDATE 0.2, everything else 1.0.
@@ -47,14 +49,13 @@ const PREEMPTS: Record<string, string[]> = {
   ALERT: ["EEW"],
 };
 
-const BATCH_MS = 10;
-
 interface Queue {
   /** Playing, or being started: nothing else may start meanwhile. */
   busy: boolean;
   playing: AudioBufferSourceNode | null;
   pending: string[];
-  timer: ReturnType<typeof setTimeout> | null;
+  /** A pump is due once the current task has queued all it will. */
+  scheduled: boolean;
 }
 
 let ctx: AudioContext | null = null;
@@ -98,7 +99,7 @@ async function start(name: string): Promise<AudioBufferSourceNode | null> {
 
 function queue(name: QueueName): Queue {
   let q = queues.get(name);
-  if (!q) queues.set(name, (q = { busy: false, playing: null, pending: [], timer: null }));
+  if (!q) queues.set(name, (q = { busy: false, playing: null, pending: [], scheduled: false }));
   return q;
 }
 
@@ -145,10 +146,12 @@ export const webAudio = {
     if (evict) q.pending = q.pending.filter((p) => !evict.includes(p));
     if (sound === "ALERT") q.pending.push(sound);
     q.pending.push(sound);
-    q.timer ??= setTimeout(() => {
-      q.timer = null;
+    if (q.scheduled) return;
+    q.scheduled = true;
+    queueMicrotask(() => {
+      q.scheduled = false;
       void pump(q);
-    }, BATCH_MS);
+    });
   },
 
   play(sound: string): void {
