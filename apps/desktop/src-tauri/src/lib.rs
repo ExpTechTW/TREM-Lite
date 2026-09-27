@@ -5,6 +5,7 @@ mod http_cache;
 mod http_proxy;
 mod logging;
 mod math;
+mod ml_intensity;
 mod ntp;
 #[cfg(desktop)]
 mod updater;
@@ -64,6 +65,18 @@ pub fn run() {
         .manage(AudioEngine::new())
         .setup(|app| {
             logging::prune_old_logs(app.handle());
+            // The intensity model: read from the app's data, or downloaded
+            // there on first launch, then built ahead of the first EEW.
+            match app.path().app_local_data_dir() {
+                Ok(dir) => {
+                    let client = tauri_plugin_http::reqwest::Client::builder()
+                        .user_agent(concat!("TREM-Lite/", env!("CARGO_PKG_VERSION")))
+                        .build()
+                        .unwrap_or_default();
+                    tauri::async_runtime::spawn(ml_intensity::prepare(dir.join("models"), client));
+                }
+                Err(e) => log::error!("no data dir for the intensity model: {e}"),
+            }
             // Every buffered HTTP request in the app goes through this proxy
             // (ETag revalidation + gzip + 250 MB SQLite LRU). If it can't open
             // its database the app must still run, so failure only logs.
@@ -153,7 +166,7 @@ pub fn run() {
             http_proxy::http_request,
             http_proxy::http_resolve,
             http_proxy::http_report,
-            math::eew_area_pga,
+            math::eew_area_intensity,
             ntp::ntp_sync,
             updater::update_check,
             window::window_focus,

@@ -16,7 +16,7 @@
  * clip is silent until the welcome dialog's button (WebWelcome.tsx) calls
  * `unlock()`, which also decodes all twelve at once — an EEW's first sound
  * must not wait for a download. The clips are the desktop's own mp3s, which
- * the web build serves (apps/web/vite.config.ts, `publicDir`).
+ * the web build serves from packages/core/static.
  */
 import { http } from "./http";
 
@@ -71,7 +71,7 @@ function buffer(name: string): Promise<AudioBuffer | null> {
     const audio = ctx;
     clip = audio
       ? http
-          .asset(`${import.meta.env.BASE_URL}${name}.mp3`)
+          .asset(`${import.meta.env.BASE_URL}audio/${name}.mp3`)
           // decodeAudioData takes (and detaches) an ArrayBuffer of its own.
           .then((bytes) => audio.decodeAudioData(bytes.slice().buffer))
           .catch(() => null)

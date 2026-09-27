@@ -1,12 +1,13 @@
 /**
  * Seismology math — P/S wave travel distance from the depth time-table.
  *
- * The town-level intensity attenuation (`eewAreaPga`) now runs natively in Rust
- * (src-tauri/src/math.rs, wrapped by src/domain/eewMath.ts). The JS port of it
- * plus several never-wired helpers (eewAreaPgv, distance, p/sWaveTimeByDistance,
- * calculateWaveTime, pga↔intensity conversions, intensityToNumberString) were
- * removed as dead code — `psWaveDist` (which drives the EEW P/S wavefront rings)
- * is the only live consumer.
+ * The town-level predicted intensity (`eewAreaIntensity`, the ML model v1) runs
+ * natively in Rust (src-tauri/src/math.rs, wrapped by src/domain/eewMath.ts).
+ * The JS port of the attenuation formula it replaced plus several never-wired
+ * helpers (eewAreaPgv, distance, p/sWaveTimeByDistance, calculateWaveTime,
+ * pga↔intensity conversions, intensityToNumberString) were removed as dead
+ * code — `psWaveDist` (which drives the EEW P/S wavefront rings) is the only
+ * live consumer.
  */
 export interface TimeTableRow {
   P: number;

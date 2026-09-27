@@ -1,14 +1,18 @@
-//! Seismic intensity attenuation — moved to Rust for speed. This is the hot path
-//! that loops over every Taiwan town (~370) on each EEW update. Ported to be
-//! behavior-equivalent to `EEWCalculator.eewAreaPga` in the old
-//! legacy/src/js/index/utils/eewCalculator.js (the redundant `atan(tan(x))` in
-//! the JS haversine is simplified away — it is identically `x` for latitudes).
+//! EEW predicted intensity per town — the hot path that runs over every Taiwan
+//! town (368) on each EEW update. The level comes from the ML model v1
+//! (ml_intensity.rs); this file owns the town table and the hypocentral
+//! distance the frontend also receives.
+//!
+//! It replaced the TREM-Lite formula (Katsumata PGA, and a PGV estimate once
+//! that reached 4.5) ported from legacy/src/js/index/utils/eewCalculator.js.
 
 use std::collections::HashMap;
 use std::f64::consts::PI;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 
 use serde::Serialize;
+
+use crate::ml_intensity;
 
 // Shared compact binary produced by scripts/encode-data.mjs (also decoded by the
 // frontend, packages/core/src/lib/bindata.ts). Single source of truth — the old
@@ -20,6 +24,9 @@ const REGION_BIN: &[u8] = include_bytes!("../../../../packages/core/src/data/reg
 
 struct Town {
     code: i64,
+    /// Degrees, as in region.json: the model's feature inputs.
+    lat_deg: f64,
+    lon_deg: f64,
     /// Sine and cosine of the latitude, and the longitude, in radians: the
     /// parts of the distance that depend only on the town, worked out once
     /// instead of on every EEW update.
@@ -75,10 +82,13 @@ fn towns() -> &'static Vec<Town> {
             for _ in 0..num_towns {
                 r.skip_str(); // town name
                 let code = r.varint() as i64;
-                let lat = r.f64() * PI / 180.0;
+                let lat_deg = r.f64();
                 let lon = r.f64();
+                let lat = lat_deg * PI / 180.0;
                 v.push(Town {
                     code,
+                    lat_deg,
+                    lon_deg: lon,
                     sin_lat: lat.sin(),
                     cos_lat: lat.cos(),
                     lon_rad: lon * PI / 180.0,
@@ -95,77 +105,75 @@ fn distance(sin_a: f64, cos_a: f64, lng_a: f64, sin_b: f64, cos_b: f64, lng_b: f
     (sin_a * sin_b + cos_a * cos_b * (lng_a - lng_b).cos()).acos() * 6371.008
 }
 
-/// The PGV estimate's terms that depend only on the quake (it takes over once
-/// the PGA estimate reaches 4.5).
-struct Pgv {
-    long: f64,
-    near: f64,
-    base: f64,
-}
-
-impl Pgv {
-    fn new(depth: f64, mag_w: f64) -> Self {
-        Self {
-            long: 10f64.powf(0.5 * mag_w - 1.85) / 2.0,
-            near: 0.0028 * 10f64.powf(0.5 * mag_w),
-            base: 0.58 * mag_w + 0.0038 * depth - 1.29,
-        }
-    }
-
-    /// `hypo` is the hypocentral distance, √(e² + depth²). This used to compute
-    /// √(depth² + e²) itself, which is the same number: IEEE addition commutes.
-    fn intensity(&self, hypo: f64) -> f64 {
-        let x = (hypo - self.long).max(3.0);
-        let gpv600 = 10f64.powf(self.base - (x + self.near).log10() - 0.002 * x);
-        let pgv = gpv600 * 1.31;
-        2.68 + 1.72 * pgv.log10()
-    }
-}
-
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct AreaEntry {
+    /// Hypocentral distance (km), √(epicentral² + depth²).
     pub dist: f64,
-    pub i: f64,
+    /// Predicted CWA level 0-9 (5 = 5弱 … 9 = 7).
+    pub level: u8,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct EewAreaResult {
-    pub max_i: f64,
-    /// town code -> { dist, i }
+    /// town code -> { dist, level }
     pub area: HashMap<i64, AreaEntry>,
 }
 
-/// Predicted intensity per town for an EEW at (lat, lon, depth, mag).
-#[tauri::command]
-pub fn eew_area_pga(lat: f64, lon: f64, depth: f64, mag: f64) -> EewAreaResult {
-    let mut area = HashMap::with_capacity(400);
-    let mut max_i = 0.0f64;
+/// Predicted level per town for an EEW at (lat, lon, depth, mag).
+///
+/// `async` so it runs off the main thread: the model takes a few milliseconds.
+#[tauri::command(async)]
+pub fn eew_area_intensity(
+    lat: f64,
+    lon: f64,
+    depth: f64,
+    mag: f64,
+) -> Result<EewAreaResult, String> {
+    area_intensity(lat, lon, depth, mag)
+}
 
-    // Everything that depends only on the quake, worked out once rather than
-    // per town. Each keeps the grouping it had inside the loop — the hoisted
-    // factor is always the one evaluated first — so every intensity comes out
-    // bit-identical.
+fn area_intensity(lat: f64, lon: f64, depth: f64, mag: f64) -> Result<EewAreaResult, String> {
+    // The trees need finite features; a garbled report must fail, not paint a
+    // plausible-looking map.
+    if ![lat, lon, depth, mag].iter().all(|v| v.is_finite()) {
+        return Err(format!("non-finite EEW M{mag} {depth}km at {lat},{lon}"));
+    }
+    // Successive reports often carry the same solution (only the serial moves
+    // on), so the last result is kept and reused for identical inputs.
+    static LAST: Mutex<Option<([u64; 4], EewAreaResult)>> = Mutex::new(None);
+    let key = [lat, lon, depth, mag].map(f64::to_bits);
+    if let Some((k, r)) = LAST.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+        if *k == key {
+            return Ok(r.clone());
+        }
+    }
+
+    let model = ml_intensity::model()?;
+    let towns = towns();
+    let rows: Vec<ml_intensity::Row> = towns
+        .iter()
+        .map(|t| ml_intensity::features(mag, depth, lat, lon, t.lat_deg, t.lon_deg))
+        .collect();
+    let (pga, pgv) = model.predict(&rows);
+
     let la = lat * PI / 180.0;
     let (sin_la, cos_la) = (la.sin(), la.cos());
     let lna = lon * PI / 180.0;
-    let pga_scale = 1.657 * (1.533 * mag).exp();
-    let pgv = Pgv::new(depth, mag);
-
-    for t in towns() {
-        let dist_surface = distance(sin_la, cos_la, lna, t.sin_lat, t.cos_lat, t.lon_rad);
-        let dist = (dist_surface * dist_surface + depth * depth).sqrt();
-        let pga = pga_scale * dist.powf(-1.607);
-        let mut i = 2.0 * pga.log10() + 0.7;
-        if i >= 4.5 {
-            i = pgv.intensity(dist);
-        }
-        if i > max_i {
-            max_i = i;
-        }
-        area.insert(t.code, AreaEntry { dist, i });
+    let mut area = HashMap::with_capacity(towns.len());
+    for (i, t) in towns.iter().enumerate() {
+        let surface = distance(sin_la, cos_la, lna, t.sin_lat, t.cos_lat, t.lon_rad);
+        let dist = (surface * surface + depth * depth).sqrt();
+        area.insert(
+            t.code,
+            AreaEntry {
+                dist,
+                level: ml_intensity::level(pga[i], pgv[i]),
+            },
+        );
     }
-
-    EewAreaResult { max_i, area }
+    let result = EewAreaResult { area };
+    *LAST.lock().unwrap_or_else(|e| e.into_inner()) = Some((key, result.clone()));
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -192,11 +200,48 @@ mod tests {
 
     #[test]
     fn area_result_is_populated_and_bounded() {
-        let r = eew_area_pga(23.5, 121.5, 10.0, 6.0);
+        ml_intensity::load_for_tests();
+        let r = area_intensity(23.5, 121.5, 10.0, 6.0).unwrap();
         // Keyed by town code, one entry per town. Exact rather than a floor: a
         // stale region.bin once gave two towns the same code, which a floor let
         // through while one of them silently lost its estimate.
         assert_eq!(r.area.len(), 368);
-        assert!(r.max_i > 0.0 && r.max_i < 12.0, "max_i={}", r.max_i);
+        let max = r.area.values().map(|e| e.level).max().unwrap();
+        assert!((1..=9).contains(&max), "max level {max}");
+    }
+
+    #[test]
+    fn rejects_non_finite_input() {
+        assert!(area_intensity(f64::NAN, 121.5, 10.0, 6.0).is_err());
+    }
+
+    /// The whole town table against onnxruntime's levels for the same events,
+    /// through region.bin rather than the golden file's own coordinates.
+    #[test]
+    fn town_levels_match_onnxruntime() {
+        #[derive(serde::Deserialize)]
+        struct Field {
+            lat: f64,
+            lon: f64,
+            mag: f64,
+            depth: f64,
+            levels: HashMap<String, u8>,
+        }
+        #[derive(serde::Deserialize)]
+        struct Golden {
+            fields: Vec<Field>,
+        }
+        let g: Golden =
+            serde_json::from_str(include_str!("../testdata/ml_intensity_golden.json")).unwrap();
+        assert!(!g.fields.is_empty());
+        ml_intensity::load_for_tests();
+        for f in g.fields {
+            let r = area_intensity(f.lat, f.lon, f.depth, f.mag).unwrap();
+            assert_eq!(r.area.len(), f.levels.len());
+            for (code, want) in f.levels {
+                let got = r.area[&code.parse::<i64>().unwrap()].level;
+                assert_eq!(got, want, "M{} town {code}", f.mag);
+            }
+        }
     }
 }

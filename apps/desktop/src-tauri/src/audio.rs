@@ -24,18 +24,18 @@ use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 /// The 12 bundled clips, embedded straight into the binary (~580 KB total).
 fn sound_bytes(name: &str) -> Option<&'static [u8]> {
     let bytes: &'static [u8] = match name {
-        "ALERT" => include_bytes!("../audio/ALERT.mp3"),
-        "EEW" => include_bytes!("../audio/EEW.mp3"),
-        "UPDATE" => include_bytes!("../audio/UPDATE.mp3"),
-        "CANCEL" => include_bytes!("../audio/CANCEL.mp3"),
-        "PGA1" => include_bytes!("../audio/PGA1.mp3"),
-        "PGA2" => include_bytes!("../audio/PGA2.mp3"),
-        "SHINDO0" => include_bytes!("../audio/SHINDO0.mp3"),
-        "SHINDO1" => include_bytes!("../audio/SHINDO1.mp3"),
-        "SHINDO2" => include_bytes!("../audio/SHINDO2.mp3"),
-        "INTENSITY" => include_bytes!("../audio/INTENSITY.mp3"),
-        "REPORT" => include_bytes!("../audio/REPORT.mp3"),
-        "TSUNAMI" => include_bytes!("../audio/TSUNAMI.mp3"),
+        "ALERT" => include_bytes!("../../../../packages/core/static/audio/ALERT.mp3"),
+        "EEW" => include_bytes!("../../../../packages/core/static/audio/EEW.mp3"),
+        "UPDATE" => include_bytes!("../../../../packages/core/static/audio/UPDATE.mp3"),
+        "CANCEL" => include_bytes!("../../../../packages/core/static/audio/CANCEL.mp3"),
+        "PGA1" => include_bytes!("../../../../packages/core/static/audio/PGA1.mp3"),
+        "PGA2" => include_bytes!("../../../../packages/core/static/audio/PGA2.mp3"),
+        "SHINDO0" => include_bytes!("../../../../packages/core/static/audio/SHINDO0.mp3"),
+        "SHINDO1" => include_bytes!("../../../../packages/core/static/audio/SHINDO1.mp3"),
+        "SHINDO2" => include_bytes!("../../../../packages/core/static/audio/SHINDO2.mp3"),
+        "INTENSITY" => include_bytes!("../../../../packages/core/static/audio/INTENSITY.mp3"),
+        "REPORT" => include_bytes!("../../../../packages/core/static/audio/REPORT.mp3"),
+        "TSUNAMI" => include_bytes!("../../../../packages/core/static/audio/TSUNAMI.mp3"),
         _ => return None,
     };
     Some(bytes)

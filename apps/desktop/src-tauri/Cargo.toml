@@ -49,6 +49,8 @@ flate2 = "1"
 # The timer between update checks (src/updater.rs) and between endpoint probes
 # (src/endpoints.rs). Already in the tree through tauri.
 tokio = { version = "1", features = ["time"] }
+# Checks the downloaded intensity model (ml_intensity.rs). Already in the tree.
+sha2 = "0.10"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

@@ -2,16 +2,16 @@
 import type { ExpressionSpecification } from "maplibre-gl";
 
 import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
+import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
 import type { Ans, EewData } from "@/lib/types";
 import { variable } from "@/lib/variable";
-import { eewAreaPga, type EewArea } from "@/domain/eewMath";
-import { generateMapStyle, intensity_float_to_int, search_loc_name } from "@/domain/utils";
+import { eewAreaIntensity, prepareIntensityModel, type EewArea } from "@/domain/eewMath";
+import { generateMapStyle, search_loc_name } from "@/domain/utils";
 
-/** Predicted intensity for one town after merging the eq's reported area. */
+/** Predicted level for one town after merging the eq's reported area. */
 interface MergedTown {
   I: number;
-  i: number;
   dist: number;
 }
 
@@ -29,10 +29,10 @@ async function updateEewArea(ans: Ans<EewData>): Promise<void> {
     return;
   }
 
-  // Heavy per-town attenuation loop runs in Rust (src-tauri/src/math.rs).
+  // The ML model runs in Rust (src-tauri/src/math.rs, ml_intensity.rs).
   let area: EewArea["area"];
   try {
-    ({ area } = await eewAreaPga(
+    ({ area } = await eewAreaIntensity(
       ans.data.eq.lat,
       ans.data.eq.lon,
       ans.data.eq.depth,
@@ -114,8 +114,7 @@ function mergeEqArea(
 
   Object.entries(area).forEach(([code, data]) => {
     mergedArea[code] = {
-      I: intensity_float_to_int(data.i),
-      i: data.i,
+      I: data.level,
       dist: data.dist,
     };
   });
@@ -160,6 +159,8 @@ function processIntensityAreas(): Record<string, number> {
 
 /** Register the eew lifecycle subscriptions (was the require-time singleton). */
 export function initEstimate(): void {
+  // The web fetches and builds the model now, not when the first EEW comes.
+  if (!inTauri) void prepareIntensityModel().catch(() => {});
   events.on("EewRelease", (ans) => void updateEewArea(ans));
   events.on("EewUpdate", (ans) => void updateEewArea(ans));
   events.on("EewEnd", (ans) => {
