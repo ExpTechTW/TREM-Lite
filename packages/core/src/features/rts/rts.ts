@@ -14,10 +14,8 @@ import { isAutoFocusLocked } from "@/features/focus/focus";
 import { showReportPoint } from "@/features/report/report";
 
 import { rtsColor } from "./palette";
+import { shakeLevel, type ShakePoint } from "./shakeLevel";
 import { TownPeaks } from "./townPeaks";
-
-/** Per-station rolling trigger peak (persists across DataRts frames). */
-const level_list: Record<string, number> = {};
 
 let initialized = false;
 
@@ -46,7 +44,6 @@ export function initRts(): void {
   initialized = true;
 
   events.on("DataModeReset", () => {
-    Object.keys(level_list).forEach((id) => delete level_list[id]);
     ui.currentStation = null;
     ui.rtsInfo = { level: 0, trigger: 0 };
     ui.rtsIntensityRows = [];
@@ -137,6 +134,7 @@ export function initRts(): void {
     let data_alert_list: RtsPointFeature[] = [];
 
     const coordinates: { lon: number; lat: number }[] = [];
+    const shakePoints: ShakePoint[] = [];
 
     let pga = 0;
     let trigger = 0;
@@ -215,13 +213,10 @@ export function initRts(): void {
           };
         }
 
+        shakePoints.push({ lon: station_location.lon, lat: station_location.lat, i: st.i });
+
         if (st.alert) {
           trigger++;
-          if (!level_list[id] || level_list[id] < st.pga) {
-            level_list[id] = st.pga;
-          }
-        } else {
-          delete level_list[id];
         }
 
         if (alert && st.alert) {
@@ -308,6 +303,10 @@ export function initRts(): void {
           });
         }
       }
+
+      // Every station scores, alerting or not: quiet ones sit below 0 and add
+      // nothing (see shakeLevel.ts).
+      level = shakeLevel(shakePoints);
 
       if (variable.cache.audio.pga && rts_max_pga < variable.cache.audio.pga) {
         if (variable.cache.audio.status.pga == 2) {
@@ -432,10 +431,7 @@ export function initRts(): void {
         ? intensity_float_to_int(2 * Math.log10(pga) + 0.7)
         : 0;
 
-    for (const id of Object.keys(level_list)) {
-      level += level_list[id];
-    }
-    ui.rtsInfo = { level: Math.round(level), trigger };
+    ui.rtsInfo = { level, trigger };
 
     // bounds.rts holds {lon,lat} entries at runtime (contract types it as number[]).
     variable.cache.bounds.rts = coordinates as unknown as number[];
