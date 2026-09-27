@@ -10,17 +10,17 @@
  *
  * Two live streams, each connecting and reconnecting on its own:
  *
- *   trem  api/v1/trem/sse?topics=trem.eew.v1,trem.intensity.v1,trem.rts.v1 —
- *         ExpTech's SSE server, one topic per named event, each frame
- *         base64(gzip(…)): rts.v1 as JSON (rtsV1.ts), intensity.v1 as TREM
- *         XML (intensityV1.ts). No token: rts and intensity are public, and
- *         the server says in its `info` greeting what it left out — eew, for
- *         an anonymous connection. The EEW comes from the stream below.
- *   eew   api/v2/eq/eew — public, plain JSON: CWA's EEWs and TREM's.
+ *   trem  api/v1/trem/sse?topics=trem.intensity.v1,trem.rts.v1 — ExpTech's
+ *         SSE server, one topic per named event, each frame base64(gzip(…)):
+ *         rts.v1 as JSON (rtsV1.ts), intensity.v1 as TREM XML
+ *         (intensityV1.ts). Both public, so no token. The server also carries
+ *         trem.eew.v1, TREM's own EEW, which is not this app's business and is
+ *         never asked for.
+ *   eew   api/v2/eq/eew — public, plain JSON: the agencies' EEWs, of which the
+ *         app shows CWA's (EEW_AUTHOR).
  *
  * `mode=live` asks for every RTS frame, about 2 Hz; without it the server
- * sends only frames with a triggered station (eew and intensity are never
- * filtered). While the main window is hidden the stream sleeps, as
+ * sends only frames with a triggered station (intensity is never filtered). While the main window is hidden the stream sleeps, as
  * trem-monitor does: the map is not seen, and an alert frame still arrives —
  * which is also what brings the window back. Switching is make-before-break:
  * the new connection opens, and the old one is closed once it is up.
@@ -69,7 +69,7 @@ const READY_MS = 10_000;
  */
 const BACKOFF_MAX_MS = 15_000;
 
-const TOPICS = "trem.eew.v1,trem.intensity.v1,trem.rts.v1";
+const TOPICS = "trem.intensity.v1,trem.rts.v1";
 
 const lookups: RtsV1Lookups = {
   station: (id) => {
@@ -300,9 +300,7 @@ export function init(options: SseHandlers = {}): SseManager {
             log.warn(`trem ${frame.event}: ${frame.data}`);
             return;
           default:
-            // trem.eew.v1 is not granted without a token; the EEW comes from
-            // the eew stream.
-            return;
+            return; // a topic this client does not read
         }
       },
     },
