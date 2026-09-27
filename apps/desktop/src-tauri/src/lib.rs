@@ -204,6 +204,20 @@ pub fn run() {
                 }
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(on_run_event);
 }
+
+/// A click on the Dock icon while the app runs (macOS): the main window comes
+/// back, closed to the tray or minimised. macOS leaves it to the app, and the
+/// app did nothing, so a hidden window stayed hidden.
+#[cfg(target_os = "macos")]
+fn on_run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
+    if let tauri::RunEvent::Reopen { .. } = event {
+        window::focus_main(app);
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn on_run_event(_: &tauri::AppHandle, _: tauri::RunEvent) {}
