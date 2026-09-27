@@ -83,6 +83,14 @@ class DataManager {
     if (!inTauri && typeof document !== "undefined") {
       document.addEventListener("visibilitychange", () => this.setBackground(document.hidden));
       this.setBackground(document.hidden);
+      // Edge puts a tab left in the background to sleep, streams and all,
+      // unless it holds a Web Lock:
+      // https://techcommunity.microsoft.com/discussions/edgeinsiderannouncements/sleeping-tabs-faq/1705434
+      // Shared, so every open tab holds it, and never released. (Chrome's
+      // Memory Saver is not held off by one; there, pinning the tab is.)
+      void navigator.locks
+        ?.request("trem-live", { mode: "shared" }, () => new Promise<never>(() => {}))
+        .catch(() => {}); // no Web Locks here (an insecure origin): the tab may sleep
     }
 
     events.on("MapLoad", () => {
