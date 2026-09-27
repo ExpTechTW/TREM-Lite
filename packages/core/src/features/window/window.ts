@@ -57,6 +57,7 @@ async function syncVisibilityTransition(): Promise<void> {
   checkingVisibility = true;
   try {
     const unavailable = await isMainUnavailable();
+    if (unavailable !== mainUnavailable) events.emit("MainWindowHidden", unavailable);
     if (!unavailable) {
       mainUnavailable = false;
       // Enforce the invariant, not only the transition: a delayed handshake or
@@ -122,6 +123,8 @@ export function initWindowControl(): void {
     void isMainUnavailable()
       .then((unavailable) => {
         mainUnavailable = unavailable;
+        // Started to the tray (`--start`): the stream sleeps from the outset.
+        if (unavailable) events.emit("MainWindowHidden", true);
       })
       .catch(() => {});
     window.setInterval(() => void syncVisibilityTransition(), 500);

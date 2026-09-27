@@ -57,7 +57,6 @@ export function SettingsApp() {
   const [stationData] = useState<Record<string, Station>>(loadCachedStations);
   const [regionRevision, setRegionRevision] = useState(0);
   const [proxy, setProxy] = useState(DEFAULT_API_PROXY_DOMAIN);
-  const [token, setToken] = useState("");
   const [updateStatus, setUpdateStatus] = useState("");
 
   useEffect(() => {
@@ -76,7 +75,6 @@ export function SettingsApp() {
       }
       setConfig(value);
       setProxy(value.apiProxyDomain || DEFAULT_API_PROXY_DOMAIN);
-      setToken(value.apiToken ?? "");
     });
     void regionReady.then(() => setRegionRevision((value) => value + 1));
 
@@ -286,22 +284,6 @@ export function SettingsApp() {
                 <ToggleRow label="開機自動啟動" checked={!!config["check-box"]["other-auto-start"]} onChange={(value) => void toggleAutostart(value)} />
               </SettingSection>
 
-              <SettingSection title="ExpTech API 權杖" description="即時測站資料需要 ExpTech 帳號的 API 權杖（et_ 開頭）；沒有權杖時不會顯示即時測站。">
-                <div className="legacy-setting-row legacy-proxy-row">
-                  <input type="password" value={token} placeholder="et_…" spellCheck={false} autoComplete="off" onChange={(event) => setToken(event.target.value)} onBlur={() => {
-                    const value = token.trim();
-                    setToken(value);
-                    if (value !== (config.apiToken ?? "")) save({ ...config, apiToken: value });
-                  }} onKeyDown={(event) => {
-                    if (event.key === "Enter") event.currentTarget.blur();
-                  }} />
-                  <button type="button" onClick={() => {
-                    setToken("");
-                    save({ ...config, apiToken: "" });
-                  }}>清除</button>
-                </div>
-              </SettingSection>
-
               <SettingSection title="API 代理網域" description="設定備援 API 代理網域；清空時自動使用預設網域。">
                 <div className="legacy-setting-row legacy-proxy-row">
                   <input value={proxy} spellCheck={false} onChange={(event) => setProxy(event.target.value)} onBlur={() => {
@@ -326,7 +308,6 @@ export function SettingsApp() {
                 <ActionRow label="重置所有設定" action="重設" danger onClick={() => void resetConfig().then((value) => {
                   setConfig(value);
                   setProxy(value.apiProxyDomain);
-                  setToken(value.apiToken ?? "");
                   setUpdateStatus("已重設所有設定");
                 })} />
               </SettingSection>

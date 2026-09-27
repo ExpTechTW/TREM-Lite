@@ -114,13 +114,7 @@ export const webBackend: HttpBackend = {
   },
 
   async stream(url, options) {
-    let full = url;
-    if (options.token) {
-      const withToken = new URL(url);
-      withToken.searchParams.set("token", options.token);
-      full = withToken.toString();
-    }
-    const r = route(full);
+    const r = route(url);
     const res = await attempt(r, { ...options, store: false, timeout: undefined });
     const target = r.target;
     return target ? watchBody(res, () => report(target, false), options.signal) : res;

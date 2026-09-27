@@ -10,26 +10,33 @@
  *
  * Two live streams, each connecting and reconnecting on its own:
  *
- *   rts  api/v1/trem/sse/rts?mode=live — the rts.v1 feed, about 2 Hz, each
- *        frame base64(gzip(JSON)) (see rtsV1.ts). It needs the user's ExpTech
- *        API token: without one it is not opened, and a token the server
- *        refuses stops it until the token changes (see ui.rtsAccess).
- *   eew  api/v2/eq/eew — public, plain JSON.
+ *   trem  api/v1/trem/sse?topics=trem.eew.v1,trem.intensity.v1,trem.rts.v1 —
+ *         ExpTech's SSE server, one topic per named event, each frame
+ *         base64(gzip(…)): rts.v1 as JSON (rtsV1.ts), intensity.v1 as TREM
+ *         XML (intensityV1.ts). No token: rts and intensity are public, and
+ *         the server says in its `info` greeting what it left out — eew, for
+ *         an anonymous connection. The EEW comes from the stream below.
+ *   eew   api/v2/eq/eew — public, plain JSON: CWA's EEWs and TREM's.
+ *
+ * `mode=live` asks for every RTS frame, about 2 Hz; without it the server
+ * sends only frames with a triggered station (eew and intensity are never
+ * filtered). While the main window is hidden the stream sleeps, as
+ * trem-monitor does: the map is not seen, and an alert frame still arrives —
+ * which is also what brings the window back. Switching is make-before-break:
+ * the new connection opens, and the old one is closed once it is up.
  */
 
 import { search_loc_name } from "@/domain/utils";
 import { boxOf } from "@/features/box/polygons";
 import { HTTP_TIMEOUT } from "@/lib/constants";
 import { HOST, lbApiHost } from "@/lib/endpoints";
-import { events } from "@/lib/events";
 import { http, withController, type HttpResponse } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
 import type { RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
-import { ui } from "@/lib/variable.ui";
 
-import { readIntensityV1 } from "./intensityV1";
+import { readIntensityV1, readIntensityXml, type IntensityReport } from "./intensityV1";
 import { decodePayload, readRtsV1, type RtsV1, type RtsV1Lookups } from "./rtsV1";
 
 let sseController: AbortController | null = null;
@@ -49,11 +56,20 @@ const NO_STORE = { store: false } as const;
  */
 const STALE_MS = 90_000;
 /**
+ * A connection is up once the server's `info` greeting arrives: the
+ * subscription exists. Until then a handover keeps the connection it would
+ * replace, and one that brings no greeting in this long is dropped — a hung
+ * connect must not wait forever, nor hold two connections open.
+ */
+const READY_MS = 10_000;
+/**
  * Reconnect delays double from `reconnectDelay` up to this. Kept short: the
  * eew stream is the early-warning path, and a node that comes back must not
  * sit unused for a minute.
  */
 const BACKOFF_MAX_MS = 15_000;
+
+const TOPICS = "trem.eew.v1,trem.intensity.v1,trem.rts.v1";
 
 const lookups: RtsV1Lookups = {
   station: (id) => {
@@ -63,12 +79,6 @@ const lookups: RtsV1Lookups = {
   boxOf,
   townOf: search_loc_name,
 };
-
-function setRtsAccess(state: typeof ui.rtsAccess.state, reason = ""): void {
-  if (ui.rtsAccess.state === state && ui.rtsAccess.reason === reason) return;
-  ui.rtsAccess = { state, reason };
-  events.emit("RtsAccessChange");
-}
 
 export function abortAll(): void {
   if (sseController) {
@@ -80,17 +90,19 @@ export function abortAll(): void {
 }
 
 export interface SseHandlers {
-  /** The ExpTech API token for the rts stream; empty leaves it closed. */
-  token?: string;
   onRts?: (v: RtsData) => void;
   onEew?: (v: unknown) => void;
-  onIntensity?: (v: unknown) => void;
+  onIntensity?: (v: IntensityReport[]) => void;
   onLpgm?: (v: unknown) => void;
   reconnectDelay?: number;
+  /** Start asleep: RTS alert frames only (see the top of this file). */
+  background?: boolean;
 }
 
 export interface SseManager {
   abort: () => void;
+  /** Sleep (true) or wake the trem stream, handing over to a new connection. */
+  setBackground: (background: boolean) => void;
 }
 
 interface SseFrame {
@@ -127,23 +139,47 @@ function frameReader() {
 }
 
 interface Stream {
-  name: "rts" | "eew";
-  url: string;
-  token?: string;
-  onData: (data: string) => void;
-  /** The server refused the token: stop, and do not reconnect with it. */
-  onRefused?: (reason: string) => void;
+  name: string;
+  /** Read at every connection, so a reconnect or handover takes the current mode. */
+  url: () => string;
+  onFrame: (frame: SseFrame) => void;
 }
 
-/** Keep one stream open until `signal` aborts, reconnecting with backoff. */
-function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): void {
+/**
+ * Keep one stream open until `signal` aborts, reconnecting with backoff.
+ * `handover()` opens a second connection and closes the first once the new one
+ * is up (READY_MS); should the new one fail first, the old one carries on and
+ * the handover is tried again.
+ */
+function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { handover: () => void } {
   let failures = 0;
   let frames = 0;
+  /** The connection in use, and one taking over from it. */
+  let active: AbortController | null = null;
+  let pending: AbortController | null = null;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const connect = () => {
+  const later = (handover: boolean) => {
     if (signal.aborted) return;
-    // The attempt's own controller, so the stale watchdog can end it alone.
+    if (retryTimer) clearTimeout(retryTimer);
+    retryTimer = setTimeout(() => connect(handover), Math.min(reconnectDelay * 2 ** failures, BACKOFF_MAX_MS));
+    failures++;
+  };
+
+  function connect(handover: boolean) {
+    if (signal.aborted) return;
+    if (retryTimer) clearTimeout(retryTimer);
+    retryTimer = null;
     const attempt = new AbortController();
+    if (handover && active && !active.signal.aborted) {
+      pending?.abort();
+      pending = attempt;
+    } else {
+      pending?.abort();
+      pending = null;
+      active?.abort();
+      active = attempt;
+    }
     const end = () => attempt.abort();
     signal.addEventListener("abort", end, { once: true });
     let stale: ReturnType<typeof setTimeout> | undefined;
@@ -154,113 +190,138 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): voi
         attempt.abort();
       }, STALE_MS);
     };
-    const retry = () => {
-      if (signal.aborted) return;
-      setTimeout(connect, Math.min(reconnectDelay * 2 ** failures, BACKOFF_MAX_MS));
-      failures++;
-    };
+    let up = false;
+    const notReady = setTimeout(() => {
+      log.warn(`${s.name}: no greeting within ${READY_MS / 1000} s → drop`);
+      attempt.abort();
+    }, READY_MS);
+    const url = s.url();
 
     http
-      .stream(s.url, {
+      .stream(url, {
         signal: attempt.signal,
-        token: s.token,
         headers: { Accept: "text/event-stream", "Cache-Control": "no-cache" },
       })
       .then(async (res) => {
-        if (s.onRefused && (res.status === 401 || res.status === 403)) {
-          const reason = (await res.text().catch(() => "")).trim() || `HTTP ${res.status}`;
-          log.error(`${s.name} refused: ${reason}`);
-          s.onRefused(reason);
-          return;
-        }
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
-        log.info(`${s.name} connected (${res.status}), streaming…`);
+        log.info(`${s.name} connected (${res.status}) ${url.replace(/^.*\?/, "?")}`);
         mark(`sse-${s.name}-connected`);
-        failures = 0;
         alive();
         const reader = res.body.getReader();
         const split = frameReader();
         for (;;) {
           const { value, done } = await reader.read();
-          if (done) {
-            log.warn(`${s.name} stream ended → reconnect`);
-            break;
-          }
+          if (done) throw new Error("stream ended");
           alive();
           for (const frame of split(value)) {
-            // Sent when the token is revoked, just before the server hangs up.
-            if (frame.event === "close" && s.onRefused) {
-              log.error(`${s.name} closed by the server: ${frame.data || "token revoked"}`);
-              s.onRefused(frame.data || "token revoked");
-              attempt.abort();
-              return;
+            if (!frame.data && !frame.event) continue;
+            if (!up) {
+              up = true;
+              clearTimeout(notReady);
+              failures = 0;
+              if (pending === attempt) {
+                // Also drops a reconnect the replaced connection had asked for.
+                if (retryTimer) clearTimeout(retryTimer);
+                retryTimer = null;
+                active?.abort();
+                active = attempt;
+                pending = null;
+              }
             }
-            if (!frame.data || frame.event === "info") continue;
-            if (frames++ % 40 === 0) log.debug(`${s.name} data #${frames}`);
-            s.onData(frame.data);
+            if (frames++ % 40 === 0) log.debug(`${s.name} frame #${frames} (${frame.event ?? "message"})`);
+            s.onFrame(frame);
           }
         }
-        retry();
       })
       .catch((e) => {
-        // Entering replay aborts both streams on purpose. That is a mode
-        // transition, not a failure: no warning, no reconnect. (Node health is
-        // the HTTP layer's; it ignores aborts too.)
+        // Entering replay aborts both streams on purpose, and a handover
+        // closes the connection it replaced. Neither is a failure: no warning,
+        // no reconnect. (Node health is the HTTP layer's; it ignores aborts too.)
         if (signal.aborted) return;
+        if (pending === attempt && !up) {
+          log.warn(`${s.name} handover failed → keeping the current connection`, e);
+          pending = null;
+          later(true);
+          return;
+        }
+        if (attempt !== active) return;
         if (!attempt.signal.aborted) log.warn(`${s.name} error → reconnect`, e);
-        retry();
+        later(false);
       })
       .finally(() => {
         clearTimeout(stale);
+        clearTimeout(notReady);
         signal.removeEventListener("abort", end);
       });
-  };
+  }
 
-  connect();
+  connect(false);
+  return { handover: () => connect(true) };
 }
 
 /** Open the live streams and dispatch parsed events. */
 export function init(options: SseHandlers = {}): SseManager {
-  const { token = "", onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
+  const { onRts, onEew, onIntensity, onLpgm, reconnectDelay = 3000 } = options;
+  let background = !!options.background;
 
   if (sseController) sseController.abort();
   const controller = new AbortController();
   sseController = controller;
   const { signal } = controller;
 
-  if (token) {
-    setRtsAccess("ok");
-    openStream(
-      {
-        name: "rts",
-        url: `https://${lbApiHost()}/api/v1/trem/sse/rts?mode=live`,
-        token,
-        onData: (data) => {
-          let payload: RtsV1;
-          try {
-            payload = JSON.parse(decodePayload(data)) as RtsV1;
-          } catch {
-            return; // not a frame this client understands
+  const trem = openStream(
+    {
+      name: "trem",
+      url: () => `https://${lbApiHost()}/api/v1/trem/sse?topics=${TOPICS}${background ? "" : "&mode=live"}`,
+      onFrame: (frame) => {
+        switch (frame.event) {
+          case "info":
+            // What the server granted, and what it left out and why.
+            log.info(`trem greeting ${frame.data}`);
+            return;
+          case "trem.rts.v1": {
+            let payload: RtsV1;
+            try {
+              payload = JSON.parse(decodePayload(frame.data)) as RtsV1;
+            } catch {
+              return; // not a frame this client understands
+            }
+            const rts = readRtsV1(payload, lookups);
+            if (rts) onRts?.(rts);
+            return;
           }
-          const rts = readRtsV1(payload, lookups);
-          if (rts) onRts?.(rts);
-        },
-        onRefused: (reason) => setRtsAccess("rejected", reason),
+          case "trem.intensity.v1": {
+            const report = readIntensityXml(decodePayload(frame.data));
+            if (report) onIntensity?.([report]);
+            return;
+          }
+          case "unsubscribed":
+          case "close":
+            log.warn(`trem ${frame.event}: ${frame.data}`);
+            return;
+          default:
+            // trem.eew.v1 is not granted without a token; the EEW comes from
+            // the eew stream.
+            return;
+        }
       },
-      signal,
-      reconnectDelay,
-    );
-  } else {
-    setRtsAccess("missing");
-  }
+    },
+    signal,
+    reconnectDelay,
+  );
 
   openStream(
     {
       name: "eew",
-      url: `https://${lbApiHost()}/api/v2/eq/eew`,
-      onData: (data) => {
+      url: () => `https://${lbApiHost()}/api/v2/eq/eew`,
+      onFrame: (frame) => {
+        if (frame.event) {
+          // The `info` greeting names the node that answered; EEWs come unnamed.
+          if (frame.event === "info") log.info(`eew greeting ${frame.data}`);
+          return;
+        }
         try {
-          const parsed: unknown = JSON.parse(data);
+          const parsed: unknown = JSON.parse(frame.data);
           if (parsed != null) onEew?.(parsed);
         } catch {
           /* skip invalid JSON */
@@ -271,14 +332,19 @@ export function init(options: SseHandlers = {}): SseManager {
     reconnectDelay,
   );
 
-  // Unused onIntensity/onLpgm are kept for parity with the polling path.
-  void onIntensity;
+  // Unused onLpgm is kept for parity with the polling path.
   void onLpgm;
 
   return {
     abort: () => {
       controller.abort();
       if (sseController === controller) sseController = null;
+    },
+    setBackground: (value) => {
+      if (value === background || signal.aborted) return;
+      background = value;
+      log.info(`trem → ${background ? "sleep (alert frames only)" : "live"}`);
+      trem.handover();
     },
   };
 }

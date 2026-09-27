@@ -79,9 +79,7 @@ export const tauriBackend: HttpBackend = {
       res = await tauriFetch(target, {
         method: options.method ?? "GET",
         signal: options.signal,
-        headers: options.token
-          ? { ...options.headers, Authorization: `Bearer ${options.token}` }
-          : options.headers,
+        headers: options.headers,
       });
     } catch (err) {
       if (!options.signal?.aborted) report(false);

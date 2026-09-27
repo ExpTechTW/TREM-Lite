@@ -37,7 +37,6 @@ export const DEFAULT_CONFIG: TremConfig = {
     "sound-effects-Update": true,
   },
   apiProxyDomain: "api.lb.exptech.dev",
-  apiToken: "",
 };
 
 let cache: TremConfig | null = null;

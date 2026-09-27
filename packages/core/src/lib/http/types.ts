@@ -20,13 +20,6 @@ export interface HttpOptions {
    * be revalidated and would only evict entries that can.
    */
   store?: boolean;
-  /**
-   * ExpTech API token, for {@link HttpBackend.stream} to an authenticated
-   * stream. Sent as `Authorization: Bearer` on desktop, and on the web as
-   * `?token=`: a header would need a CORS preflight, and the SSE server reads
-   * the query parameter for browsers for that reason.
-   */
-  token?: string;
 }
 
 /** Metadata the Rust proxy frames ahead of the response body. */

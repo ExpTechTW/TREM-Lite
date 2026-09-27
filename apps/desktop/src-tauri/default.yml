@@ -31,4 +31,3 @@ check-box:
   sound-effects-Update: true
 
 apiProxyDomain: 'api.lb.exptech.dev'
-apiToken: ''

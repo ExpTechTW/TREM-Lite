@@ -392,7 +392,7 @@ export function initRts(): void {
       setFeatures(variable.map, "markers-geojson-0", data_alert_0_list);
     }
 
-    // No station data while live — no API token, a lost connection, or just
+    // No station data while live — a lost connection, or just
     // back from a replay — falls back to the latest report, as an idle frame
     // does. Otherwise the replay's markers leave with nothing in their place.
     if (!ans.data && variable.play_mode === 0 && SHOW_REPORT) {

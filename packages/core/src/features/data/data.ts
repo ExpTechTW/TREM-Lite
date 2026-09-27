@@ -6,8 +6,8 @@
 import { readDir, readTextFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 
 import { stopAll as stopSounds } from "@/lib/audioClient";
-import { getConfig } from "@/lib/config";
 import { HTTP_TIMEOUT, LAST_DATA_TIMEOUT_ERROR, EEW_AUTHOR } from "@/lib/constants";
+import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
 import { now } from "@/lib/ntp";
 import { stopSpeech } from "@/lib/speechClient";
@@ -56,8 +56,11 @@ class TimeoutManager {
 
 const timeoutManager = new TimeoutManager();
 
-/** The ExpTech API token the realtime station stream is opened with. */
-const apiToken = () => getConfig().apiToken?.trim() ?? "";
+/**
+ * How long the main window stays hidden before the RTS stream sleeps. Waking
+ * is immediate: a window brought back by an earthquake needs its data now.
+ */
+const SLEEP_AFTER_MS = 3000;
 
 class DataManager {
   private lastFetchTime = 0;
@@ -66,8 +69,11 @@ class DataManager {
   private sseActive = false;
   private sseManager: SseManager | null = null;
   private sseHandled = false;
-  /** The token the open streams were started with. */
-  private sseToken = "";
+  /** The main window is hidden, so RTS may sleep (see dataHttp.ts). */
+  private background = false;
+  /** Whether the stream has actually been put to sleep. */
+  private asleep = false;
+  private sleepTimer: ReturnType<typeof setTimeout> | null = null;
   private transportEpoch = 0;
 
   constructor() {
@@ -75,6 +81,14 @@ class DataManager {
   }
 
   private initialize() {
+    // Hidden means asleep: the main window on desktop (window.ts watches it),
+    // the tab in a browser.
+    events.on("MainWindowHidden", (hidden) => this.setBackground(hidden));
+    if (!inTauri && typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => this.setBackground(document.hidden));
+      this.setBackground(document.hidden);
+    }
+
     events.on("MapLoad", () => {
       if (this.mapInitialized) return;
       this.mapInitialized = true;
@@ -117,8 +131,6 @@ class DataManager {
     this.lastFetchTime = localNow;
 
     if (variable.play_mode === 0) {
-      // A token saved in settings, or pasted on the web, reopens the streams with it.
-      if (this.sseManager && this.sseToken !== apiToken()) this.stopSSE();
       this.startSSE();
     }
     if (variable.play_mode === 3) this.stopSSE();
@@ -201,9 +213,8 @@ class DataManager {
       return v;
     };
 
-    this.sseToken = apiToken();
     this.sseManager = sseInit({
-      token: this.sseToken,
+      background: this.asleep,
       reconnectDelay: 3000,
       onRts: (raw) => {
         if (variable.play_mode !== 0) return;
@@ -236,6 +247,34 @@ class DataManager {
         this.processLpgmData(value as never[]);
       },
     });
+  }
+
+  /** Sleep the RTS stream once hidden for SLEEP_AFTER_MS; wake it at once. */
+  setBackground(hidden: boolean): void {
+    this.background = hidden;
+    if (this.sleepTimer) clearTimeout(this.sleepTimer);
+    this.sleepTimer = null;
+    if (!hidden) {
+      this.applySleep(false);
+      return;
+    }
+    this.sleepTimer = setTimeout(() => {
+      this.sleepTimer = null;
+      if (this.background) this.applySleep(true);
+    }, SLEEP_AFTER_MS);
+  }
+
+  private applySleep(asleep: boolean): void {
+    if (asleep === this.asleep) return;
+    this.asleep = asleep;
+    // Frames stopped coming on purpose; the first live one is a moment away.
+    if (!asleep) variable.cache.last_data_time = Date.now();
+    this.sseManager?.setBackground(asleep);
+  }
+
+  /** RTS frames come only with an alert while this is true. */
+  isAsleep(): boolean {
+    return this.asleep;
   }
 
   private stopSSE() {
@@ -491,4 +530,9 @@ export function initData(): DataManager {
 /** Switch between live and replay (see DataManager.switchMode). */
 export function switchPlayMode(mode: number, replay: TremVariable["replay"]): void {
   initData().switchMode(mode, replay);
+}
+
+/** Whether the RTS stream is asleep: no frames until a station triggers. */
+export function rtsAsleep(): boolean {
+  return manager?.isAsleep() ?? false;
 }
