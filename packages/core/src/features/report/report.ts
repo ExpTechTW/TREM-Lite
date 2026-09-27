@@ -9,6 +9,7 @@ import { events } from "@/lib/events";
 import { setFeatures } from "@/lib/mapSource";
 import { fetchJson, http } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
+import { now } from "@/lib/ntp";
 import { mark } from "@/lib/perf";
 import { variable } from "@/lib/variable";
 import type { ReportListItem } from "@/lib/types";
@@ -26,21 +27,26 @@ let seeded = false; // first (empty) fetch must NOT emit a report event
 
 const log = createLogger("report");
 
-// Reports come from a health-selected core node (never the DNS-balanced base,
-// whose region drift caused false "new report" events). New reports are detected
-// by md5; the hash list grows naturally and is capped at 200 (oldest evicted).
-const MD5_LIMIT = 200;
+// A new report is one whose id has not been seen, as in legacy report.js, and
+// whose earthquake is less than an hour old. Not the list's md5: the two core
+// nodes can disagree on it for the same report — tnn1 and tyo1 did for the
+// 2026-08-25 15:00 report — so every switch between them released that report
+// again. And not an old id either: a node whose list lags by one report ends
+// its 150 one report further back, and that one was never seen. The id list is
+// capped at 200 (oldest evicted).
+const SEEN_LIMIT = 200;
+const FRESH_MS = 60 * 60 * 1000;
 const REPORT_CACHE_KEY = "cache.report"; // 上次的報告列表，供冷啟動秒開
-const seenMd5 = new Set<string>();
-const md5Order: string[] = [];
+const seenIds = new Set<string>();
+const seenOrder: string[] = [];
 
-function rememberMd5(md5: string): void {
-  if (seenMd5.has(md5)) return;
-  seenMd5.add(md5);
-  md5Order.push(md5);
-  while (md5Order.length > MD5_LIMIT) {
-    const oldest = md5Order.shift();
-    if (oldest) seenMd5.delete(oldest);
+function rememberId(id: string): void {
+  if (seenIds.has(id)) return;
+  seenIds.add(id);
+  seenOrder.push(id);
+  while (seenOrder.length > SEEN_LIMIT) {
+    const oldest = seenOrder.shift();
+    if (oldest) seenIds.delete(oldest);
   }
 }
 
@@ -174,7 +180,7 @@ async function refresh() {
   // An unchanged list is the usual answer — the proxy revalidates it with an
   // ETag every ten seconds and the server says 304 — and nothing below does
   // anything with one: the panel gets the rows it already shows, the cache the
-  // bytes it already holds, and every md5 in it has been seen. Stopping here
+  // bytes it already holds, and every id in it has been seen. Stopping here
   // skips re-parsing 35 KB, re-rendering 150 rows and re-writing localStorage.
   if (seeded && text !== null && text === lastListText) return;
 
@@ -205,11 +211,11 @@ async function refresh() {
     /* 配額滿等情況忽略 */
   }
 
-  // First (empty) load: seed the md5 hash list, DO NOT emit a report event.
+  // First (empty) load: seed the seen ids, DO NOT emit a report event.
   // Seed oldest→newest so the FIFO evicts genuinely-old reports first.
   if (!seeded) {
     seeded = true;
-    [...list].reverse().forEach((r) => r.md5 && rememberMd5(r.md5));
+    [...list].reverse().forEach((r) => rememberId(r.id));
     // Seed the idle map with the most recent quake's shaking points (legacy sets
     // cache.last_report on first load WITHOUT emitting ReportRelease). Without
     // this, the idle RTS handler clears the live station dots and has no report
@@ -226,9 +232,14 @@ async function refresh() {
     return;
   }
 
-  // Afterwards: a genuinely new md5 (robust to node switching) = a new report.
-  const fresh = list.filter((r) => r.md5 && !seenMd5.has(r.md5));
-  fresh.forEach((r) => r.md5 && rememberMd5(r.md5));
+  // Afterwards: an id never seen, for an earthquake under an hour old.
+  const unseen = list.filter((r) => !seenIds.has(r.id));
+  unseen.forEach((r) => rememberId(r.id));
+  const fresh = unseen.filter((r) => now() - r.time < FRESH_MS);
+  // Named in the log, so the next "why did this report pop up" has an answer.
+  for (const r of unseen) {
+    log.info(`${fresh.includes(r) ? "new" : "unseen but old, not released"}: ${r.id}`);
+  }
 
   // Remember live arrivals while replaying so they do not become false "new"
   // reports afterwards, but never surface live report alerts in replay mode.
