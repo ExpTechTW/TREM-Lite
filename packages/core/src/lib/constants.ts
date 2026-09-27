@@ -68,10 +68,6 @@ export const COLOR = {
 
 export const SHOW_TREM_EEW = false;
 
-export const URL = {
-  API: ["api-1.exptech.dev", "api-2.exptech.dev"],
-} as const;
-
 /** Logical clip names — playback happens in Rust (see lib/audioClient.ts). */
 export const AUDIO = {
   ALERT: "ALERT",

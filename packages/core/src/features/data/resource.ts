@@ -9,7 +9,7 @@
 // The two share no ids, so neither can stand in for the other.
 import { distance } from "@/domain/utils";
 import { getConfig, writeConfig } from "@/lib/config";
-import { HTTP_TIMEOUT, URL as API_URL } from "@/lib/constants";
+import { HTTP_TIMEOUT } from "@/lib/constants";
 import { HOST } from "@/lib/endpoints";
 import { fetchData } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
@@ -18,6 +18,8 @@ import { variable } from "@/lib/variable";
 import type { Station } from "@/lib/types";
 
 const log = createLogger("station");
+/** Only api-1 serves the older list; api-2 and the lb/core nodes answer 404. */
+const LEGACY_STATION_HOST = "api-1.exptech.dev";
 
 /** localStorage keys. The legacy list keeps the key both lists once shared. */
 export const STATION_CACHE_KEY = "cache.stations";
@@ -61,8 +63,7 @@ async function fetchStations(): Promise<Record<string, Station> | null> {
 }
 
 async function fetchLegacyStations(): Promise<Record<string, Station> | null> {
-  const host = API_URL.API[Math.floor(Math.random() * API_URL.API.length)];
-  const res = await fetchData(`https://${host}/api/v1/trem/station`, HTTP_TIMEOUT.RESOURCE);
+  const res = await fetchData(`https://${LEGACY_STATION_HOST}/api/v1/trem/station`, HTTP_TIMEOUT.RESOURCE);
   return res.ok ? ((await res.json()) as Record<string, Station>) : null;
 }
 
