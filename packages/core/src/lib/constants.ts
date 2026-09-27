@@ -91,7 +91,8 @@ export const HTTP_TIMEOUT = {
 export const LAST_DATA_TIMEOUT_ERROR = 3000;
 /** The EEWs this app shows: CWA's. The feed also carries other agencies'. */
 export const EEW_AUTHOR = ["cwa"] as const;
-export const REPORT_LIMIT = 150;
+/** Reports in the list: the panel's length, and each full fetch's. */
+export const REPORT_LIMIT = 75;
 
 export const MAP = {
   BOUNDS: [

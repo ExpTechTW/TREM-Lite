@@ -25,8 +25,8 @@ const LEGACY_STATION_HOST = "api-1.exptech.dev";
 export const STATION_CACHE_KEY = "cache.stations";
 const LEGACY_CACHE_KEY = "cache.station";
 
-const MAX_RETRIES = 5;
-const REFRESH_MS = 600_000;
+/** How often each list is fetched; at start too. */
+const REFRESH_MS = 300_000;
 
 /**
  * The CSV at static.core/resource/station (served as application/json). Its
@@ -57,51 +57,47 @@ export function parseStationCsv(text: string): Record<string, Station> {
   return out;
 }
 
-async function fetchStations(): Promise<Record<string, Station> | null> {
-  const res = await fetchData(`https://${HOST.coreStatic}/resource/station`, HTTP_TIMEOUT.RESOURCE);
-  return res.ok ? parseStationCsv(await res.text()) : null;
-}
-
-async function fetchLegacyStations(): Promise<Record<string, Station> | null> {
-  const res = await fetchData(`https://${LEGACY_STATION_HOST}/api/v1/trem/station`, HTTP_TIMEOUT.RESOURCE);
-  return res.ok ? ((await res.json()) as Record<string, Station>) : null;
-}
+const STATIONS_URL = `https://${HOST.coreStatic}/resource/station`;
+const LEGACY_STATIONS_URL = `https://${LEGACY_STATION_HOST}/api/v1/trem/station`;
+const parseLegacy = (text: string) => JSON.parse(text) as Record<string, Station>;
 
 /**
- * Load a list now and every 10 minutes, retrying a failure with backoff. A
- * failed or empty answer never replaces the list in hand.
+ * Keep a list current: fetched now and every REFRESH_MS. The HTTP layer
+ * revalidates it with its ETag and retries a failure, so an unchanged list is
+ * a 304 whose bytes match the last ones, and nothing more happens: no parse,
+ * no localStorage write. A failed, empty or unreadable answer never replaces
+ * the list in hand; the next round tries again.
  */
 function keepFresh(
   name: string,
-  fetcher: () => Promise<Record<string, Station> | null>,
-  apply: (list: Record<string, Station>) => void,
+  url: string,
+  parse: (text: string) => Record<string, Station>,
+  apply: (list: Record<string, Station>, text: string) => void,
 ): void {
-  let retries = 0;
-  let retry: ReturnType<typeof setTimeout> | null = null;
-  const attempt = async () => {
-    if (retry) clearTimeout(retry);
-    retry = null;
-    let list: Record<string, Station> | null = null;
+  let last = "";
+  const fetchList = async () => {
+    let text: string;
     try {
-      list = await fetcher();
+      const res = await fetchData(url, HTTP_TIMEOUT.RESOURCE);
+      if (!res.ok) return;
+      text = await res.text();
     } catch {
-      /* retried below */
-    }
-    if (list && Object.keys(list).length) {
-      retries = 0;
-      apply(list);
-      log.info(`loaded ${Object.keys(list).length} ${name}`);
       return;
     }
-    if (retries < MAX_RETRIES) {
-      retries++;
-      retry = setTimeout(() => void attempt(), 3000 * retries);
-    } else {
-      retries = 0;
+    if (text === last) return;
+    let list: Record<string, Station>;
+    try {
+      list = parse(text);
+    } catch {
+      return;
     }
+    if (!Object.keys(list).length) return;
+    last = text;
+    apply(list, text);
+    log.info(`loaded ${Object.keys(list).length} ${name}`);
   };
-  void attempt();
-  setInterval(() => void attempt(), REFRESH_MS);
+  void fetchList();
+  setInterval(() => void fetchList(), REFRESH_MS);
 }
 
 function readCache(key: string): Record<string, Station> | null {
@@ -144,20 +140,32 @@ function migrateRealtimeStation(): void {
   void writeConfig({ ...config, "realtime-station-id": nearest });
 }
 
-/** Load both station lists now and every 10 minutes. */
+/** Store a list for the next start; a full storage only costs that. */
+function keep(key: string, list: Record<string, Station>): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch {
+    /* quota: the list is still in use, just not kept */
+  }
+}
+
+/**
+ * Both station lists: the last ones kept, at once, then fetched now and every
+ * REFRESH_MS (keepFresh), each kept again whenever it changes.
+ */
 export function initResource(): void {
   variable.station = readCache(STATION_CACHE_KEY);
   variable.legacyStation = readCache(LEGACY_CACHE_KEY);
 
-  keepFresh("stations", fetchStations, (list) => {
+  keepFresh("stations", STATIONS_URL, parseStationCsv, (list) => {
     variable.station = list;
-    localStorage.setItem(STATION_CACHE_KEY, JSON.stringify(list));
+    keep(STATION_CACHE_KEY, list);
     mark("station-loaded");
     migrateRealtimeStation();
   });
-  keepFresh("legacy stations", fetchLegacyStations, (list) => {
+  keepFresh("legacy stations", LEGACY_STATIONS_URL, parseLegacy, (list) => {
     variable.legacyStation = list;
-    localStorage.setItem(LEGACY_CACHE_KEY, JSON.stringify(list));
+    keep(LEGACY_CACHE_KEY, list);
     migrateRealtimeStation();
   });
 }

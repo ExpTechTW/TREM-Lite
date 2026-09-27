@@ -19,7 +19,7 @@ import { updateMapBounds } from "@/features/focus/focus";
 import { startReplay, stopReplay } from "@/features/replay/replay";
 
 let mapInitialized = false;
-let refreshInterval: ReturnType<typeof setInterval> | null = null;
+let polling = false;
 let activeReplayReportId: string | null = null;
 let latestFullReportList: ReportListItem[] = [];
 let replayStateEpoch = 0;
@@ -55,16 +55,42 @@ function remember(r: ReportListItem): void {
   }
 }
 
-/** The report list's body, verbatim, or null on any failure. */
-async function getReportListText(limit: number): Promise<string | null> {
+/**
+ * How the list is kept current:
+ *
+ *   every NEWEST_MS  the newest report alone — ETag-revalidated, so almost
+ *                    always a 304 — and a full fetch as soon as it changes
+ *   every FULL_MS    the whole list anyway, at start too: a revision of an
+ *                    older report changes nothing at the top
+ *
+ * The newest alone is /api/v2/eq/report without a limit: `?limit=1` is only a
+ * redirect to it.
+ */
+const NEWEST_MS = 60_000;
+const FULL_MS = 600_000;
+
+/** A report list's body, verbatim, or null on any failure. */
+async function getReportListText(url: string): Promise<string | null> {
   try {
-    const res = await http.request(`https://${HOST.coreApi}/api/v2/eq/report?limit=${limit}`, {
-      timeout: HTTP_TIMEOUT.REPORT,
-    });
+    const res = await http.request(url, { timeout: HTTP_TIMEOUT.REPORT });
     return res.ok ? await res.text() : null;
   } catch {
     return null;
   }
+}
+
+const listUrl = () => `https://${HOST.coreApi}/api/v2/eq/report?limit=${REPORT_LIMIT}`;
+const newestUrl = () => `https://${HOST.coreApi}/api/v2/eq/report`;
+
+/** The newest report's body, as last fetched. */
+let lastNewestText = "";
+
+async function checkNewest(): Promise<void> {
+  const text = await getReportListText(newestUrl());
+  if (text === null || text === lastNewestText) return;
+  const first = lastNewestText === "";
+  lastNewestText = text;
+  if (!first) await refresh();
 }
 
 /** The list `refresh` last acted on, verbatim. */
@@ -180,13 +206,13 @@ export function showReportPoint(data: ReportListItem | null): void {
 }
 
 async function refresh() {
-  const text = await getReportListText(REPORT_LIMIT);
+  const text = await getReportListText(listUrl());
 
   // An unchanged list is the usual answer — the proxy revalidates it with an
-  // ETag every ten seconds and the server says 304 — and nothing below does
-  // anything with one: the panel gets the rows it already shows, the cache the
-  // bytes it already holds, and every id in it has been seen. Stopping here
-  // skips re-parsing 35 KB, re-rendering 150 rows and re-writing localStorage.
+  // ETag and the server says 304 — and nothing below does anything with one:
+  // the panel gets the rows it already shows, the cache the bytes it already
+  // holds, and every id in it has been seen. Stopping here skips re-parsing
+  // the list, re-rendering its rows and re-writing localStorage.
   if (seeded && text !== null && text === lastListText) return;
 
   let list: ReportListItem[] | null;
@@ -197,7 +223,7 @@ async function refresh() {
   }
   if (!list) return;
   lastListText = text!;
-  // 首次載入用 info（里程碑）；之後每 10s 的輪詢降為 debug，避免洗版日誌檔。
+  // 首次載入用 info（里程碑）；之後的更新降為 debug，避免洗版日誌檔。
   if (seeded) log.debug("list", list.length);
   else log.info("list", list.length, "(initial)");
   mark("report-loaded");
@@ -346,9 +372,12 @@ export function initReport(): void {
   // populates even if the basemap is slow to load. showReportPoint() safely
   // no-ops until variable.map exists, and the epicenter map layers are added
   // when MapLoad fires.
-  if (!refreshInterval) {
-    refreshInterval = setInterval(() => void refresh(), 10000);
+  if (!polling) {
+    polling = true;
     void refresh();
+    void checkNewest();
+    setInterval(() => void checkNewest(), NEWEST_MS);
+    setInterval(() => void refresh(), FULL_MS);
   }
   events.on("MapLoad", () => {
     if (mapInitialized) return;
