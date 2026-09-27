@@ -16,6 +16,12 @@ mod updater {
     pub fn update_check() -> Result<(), String> {
         Err("updates are desktop-only".into())
     }
+    #[tauri::command]
+    pub fn update_pending() -> Option<String> {
+        None
+    }
+    #[tauri::command]
+    pub fn update_restart() {}
 }
 mod version;
 mod window;
@@ -87,8 +93,14 @@ pub fn run() {
                 Err(e) => log::error!("http proxy unavailable: {e}"),
             }
             config::ensure_initialized(app.handle());
+            #[cfg(desktop)]
+            let start_hidden = std::env::args_os().any(|arg| arg == "--start")
+                || updater::restart_hidden(app.handle());
+            #[cfg(not(desktop))]
             let start_hidden = std::env::args_os().any(|arg| arg == "--start");
             let reveal = move |app: &tauri::AppHandle| {
+                #[cfg(desktop)]
+                updater::clear_restart_hidden(app);
                 if let Some(window) = app.get_webview_window("main") {
                     if start_hidden {
                         let _ = window.hide();
@@ -169,6 +181,8 @@ pub fn run() {
             math::eew_area_intensity,
             ntp::ntp_sync,
             updater::update_check,
+            updater::update_pending,
+            updater::update_restart,
             window::window_focus,
             window::window_request_attention,
             window::window_hide,

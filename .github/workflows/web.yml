@@ -42,6 +42,24 @@ jobs:
       - name: Build web
         run: bun run --filter @trem/web build
 
+      # The snapshot update channel (see release.yml, `Refresh the snapshot
+      # channel`): the newest published snapshot's latest.json, served as a
+      # static file. Nothing to add before the first snapshot.
+      - name: Add the snapshot update manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 30 \
+            --json tagName,isPrerelease \
+            -q '[.[] | select(.isPrerelease and (.tagName | test("^[0-9]{2}w[0-9]{2}[a-z]+$")))][0].tagName // ""')"
+          if [ -z "$tag" ]; then
+            echo "no snapshot published yet"
+            exit 0
+          fi
+          mkdir -p apps/web/dist/updater
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" -p latest.json -O apps/web/dist/updater/snapshot.json
+          echo "snapshot channel → $tag"
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

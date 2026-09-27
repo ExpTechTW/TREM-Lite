@@ -325,7 +325,7 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
 
           {tab === "about" && (
             <>
-              <Group title="版本" note={inTauri ? "有新版本時會在背景自動下載，下次啟動時套用。" : undefined}>
+              <Group title="版本" note={inTauri ? "新版本會在背景自動下載。" : undefined}>
                 <Row label="TREM Lite">
                   <div className="settings-actions">
                     <span className="settings-value">{version || "網頁版"}</span>
@@ -336,6 +336,14 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
                     )}
                   </div>
                 </Row>
+                {inTauri && (
+                  <Toggle
+                    label="自動重新啟動以完成更新"
+                    hint="新版本下載後，在沒有地震事件時自動重新啟動並套用；關閉則等下次開啟時套用"
+                    checked={check("update-auto-restart")}
+                    onChange={(on) => setCheck("update-auto-restart", on)}
+                  />
+                )}
                 {system && (
                   <Row label="系統">
                     <span className="settings-value">{system}</span>

@@ -10,7 +10,7 @@ import type { TremConfig } from "./types";
 
 /** Mirrors src-tauri/default.yml — used as the browser-mode / fallback config. */
 export const DEFAULT_CONFIG: TremConfig = {
-  ver: 5,
+  ver: 6,
   "realtime-station-id": "1C10848",
   "check-box": {
     "show-window-eew": true,
@@ -18,6 +18,7 @@ export const DEFAULT_CONFIG: TremConfig = {
     "show-window-detect": true,
     "show-window-rts-intensity": true,
     "other-auto-start": true,
+    "update-auto-restart": true,
     "other-tts": true,
     "graphics-block-auto-zoom": false,
     "sound-effects-EEW": true,

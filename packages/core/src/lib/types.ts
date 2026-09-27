@@ -93,6 +93,8 @@ export type TremEvents = {
   EewDisplayUpdate: void;
   /** 斷線旗標（ui.internetError）改變，供 WarningBanners 事件驅動刷新。 */
   InternetErrorChange: boolean;
+  /** An update is downloaded and waits for a restart; its version label. */
+  UpdateReady: string;
   /** The main window was hidden (tray, minimised) or shown again. */
   MainWindowHidden: boolean;
 

@@ -16,7 +16,7 @@ use base64::Engine;
 use serde::Serialize;
 use tauri::async_runtime::Mutex;
 use tauri::ipc::Channel;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_updater::{UpdaterBuilder, UpdaterExt};
 
@@ -28,13 +28,18 @@ const CHECK_EVERY: Duration = Duration::from_secs(300);
 /// start must not keep the main window hidden waiting for that answer.
 const LAUNCH_CHECK_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Where a snapshot looks for the next one. Every snapshot's latest.json sits
-/// under its own tag, and `releases/latest` — tauri.conf.json's endpoint —
-/// never points at a pre-release, so release.yml copies each published
-/// snapshot's manifest to this fixed pre-release. A release keeps
-/// `releases/latest`, which a snapshot never reaches.
-const SNAPSHOT_MANIFEST: &str =
-    "https://github.com/ExpTechTW/TREM-Lite/releases/download/snapshot/latest.json";
+/// Where a snapshot looks for the next one: the snapshot channel, chosen at
+/// runtime as tauri-plugin-updater's docs set channels up. `releases/latest` —
+/// tauri.conf.json's endpoint, for a release — never points at a pre-release,
+/// so the newest snapshot's latest.json is served as a static file on the web
+/// build's Pages site (web.yml, release.yml).
+const SNAPSHOT_MANIFEST: &str = "https://exptechtw.github.io/TREM-Lite/updater/snapshot.json";
+
+/// Left by [`update_restart`] when the main window is hidden, so the restarted
+/// app comes back hidden too. Honoured only this long, lest a crash before it
+/// is cleared hide the window from a later, ordinary launch.
+const HIDDEN_MARKER: &str = "restart-hidden";
+const HIDDEN_MARKER_TTL: Duration = Duration::from_secs(120);
 
 /// One check at a time: the timer and the settings button share it, and two
 /// concurrent downloads would race to write the same staged package.
@@ -141,6 +146,7 @@ async fn check_and_stage(
 
     let dir = staging_dir(app)?;
     if staged_version(&dir).as_deref() == Some(update.version.as_str()) {
+        let _ = app.emit("update-staged", &update.version);
         return Ok(CheckResult::Staged {
             version: update.version,
         });
@@ -170,9 +176,52 @@ async fn check_and_stage(
         .body("將在下次啟動時自動更新。")
         .show();
 
+    let _ = app.emit("update-staged", &update.version);
     Ok(CheckResult::Staged {
         version: update.version,
     })
+}
+
+/// The version downloaded and waiting for a restart, if any: for a window that
+/// opens after `update-staged` was sent.
+#[tauri::command]
+pub fn update_pending(app: AppHandle) -> Option<String> {
+    staging_dir(&app).ok().and_then(|dir| staged_version(&dir))
+}
+
+/// Restart to install the staged update (it is installed at launch, before the
+/// window shows). `hidden`: the main window is hidden, so the app comes back
+/// hidden as well.
+#[tauri::command]
+pub fn update_restart(app: AppHandle, hidden: bool) {
+    if hidden {
+        if let Ok(dir) = app.path().app_local_data_dir() {
+            let _ = std::fs::create_dir_all(&dir);
+            let _ = std::fs::write(dir.join(HIDDEN_MARKER), "");
+        }
+    }
+    log::info!("restarting to install the staged update");
+    app.restart();
+}
+
+/// Whether a restart for an update left the window hidden. The marker stays
+/// until [`clear_restart_hidden`], so a second restart — the install at launch
+/// — keeps it hidden too.
+pub fn restart_hidden(app: &AppHandle) -> bool {
+    let Ok(dir) = app.path().app_local_data_dir() else {
+        return false;
+    };
+    std::fs::metadata(dir.join(HIDDEN_MARKER))
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|at| at.elapsed().ok())
+        .is_some_and(|age| age < HIDDEN_MARKER_TTL)
+}
+
+pub fn clear_restart_hidden(app: &AppHandle) {
+    if let Ok(dir) = app.path().app_local_data_dir() {
+        let _ = std::fs::remove_file(dir.join(HIDDEN_MARKER));
+    }
 }
 
 /// Installs the package staged by an earlier session, if it is still the

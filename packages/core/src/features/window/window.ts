@@ -12,6 +12,11 @@ import { hasPipContent, hidePip, showPipForCurrentAlert } from "@/lib/pipBridge"
 
 let initialized = false;
 let mainUnavailable = false;
+
+/** Whether the main window is hidden or minimised, as last checked. */
+export function isMainHidden(): boolean {
+  return mainUnavailable;
+}
 let checkingVisibility = false;
 
 function enabled(key: string): boolean {

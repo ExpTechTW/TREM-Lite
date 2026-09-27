@@ -41,6 +41,8 @@ export interface TremUi {
   rtsIntensityRows: RtsTriggerLocation[];
   unstable: boolean;
   internetError: boolean;
+  /** The downloaded update waiting for a restart (its label), or "". */
+  updateReady: string;
   /** Currently-shown EEW (null when the box is hidden / no EEW active). */
   currentEew: EewDisplay | null;
   /** RTS trigger summary shown in the EEW box when no authored EEW is active. */
@@ -56,6 +58,7 @@ export const ui: TremUi = {
   rtsIntensityRows: [],
   unstable: false,
   internetError: false,
+  updateReady: "",
   currentEew: null,
   currentTrigger: null,
 };
