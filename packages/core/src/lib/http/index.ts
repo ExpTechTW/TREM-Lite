@@ -12,6 +12,11 @@
  * | gzip | forced `Accept-Encoding: gzip`, stored re-gzipped at max level | browser-managed |
  * | ETag | `If-None-Match` from a SQLite store, 250 MB LRU | browser HTTP cache |
  * | stale-on-error | yes — cached body served when the network fails | no |
+ * | regional node | picked and health-checked by the proxy (`endpoints.rs`) | `regions.ts` |
+ *
+ * Callers write ExpTech's DNS-balanced names (see `@/lib/endpoints`); what goes
+ * on the wire is always one region's node, retried once on the next healthy
+ * node when it gives no answer or a 5xx.
  *
  * Two shapes of request exist:
  *

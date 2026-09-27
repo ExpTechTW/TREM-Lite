@@ -12,11 +12,15 @@
 //! * **LRU persistence** — see [`crate::http_cache`].
 //! * **Stale-on-error** — if the network fails outright but we hold a cached
 //!   body, the app gets the stale copy rather than nothing.
+//! * **Regional routing** — a DNS-balanced ExpTech name is sent to its pool's
+//!   healthy regional node instead (see [`crate::endpoints`]). A request that
+//!   gets no answer there, or a 5xx, is retried once on the next healthy node.
 //!
 //! Long-lived responses (SSE) deliberately do *not* come through here; they
 //! stay on `tauri-plugin-http`'s streaming `fetch`, since a cache has nothing
 //! to offer an infinite stream. The frontend routes those through the same
-//! abstraction layer via its `stream()` entry point.
+//! abstraction layer via its `stream()` entry point, which asks
+//! [`http_resolve`] for the node and tells [`http_report`] how it went.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -26,6 +30,7 @@ use serde::Deserialize;
 use tauri::{Manager, State};
 use tauri_plugin_http::reqwest;
 
+use crate::endpoints::{Endpoints, Target};
 use crate::http_cache::{gunzip, CacheEntry, HttpCache, StoredResponse};
 
 /// Hosts the proxy is willing to talk to. This command bypasses the
@@ -88,6 +93,7 @@ pub struct ProxyState {
     /// synchronous work that must not sit on a tokio worker: doing so once
     /// starved the executor badly enough to delay map-ready by 30 s.
     cache: Arc<HttpCache>,
+    endpoints: Arc<Endpoints>,
 }
 
 impl ProxyState {
@@ -105,9 +111,13 @@ impl ProxyState {
             .build()
             .map_err(|e| e.to_string())?;
 
+        let endpoints = Arc::new(Endpoints::new(client.clone()));
+        endpoints.start();
+
         Ok(Self {
             client,
             cache: Arc::new(cache),
+            endpoints,
         })
     }
 }
@@ -137,6 +147,24 @@ fn frame(meta: &ProxyMeta, body: &[u8]) -> tauri::ipc::Response {
     tauri::ipc::Response::new(out)
 }
 
+/// `url` sent to `target`'s host, or unchanged when there is no target.
+fn at(url: &reqwest::Url, target: Option<Target>) -> reqwest::Url {
+    let mut url = url.clone();
+    if let Some(target) = target {
+        // A host from the endpoint table always parses.
+        let _ = url.set_host(Some(target.host));
+    }
+    url
+}
+
+/// No answer, or the node answered that it cannot serve right now. A 4xx is a
+/// working node saying no, and does not count.
+fn node_failed(result: &Result<reqwest::Response, reqwest::Error>) -> bool {
+    match result {
+        Ok(res) => res.status().is_server_error(),
+        Err(_) => true,
+    }
+}
 
 /// Read a cache row on the blocking pool. Concurrent calls use separate
 /// pooled connections, so tile bursts revalidate in parallel.
@@ -200,29 +228,49 @@ pub async fn http_request(
 
     let http_method =
         reqwest::Method::from_bytes(method.as_bytes()).map_err(|e| format!("bad method: {e}"))?;
-    let mut builder = state
-        .client
-        .request(http_method, parsed.clone())
-        .timeout(timeout);
+    // One attempt at `url`. A builder is spent by sending it, so the retry
+    // below builds its own.
+    let send = |url: reqwest::Url| {
+        let mut builder = state
+            .client
+            .request(http_method.clone(), url)
+            .timeout(timeout);
+        for (name, value) in &req.headers {
+            // Never let a caller hand-set Accept-Encoding: doing so switches
+            // reqwest out of transparent decoding and we would store junk.
+            if name.eq_ignore_ascii_case("accept-encoding") {
+                continue;
+            }
+            builder = builder.header(name, value);
+        }
+        if let Some(entry) = &cached {
+            if let Some(etag) = &entry.etag {
+                builder = builder.header("If-None-Match", etag);
+            }
+            if let Some(lm) = &entry.last_modified {
+                builder = builder.header("If-Modified-Since", lm);
+            }
+        }
+        builder.send()
+    };
 
-    for (name, value) in &req.headers {
-        // Never let a caller hand-set Accept-Encoding: doing so switches
-        // reqwest out of transparent decoding and we would store junk.
-        if name.eq_ignore_ascii_case("accept-encoding") {
-            continue;
-        }
-        builder = builder.header(name, value);
-    }
-    if let Some(entry) = &cached {
-        if let Some(etag) = &entry.etag {
-            builder = builder.header("If-None-Match", etag);
-        }
-        if let Some(lm) = &entry.last_modified {
-            builder = builder.header("If-Modified-Since", lm);
+    // The cache key stays the balanced URL, so both nodes of a pool share one
+    // entry. Their validators differ, which costs a full answer — never a
+    // wrong one — the first time the other node serves it.
+    let target = state.endpoints.route(&host);
+    let mut result = send(at(&parsed, target)).await;
+    if let Some(first) = target {
+        let failed = node_failed(&result);
+        state.endpoints.report(first, !failed);
+        if failed {
+            if let Some(next) = state.endpoints.alternative(first) {
+                result = send(at(&parsed, Some(next))).await;
+                state.endpoints.report(next, !node_failed(&result));
+            }
         }
     }
 
-    let response = match builder.send().await {
+    let response = match result {
         Ok(res) => res,
         Err(err) => {
             // Network failure: a stale body beats no body at all.
@@ -313,4 +361,45 @@ pub async fn http_request(
         stale: false,
     };
     Ok(frame(&meta, &body))
+}
+
+/// The URL a stream should open: a balanced name swapped for its pool's
+/// active node, anything else unchanged. Streams stay on the plugin's `fetch`
+/// (see the top of this file), so they ask here rather than go through
+/// [`http_request`].
+#[tauri::command]
+pub fn http_resolve(state: State<'_, ProxyState>, url: String) -> Result<String, String> {
+    let parsed = reqwest::Url::parse(&url).map_err(|e| format!("bad url: {e}"))?;
+    let host = parsed.host_str().unwrap_or_default().to_ascii_lowercase();
+    Ok(at(&parsed, state.endpoints.route(&host)).to_string())
+}
+
+/// How a stream opened from [`http_resolve`]'s URL went, so a node that keeps
+/// refusing or dropping streams is failed over like one that fails requests.
+#[tauri::command]
+pub fn http_report(state: State<'_, ProxyState>, url: String, ok: bool) {
+    let host = reqwest::Url::parse(&url)
+        .ok()
+        .and_then(|u| u.host_str().map(str::to_ascii_lowercase));
+    if let Some(target) = host.and_then(|h| state.endpoints.node(&h)) {
+        state.endpoints.report(target, ok);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn balanced_names_go_to_the_active_node_and_nothing_else_moves() {
+        let endpoints = Endpoints::new(reqwest::Client::new());
+        let url =
+            reqwest::Url::parse("https://api.core.exptech.dev/api/v2/eq/report?limit=150").unwrap();
+        assert_eq!(
+            at(&url, endpoints.route("api.core.exptech.dev")).as_str(),
+            "https://api.core-tnn1.exptech.dev/api/v2/eq/report?limit=150"
+        );
+        let other = reqwest::Url::parse("https://api-1.exptech.dev/api/v1/trem/station").unwrap();
+        assert_eq!(at(&other, endpoints.route("api-1.exptech.dev")), other);
+    }
 }

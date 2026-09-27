@@ -10,7 +10,7 @@
  */
 
 import { HTTP_TIMEOUT } from "@/lib/constants";
-import { getHost, reportFailure, reportSuccess } from "@/lib/endpoints";
+import { HOST, lbApiHost } from "@/lib/endpoints";
 import { http, withController, type HttpResponse } from "@/lib/http";
 import { createLogger } from "@/lib/logger";
 import { mark } from "@/lib/perf";
@@ -18,7 +18,6 @@ import { variable } from "@/lib/variable";
 
 let sseController: AbortController | null = null;
 let requestCounter = 0;
-let transportGeneration = 0;
 const activePollingControllers = new Set<AbortController>();
 
 const log = createLogger("sse");
@@ -28,7 +27,6 @@ const TREM_REPLAY_HOST = "api-1.exptech.dev";
 const NO_STORE = { store: false } as const;
 
 export function abortAll(): void {
-  transportGeneration++;
   if (sseController) {
     sseController.abort();
     sseController = null;
@@ -98,8 +96,8 @@ export function init(options: SseHandlers = {}): SseManager {
 
     // The RTS archive exists on api-1 (the regional core nodes return 404 for
     // this route); EEW history remains on the core pool.
-    const rtsDomain = variable.play_mode == 2 ? TREM_REPLAY_HOST : getHost("lbApi");
-    const eewDomain = variable.play_mode == 2 ? getHost("coreApi") : getHost("lbApi");
+    const rtsDomain = variable.play_mode == 2 ? TREM_REPLAY_HOST : lbApiHost();
+    const eewDomain = variable.play_mode == 2 ? HOST.coreApi : lbApiHost();
 
     const urls = [
       { url: `https://${rtsDomain}/api/v2/trem/rts`, type: "rts" as const, enabled: variable.play_mode != 1 },
@@ -136,7 +134,6 @@ export function init(options: SseHandlers = {}): SseManager {
           if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
           log.info(`${u.type} connected (${res.status}), streaming…`);
           mark(`sse-${u.type}-connected`);
-          reportSuccess("lbApi");
           const reader = res.body.getReader();
           while (!signal.aborted) {
             const { value, done } = await reader.read();
@@ -150,11 +147,11 @@ export function init(options: SseHandlers = {}): SseManager {
         })
         .catch((e) => {
           // Entering replay intentionally aborts both live streams. That is a
-          // mode transition, not a network failure, and must not poison the LB
-          // health score or produce a reconnect warning.
+          // mode transition, not a network failure, and must not produce a
+          // reconnect warning. (Node health is the HTTP layer's; it ignores
+          // aborts too.)
           if (signal.aborted || (e as { name?: string })?.name === "AbortError") return;
           log.warn(`${u.type} error → reconnect`, e);
-          reportFailure("lbApi");
           scheduleReconnect();
         });
     }
@@ -194,16 +191,15 @@ async function parseJson(response: HttpResponse | null): Promise<unknown | null>
 
 /** HTTP polling fallback — RTS/EEW always, intensity every 5th, lpgm every 7th. */
 export async function getData(time?: number): Promise<PolledData> {
-  const requestGeneration = transportGeneration;
   const requestMode = variable.play_mode;
   const t = time ? Math.round(time / 1000) : 0;
   requestCounter++;
   const shouldFetchLPGM = requestCounter % 7 === 0;
   const shouldFetchIntensity = requestCounter % 5 === 0;
 
-  const lb = getHost("lbApi");
+  const lb = lbApiHost();
   const tremDomain = requestMode == 2 ? TREM_REPLAY_HOST : lb;
-  const eewDomain = requestMode == 2 ? getHost("coreApi") : lb;
+  const eewDomain = requestMode == 2 ? HOST.coreApi : lb;
 
   const suffix = t ? `/${t}` : "";
   const reqs: (ReturnType<typeof withController> | null)[] = [
@@ -234,11 +230,6 @@ export async function getData(time?: number): Promise<PolledData> {
     }
     if (shouldFetchLPGM) {
       out.lpgm = (await parseJson(responses[responses.length - 1])) as unknown[] | null;
-    }
-    // Archive availability must not mark a live LB node healthy/unhealthy.
-    if (requestMode == 0 && requestGeneration === transportGeneration) {
-      if (out.rts || out.eew) reportSuccess("lbApi");
-      else reportFailure("lbApi");
     }
     return out;
   } finally {

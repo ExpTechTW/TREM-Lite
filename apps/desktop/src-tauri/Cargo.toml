@@ -46,14 +46,17 @@ rodio = "0.20"
 rusqlite = { version = "0.37", features = ["bundled"] }
 flate2 = "1"
 
+# The timer between update checks (src/updater.rs) and between endpoint probes
+# (src/endpoints.rs). Already in the tree through tauri.
+tokio = { version = "1", features = ["time"] }
+
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
 # OTA (src/updater.rs): re-verifying a staged package's signature before it is
-# installed, and the timer between checks. All three are already in the tree
-# through the updater plugin and tauri; naming them costs no build time.
+# installed. Both are already in the tree through the updater plugin; naming
+# them costs no build time.
 minisign-verify = "0.2"
 base64 = "0.22"
-tokio = { version = "1", features = ["time"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 

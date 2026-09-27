@@ -4,7 +4,7 @@
 import { openUrl as openExternal } from "@tauri-apps/plugin-opener";
 
 import { REPORT_LIMIT, HTTP_TIMEOUT, SHOW_REPORT } from "@/lib/constants";
-import { url, reportFailure, reportSuccess } from "@/lib/endpoints";
+import { HOST } from "@/lib/endpoints";
 import { events } from "@/lib/events";
 import { setFeatures } from "@/lib/mapSource";
 import { fetchJson, http } from "@/lib/http";
@@ -47,7 +47,7 @@ function rememberMd5(md5: string): void {
 /** The report list's body, verbatim, or null on any failure. */
 async function getReportListText(limit: number): Promise<string | null> {
   try {
-    const res = await http.request(url("coreApi", `/api/v2/eq/report?limit=${limit}`), {
+    const res = await http.request(`https://${HOST.coreApi}/api/v2/eq/report?limit=${limit}`, {
       timeout: HTTP_TIMEOUT.REPORT,
     });
     return res.ok ? await res.text() : null;
@@ -60,7 +60,7 @@ async function getReportListText(limit: number): Promise<string | null> {
 let lastListText = "";
 
 async function getReportById(id: string): Promise<ReportListItem | null> {
-  return fetchJson<ReportListItem>(url("coreApi", `/api/v2/eq/report/${id}`), HTTP_TIMEOUT.REPORT);
+  return fetchJson<ReportListItem>(`https://${HOST.coreApi}/api/v2/eq/report/${id}`, HTTP_TIMEOUT.REPORT);
 }
 
 function reportList(): ReportListItem[] {
@@ -176,10 +176,7 @@ async function refresh() {
   // anything with one: the panel gets the rows it already shows, the cache the
   // bytes it already holds, and every md5 in it has been seen. Stopping here
   // skips re-parsing 35 KB, re-rendering 150 rows and re-writing localStorage.
-  if (seeded && text !== null && text === lastListText) {
-    reportSuccess("coreApi");
-    return;
-  }
+  if (seeded && text !== null && text === lastListText) return;
 
   let list: ReportListItem[] | null;
   try {
@@ -187,12 +184,8 @@ async function refresh() {
   } catch {
     list = null;
   }
-  if (!list) {
-    reportFailure("coreApi");
-    return;
-  }
+  if (!list) return;
   lastListText = text!;
-  reportSuccess("coreApi");
   // 首次載入用 info（里程碑）；之後每 10s 的輪詢降為 debug，避免洗版日誌檔。
   if (seeded) log.debug("list", list.length);
   else log.info("list", list.length, "(initial)");

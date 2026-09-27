@@ -10,6 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
 import { HttpError, HttpResponse, type HttpBackend, type HttpMeta } from "./types";
+import { watchBody } from "./watchBody";
 
 /**
  * Decode `[u32 LE meta length][meta JSON][body bytes]`.
@@ -67,13 +68,24 @@ export const tauriBackend: HttpBackend = {
     return decodeFrame(buffer);
   },
 
-  stream(url, options) {
+  async stream(url, options) {
     // plugin-http gives a real streaming ReadableStream, which a buffered
-    // command result cannot. Lifetime is the caller's via options.signal.
-    return tauriFetch(url, {
-      method: options.method ?? "GET",
-      signal: options.signal,
-      headers: options.headers,
-    });
+    // command result cannot. Lifetime is the caller's via options.signal. The
+    // proxy still picks the regional node, and hears how the stream went.
+    const target = await invoke<string>("http_resolve", { url });
+    const report = (ok: boolean) => void invoke("http_report", { url: target, ok }).catch(() => {});
+    let res: Response;
+    try {
+      res = await tauriFetch(target, {
+        method: options.method ?? "GET",
+        signal: options.signal,
+        headers: options.headers,
+      });
+    } catch (err) {
+      if (!options.signal?.aborted) report(false);
+      throw err;
+    }
+    report(res.status < 500);
+    return watchBody(res, () => report(false), options.signal);
   },
 };

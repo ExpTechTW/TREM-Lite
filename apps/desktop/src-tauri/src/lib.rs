@@ -1,5 +1,6 @@
 mod audio;
 mod config;
+mod endpoints;
 mod http_cache;
 mod http_proxy;
 mod logging;
@@ -149,6 +150,8 @@ pub fn run() {
             config::config_set,
             config::config_reset,
             http_proxy::http_request,
+            http_proxy::http_resolve,
+            http_proxy::http_report,
             math::eew_area_pga,
             ntp::ntp_sync,
             updater::update_check,

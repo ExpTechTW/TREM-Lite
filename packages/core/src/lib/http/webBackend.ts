@@ -7,7 +7,9 @@
  * and handle the 304, and `Accept-Encoding` is set by the browser itself and
  * is not settable from script.
  */
+import { alternative, report, route, type Route } from "./regions";
 import { HttpError, HttpResponse, type HttpBackend, type HttpOptions } from "./types";
+import { watchBody } from "./watchBody";
 
 /** Merge a caller signal with our own timeout into one signal. */
 function linkSignals(timeout: number | undefined, external: AbortSignal | undefined) {
@@ -53,9 +55,44 @@ async function run(url: string, options: HttpOptions): Promise<Response> {
   }
 }
 
+const aborted = (err: unknown) => err instanceof HttpError && err.type === "ABORTED";
+
+/** One attempt at a route, its outcome told to the node's health. */
+async function attempt(r: Route, options: HttpOptions): Promise<Response> {
+  try {
+    const res = await run(r.url, options);
+    if (r.target) report(r.target, res.status < 500);
+    return res;
+  } catch (err) {
+    if (r.target && !aborted(err)) report(r.target, false);
+    throw err;
+  }
+}
+
+/**
+ * Retried once on the next healthy node when the first gives no answer or a
+ * 5xx, as the Rust proxy does on desktop.
+ */
+async function send(url: string, options: HttpOptions): Promise<Response> {
+  const first = route(url);
+  let failure: Response | unknown;
+  try {
+    const res = await attempt(first, options);
+    if (res.status < 500) return res;
+    failure = res;
+  } catch (err) {
+    if (aborted(err)) throw err;
+    failure = err;
+  }
+  const next = alternative(first);
+  if (next) return attempt(next, options);
+  if (failure instanceof Response) return failure;
+  throw failure;
+}
+
 export const webBackend: HttpBackend = {
   async request(url, options) {
-    const res = await run(url, options);
+    const res = await send(url, options);
     const headers: Record<string, string> = {};
     res.headers.forEach((value, name) => {
       headers[name.toLowerCase()] = value;
@@ -76,7 +113,10 @@ export const webBackend: HttpBackend = {
     );
   },
 
-  stream(url, options) {
-    return run(url, { ...options, store: false, timeout: undefined });
+  async stream(url, options) {
+    const r = route(url);
+    const res = await attempt(r, { ...options, store: false, timeout: undefined });
+    const target = r.target;
+    return target ? watchBody(res, () => report(target, false), options.signal) : res;
   },
 };
