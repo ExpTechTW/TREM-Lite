@@ -414,6 +414,42 @@ jobs:
           done </tmp/urls.txt
           echo "published $TAG at $SHA; all $(wc -l </tmp/urls.txt | tr -d ' ') updater URLs answer 200"
 
+      # Snapshots update snapshots. Each one's latest.json sits under its own
+      # tag, and `releases/latest` never points at a pre-release, so a snapshot
+      # build reads a fixed URL instead — releases/download/snapshot/latest.json
+      # (see SNAPSHOT_MANIFEST in updater.rs) — and this copies the manifest
+      # there once the snapshot is verified. The `snapshot` pre-release is made
+      # on first use, tagged at the default branch: GITHUB_TOKEN may not create
+      # a tag anywhere whose workflows differ from it (see `Tag the snapshot`).
+      #
+      # Never a failed job: the snapshot is public and fine by now, and a red
+      # job here would hand it to `discard`. The step shows red on its own, and
+      # testers get this snapshot with the next one. (`continue-on-error`, not
+      # `|| echo`: a function on the left of `||` runs with `set -e` off, and
+      # would carry on past a failed upload and end green.)
+      - name: Point the snapshot channel at it
+        if: needs.version.outputs.is_release == 'false'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.version.outputs.tag }}
+          BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if ! gh release view snapshot --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh api "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name=snapshot -f target_commitish="$BRANCH" \
+              -f name="快照更新通道" \
+              -f body="不是一個版本：這裡只放最新快照的 latest.json，供快照版的自動更新讀取。" \
+              -F prerelease=true -F draft=false -f make_latest=false >/dev/null
+          fi
+          mkdir -p /tmp/channel
+          curl -sfL -o /tmp/channel/latest.json \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/latest.json"
+          gh release upload snapshot /tmp/channel/latest.json --clobber --repo "$GITHUB_REPOSITORY"
+          # As an installed copy will fetch it.
+          curl -sfL "https://github.com/$GITHUB_REPOSITORY/releases/download/snapshot/latest.json" |
+            python3 -c 'import json, sys; print("snapshot channel →", json.load(sys.stdin)["version"])'
+
       # Here rather than in a workflow listening on `release`: GitHub starts no
       # run for an event its own GITHUB_TOKEN caused, and the snapshot was just
       # published with exactly that token. A release is published by a human,

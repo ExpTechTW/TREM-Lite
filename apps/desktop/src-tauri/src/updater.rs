@@ -8,6 +8,7 @@
 //! nothing is installed mid-session anywhere: a download is staged
 //! on disk and installed at the next launch, before the main window is shown.
 
+use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -17,7 +18,7 @@ use tauri::async_runtime::Mutex;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
-use tauri_plugin_updater::UpdaterExt;
+use tauri_plugin_updater::{UpdaterBuilder, UpdaterExt};
 
 /// How often to look for an update. Matches the legacy client.
 const CHECK_EVERY: Duration = Duration::from_secs(300);
@@ -26,6 +27,14 @@ const CHECK_EVERY: Duration = Duration::from_secs(300);
 /// installed once the server confirms it is still the latest, and an offline
 /// start must not keep the main window hidden waiting for that answer.
 const LAUNCH_CHECK_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Where a snapshot looks for the next one. Every snapshot's latest.json sits
+/// under its own tag, and `releases/latest` — tauri.conf.json's endpoint —
+/// never points at a pre-release, so release.yml copies each published
+/// snapshot's manifest to this fixed pre-release. A release keeps
+/// `releases/latest`, which a snapshot never reaches.
+const SNAPSHOT_MANIFEST: &str =
+    "https://github.com/ExpTechTW/TREM-Lite/releases/download/snapshot/latest.json";
 
 /// One check at a time: the timer and the settings button share it, and two
 /// concurrent downloads would race to write the same staged package.
@@ -110,12 +119,22 @@ async fn check_and_stage(
     let _one_at_a_time = state.0.lock().await;
 
     let current = app.package_info().version.to_string();
-    let update = app
-        .updater()
+    let checked = channel(app)?
+        .build()
         .map_err(|e| e.to_string())?
         .check()
-        .await
-        .map_err(|e| e.to_string())?;
+        .await;
+    let update = match checked {
+        Ok(update) => update,
+        // Every endpoint answered, none with a manifest: nothing has been
+        // published to update to (for a release build, until the first
+        // release is). Not an error to show anyone.
+        Err(tauri_plugin_updater::Error::ReleaseNotFound) => {
+            log::debug!("no update manifest published for this build's channel");
+            None
+        }
+        Err(e) => return Err(e.to_string()),
+    };
     let Some(update) = update else {
         return Ok(CheckResult::UpToDate { current });
     };
@@ -166,8 +185,7 @@ async fn apply_staged(app: &AppHandle) -> Result<(), String> {
     };
 
     // Offline, this fails and the package stays staged for the next launch.
-    let update = app
-        .updater_builder()
+    let update = channel(app)?
         .timeout(LAUNCH_CHECK_TIMEOUT)
         .build()
         .map_err(|e| e.to_string())?
@@ -194,6 +212,60 @@ async fn apply_staged(app: &AppHandle) -> Result<(), String> {
     log::info!("installing staged update {version}");
     update.install(bytes).map_err(|e| e.to_string())?;
     app.restart()
+}
+
+/// The updater for this build's channel: a snapshot follows snapshots
+/// (SNAPSHOT_MANIFEST), a release follows releases.
+fn channel(app: &AppHandle) -> Result<UpdaterBuilder, String> {
+    let builder = app
+        .updater_builder()
+        .version_comparator(|current, remote| is_newer(&remote.version, &current));
+    if app.package_info().version.pre.is_empty() {
+        return Ok(builder);
+    }
+    let url = SNAPSHOT_MANIFEST.parse().map_err(|e| format!("{e}"))?;
+    builder.endpoints(vec![url]).map_err(|e| e.to_string())
+}
+
+/// The updater's "is this newer?": semver's order, except between two
+/// snapshots of one train (snapshot_order).
+fn is_newer<V: PartialOrd + ToString>(remote: &V, current: &V) -> bool {
+    match snapshot_order(&remote.to_string(), &current.to_string()) {
+        Some(order) => order == Ordering::Greater,
+        None => remote > current,
+    }
+}
+
+/// Two snapshots of one train, in the order they were cut. Semver compares
+/// their labels as text, which goes wrong past a week's 26th: `26w40aa` sorts
+/// before `26w40z`, and would never be offered. A label is read as year, week,
+/// then its letters — by count, then alphabetically. None when either is not a
+/// snapshot or their trains differ: semver's order is right then.
+fn snapshot_order(a: &str, b: &str) -> Option<Ordering> {
+    let (train_a, key_a) = snapshot_key(a)?;
+    let (train_b, key_b) = snapshot_key(b)?;
+    (train_a == train_b).then(|| key_a.cmp(&key_b))
+}
+
+/// A snapshot label's place in line: year, week, letter count, letters.
+type LabelKey<'a> = (u32, u32, usize, &'a str);
+
+/// `26.1.0-26w40ab` → ("26.1.0", (26, 40, 2, "ab")).
+fn snapshot_key(version: &str) -> Option<(&str, LabelKey<'_>)> {
+    let version = version.split('+').next()?;
+    let (train, label) = version.split_once('-')?;
+    let (year, rest) = label.split_once('w')?;
+    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
+    let (week, letters) = rest.split_at(digits);
+    if year.len() != 2 || week.is_empty() || letters.is_empty() {
+        return None;
+    }
+    if !letters.bytes().all(|b| b.is_ascii_lowercase()) {
+        return None;
+    }
+    let year = year.parse().ok()?;
+    let week = week.parse().ok()?;
+    Some((train, (year, week, letters.len(), letters)))
 }
 
 /// Starts OTA. `reveal` shows (or keeps hidden) the main window; it runs once
@@ -230,6 +302,36 @@ pub async fn update_check(
         let _ = on_progress.send(Progress { downloaded, total });
     })
     .await
+}
+
+#[cfg(test)]
+mod channel_tests {
+    use super::snapshot_order;
+    use std::cmp::Ordering::{Greater, Less};
+
+    /// `a` is the later of two snapshots, whichever way round they are asked.
+    fn later(a: &str, b: &str) -> bool {
+        snapshot_order(a, b) == Some(Greater) && snapshot_order(b, a) == Some(Less)
+    }
+
+    #[test]
+    fn snapshots_of_a_train_follow_their_labels() {
+        assert!(later("26.1.0-26w40b", "26.1.0-26w40a"));
+        assert!(later("26.1.0-26w41a", "26.1.0-26w40p"));
+    }
+
+    #[test]
+    fn the_27th_snapshot_of_a_week_follows_the_26th() {
+        assert!(later("26.1.0-26w40aa", "26.1.0-26w40z"));
+        assert!(later("26.1.0-26w40ab", "26.1.0-26w40aa"));
+    }
+
+    #[test]
+    fn anything_else_is_left_to_semver() {
+        assert_eq!(snapshot_order("26.2.0-26w45a", "26.1.0-26w44z"), None);
+        assert_eq!(snapshot_order("26.1.0", "26.1.0-26w40a"), None);
+        assert_eq!(snapshot_order("26.1.0-rc.1", "26.1.0-26w40a"), None);
+    }
 }
 
 #[cfg(test)]
