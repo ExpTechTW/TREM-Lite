@@ -26,6 +26,12 @@ export function clearQueue(queue: QueueName): void {
   if (!inTauri) return;
   void invoke("audio_clear", { queue });
 }
+
+/** Silence everything playing or queued — at a live/replay boundary. */
+export function stopAll(): void {
+  if (!inTauri) return;
+  void invoke("audio_stop_all");
+}
 function sfx(key: string): boolean {
   try {
     return !!getConfig()["check-box"][key];

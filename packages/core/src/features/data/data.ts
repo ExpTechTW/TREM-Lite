@@ -5,11 +5,13 @@
  */
 import { readDir, readTextFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 
+import { stopAll as stopSounds } from "@/lib/audioClient";
 import { getConfig } from "@/lib/config";
 import { HTTP_TIMEOUT, LAST_DATA_TIMEOUT_ERROR, EEW_AUTHOR } from "@/lib/constants";
 import { events } from "@/lib/events";
 import { now } from "@/lib/ntp";
-import { variable } from "@/lib/variable";
+import { stopSpeech } from "@/lib/speechClient";
+import { variable, type TremVariable } from "@/lib/variable";
 import { ui } from "@/lib/variable.ui";
 import type { EewData } from "@/lib/types";
 
@@ -99,12 +101,9 @@ class DataManager {
         })
         .sort((a, b) => a.time - b.time);
       if (frames.length) {
-        this.resetTransport();
         fileList = frames.map((frame) => frame.name);
         fileIndex = 0;
-        variable.play_mode = 3;
-        variable.replay = { start_time: frames[0].time, local_time: 0, dev: false };
-        this.clearDomainState(3);
+        this.switchMode(3, { start_time: frames[0].time, local_time: 0, dev: false });
         events.emit("ReplayStateChange", { active: true });
       }
     } catch {
@@ -128,10 +127,7 @@ class DataManager {
 
     if (variable.play_mode === 3) {
       if (fileIndex >= fileList.length) {
-        this.resetTransport();
-        variable.play_mode = 0;
-        variable.replay = { start_time: 0, local_time: 0, dev: false };
-        this.clearDomainState(0);
+        this.switchMode(0, { start_time: 0, local_time: 0, dev: false });
         events.emit("ReplayStateChange", { active: false });
         return;
       }
@@ -300,8 +296,24 @@ class DataManager {
     events.emit("DataRts", { info: { type: mode }, data: null });
   }
 
+  /**
+   * The one way between live and replay, whichever replay it is — a report's
+   * (HTTP) or a folder of frames (file). Nothing crosses the boundary: no
+   * stream or request, no domain object, alert cache or per-module history
+   * (every module clears its own on DataModeReset), and no sound or speech.
+   */
+  switchMode(mode: number, replay: TremVariable["replay"]): void {
+    this.resetTransport();
+    variable.play_mode = mode;
+    variable.replay = replay;
+    this.clearDomainState(mode);
+    // After the reset, so nothing its end events set off is heard either.
+    stopSounds();
+    stopSpeech();
+  }
+
   /** Fully reset the live transport before entering or leaving replay. */
-  resetTransport(): void {
+  private resetTransport(): void {
     this.transportEpoch++;
     abortAll();
     this.stopSSE();
@@ -476,7 +488,7 @@ export function initData(): DataManager {
   return manager;
 }
 
-/** Drop live transport state so the next data loop follows the new play mode. */
-export function resetDataTransport(): void {
-  manager?.resetTransport();
+/** Switch between live and replay (see DataManager.switchMode). */
+export function switchPlayMode(mode: number, replay: TremVariable["replay"]): void {
+  initData().switchMode(mode, replay);
 }

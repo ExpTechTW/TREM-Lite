@@ -392,6 +392,15 @@ export function initRts(): void {
       setFeatures(variable.map, "markers-geojson-0", data_alert_0_list);
     }
 
+    // No station data while live — no API token, a lost connection, or just
+    // back from a replay — falls back to the latest report, as an idle frame
+    // does. Otherwise the replay's markers leave with nothing in their place.
+    if (!ans.data && variable.play_mode === 0 && SHOW_REPORT) {
+      if (!variable.cache.bounds.report.length || !isAutoFocusLocked()) {
+        showReportPoint(variable.cache.last_report as ReportListItem | null);
+      }
+    }
+
     // This frame's highest level per town. The maximum intensity and the
     // trigger box read it as is; only the bottom-right ranking holds each
     // town's peak for 60 s. A frame without data (a lost connection, a mode

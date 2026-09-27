@@ -39,6 +39,11 @@ function speak(text: string, queue = true, onEnd?: () => void): void {
   window.speechSynthesis.speak(utterance);
 }
 
+/** Drop what is being said and what is queued — at a live/replay boundary. */
+export function stopSpeech(): void {
+  if (available()) window.speechSynthesis.cancel();
+}
+
 function chineseTime(timestamp: number): string {
   const date = new Date(timestamp);
   return `${date.getMonth() + 1}月${date.getDate()}日${date.getHours()}點${date.getMinutes()}分`;
