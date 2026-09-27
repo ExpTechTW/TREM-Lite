@@ -43,7 +43,8 @@ export interface TremVariable {
     show_lpgm: boolean;
     eew_last: Record<string, unknown>;
     intensity_last: Record<string, unknown>;
-    time: { syncedTime: number; lastSync: number; offset: number };
+    /** The clock's calibration: server − local, ms (lib/ntp.ts). */
+    time: { offset: number };
     intensity: { time: number; max: number };
     last_data_time: number;
     last_rts_alert: number;
@@ -90,7 +91,7 @@ export const variable: TremVariable = {
     show_lpgm: false,
     eew_last: {},
     intensity_last: {},
-    time: { syncedTime: 0, lastSync: 0, offset: 0 },
+    time: { offset: 0 },
     intensity: { time: 0, max: 0 },
     last_data_time: 0,
     last_rts_alert: 0,

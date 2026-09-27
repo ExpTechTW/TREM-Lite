@@ -16,7 +16,7 @@ import { mouseDown } from "@/features/focus/focus";
 import { COLOR } from "@/lib/constants";
 import { events } from "@/lib/events";
 import { replaceFeatures } from "@/lib/mapSource";
-import { now } from "@/lib/ntp";
+import { now, realNow } from "@/lib/ntp";
 import type { Ans, EewData } from "@/lib/types";
 import { ui } from "@/lib/variable.ui";
 import { variable } from "@/lib/variable";
@@ -182,7 +182,7 @@ export function initEew(): void {
   initialized = true;
 
   events.on("EewRelease", (ans) => {
-    eew_cache[ans.data.id] = { ...ans.data, cacheTime: Date.now() };
+    eew_cache[ans.data.id] = { ...ans.data, cacheTime: realNow() };
     show_eew(false);
     createEewLayer(ans);
   });
@@ -198,7 +198,7 @@ export function initEew(): void {
   });
 
   events.on("EewUpdate", (ans) => {
-    eew_cache[ans.data.id] = { ...ans.data, cacheTime: Date.now() };
+    eew_cache[ans.data.id] = { ...ans.data, cacheTime: realNow() };
 
     createEewLayer(ans);
 
@@ -218,7 +218,7 @@ export function initEew(): void {
 
   // Periodically drop expired EEW caches.
   setInterval(() => {
-    const nowMs = Date.now();
+    const nowMs = realNow();
     for (const id of Object.keys(eew_cache)) {
       if (nowMs - eew_cache[id].cacheTime > EEW_CACHE_TTL) {
         removeEewLayersAndSources(id);

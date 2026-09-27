@@ -11,9 +11,9 @@ mark("boot");
 // Dev-only: expose the runtime singletons so the headless-WebKit debug harness
 // (scripts/debug-live.mjs) can inspect map sources / data without a UI.
 if (import.meta.env.DEV) {
-  void Promise.all([import("@/lib/variable"), import("@/lib/events")]).then(
-    ([{ variable }, { events }]) => {
-      (window as unknown as { __trem: unknown }).__trem = { variable, events };
+  void Promise.all([import("@/lib/variable"), import("@/lib/events"), import("@/lib/variable.ui")]).then(
+    ([{ variable }, { events }, { ui }]) => {
+      (window as unknown as { __trem: unknown }).__trem = { variable, events, ui };
     },
   );
 }

@@ -9,7 +9,7 @@ import { stopAll as stopSounds } from "@/lib/audioClient";
 import { HTTP_TIMEOUT, LAST_DATA_TIMEOUT_ERROR, EEW_AUTHOR } from "@/lib/constants";
 import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
-import { now } from "@/lib/ntp";
+import { now, realNow } from "@/lib/ntp";
 import { stopSpeech } from "@/lib/speechClient";
 import { variable, type TremVariable } from "@/lib/variable";
 import { ui } from "@/lib/variable.ui";
@@ -27,11 +27,11 @@ const TIMEOUT: Record<string, number> = { ...HTTP_TIMEOUT };
 class TimeoutManager {
   private MAX = 10000;
   private STEP = 500;
-  private lastAdjust = Date.now();
+  private lastAdjust = performance.now();
   private failureCount = 0;
 
   adjustTimeouts(data: { eew: unknown; rts: unknown }): boolean {
-    const t = Date.now();
+    const t = performance.now();
     if (t - this.lastAdjust < 2000) return true;
     this.lastAdjust = t;
 
@@ -126,9 +126,9 @@ class DataManager {
   }
 
   async fetchData(): Promise<void> {
-    const localNow = Date.now();
-    if (localNow - this.lastFetchTime < TIMEOUT.LOOP) return;
-    this.lastFetchTime = localNow;
+    const tick = performance.now();
+    if (tick - this.lastFetchTime < TIMEOUT.LOOP) return;
+    this.lastFetchTime = tick;
 
     if (variable.play_mode === 0) {
       this.startSSE();
@@ -188,7 +188,7 @@ class DataManager {
       const rts = data.rts as { time?: number } | null;
       if (
         !variable.data.rts ||
-        (!data.rts && localNow - variable.cache.last_data_time > LAST_DATA_TIMEOUT_ERROR) ||
+        (!data.rts && realNow() - variable.cache.last_data_time > LAST_DATA_TIMEOUT_ERROR) ||
         (variable.data.rts.time ?? 0) < (rts?.time ?? 0)
       ) {
         variable.data.rts = data.rts as never;
@@ -199,7 +199,7 @@ class DataManager {
 
     if (data.intensity) this.processIntensityData(data.intensity as never[]);
     if (data.lpgm) this.processLpgmData(data.lpgm as never[]);
-    if (data.rts) variable.cache.last_data_time = localNow;
+    if (data.rts) variable.cache.last_data_time = realNow();
   }
 
   private startSSE() {
@@ -228,7 +228,7 @@ class DataManager {
         this.sseHandled = true;
         variable.data.rts = value as never;
         events.emit("DataRts", { info: { type: variable.play_mode }, data: (value || {}) as never });
-        variable.cache.last_data_time = Date.now();
+        variable.cache.last_data_time = realNow();
       },
       onEew: (raw) => {
         if (variable.play_mode !== 0) return;
@@ -273,7 +273,7 @@ class DataManager {
     if (asleep === this.asleep) return;
     this.asleep = asleep;
     // Frames stopped coming on purpose; the first live one is a moment away.
-    if (!asleep) variable.cache.last_data_time = Date.now();
+    if (!asleep) variable.cache.last_data_time = realNow();
     this.sseManager?.setBackground(asleep);
   }
 

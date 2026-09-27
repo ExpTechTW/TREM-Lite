@@ -3,7 +3,7 @@
 // map flash (cross/box), the internet-error flag, and periodic NTP sync (Rust).
 import { LAST_DATA_TIMEOUT_ERROR } from "@/lib/constants";
 import { events } from "@/lib/events";
-import { syncNtp } from "@/lib/ntp";
+import { realNow, startClock } from "@/lib/ntp";
 import { ui } from "@/lib/variable.ui";
 import { variable } from "@/lib/variable";
 
@@ -23,7 +23,7 @@ export function initLoop(): void {
       variable.play_mode !== 2 &&
       variable.play_mode !== 3 &&
       !rtsAsleep() &&
-      Date.now() - variable.cache.last_data_time > LAST_DATA_TIMEOUT_ERROR;
+      realNow() - variable.cache.last_data_time > LAST_DATA_TIMEOUT_ERROR;
     if (err !== ui.internetError) {
       ui.internetError = err;
       events.emit("InternetErrorChange", err);
@@ -42,7 +42,5 @@ export function initLoop(): void {
     }, 500);
   });
 
-  // NTP sync now + every minute (done in Rust).
-  void syncNtp();
-  setInterval(() => void syncNtp(), 60000);
+  startClock();
 }
