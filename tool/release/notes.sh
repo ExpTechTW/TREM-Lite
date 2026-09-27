@@ -195,9 +195,7 @@ if [ "$kind" = "--release" ]; then
   since="$(git tag --list 'v[0-9]*' --sort=-v:refname |
     grep -v "^v${label}\$" | head -n 1 || true)"
 else
-  # Not `snapshot`: that tag holds the snapshot channel's manifest (see
-  # release.yml), not a build, and wherever it happens to point it is no base.
-  since="$(git describe --tags --abbrev=0 --exclude snapshot HEAD^ 2>/dev/null || true)"
+  since="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
 fi
 range="${since:+$since..}HEAD"
 

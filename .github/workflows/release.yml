@@ -434,24 +434,6 @@ jobs:
           BRANCH: ${{ github.event.repository.default_branch }}
         run: gh workflow run web.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
 
-      # The channel's first home, until every snapshot reads the one above:
-      # 26w40d to 26w40h read this release instead, and follow it here to a
-      # build that reads Pages. Remove this step and the `snapshot` release
-      # once they have.
-      - name: Point the old snapshot channel at it
-        if: needs.version.outputs.is_release == 'false'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.version.outputs.tag }}
-        run: |
-          if gh release view snapshot --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            mkdir -p /tmp/channel
-            curl -sfL -o /tmp/channel/latest.json \
-              "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/latest.json"
-            gh release upload snapshot /tmp/channel/latest.json --clobber --repo "$GITHUB_REPOSITORY"
-          fi
-
       # Here rather than in a workflow listening on `release`: GitHub starts no
       # run for an event its own GITHUB_TOKEN caused, and the snapshot was just
       # published with exactly that token. A release is published by a human,
