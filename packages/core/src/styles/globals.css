@@ -61,7 +61,6 @@
   --eew-warn: #ffaa00;
   --eew-alert: #ff0000;
   --eew-cancel: #000000;
-  --eew-s-rts: #0005d0;
 
   /* legacy-compatible aliases (names used by the old lang.js CSS-var injection) */
   --eew-s-warn: var(--eew-warn);
@@ -178,11 +177,6 @@
 .legacy-eew-panel.is-eew-cancel {
   border-color: var(--eew-s-cancel);
   background: var(--eew-s-cancel);
-}
-
-.legacy-eew-panel.is-eew-rts {
-  border-color: var(--eew-s-rts);
-  background: var(--eew-s-rts);
 }
 
 .legacy-eew-panel.is-trigger-low {
@@ -329,13 +323,6 @@
 
 .legacy-measure-suffix {
   margin-left: 4px;
-}
-
-.legacy-eew-nsspe {
-  margin-top: 6px;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 20px;
 }
 
 .legacy-trigger-grid {
@@ -554,10 +541,6 @@
 
 .legacy-eew-panel.is-pip.is-eew-cancel {
   background: var(--eew-s-cancel);
-}
-
-.legacy-eew-panel.is-pip.is-eew-rts {
-  background: var(--eew-s-rts);
 }
 
 .legacy-eew-panel.is-pip.is-trigger-low {

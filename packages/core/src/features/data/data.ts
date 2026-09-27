@@ -405,8 +405,7 @@ class DataManager {
         if (!eewLast[data.id]) {
           if ((EEW_AUTHOR as readonly string[]).includes(data.author)) {
             eewLast[data.id] = { last_time: currentTime, serial: 1 };
-            const method = data.author === "trem" ? "nsspe" : "eew";
-            cur.push({ ...data, method });
+            cur.push(data);
             events.emit("EewRelease", eventData);
           }
           return;
@@ -417,7 +416,6 @@ class DataManager {
         eewLast[data.id].serial = data.serial;
         if (data.status === 3) data.status3Time = currentTime;
         events.emit("EewUpdate", eventData);
-        if (data.eq.mag && data.eq.mag != 1) data.method = "eew";
         if (data.status == 3 && cur[existingIndex].status != data.status) {
           events.emit("EewCancel", eventData);
         }

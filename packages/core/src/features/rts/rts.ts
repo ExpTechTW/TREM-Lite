@@ -1,7 +1,7 @@
 // Ported from legacy/src/js/index/core/rts.js
 import { type ExpressionSpecification } from "maplibre-gl";
 
-import { COLOR, SHOW_REPORT, SHOW_TREM_EEW } from "@/lib/constants";
+import { COLOR, SHOW_REPORT } from "@/lib/constants";
 import { getConfig } from "@/lib/config";
 import { events } from "@/lib/events";
 import { setFeatures } from "@/lib/mapSource";
@@ -148,10 +148,7 @@ export function initRts(): void {
     const stationMeta = variable.station;
     const config = getConfig();
 
-    const eew_alert =
-      variable.data.eew.length && SHOW_TREM_EEW
-        ? true
-        : variable.data.eew.some((item) => item.author != "trem");
+    const eew_alert = variable.data.eew.length > 0;
 
     if (ans.data) {
       const rts = ans.data;

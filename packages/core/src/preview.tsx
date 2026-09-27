@@ -55,7 +55,6 @@ if (previewState === "trigger") {
     depth: 18,
     mag: 5.8,
     max: 6,
-    nsspe: false,
     time: new Date("2026-08-28T07:25:29+08:00").getTime(),
   };
 } else if (previewState === "rts") {

@@ -1,7 +1,7 @@
 // Ported from legacy/src/js/index/core/cross.js
 import { type ExpressionSpecification, type GeoJSONSource } from "maplibre-gl";
 
-import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
+import { COLOR } from "@/lib/constants";
 import { events } from "@/lib/events";
 import { variable } from "@/lib/variable";
 
@@ -13,7 +13,6 @@ interface CrossFeature {
   geometry: { type: "Point"; coordinates: [number, number] };
   properties: {
     no: number;
-    markerType: "cross" | "dot";
     maxIntensity: number;
     fillColor: string;
     strokeColor: string;
@@ -45,22 +44,17 @@ export function initCross(): void {
         "symbol-sort-key": ["get", "no"] as ExpressionSpecification,
         "symbol-z-order": "source",
         "icon-image": [
-          "case",
-          ["==", ["get", "markerType"], "dot"],
-          "dot",
-          [
-            "match",
-            ["get", "no"],
-            1,
-            "cross1",
-            2,
-            "cross2",
-            3,
-            "cross3",
-            4,
-            "cross4",
-            "cross",
-          ],
+          "match",
+          ["get", "no"],
+          1,
+          "cross1",
+          2,
+          "cross2",
+          3,
+          "cross3",
+          4,
+          "cross4",
+          "cross",
         ] as ExpressionSpecification,
         "icon-size": [
           "interpolate",
@@ -81,7 +75,7 @@ export function initCross(): void {
   });
 }
 
-/** Rebuild the EEW cross/dot markers. Imported by the eew & loop modules. */
+/** Rebuild the EEW cross markers. Imported by the eew & loop modules. */
 export function refresh_cross(show: boolean): void {
   const map = variable.map;
   if (!map) return;
@@ -103,9 +97,6 @@ export function refresh_cross(show: boolean): void {
   clean = true;
 
   for (const eew of variable.data.eew) {
-    if (!SHOW_TREM_EEW && eew.author == "trem") {
-      continue;
-    }
     const sWaveSource = map.getSource(`${eew.id}-s-wave`);
     const pWaveSource = map.getSource(`${eew.id}-p-wave`);
     if (eew.status == 3 || (sWaveSource && pWaveSource)) {
@@ -134,7 +125,6 @@ export function refresh_cross(show: boolean): void {
           },
           properties: {
             no: no < 5 ? no : 0,
-            markerType: eew.method == "eew" ? "cross" : "dot",
             maxIntensity: eew.eq.max,
             fillColor: COLOR.INTENSITY[eew.eq.max],
             strokeColor: COLOR.INTENSITY_TEXT[eew.eq.max],
@@ -150,29 +140,8 @@ export function refresh_cross(show: boolean): void {
     features: markerFeatures,
   } as unknown as SetDataArg);
 
-  if (!map.getLayer("dots")) {
-    map.addLayer({
-      id: "dots",
-      type: "circle",
-      source: "cross-geojson",
-      filter: ["==", ["get", "markerType"], "dot"] as ExpressionSpecification,
-      paint: {
-        "circle-radius": 10,
-        "circle-color": ["get", "fillColor"] as ExpressionSpecification,
-        "circle-stroke-width": 4,
-        "circle-stroke-color": ["get", "strokeColor"] as ExpressionSpecification,
-        "circle-opacity": ["get", "opacity"] as ExpressionSpecification,
-        "circle-stroke-opacity": ["get", "opacity"] as ExpressionSpecification,
-      },
-    });
-  }
-
   // Every moveLayer forces a style update and a full label placement, and this
-  // ran every 500 ms whether or not the order had changed. Moving them only
-  // when they are not already the top two ends in the same order.
-  const order = map.getLayersOrder();
-  if (order.at(-2) !== "cross" || order.at(-1) !== "dots") {
-    map.moveLayer("cross");
-    map.moveLayer("dots");
-  }
+  // ran every 500 ms whether or not the order had changed. Moving it only when
+  // it is not already on top ends in the same order.
+  if (map.getLayersOrder().at(-1) !== "cross") map.moveLayer("cross");
 }

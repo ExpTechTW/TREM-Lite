@@ -19,7 +19,6 @@ export const DEFAULT_CONFIG: TremConfig = {
     "show-window-report": true,
     "show-window-detect": true,
     "show-window-rts-intensity": true,
-    "early-warning-trem-eew": false,
     "other-auto-start": true,
     "other-tts": true,
     "graphics-block-auto-zoom": false,

@@ -8,7 +8,7 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 
-import { AUDIO, SHOW_TREM_EEW } from "./constants";
+import { AUDIO } from "./constants";
 import { getConfig } from "./config";
 import { events } from "./events";
 import { inTauri } from "./env";
@@ -40,11 +40,6 @@ function sfx(key: string): boolean {
   }
 }
 
-/** True when a TREM-authored EEW should be suppressed. */
-function suppressedTrem(author: string | undefined): boolean {
-  return !SHOW_TREM_EEW && author === "trem";
-}
-
 let bound = false;
 
 /** Subscribe the audio engine to the event bus. Call once at startup. */
@@ -53,7 +48,6 @@ export function initAudio(): void {
   bound = true;
 
   events.on("EewRelease", ({ data }) => {
-    if (suppressedTrem(data.author)) return;
     if (data.status == 1) {
       if (sfx("sound-effects-EEW2")) enqueue("eew", AUDIO.ALERT);
     } else {
@@ -61,13 +55,11 @@ export function initAudio(): void {
     }
   });
 
-  events.on("EewAlert", ({ data }) => {
-    if (suppressedTrem(data.author)) return;
+  events.on("EewAlert", () => {
     if (sfx("sound-effects-EEW2")) enqueue("eew", AUDIO.ALERT);
   });
 
-  events.on("EewUpdate", ({ data }) => {
-    if (suppressedTrem(data.author)) return;
+  events.on("EewUpdate", () => {
     clearQueue("update");
     if (sfx("sound-effects-Update")) enqueue("update", AUDIO.UPDATE);
   });

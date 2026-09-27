@@ -30,15 +30,13 @@ export function initLoop(): void {
     }
   }, 1000);
 
-  // 單一 500ms 閃爍節拍：直接刷新 cross/box，並廣播 Flash 給其他模組（如 eew 波前），
-  // 取代各自重複的計時器。
+  // 單一 500ms 閃爍節拍：刷新 cross/box，取代各自重複的計時器。
   events.on("MapLoad", () => {
     if (mapInitialized) return;
     mapInitialized = true;
     if (mapLoopInterval) clearInterval(mapLoopInterval);
     mapLoopInterval = setInterval(() => {
       flash = !flash;
-      events.emit("Flash", flash);
       refresh_cross(flash);
       refresh_box(flash);
     }, 500);

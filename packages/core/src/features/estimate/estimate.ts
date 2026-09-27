@@ -1,7 +1,7 @@
 // Ported from legacy/src/js/index/core/estimate.js
 import type { ExpressionSpecification } from "maplibre-gl";
 
-import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
+import { COLOR } from "@/lib/constants";
 import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
 import type { Ans, EewData } from "@/lib/types";
@@ -25,10 +25,6 @@ interface MergedArea {
 const alertedCities = new Set<string>();
 
 async function updateEewArea(ans: Ans<EewData>): Promise<void> {
-  if (!SHOW_TREM_EEW && ans.data.author === "trem") {
-    return;
-  }
-
   // The ML model runs in Rust (src-tauri/src/math.rs, ml_intensity.rs).
   let area: EewArea["area"];
   try {

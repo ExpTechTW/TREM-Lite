@@ -16,7 +16,7 @@
 // an earthquake listed for 240 s after its origin.
 import type { ExpressionSpecification } from "maplibre-gl";
 
-import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
+import { COLOR } from "@/lib/constants";
 import { events } from "@/lib/events";
 import type { BoxFeature as BinBoxFeature } from "@/lib/bindata";
 import type { EewData, RtsData, RtsEq } from "@/lib/types";
@@ -167,15 +167,6 @@ export function refresh_box(show: boolean): void {
   // No boxes to show, so nothing to stand in for them either.
   if (!rts?.box || !Object.keys(rts.box).length) {
     clearBoxes();
-    clearEqWaves();
-    return;
-  }
-
-  // A TREM EEW flashes its own faint rings (eew.ts) while its display is off.
-  const trem_alert = variable.data.eew.some((eew) => eew.author == "trem");
-  if (!SHOW_TREM_EEW && trem_alert) {
-    box_alert = false;
-    if (map) setFeatures(map, "box-geojson", []);
     clearEqWaves();
     return;
   }

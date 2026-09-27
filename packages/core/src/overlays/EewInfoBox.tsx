@@ -70,20 +70,16 @@ function EewDetails({ eew }: { eew: EewDisplay }) {
           <span className="tabular-nums">{formatTime(eew.time)}</span>
           <span>發震</span>
         </div>
-        {eew.nsspe ? (
-          <div className="legacy-eew-nsspe">NSSPE 無震源參數推算</div>
-        ) : (
-          <div className="legacy-eew-mag-depth">
-            <Measurement label="規模">
-              <span className="legacy-measure-prefix">𝖬</span>
-              {eew.mag.toFixed(1)}
-            </Measurement>
-            <Measurement label="深度">
-              {eew.depth}
-              <span className="legacy-measure-suffix">㎞</span>
-            </Measurement>
-          </div>
-        )}
+        <div className="legacy-eew-mag-depth">
+          <Measurement label="規模">
+            <span className="legacy-measure-prefix">𝖬</span>
+            {eew.mag.toFixed(1)}
+          </Measurement>
+          <Measurement label="深度">
+            {eew.depth}
+            <span className="legacy-measure-suffix">㎞</span>
+          </Measurement>
+        </div>
       </div>
     </div>
   );
@@ -101,7 +97,6 @@ function Measurement({ label, children }: { label: string; children: React.React
 function unitPrefix(eew: EewDisplay): string {
   if (eew.statusClass === "eew-alert") return "緊急地震速報 ";
   if (eew.statusClass === "eew-cancel") return "取消報 ";
-  if (eew.statusClass === "eew-rts") return "單點地震檢知 ";
   return "地震速報 ";
 }
 

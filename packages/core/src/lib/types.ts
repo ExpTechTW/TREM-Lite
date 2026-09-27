@@ -18,7 +18,6 @@ export interface EewData {
   status: number; // 0 warn, 1 alert, 3 cancel
   final?: number;
   eq: Eq;
-  method?: string;
   time?: number;
   dist?: { p_dist: number; s_dist: number; s_t: number };
   // lifecycle flags set by DataManager
@@ -96,8 +95,6 @@ export type TremEvents = {
   MapLoad: void;
   /** 自動聚焦鎖定狀態改變（使用者手動平移/縮放 → true；按定位鈕 → false）。 */
   FocusLockChange: boolean;
-  /** 500ms 中央閃爍節拍（cross/box/nsspe 波前共用，取代各自的計時器）。 */
-  Flash: boolean;
   /** EEW 資訊卡（ui.currentEew）內容更新，供 EewInfoBox 事件驅動刷新。 */
   EewDisplayUpdate: void;
   /** 斷線旗標（ui.internetError）改變，供 WarningBanners 事件驅動刷新。 */

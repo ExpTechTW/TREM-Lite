@@ -55,18 +55,12 @@ export const COLOR = {
     },
     P: "#00CACA",
   },
-  TREM: {
-    S: "#beff0c",
-    P: "#beff0c",
-  },
   BOX: {
     0: "#00DB00",
     1: "#EAC100",
     2: "#FF0000",
   } as Record<number, string>,
 } as const;
-
-export const SHOW_TREM_EEW = false;
 
 /** Logical clip names — playback happens in Rust (see lib/audioClient.ts). */
 export const AUDIO = {
@@ -95,7 +89,8 @@ export const HTTP_TIMEOUT = {
 } as const;
 
 export const LAST_DATA_TIMEOUT_ERROR = 3000;
-export const EEW_AUTHOR = ["trem", "cwa"] as const;
+/** The EEWs this app shows: CWA's. The feed also carries other agencies'. */
+export const EEW_AUTHOR = ["cwa"] as const;
 export const REPORT_LIMIT = 150;
 
 export const MAP = {

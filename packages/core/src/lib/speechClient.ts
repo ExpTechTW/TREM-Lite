@@ -1,7 +1,7 @@
 /** zh-TW speech announcements corresponding to the legacy speak-tts wiring. */
 import { extractLocation, int_to_string, search_loc_name } from "@/domain/utils";
 
-import { INTENSITY_LIST, SHOW_TREM_EEW } from "./constants";
+import { INTENSITY_LIST } from "./constants";
 import { getConfig } from "./config";
 import { events } from "./events";
 import type { ReportListItem } from "./types";
@@ -133,7 +133,6 @@ export function initSpeech(): void {
   variable.tts = enabled();
 
   events.on("EewRelease", ({ data }) => {
-    if (!SHOW_TREM_EEW && data.author === "trem") return;
     cache.set(data.id, {
       lastLoc: "",
       lastIntensity: -1,
@@ -142,7 +141,6 @@ export function initSpeech(): void {
     });
   });
   events.on("EewUpdate", ({ data }) => {
-    if (!SHOW_TREM_EEW && data.author === "trem") return;
     const state = cache.get(data.id);
     if (state) {
       state.loc = data.eq.loc;

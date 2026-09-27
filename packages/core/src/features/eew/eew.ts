@@ -8,9 +8,9 @@ import type { GeoJSONSource } from "maplibre-gl";
 
 import { refresh_cross } from "@/features/cross/cross";
 import { mouseDown } from "@/features/focus/focus";
-import { COLOR, SHOW_TREM_EEW } from "@/lib/constants";
+import { COLOR } from "@/lib/constants";
 import { events } from "@/lib/events";
-import { replaceFeatures, setFeatures } from "@/lib/mapSource";
+import { replaceFeatures } from "@/lib/mapSource";
 import { now } from "@/lib/ntp";
 import type { Ans, EewData } from "@/lib/types";
 import { ui } from "@/lib/variable.ui";
@@ -18,9 +18,8 @@ import { variable } from "@/lib/variable";
 
 import { createCircleFeature, waveCalculator } from "./waves";
 
-type CachedEew = EewData & { cacheTime: number; rts?: boolean };
+type CachedEew = EewData & { cacheTime: number };
 
-let flash = false;
 let eew_rotation = 0;
 let draw_lock = false;
 let initialized = false;
@@ -50,8 +49,6 @@ function createEewLayer(ans: Ans<EewData>): void {
     map.addSource(`${ans.data.id}-s-wave-bg`, { type: "geojson", data: fc(), tolerance: 1, buffer: 128 });
   }
 
-  const isTrem = !SHOW_TREM_EEW && ans.data.author == "trem";
-
   if (!map.getLayer(`${ans.data.id}-p-wave-outline`)) {
     map.addLayer({
       id: `${ans.data.id}-p-wave-outline`,
@@ -59,16 +56,12 @@ function createEewLayer(ans: Ans<EewData>): void {
       source: `${ans.data.id}-p-wave`,
       paint: {
         "line-color": COLOR.EEW.P,
-        "line-width": isTrem ? 0.2 : 1,
+        "line-width": 1,
       },
     });
   }
 
-  const color = isTrem
-    ? COLOR.TREM.S
-    : ans.data.status == 1
-      ? COLOR.EEW.S.ALERT
-      : COLOR.EEW.S.WARN;
+  const color = ans.data.status == 1 ? COLOR.EEW.S.ALERT : COLOR.EEW.S.WARN;
 
   if (!map.getLayer(`${ans.data.id}-s-wave-outline`)) {
     map.addLayer({
@@ -77,7 +70,7 @@ function createEewLayer(ans: Ans<EewData>): void {
       source: `${ans.data.id}-s-wave`,
       paint: {
         "line-color": color,
-        "line-width": isTrem ? 0.6 : 2,
+        "line-width": 2,
       },
     });
   }
@@ -89,8 +82,8 @@ function createEewLayer(ans: Ans<EewData>): void {
         type: "fill",
         source: `${ans.data.id}-s-wave-bg`,
         paint: {
-          "fill-color": isTrem ? COLOR.TREM.P : color,
-          "fill-opacity": isTrem ? 0 : 0.25,
+          "fill-color": color,
+          "fill-opacity": 0.25,
         },
       },
       "county",
@@ -124,47 +117,27 @@ function removeEewLayersAndSources(eewId: string): void {
  * `rts` imports this. `rotation` advances to the next EEW when true.
  */
 export function show_eew(rotation = true): void {
-  let count = 0;
+  const count = variable.data.eew.length;
   const eew_list = Object.keys(eew_cache);
-
-  for (const eew of variable.data.eew) {
-    if (!SHOW_TREM_EEW && eew.author == "trem") continue;
-    count++;
-  }
 
   if (count && eew_list.length) {
     variable.cache.show_eew_box = true;
     ui.currentTrigger = null;
 
-    if (eew_cache[eew_list[eew_rotation]]) {
-      if (!SHOW_TREM_EEW && eew_cache[eew_list[eew_rotation]].author == "trem") {
-        eew_rotation++;
-        if (eew_rotation >= eew_list.length) eew_rotation = 0;
-      } else {
-        const eew = eew_cache[eew_list[eew_rotation]];
-        const statusClass =
-          eew.status == 3
-            ? "eew-cancel"
-            : eew.status == 1
-              ? "eew-alert"
-              : eew.author == "trem" && !eew.rts
-                ? "eew-rts"
-                : "eew-warn";
-
-        ui.currentEew = {
-          id: eew.id,
-          statusClass,
-          serial: eew.serial,
-          final: !!eew.final,
-          unitText: `${eew.author.toUpperCase()}${count == 1 ? "" : ` ${eew_rotation + 1}/${count}`}`,
-          loc: eew.eq.loc,
-          depth: eew.eq.depth,
-          mag: eew.eq.mag,
-          max: eew.eq.max,
-          nsspe: eew.eq.mag == 1,
-          time: eew.eq.time,
-        };
-      }
+    const eew = eew_cache[eew_list[eew_rotation]];
+    if (eew) {
+      ui.currentEew = {
+        id: eew.id,
+        statusClass: eew.status == 3 ? "eew-cancel" : eew.status == 1 ? "eew-alert" : "eew-warn",
+        serial: eew.serial,
+        final: !!eew.final,
+        unitText: `${eew.author.toUpperCase()}${count == 1 ? "" : ` ${eew_rotation + 1}/${count}`}`,
+        loc: eew.eq.loc,
+        depth: eew.eq.depth,
+        mag: eew.eq.mag,
+        max: eew.eq.max,
+        time: eew.eq.time,
+      };
       variable.last_rotation = eew_rotation;
     }
 
@@ -216,8 +189,7 @@ export function initEew(): void {
       map.removeLayer(`${ans.data.id}-s-wave-background`);
     }
 
-    const isTrem = !SHOW_TREM_EEW && ans.data.author == "trem";
-    const color = isTrem ? COLOR.TREM.S : COLOR.EEW.S.ALERT;
+    const color = COLOR.EEW.S.ALERT;
 
     map.addLayer({
       id: `${ans.data.id}-s-wave-outline`,
@@ -225,7 +197,7 @@ export function initEew(): void {
       source: `${ans.data.id}-s-wave`,
       paint: {
         "line-color": color,
-        "line-width": isTrem ? 0.6 : 2,
+        "line-width": 2,
       },
     });
 
@@ -236,7 +208,7 @@ export function initEew(): void {
         source: `${ans.data.id}-s-wave-bg`,
         paint: {
           "fill-color": color,
-          "fill-opacity": isTrem ? 0 : 0.25,
+          "fill-opacity": 0.25,
         },
       },
       "county",
@@ -273,11 +245,6 @@ export function initEew(): void {
     }
   }, 60000);
 
-  // nsspe 波前閃爍跟隨中央 Flash 節拍（loop.ts），不另開計時器。
-  events.on("Flash", (v) => {
-    flash = v;
-  });
-
   // Animate the P/S wavefronts.
   setInterval(() => {
     if (draw_lock) return;
@@ -287,39 +254,10 @@ export function initEew(): void {
     if (!calculator) return; // travel-time table still loading
     draw_lock = true;
 
-    const alert = variable.data.eew.some((eew) => eew.author != "trem");
-
     // 拖動地圖時不畫 S 波背景圈，避免拖動中閃爍（對應舊版 FocusManager.mouseDown()）。
     const isMouseDown = mouseDown();
 
     for (const eew of variable.data.eew) {
-      if (!SHOW_TREM_EEW && eew.author == "trem") {
-        const sWaveSource = getGeoSource(`${eew.id}-s-wave`);
-        const sWaveSourceBg = getGeoSource(`${eew.id}-s-wave-bg`);
-        const pWaveSource = getGeoSource(`${eew.id}-p-wave`);
-        if (sWaveSource && sWaveSourceBg && pWaveSource) {
-          const center: [number, number] = [eew.eq.lon, eew.eq.lat];
-          const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
-
-          if (!alert && flash) {
-            const sRing = createCircleFeature(center, dist.s_dist);
-            replaceFeatures(map, `${eew.id}-s-wave`, [sRing]);
-            replaceFeatures(map, `${eew.id}-s-wave-bg`, isMouseDown ? [] : [sRing]);
-            replaceFeatures(map, `${eew.id}-p-wave`, [createCircleFeature(center, dist.p_dist)]);
-          } else {
-            // Emptied on every tick of the hidden half of each blink, and on
-            // every tick while a CWA EEW is up; only the first one changes
-            // anything.
-            setFeatures(map, `${eew.id}-s-wave`, []);
-            setFeatures(map, `${eew.id}-s-wave-bg`, []);
-            setFeatures(map, `${eew.id}-p-wave`, []);
-          }
-        }
-        continue;
-      }
-
-      if (eew.eq.mag == 1) continue;
-
       const sWaveSource = getGeoSource(`${eew.id}-s-wave`);
       const sWaveSourceBg = getGeoSource(`${eew.id}-s-wave-bg`);
       const pWaveSource = getGeoSource(`${eew.id}-p-wave`);

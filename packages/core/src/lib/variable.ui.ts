@@ -6,7 +6,7 @@
 /** The single EEW the rotation logic currently wants the info box to display. */
 export interface EewDisplay {
   id: string;
-  /** CSS state class: eew-cancel | eew-alert | eew-rts | eew-warn. */
+  /** CSS state class: eew-cancel | eew-alert | eew-warn. */
   statusClass: string;
   serial: number;
   final: boolean;
@@ -16,8 +16,6 @@ export interface EewDisplay {
   depth: number;
   mag: number;
   max: number;
-  /** NSSPE placeholder (mag == 1) footer flag. */
-  nsspe: boolean;
   /** Origin time (ms) — React formats it. */
   time: number;
 }

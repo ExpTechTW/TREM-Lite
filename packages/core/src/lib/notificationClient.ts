@@ -6,7 +6,6 @@ import {
 } from "@tauri-apps/plugin-notification";
 
 import { formatTimestamp, int_to_string, search_loc_name } from "@/domain/utils";
-import { SHOW_TREM_EEW } from "./constants";
 import { inTauri } from "./env";
 import { events } from "./events";
 import type { EewData, ReportListItem } from "./types";
@@ -55,7 +54,6 @@ export function initNotifications(): void {
   initialized = true;
 
   const eewNotice = (data: EewData) => {
-    if (!SHOW_TREM_EEW && data.author === "trem") return;
     const kind = data.status === 1 ? "🚨 緊急地震速報" : "⚠️ 地震速報";
     void sendDesktopNotification(
       `${kind} ${data.serial}報`,
