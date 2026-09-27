@@ -3,8 +3,13 @@
  * EEW map driver — draws per-EEW P/S great-circle wavefronts and feeds the
  * (now React) info box via `ui.currentEew`. DOM writes live in React while
  * PiP, notifications and speech are handled by their cross-window clients.
+ *
+ * Each EEW's rings share one GeoJSON source, `waveSource(id)`: a P and an S
+ * polygon, told apart by `ring`. Its three layers filter theirs out — the S
+ * fill also reads `bg`, off while the map is dragged — so a wavefront tick is
+ * one setData per EEW, and the S ring is tiled once, not twice.
  */
-import type { GeoJSONSource } from "maplibre-gl";
+import type { ExpressionSpecification, Map as MlMap } from "maplibre-gl";
 
 import { refresh_cross } from "@/features/cross/cross";
 import { mouseDown } from "@/features/focus/focus";
@@ -16,100 +21,104 @@ import type { Ans, EewData } from "@/lib/types";
 import { ui } from "@/lib/variable.ui";
 import { variable } from "@/lib/variable";
 
-import { createCircleFeature, waveCalculator } from "./waves";
+import { createCircleFeature, waveCalculator, waveSource } from "./waves";
 
 type CachedEew = EewData & { cacheTime: number };
 
 let eew_rotation = 0;
-let draw_lock = false;
 let initialized = false;
 const eew_cache: Record<string, CachedEew> = {};
 const EEW_CACHE_TTL = 600000; // 10 分鐘
 
-/** Empty / wrapped GeoJSON helpers. */
-function fc(features: GeoJSON.Feature[] = []): GeoJSON.FeatureCollection {
-  return { type: "FeatureCollection", features };
-}
+const IS_P: ExpressionSpecification = ["==", ["get", "ring"], "p"];
+const IS_S: ExpressionSpecification = ["==", ["get", "ring"], "s"];
+const IS_S_BG: ExpressionSpecification = ["all", IS_S, ["==", ["get", "bg"], true]];
 
-function getGeoSource(id: string): GeoJSONSource | undefined {
-  return variable.map?.getSource(id) as GeoJSONSource | undefined;
+/** The S ring's outline and, beneath the county borders, its fill. */
+function addSLayers(map: MlMap, id: string, color: string): void {
+  map.addLayer({
+    id: `${id}-s-wave-outline`,
+    type: "line",
+    source: waveSource(id),
+    filter: IS_S,
+    paint: { "line-color": color, "line-width": 2 },
+  });
+  map.addLayer(
+    {
+      id: `${id}-s-wave-background`,
+      type: "fill",
+      source: waveSource(id),
+      filter: IS_S_BG,
+      paint: { "fill-color": color, "fill-opacity": 0.25 },
+    },
+    "county",
+  );
 }
 
 function createEewLayer(ans: Ans<EewData>): void {
   const map = variable.map;
   if (!map) return;
+  const id = ans.data.id;
 
-  if (!map.getSource(`${ans.data.id}-s-wave`)) {
-    map.addSource(`${ans.data.id}-s-wave`, { type: "geojson", data: fc(), tolerance: 1, buffer: 128 });
-  }
-  if (!map.getSource(`${ans.data.id}-p-wave`)) {
-    map.addSource(`${ans.data.id}-p-wave`, { type: "geojson", data: fc(), tolerance: 1, buffer: 128 });
-  }
-  if (!map.getSource(`${ans.data.id}-s-wave-bg`)) {
-    map.addSource(`${ans.data.id}-s-wave-bg`, { type: "geojson", data: fc(), tolerance: 1, buffer: 128 });
-  }
-
-  if (!map.getLayer(`${ans.data.id}-p-wave-outline`)) {
-    map.addLayer({
-      id: `${ans.data.id}-p-wave-outline`,
-      type: "line",
-      source: `${ans.data.id}-p-wave`,
-      paint: {
-        "line-color": COLOR.EEW.P,
-        "line-width": 1,
-      },
+  if (!map.getSource(waveSource(id))) {
+    map.addSource(waveSource(id), {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+      tolerance: 1,
+      buffer: 128,
     });
   }
-
-  const color = ans.data.status == 1 ? COLOR.EEW.S.ALERT : COLOR.EEW.S.WARN;
-
-  if (!map.getLayer(`${ans.data.id}-s-wave-outline`)) {
+  if (!map.getLayer(`${id}-p-wave-outline`)) {
     map.addLayer({
-      id: `${ans.data.id}-s-wave-outline`,
+      id: `${id}-p-wave-outline`,
       type: "line",
-      source: `${ans.data.id}-s-wave`,
-      paint: {
-        "line-color": color,
-        "line-width": 2,
-      },
+      source: waveSource(id),
+      filter: IS_P,
+      paint: { "line-color": COLOR.EEW.P, "line-width": 1 },
     });
   }
-
-  if (!map.getLayer(`${ans.data.id}-s-wave-background`)) {
-    map.addLayer(
-      {
-        id: `${ans.data.id}-s-wave-background`,
-        type: "fill",
-        source: `${ans.data.id}-s-wave-bg`,
-        paint: {
-          "fill-color": color,
-          "fill-opacity": 0.25,
-        },
-      },
-      "county",
-    );
+  if (!map.getLayer(`${id}-s-wave-outline`)) {
+    addSLayers(map, id, ans.data.status == 1 ? COLOR.EEW.S.ALERT : COLOR.EEW.S.WARN);
   }
+  startWaves();
 }
 
 function removeEewLayersAndSources(eewId: string): void {
   const map = variable.map;
   if (!map) return;
+  for (const layer of [`${eewId}-p-wave-outline`, `${eewId}-s-wave-outline`, `${eewId}-s-wave-background`]) {
+    if (map.getLayer(layer)) map.removeLayer(layer);
+  }
+  if (map.getSource(waveSource(eewId))) map.removeSource(waveSource(eewId));
+}
 
-  const layerIds = [
-    `${eewId}-p-wave-outline`,
-    `${eewId}-s-wave-outline`,
-    `${eewId}-s-wave-background`,
-  ];
+let waves: ReturnType<typeof setInterval> | null = null;
 
-  const sourceIds = [`${eewId}-s-wave`, `${eewId}-s-wave-bg`, `${eewId}-p-wave`];
-
-  layerIds.forEach((layerId) => {
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
-  });
-
-  sourceIds.forEach((sourceId) => {
-    if (map.getSource(sourceId)) map.removeSource(sourceId);
-  });
+/** Grow every EEW's rings, every 100 ms while there is one to grow. */
+function startWaves(): void {
+  waves ??= setInterval(() => {
+    const map = variable.map;
+    if (!map || !variable.data.eew.length) {
+      if (waves) clearInterval(waves);
+      waves = null;
+      return;
+    }
+    const calculator = waveCalculator();
+    if (!calculator) return; // travel-time table still loading
+    // 拖動地圖時不畫 S 波背景圈，避免拖動中閃爍（對應舊版 FocusManager.mouseDown()）。
+    const bg = !mouseDown();
+    for (const eew of variable.data.eew) {
+      if (!map.getSource(waveSource(eew.id))) continue;
+      const center: [number, number] = [eew.eq.lon, eew.eq.lat];
+      const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
+      eew.dist = dist;
+      const p = createCircleFeature(center, dist.p_dist);
+      const s = createCircleFeature(center, dist.s_dist);
+      p.properties = { ring: "p" };
+      s.properties = { ring: "s", bg };
+      replaceFeatures(map, waveSource(eew.id), [p, s]);
+    }
+  }, 100);
 }
 
 /**
@@ -180,39 +189,12 @@ export function initEew(): void {
 
   events.on("EewAlert", (ans) => {
     const map = variable.map;
-    if (!map) return;
-
-    if (map.getLayer(`${ans.data.id}-s-wave-outline`)) {
-      map.removeLayer(`${ans.data.id}-s-wave-outline`);
+    if (!map || !map.getSource(waveSource(ans.data.id))) return;
+    // Removed and added again, not recoloured: they go back on top, as before.
+    for (const layer of [`${ans.data.id}-s-wave-outline`, `${ans.data.id}-s-wave-background`]) {
+      if (map.getLayer(layer)) map.removeLayer(layer);
     }
-    if (map.getLayer(`${ans.data.id}-s-wave-background`)) {
-      map.removeLayer(`${ans.data.id}-s-wave-background`);
-    }
-
-    const color = COLOR.EEW.S.ALERT;
-
-    map.addLayer({
-      id: `${ans.data.id}-s-wave-outline`,
-      type: "line",
-      source: `${ans.data.id}-s-wave`,
-      paint: {
-        "line-color": color,
-        "line-width": 2,
-      },
-    });
-
-    map.addLayer(
-      {
-        id: `${ans.data.id}-s-wave-background`,
-        type: "fill",
-        source: `${ans.data.id}-s-wave-bg`,
-        paint: {
-          "fill-color": color,
-          "fill-opacity": 0.25,
-        },
-      },
-      "county",
-    );
+    addSLayers(map, ans.data.id, COLOR.EEW.S.ALERT);
   });
 
   events.on("EewUpdate", (ans) => {
@@ -244,38 +226,6 @@ export function initEew(): void {
       }
     }
   }, 60000);
-
-  // Animate the P/S wavefronts.
-  setInterval(() => {
-    if (draw_lock) return;
-    const map = variable.map;
-    if (!map) return;
-    const calculator = waveCalculator();
-    if (!calculator) return; // travel-time table still loading
-    draw_lock = true;
-
-    // 拖動地圖時不畫 S 波背景圈，避免拖動中閃爍（對應舊版 FocusManager.mouseDown()）。
-    const isMouseDown = mouseDown();
-
-    for (const eew of variable.data.eew) {
-      const sWaveSource = getGeoSource(`${eew.id}-s-wave`);
-      const sWaveSourceBg = getGeoSource(`${eew.id}-s-wave-bg`);
-      const pWaveSource = getGeoSource(`${eew.id}-p-wave`);
-
-      if (sWaveSource && sWaveSourceBg && pWaveSource) {
-        const center: [number, number] = [eew.eq.lon, eew.eq.lat];
-        const dist = calculator.psWaveDist(eew.eq.depth, eew.eq.time, now());
-        eew.dist = dist;
-        // One S ring for both sources: it used to be built twice from the
-        // same arguments on every tick.
-        const sRing = createCircleFeature(center, dist.s_dist);
-        replaceFeatures(map, `${eew.id}-s-wave`, [sRing]);
-        replaceFeatures(map, `${eew.id}-s-wave-bg`, isMouseDown ? [] : [sRing]);
-        replaceFeatures(map, `${eew.id}-p-wave`, [createCircleFeature(center, dist.p_dist)]);
-      }
-    }
-    draw_lock = false;
-  }, 100);
 
   // Rotate the info box through the active EEWs.
   setInterval(() => show_eew(), 5000);

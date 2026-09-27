@@ -47,6 +47,9 @@ for (let i = 0; i <= RING_STEPS; i++) {
  * grouping the per-vertex version had — `a + b·cos θ` is `sin φ1·cos δ +
  * (cos φ1·sin δ)·cos θ` — so every coordinate comes out bit-identical.
  */
+/** The one source an EEW's P and S rings are drawn from (eew.ts; cross.ts reads it). */
+export const waveSource = (id: string) => `${id}-wave`;
+
 export function createCircleFeature(center: [number, number], radius: number): GeoJSON.Feature<GeoJSON.Polygon> {
   const delta = radius / 6371;
   const phi1 = (center[1] * Math.PI) / 180;

@@ -1,6 +1,7 @@
 // Ported from legacy/src/js/index/core/cross.js
 import { type ExpressionSpecification, type GeoJSONSource } from "maplibre-gl";
 
+import { waveSource } from "@/features/eew/waves";
 import { COLOR } from "@/lib/constants";
 import { events } from "@/lib/events";
 import { variable } from "@/lib/variable";
@@ -97,18 +98,11 @@ export function refresh_cross(show: boolean): void {
   clean = true;
 
   for (const eew of variable.data.eew) {
-    const sWaveSource = map.getSource(`${eew.id}-s-wave`);
-    const pWaveSource = map.getSource(`${eew.id}-p-wave`);
-    if (eew.status == 3 || (sWaveSource && pWaveSource)) {
-      eew_list.push(eew);
-    }
+    if (eew.status == 3 || map.getSource(waveSource(eew.id))) eew_list.push(eew);
   }
 
   for (const eew of eew_list) {
-    const sWaveSource = map.getSource(`${eew.id}-s-wave`);
-    const pWaveSource = map.getSource(`${eew.id}-p-wave`);
-
-    if (eew.status == 3 || (sWaveSource && pWaveSource)) {
+    if (eew.status == 3 || map.getSource(waveSource(eew.id))) {
       const existingIndex = eew_list.findIndex((item) => item.id === eew.id);
       let no = existingIndex;
       if (eew_list.length > 1) {
