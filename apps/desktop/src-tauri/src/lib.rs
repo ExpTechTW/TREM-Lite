@@ -96,9 +96,10 @@ pub fn run() {
                 );
                 let version = MenuItem::with_id(app, "version", &name, false, None::<&str>)?;
                 let separator = PredefinedMenuItem::separator(app)?;
+                let show = MenuItem::with_id(app, "show", "顯示視窗", true, None::<&str>)?;
                 let restart = MenuItem::with_id(app, "restart", "重新啟動", true, None::<&str>)?;
                 let quit = MenuItem::with_id(app, "quit", "結束程式", true, None::<&str>)?;
-                let menu = Menu::with_items(app, &[&version, &separator, &restart, &quit])?;
+                let menu = Menu::with_items(app, &[&version, &separator, &show, &restart, &quit])?;
                 let icon = app
                     .default_window_icon()
                     .cloned()
@@ -110,6 +111,7 @@ pub fn run() {
                     .menu(&menu)
                     .show_menu_on_left_click(false)
                     .on_menu_event(|app, event| match event.id().as_ref() {
+                        "show" => window::focus_main(app),
                         "restart" => app.restart(),
                         "quit" => app.exit(0),
                         _ => {}
