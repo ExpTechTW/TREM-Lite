@@ -7,11 +7,14 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
 import { inTauri } from "./env";
+import { events } from "./events";
 import type { EewDisplay, RtsTriggerDisplay } from "./variable.ui";
 import { ui } from "./variable.ui";
 import { ensurePipWindow } from "./windows";
 
 let last = "";
+/** The PiP window was shown and not hidden since: only then is there anything to hide. */
+let shown = false;
 let initialized = false;
 let pipReady = false;
 let publishRevision = 0;
@@ -51,7 +54,7 @@ async function publish(force = false): Promise<PublishedPipState | null> {
   // Content updates and window visibility are separate in the legacy app.
   // Receiving an EEW/RTS payload must not make PiP appear while the main window
   // is visible (or merely because replay advanced to another frame).
-  if (payload.noEew) await invoke("pip_hide").catch(() => {});
+  if (payload.noEew) hidePip();
   return { revision, noEew: payload.noEew, serialized };
 }
 
@@ -129,14 +132,21 @@ export async function showPipForCurrentAlert(
       return false;
     }
     await invoke("pip_show");
+    shown = true;
     return true;
   } catch {
     return false;
   }
 }
 
+/**
+ * Hide the PiP window, if it is showing. The main window's visibility check
+ * calls this every 500 ms; `pip_hide` runs on the main thread, so it is only
+ * sent when there is a window up to hide.
+ */
 export function hidePip(): void {
-  if (!inTauri) return;
+  if (!inTauri || !shown) return;
+  shown = false;
   void invoke("pip_hide").catch(() => {});
 }
 
@@ -163,5 +173,7 @@ export function initPipBridge(): void {
     .then(() => ensurePipWindow())
     .then(() => emit("pip-sync-request"))
     .catch(() => {});
-  window.setInterval(() => void publish(), 500);
+  // What PiP shows (ui.currentEew / currentTrigger) changes only where
+  // EewDisplayUpdate is emitted; publishing then replaces a 500 ms poll.
+  events.on("EewDisplayUpdate", () => void publish());
 }

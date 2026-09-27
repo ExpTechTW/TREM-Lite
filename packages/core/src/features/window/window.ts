@@ -4,7 +4,6 @@
  * settings and bring the main window back to the foreground.
  */
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { getConfig } from "@/lib/config";
 import { inTauri } from "@/lib/env";
@@ -51,8 +50,7 @@ function focusMain(critical = false): void {
 
 async function isMainUnavailable(): Promise<boolean> {
   if (!inTauri) return false;
-  const current = getCurrentWindow();
-  const [visible, minimized] = await Promise.all([current.isVisible(), current.isMinimized()]);
+  const [visible, minimized] = await invoke<[boolean, boolean]>("window_state", { label: "main" });
   return !visible || minimized;
 }
 

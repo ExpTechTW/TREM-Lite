@@ -23,6 +23,19 @@ pub fn window_focus(app: tauri::AppHandle) {
     focus_main(&app);
 }
 
+/// Whether a window is visible, and whether it is minimised, in one call: the
+/// main window polls this every 500 ms (features/window/window.ts), which as
+/// two JS API calls cost two round trips to the main thread each time.
+#[tauri::command]
+pub fn window_state(app: tauri::AppHandle, label: String) -> (bool, bool) {
+    window(&app, &label).map_or((false, false), |w| {
+        (
+            w.is_visible().unwrap_or(false),
+            w.is_minimized().unwrap_or(false),
+        )
+    })
+}
+
 /// Flash the taskbar / bounce the dock to grab attention.
 #[tauri::command]
 pub fn window_request_attention(app: tauri::AppHandle, critical: bool) {

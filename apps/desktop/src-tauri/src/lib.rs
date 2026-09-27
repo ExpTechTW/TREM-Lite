@@ -172,6 +172,7 @@ pub fn run() {
             window::window_focus,
             window::window_request_attention,
             window::window_hide,
+            window::window_state,
             window::window_show,
             window::pip_show,
             window::pip_hide,
