@@ -621,10 +621,15 @@
 }
 
 @media (max-width: 980px) {
+  /* No height cap: capped at 147 px, the magnitude and depth spilled below
+     the card. It grows instead, and the readouts under it sit 1.5rem lower. */
   .legacy-eew-panel:not(.is-pip) {
     box-sizing: content-box;
     min-width: 17rem;
-    max-height: 147px;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-details {
+    height: auto;
   }
 
   .legacy-eew-panel:not(.is-pip) .legacy-eew-title {
@@ -635,7 +640,6 @@
   .legacy-eew-panel:not(.is-pip) .legacy-eew-body {
     min-width: 0;
     min-height: 85px;
-    max-height: 85px;
     gap: 0;
   }
 
@@ -666,7 +670,7 @@
   }
 
   .legacy-station-readout {
-    top: 9.55rem !important;
+    top: 11.05rem !important;
     left: 0.3rem !important;
   }
 
@@ -701,7 +705,7 @@
   }
 
   .legacy-max-panel {
-    top: calc(12.5rem + 4px) !important;
+    top: calc(14rem + 4px) !important;
     width: 9.3em;
     flex-direction: column-reverse !important;
   }
@@ -786,6 +790,239 @@
 
   .legacy-report-panel.is-closed ~ .legacy-warning-banners {
     transform: translateX(315px) !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Phones (portrait). The desktop arranges its panels around the map's edges;
+   a 390 px screen has no edges to spare, so the panels stack in two compact
+   strips — the EEW card and the readouts along the top, the ranking along the
+   bottom — and the report list becomes a drawer. Every rule is !important: the
+   components carry the desktop layout in inline utility classes.
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .legacy-eew-panel:not(.is-pip) {
+    right: 0 !important;
+    margin: 6px !important;
+    padding: 6px !important;
+    min-width: 0 !important;
+    max-height: none !important;
+    gap: 4px !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-title {
+    font-size: 13px !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) > .legacy-eew-body {
+    min-width: 0 !important;
+    min-height: 64px !important;
+    max-height: none !important;
+    padding: 6px !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-details {
+    height: auto !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-intensity {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 32px !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-intensity-label {
+    font-size: 10px !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-location {
+    font-size: 17px !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-measure-label {
+    font-size: 17px !important;
+  }
+
+  .legacy-eew-panel:not(.is-pip) .legacy-eew-measure-value {
+    margin-top: 4px !important;
+    font-size: 17px !important;
+  }
+
+  /* The station and the two maxima share one row under the EEW card. */
+  .legacy-station-readout {
+    top: auto !important;
+    left: 6px !important;
+    right: 6px;
+    bottom: calc(46px + env(safe-area-inset-bottom)) !important;
+    flex-direction: row !important;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .legacy-current-station {
+    flex: 1;
+    width: auto !important;
+    height: auto !important;
+    margin-top: 0 !important;
+  }
+
+  .legacy-current-station-info {
+    flex: 1;
+    width: auto !important;
+    min-width: 0;
+    padding: 0 4px;
+  }
+
+  .legacy-current-station-loc {
+    overflow: hidden;
+    font-size: 14px !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .legacy-current-station-info > div:last-child {
+    font-size: 12px !important;
+  }
+
+  .legacy-current-station-intensity {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 22px !important;
+  }
+
+  .legacy-rts-info {
+    width: 64px !important;
+    height: auto !important;
+    margin-top: 0 !important;
+    justify-content: center;
+  }
+
+  .legacy-max-panel {
+    top: auto !important;
+    left: 6px !important;
+    right: 6px;
+    bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    flex-direction: row !important;
+    gap: 4px;
+  }
+
+  .legacy-max-intensity {
+    flex-direction: row !important;
+    gap: 6px;
+    width: auto !important;
+    height: auto !important;
+    margin-top: 0 !important;
+    padding: 3px 6px !important;
+  }
+
+  .legacy-max-intensity > span,
+  .legacy-max-pga > span {
+    font-size: 12px !important;
+  }
+
+  .legacy-max-intensity-badge {
+    width: 30px !important;
+    height: 30px !important;
+    margin-top: 0 !important;
+    border-radius: 7px !important;
+    font-size: 18px !important;
+  }
+
+  .legacy-max-pga {
+    position: static !important;
+    flex: 1;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between !important;
+    width: auto !important;
+    height: auto !important;
+    margin-top: 0 !important;
+    padding-left: 6px;
+  }
+
+  .legacy-max-pga > div {
+    height: 100% !important;
+    margin-top: 0 !important;
+    padding: 0 8px;
+    border-radius: 0 5px 5px 0 !important;
+  }
+
+  /* The legend and the ranking would sit on the map's only open space. */
+  .legacy-intensity-legend,
+  .legacy-rts-list {
+    display: none !important;
+  }
+
+  /* The report list: a drawer over the map, closed by default. */
+  .legacy-report-panel {
+    top: 0 !important;
+    width: min(300px, 86vw) !important;
+    max-width: none !important;
+    height: auto !important;
+    bottom: 0 !important;
+    z-index: 3000 !important;
+  }
+
+  .legacy-report-panel.is-closed {
+    translate: calc(100% - 22px) !important;
+  }
+
+  .legacy-report-list {
+    right: 0 !important;
+    width: calc(100% - 24px) !important;
+  }
+
+  .legacy-report-card {
+    width: 100% !important;
+  }
+
+  .legacy-report-featured-badge {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 36px !important;
+  }
+
+  .legacy-version,
+  .legacy-report-panel.is-closed ~ .legacy-version {
+    display: none !important;
+  }
+
+  .legacy-warning-banners,
+  .legacy-report-panel.is-closed ~ .legacy-warning-banners {
+    top: auto !important;
+    right: 0 !important;
+    left: 0 !important;
+    bottom: calc(140px + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    transform: none !important;
+  }
+}
+
+/* Phones held sideways: little height, so the map takes the middle and the
+   side panels shrink rather than stack. */
+@media (max-height: 500px) and (max-width: 1000px) {
+  .legacy-eew-panel:not(.is-pip) > .legacy-eew-body {
+    min-height: 0 !important;
+  }
+
+  .legacy-station-readout {
+    top: auto !important;
+    bottom: 40px !important;
+  }
+
+  .legacy-max-panel,
+  .legacy-intensity-legend,
+  .legacy-rts-list {
+    display: none !important;
+  }
+
+  .legacy-report-panel {
+    width: 260px !important;
+  }
+
+  .legacy-report-list {
+    width: 240px !important;
   }
 }
 
@@ -1108,6 +1345,71 @@
   background: #2c2c31;
   box-shadow: 0 8px 24px #0006;
   font-size: 13px;
+}
+
+/* Phones: the pages become a row of tabs over the content, which gets the
+   whole width. */
+@media (max-width: 640px) {
+  .settings-modal {
+    padding: 0;
+  }
+
+  .settings-shell.is-embedded {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .settings-shell {
+    flex-direction: column;
+  }
+
+  .settings-sidebar {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    width: auto;
+    padding: 10px 12px calc(10px) 12px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    border-right: 0;
+    border-bottom: 1px solid #ffffff12;
+  }
+
+  .settings-brand {
+    display: none;
+  }
+
+  .settings-sidebar nav {
+    flex: 1;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .settings-sidebar nav button {
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 4px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .settings-header {
+    padding: 14px 16px 4px;
+  }
+
+  .settings-scroll {
+    padding: 6px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .settings-row {
+    padding: 10px 14px;
+  }
+
+  .settings-row select {
+    max-width: 58%;
+  }
 }
 
 /* PiP hover controls mirror legacy cursor.js: a dark veil with one action on

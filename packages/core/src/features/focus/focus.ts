@@ -145,7 +145,15 @@ export function focus_reset(isBtn?: boolean): void {
     setLock(false);
   }
 
-  if (variable.map) fitBounds(variable.map, MAP.BOUNDS, MAP.OPTIONS);
+  if (!variable.map) return;
+  // On a phone the panels take the top and bottom of the screen; Taiwan is
+  // framed in what is left.
+  const phone = window.matchMedia("(max-width: 640px)").matches;
+  fitBounds(
+    variable.map,
+    MAP.BOUNDS,
+    phone ? { ...MAP.OPTIONS, padding: { top: 210, bottom: 150, left: 8, right: 8 } } : MAP.OPTIONS,
+  );
 }
 
 /**
@@ -179,6 +187,18 @@ function fitBounds(map: MlMap, bounds: LngLatBoundsLike, options: FitBoundsOptio
   map.fitBounds(bounds, options);
 }
 
+/**
+ * The padding a fit keeps clear on each side: 150 px on a desktop, less on a
+ * phone, where 150 on both sides would leave the map no room at all. In phone
+ * portrait the panels sit above and below the map, so that is where the room
+ * goes.
+ */
+function defaultPadding(): { top: number; bottom: number; left: number; right: number } {
+  if (window.matchMedia("(max-width: 640px)").matches) return { top: 150, bottom: 150, left: 24, right: 24 };
+  if (window.matchMedia("(max-height: 500px)").matches) return { top: 30, bottom: 30, left: 150, right: 60 };
+  return { top: 150, bottom: 150, left: 150, right: 150 };
+}
+
 /** Fit the map to the given coordinates with padded framing. */
 export function updateMapBounds(coordinates: Coord[], options: FitOptions = {}): void {
   const bounds = new maplibregl.LngLatBounds();
@@ -188,12 +208,13 @@ export function updateMapBounds(coordinates: Coord[], options: FitOptions = {}):
   });
 
   if (!variable.map) return;
+  const pad = defaultPadding();
   fitBounds(variable.map, bounds, {
     padding: {
-      top: options.paddingTop || 150,
-      bottom: options.paddingBottom || 150,
-      left: options.paddingLeft || 150,
-      right: options.paddingRight || 150,
+      top: options.paddingTop || pad.top,
+      bottom: options.paddingBottom || pad.bottom,
+      left: options.paddingLeft || pad.left,
+      right: options.paddingRight || pad.right,
     },
     maxZoom: options.maxZoom || 8,
     duration: options.duration || 500,
