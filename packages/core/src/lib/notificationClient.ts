@@ -76,12 +76,12 @@ export function initNotifications(): void {
   events.on("RtsShindo1", () => void sendDesktopNotification("🟧 震動檢測", "請注意今後的資訊。"));
   events.on("RtsShindo0", () => void sendDesktopNotification("🟩 弱反應", "請注意今後的資訊。"));
 
-  events.on("ReportRelease", ({ data }) => {
+  events.on("ReportRelease", ({ data, update }) => {
     const maximum = reportMaximum(data);
     const id = data.id.split("-")[0];
     const label = id.includes("000") ? "小區域有感地震" : id;
     void sendDesktopNotification(
-      `🔔 地震報告 [${label}]`,
+      `🔔 ${update ? "地震報告更新" : "地震報告"} [${label}]`,
       `${formatTimestamp(data.time)} ${data.loc} M${data.mag.toFixed(1)}，${maximum.county}最大震度${int_to_string(maximum.intensity)}。`,
     );
   });

@@ -124,7 +124,10 @@ export type TremEvents = {
 
   LpgmRelease: Ans<{ id: number; time: number; list: { id: number; lpgm: number }[] }>;
 
-  ReportRelease: Ans<ReportListItem>;
+  /** `update`: a report already released whose earthquake CWA has revised. */
+  ReportRelease: Ans<ReportListItem> & { update?: boolean };
+  /** An update's announcement is over — spoken, cut off, or never started. */
+  ReportSpeechEnd: { id: string };
   /** UI 刷新訊號：報告列表（variable.data.report）內容有更新時發出。 */
   ReportListUpdate: void;
   /** 重播模式切換；reportId 只在由報告列啟動的 HTTP 重播存在。 */

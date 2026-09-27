@@ -58,7 +58,10 @@ function pronunciation(text: string): string {
     .replaceAll("為", "圍");
 }
 
-function announceReport(data: ReportListItem): void {
+/** How long an update is shown when there is no speech to wait for. */
+const UNSPOKEN_UPDATE_MS = 15_000;
+
+function announceReport(data: ReportListItem, update: boolean, onEnd?: () => void): void {
   const stations: Record<number, string[]> = {};
   let maximum = 0;
   for (const [county, countyData] of Object.entries(data.list ?? {})) {
@@ -69,7 +72,7 @@ function announceReport(data: ReportListItem): void {
   }
 
   let text = [
-    "地震報告",
+    update ? "地震報告更新" : "地震報告",
     chineseTime(data.time),
     `發生最大震度 ${int_to_string(maximum)} 地震`,
     `震央位於 ${extractLocation(data.loc)}`,
@@ -85,7 +88,7 @@ function announceReport(data: ReportListItem): void {
     text += `，${lead}震度 ${int_to_string(intensity)} 地區 ${places.join("，")}`;
     described++;
   }
-  speak(pronunciation(text), false);
+  speak(pronunciation(text), false, onEnd);
 }
 
 function announceLpgm(data: { id: number; time: number; list: { id: number; lpgm: number }[] }): void {
@@ -174,7 +177,17 @@ export function initSpeech(): void {
   };
   events.on("IntensityRelease", ({ data }) => announceIntensity(data));
   events.on("IntensityUpdate", ({ data }) => announceIntensity(data));
-  events.on("ReportRelease", ({ data }) => announceReport(data));
+  // An update stays on the map until its announcement ends (see report.ts),
+  // so the end is always reported: when spoken, when cut off, or — with speech
+  // off — after as long as reading it would take.
+  events.on("ReportRelease", ({ data, update }) => {
+    const done = update ? () => events.emit("ReportSpeechEnd", { id: data.id }) : undefined;
+    if (!enabled()) {
+      if (done) setTimeout(done, UNSPOKEN_UPDATE_MS);
+      return;
+    }
+    announceReport(data, !!update, done);
+  });
   events.on("LpgmRelease", ({ data }) => announceLpgm(data));
 
   window.setInterval(() => {

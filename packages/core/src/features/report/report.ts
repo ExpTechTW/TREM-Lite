@@ -27,26 +27,31 @@ let seeded = false; // first (empty) fetch must NOT emit a report event
 
 const log = createLogger("report");
 
-// A new report is one whose id has not been seen, as in legacy report.js, and
-// whose earthquake is less than an hour old. Not the list's md5: the two core
-// nodes can disagree on it for the same report — tnn1 and tyo1 did for the
-// 2026-08-25 15:00 report — so every switch between them released that report
-// again. And not an old id either: a node whose list lags by one report ends
-// its 150 one report further back, and that one was never seen. The id list is
-// capped at 200 (oldest evicted).
+// Each report is remembered by id, with a key of what makes it that
+// earthquake: origin time, epicentre, depth and magnitude. An id not seen
+// before is a new report; a seen id whose key has changed is an update (CWA
+// revised it). Only an earthquake under 48 h old is released either way.
+//
+// Not the list's md5: the server hashes the whole station list into it, and
+// the two core nodes stored different station lists for the 2026-08-25 15:00
+// report — tyo1 kept a station CWA later removed — so every switch between
+// them released that report again. And the age limit also keeps out an old
+// id a node whose list lags one report reaches back to. The id list is capped
+// at 200 (oldest evicted).
 const SEEN_LIMIT = 200;
-const FRESH_MS = 60 * 60 * 1000;
+const FRESH_MS = 48 * 60 * 60 * 1000;
 const REPORT_CACHE_KEY = "cache.report"; // 上次的報告列表，供冷啟動秒開
-const seenIds = new Set<string>();
-const seenOrder: string[] = [];
+const seen = new Map<string, string>();
 
-function rememberId(id: string): void {
-  if (seenIds.has(id)) return;
-  seenIds.add(id);
-  seenOrder.push(id);
-  while (seenOrder.length > SEEN_LIMIT) {
-    const oldest = seenOrder.shift();
-    if (oldest) seenIds.delete(oldest);
+const reportKey = (r: ReportListItem) => [r.time, r.lat, r.lon, r.depth, r.mag].join("|");
+
+function remember(r: ReportListItem): void {
+  seen.delete(r.id); // re-inserted last, so an update counts as recent
+  seen.set(r.id, reportKey(r));
+  while (seen.size > SEEN_LIMIT) {
+    const oldest = seen.keys().next().value;
+    if (oldest === undefined) break;
+    seen.delete(oldest);
   }
 }
 
@@ -215,7 +220,7 @@ async function refresh() {
   // Seed oldest→newest so the FIFO evicts genuinely-old reports first.
   if (!seeded) {
     seeded = true;
-    [...list].reverse().forEach((r) => rememberId(r.id));
+    [...list].reverse().forEach(remember);
     // Seed the idle map with the most recent quake's shaking points (legacy sets
     // cache.last_report on first load WITHOUT emitting ReportRelease). Without
     // this, the idle RTS handler clears the live station dots and has no report
@@ -232,30 +237,57 @@ async function refresh() {
     return;
   }
 
-  // Afterwards: an id never seen, for an earthquake under an hour old.
-  const unseen = list.filter((r) => !seenIds.has(r.id));
-  unseen.forEach((r) => rememberId(r.id));
-  const fresh = unseen.filter((r) => now() - r.time < FRESH_MS);
-  // Named in the log, so the next "why did this report pop up" has an answer.
-  for (const r of unseen) {
-    log.info(`${fresh.includes(r) ? "new" : "unseen but old, not released"}: ${r.id}`);
+  // Afterwards: a new id, or a seen id whose earthquake changed — either for
+  // an earthquake under 48 h old.
+  const changes: { report: ReportListItem; update: boolean }[] = [];
+  for (const r of list) {
+    const before = seen.get(r.id);
+    if (before === reportKey(r)) continue;
+    remember(r);
+    const update = before !== undefined;
+    const fresh = now() - r.time < FRESH_MS;
+    // Named in the log, so the next "why did this report pop up" has an answer.
+    log.info(`${update ? "updated" : "new"}${fresh ? "" : ", over 48 h old, not released"}: ${r.id}`);
+    if (fresh) changes.push({ report: r, update });
   }
 
   // Remember live arrivals while replaying so they do not become false "new"
   // reports afterwards, but never surface live report alerts in replay mode.
   if (variable.replay.start_time) return;
 
-  const target = fresh[0]; // list is newest-first
+  const target = changes[0]; // list is newest-first
   if (!target || !SHOW_REPORT) return;
 
   const detailEpoch = replayStateEpoch;
-  const detail = await getReportById(target.id);
+  const detail = await getReportById(target.report.id);
   if (detail && detailEpoch === replayStateEpoch && !variable.replay.start_time) {
-    events.emit("ReportRelease", { data: detail });
+    events.emit("ReportRelease", { data: detail, update: target.update });
   }
 }
 
-function onReportRelease(ans: { data: ReportListItem }) {
+/**
+ * An update being shown until its announcement ends. While it is set it is
+ * `last_report`, so an RTS alert or EEW that takes the map over hands it back
+ * to the update if it is still being read; after that, the latest report
+ * returns.
+ */
+let updateOnShow: string | null = null;
+
+async function endUpdate(id: string): Promise<void> {
+  if (updateOnShow !== id) return; // a later report has taken over
+  updateOnShow = null;
+  const latest = latestFullReportList[0];
+  if (!latest || latest.id === id) return; // the update is the latest report
+  const detail = await getReportById(latest.id);
+  if (!detail || updateOnShow !== null) return;
+  variable.cache.last_report = detail;
+  // Redrawn by the RTS handler, which shows the report only while the map
+  // is not taken by an alert.
+  events.emit("DataRts", { info: { type: variable.play_mode }, data: variable.data.rts });
+}
+
+function onReportRelease(ans: { data: ReportListItem; update?: boolean }) {
+  updateOnShow = ans.update ? ans.data.id : null;
   if (SHOW_REPORT) {
     variable.cache.last_report = ans.data;
     showReportPoint(ans.data);
@@ -324,6 +356,7 @@ export function initReport(): void {
     initializeMapLayers();
   });
   events.on("ReportRelease", (ans) => onReportRelease(ans));
+  events.on("ReportSpeechEnd", ({ id }) => void endUpdate(id));
   events.on("ReplayStateChange", ({ active, reportId }) => {
     replayStateEpoch++;
     activeReplayReportId = active ? (reportId ?? null) : null;
