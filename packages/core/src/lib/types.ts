@@ -37,7 +37,12 @@ export interface RtsData {
   box: Record<string, number>;
   int: { code: number; i: number }[];
   time: number;
+  /** Earthquakes the server is tracking, from rts.v1's `eq` (see data/rtsV1.ts). */
+  eq?: RtsEq[];
 }
+
+/** One earthquake of rts.v1's `eq`: latitude, longitude, depth in km, origin in unix seconds. */
+export type RtsEq = [lat: number, lon: number, depth: number, origin: number];
 
 export interface StationInfo {
   code: number;

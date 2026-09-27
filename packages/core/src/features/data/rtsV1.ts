@@ -24,16 +24,21 @@
  * else reads it.
  *
  * v2's `I` (the intensity while triggered) is gone; `i` stands in for it.
+ *
+ * rts.v1 also lists the earthquakes the server is tracking, each for 240 s
+ * after its origin, as `eq`: [[lat, lon, depth km, origin unix s], …]. It is
+ * passed on as is; box.ts draws their wavefronts in place of the boxes.
  */
 import { gunzipSync, strFromU8 } from "fflate";
 
 import { intensity_float_to_int } from "@/domain/utils";
-import type { RtsData, RtsStation } from "@/lib/types";
+import type { RtsData, RtsEq, RtsStation } from "@/lib/types";
 
 export interface RtsV1 {
   source?: string;
   ts?: number;
   stations?: Record<string, { i?: number; pga?: number; alert?: unknown }>;
+  eq?: unknown;
 }
 
 /** What the reader needs to know about the world, passed in so it can be tested alone. */
@@ -67,6 +72,14 @@ export function decodePayload(data: string): string {
 /** The server writes `"alert":1`; other clients have been lenient about 1 vs "1". */
 const alerting = (value: unknown) => value === 1 || value === "1" || value === true;
 
+/** rts.v1's `eq`, keeping only entries of four finite numbers. */
+function readEq(value: unknown): RtsEq[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (e): e is RtsEq => Array.isArray(e) && e.length >= 4 && e.slice(0, 4).every((n) => Number.isFinite(n)),
+  );
+}
+
 export function readRtsV1(payload: RtsV1, lookups: RtsV1Lookups): RtsData | null {
   if (!payload.stations) return null;
   const station: Record<string, RtsStation> = {};
@@ -95,5 +108,5 @@ export function readRtsV1(payload: RtsV1, lookups: RtsV1Lookups): RtsData | null
   }
 
   const int = [...towns.values()].sort((a, b) => b.level - a.level).map((t) => ({ code: t.code, i: t.level }));
-  return { station, box, int, time: payload.ts ?? 0 };
+  return { station, box, int, time: payload.ts ?? 0, eq: readEq(payload.eq) };
 }
