@@ -18,6 +18,7 @@ import { DEFAULT_API_PROXY_DOMAIN, INTENSITY_LIST } from "@/lib/constants";
 import { loadConfig, resetConfig, writeConfig } from "@/lib/config";
 import { inTauri } from "@/lib/env";
 import type { Station, TremConfig } from "@/lib/types";
+import { versionLabel } from "@/lib/version";
 
 const TABS = [
   { id: "general", label: "一般" },
@@ -52,7 +53,7 @@ export function SettingsApp() {
   const savedTab = localStorage.getItem("setting-tab") as TabId | null;
   const [tab, setTab] = useState<TabId>(TABS.some((item) => item.id === savedTab) ? savedTab! : "general");
   const [config, setConfig] = useState<TremConfig | null>(null);
-  const [appVersion, setAppVersion] = useState("4.0.0");
+  const [appVersion, setAppVersion] = useState("");
   const [system, setSystem] = useState({ os: "Web", cpu: navigator.platform || "unknown" });
   const [stationData] = useState<Record<string, Station>>(loadCachedStations);
   const [regionRevision, setRegionRevision] = useState(0);
@@ -79,7 +80,9 @@ export function SettingsApp() {
     void regionReady.then(() => setRegionRevision((value) => value + 1));
 
     if (inTauri) {
-      void getVersion().then(setAppVersion).catch(() => {});
+      void getVersion()
+        .then((v) => setAppVersion(versionLabel(v)))
+        .catch(() => {});
       void Promise.resolve().then(() => {
         try {
           setSystem({ os: `${osType()} ${osVersion()}`, cpu: arch() });
@@ -194,8 +197,8 @@ export function SettingsApp() {
       >("update_check", { onProgress });
       setUpdateStatus(
         result.status === "staged"
-          ? `已下載 ${result.version}，將在下次啟動時更新`
-          : `目前已是最新版本（${result.current}）`,
+          ? `已下載 ${versionLabel(result.version)}，將在下次啟動時更新`
+          : `目前已是最新版本（${versionLabel(result.current)}）`,
       );
     } catch (error) {
       setUpdateStatus(`檢查更新失敗：${String(error)}`);

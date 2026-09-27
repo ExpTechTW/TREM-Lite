@@ -16,6 +16,7 @@ mod updater {
         Err("updates are desktop-only".into())
     }
 }
+mod version;
 mod window;
 
 use audio::AudioEngine;
@@ -89,13 +90,11 @@ pub fn run() {
             reveal(app.handle());
             #[cfg(desktop)]
             {
-                let version = MenuItem::with_id(
-                    app,
-                    "version",
-                    format!("TREM Lite v{}", app.package_info().version),
-                    false,
-                    None::<&str>,
-                )?;
+                let name = format!(
+                    "TREM Lite {}",
+                    version::label(&app.package_info().version.to_string())
+                );
+                let version = MenuItem::with_id(app, "version", &name, false, None::<&str>)?;
                 let separator = PredefinedMenuItem::separator(app)?;
                 let restart = MenuItem::with_id(app, "restart", "重新啟動", true, None::<&str>)?;
                 let quit = MenuItem::with_id(app, "quit", "結束程式", true, None::<&str>)?;
@@ -107,7 +106,7 @@ pub fn run() {
 
                 TrayIconBuilder::new()
                     .icon(icon)
-                    .tooltip(format!("TREM Lite v{}", app.package_info().version))
+                    .tooltip(&name)
                     .menu(&menu)
                     .show_menu_on_left_click(false)
                     .on_menu_event(|app, event| match event.id().as_ref() {

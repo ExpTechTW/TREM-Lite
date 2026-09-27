@@ -144,7 +144,10 @@ async fn check_and_stage(
     let _ = app
         .notification()
         .builder()
-        .title(format!("TREM Lite {} 已下載", update.version))
+        .title(format!(
+            "TREM Lite {} 已下載",
+            crate::version::label(&update.version)
+        ))
         .body("將在下次啟動時自動更新。")
         .show();
 
