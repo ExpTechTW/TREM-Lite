@@ -1237,8 +1237,43 @@
   font-weight: 500;
 }
 
-.settings-toggle-row {
+.settings-toggle-row .settings-label {
+  flex: 1;
   cursor: pointer;
+}
+
+.settings-preview {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid #ffffff1f;
+  border-radius: 999px;
+  color: #d4d4d8;
+  background: #ffffff0a;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.settings-preview:hover {
+  color: #fff;
+  background: #ffffff1a;
+}
+
+.settings-preview:focus-visible {
+  outline: 2px solid #beff0c;
+  outline-offset: 2px;
+}
+
+.settings-preview svg {
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+}
+
+.settings-row select:disabled {
+  opacity: 0.5;
 }
 
 .settings-value {

@@ -27,6 +27,12 @@ export function clearQueue(queue: QueueName): void {
   void invoke("audio_clear", { queue });
 }
 
+/** Play a clip once for the settings page, cutting off the previous preview. */
+export function preview(sound: string): void {
+  if (!inTauri) return webAudio.preview(sound);
+  void invoke("audio_preview", { sound });
+}
+
 /** Silence everything playing or queued — at a live/replay boundary. */
 export function stopAll(): void {
   if (!inTauri) return webAudio.stopAll();

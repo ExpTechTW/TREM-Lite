@@ -62,6 +62,8 @@ const decoded = new Map<string, Promise<AudioBuffer | null>>();
 const queues = new Map<QueueName, Queue>();
 /** Clips playing outside the queues, so stopAll reaches them too. */
 const direct = new Set<AudioBufferSourceNode>();
+/** The settings page's 試聽: one at a time, the next cutting the last off. */
+let previewing: AudioBufferSourceNode | null = null;
 /** Bumped by stopAll: a clip still being readied when it runs never plays. */
 let epoch = 0;
 
@@ -160,6 +162,20 @@ export const webAudio = {
     });
   },
 
+  /** Play a clip for the settings page, stopping the previous preview. From a click. */
+  preview(sound: string): void {
+    webAudio.unlock();
+    previewing?.stop();
+    previewing = null;
+    const at = epoch;
+    void start(sound).then((source) => {
+      if (!source) return;
+      if (at !== epoch) return source.stop();
+      previewing?.stop();
+      previewing = source;
+    });
+  },
+
   /** Drop the clips waiting in a queue; the one playing finishes. */
   clear(name: QueueName): void {
     queue(name).pending = [];
@@ -176,5 +192,7 @@ export const webAudio = {
     }
     for (const source of direct) source.stop();
     direct.clear();
+    previewing?.stop();
+    previewing = null;
   },
 };

@@ -83,6 +83,10 @@ enum AudioCommand {
     Clear { queue: String },
     /// Stop everything and empty every queue.
     StopAll,
+    /// Play a clip on the preview sink, cutting off the preview before it —
+    /// the settings page's 試聽. Never touches the queues, so an alert
+    /// playing meanwhile carries on.
+    Preview { sound: String },
 }
 
 struct QueueState {
@@ -131,6 +135,12 @@ impl AudioEngine {
     pub fn stop_all(&self) {
         let _ = self.tx.send(AudioCommand::StopAll);
     }
+
+    pub fn preview(&self, sound: &str) {
+        let _ = self.tx.send(AudioCommand::Preview {
+            sound: sound.to_string(),
+        });
+    }
 }
 
 fn run_audio_thread(rx: Receiver<AudioCommand>) {
@@ -146,6 +156,7 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
     };
 
     let mut queues: HashMap<&'static str, QueueState> = HashMap::new();
+    let mut preview: Option<Sink> = None;
     for &q in QUEUES.iter() {
         if let Ok(sink) = Sink::try_new(&handle) {
             queues.insert(
@@ -177,7 +188,7 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
         };
 
         if let Some(cmd) = first {
-            handle_command(cmd, &handle, &mut queues);
+            handle_command(cmd, &handle, &mut queues, &mut preview);
             // Commands sent together are handled together, so a later one can
             // still evict an earlier one before it starts — RtsShindo2 dropping
             // RtsShindo1 from the same RTS frame. The 30 ms poll this replaces
@@ -188,7 +199,7 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
             loop {
                 let left = until.saturating_duration_since(Instant::now());
                 match rx.recv_timeout(BATCH_QUIET.min(left)) {
-                    Ok(cmd) => handle_command(cmd, &handle, &mut queues),
+                    Ok(cmd) => handle_command(cmd, &handle, &mut queues, &mut preview),
                     Err(mpsc::RecvTimeoutError::Timeout) => break,
                     Err(mpsc::RecvTimeoutError::Disconnected) => return,
                 }
@@ -210,6 +221,7 @@ fn handle_command(
     cmd: AudioCommand,
     handle: &OutputStreamHandle,
     queues: &mut HashMap<&'static str, QueueState>,
+    preview: &mut Option<Sink>,
 ) {
     match cmd {
         AudioCommand::Enqueue { queue, sound } => {
@@ -243,6 +255,18 @@ fn handle_command(
             for state in queues.values_mut() {
                 state.pending.clear();
                 state.sink.stop();
+            }
+            if let Some(sink) = preview.take() {
+                sink.stop();
+            }
+        }
+        AudioCommand::Preview { sound } => {
+            if let Some(sink) = preview.take() {
+                sink.stop();
+            }
+            if let Ok(sink) = Sink::try_new(handle) {
+                play_clip(&sink, &sound);
+                *preview = Some(sink);
             }
         }
     }
@@ -284,6 +308,11 @@ pub fn audio_clear(engine: tauri::State<'_, AudioEngine>, queue: String) {
 #[tauri::command]
 pub fn audio_stop_all(engine: tauri::State<'_, AudioEngine>) {
     engine.stop_all();
+}
+
+#[tauri::command]
+pub fn audio_preview(engine: tauri::State<'_, AudioEngine>, sound: String) {
+    engine.preview(&sound);
 }
 
 #[cfg(test)]

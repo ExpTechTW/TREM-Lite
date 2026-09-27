@@ -172,6 +172,7 @@ pub fn run() {
             audio::audio_play,
             audio::audio_clear,
             audio::audio_stop_all,
+            audio::audio_preview,
             config::config_get,
             config::config_set,
             config::config_reset,
