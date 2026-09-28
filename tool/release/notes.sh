@@ -197,7 +197,17 @@ EOF
 first_seen_in() { # <sha>
   [ "$kind" = "--release" ] || return 0
   git tag --list '[0-9][0-9]w[0-9][0-9]*' --contains "$1" 2>/dev/null |
-    sort | head -n 1
+    snapshot_order | head -n 1
+}
+
+# Snapshot labels in the order they were cut: year and week (both two digits,
+# so text orders them), then the letters by count, then alphabetically — past
+# a week's 26th, `26w40aa` comes after `26w40z`, where text puts it before
+# `26w40b`. The same order the updater uses (updater.rs, snapshot_order).
+snapshot_order() {
+  awk '{ letters = $0; sub(/^[0-9]+w[0-9]+/, "", letters)
+         printf "%s %03d %s %s\n", substr($0, 1, length($0) - length(letters)), length(letters), letters, $0 }' |
+    sort | awk '{ print $NF }'
 }
 
 if [ "$kind" = "--release" ]; then
