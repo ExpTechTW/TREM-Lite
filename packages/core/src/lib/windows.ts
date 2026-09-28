@@ -39,6 +39,9 @@ async function createPipWindow(): Promise<WebviewWindow> {
 
   const created = new WebviewWindow("pip", {
     url: "pip.html",
+    // Fixed, and without the version: OBS finds a captured window by its
+    // title, and an update must not lose it. Unset, it was "Tauri App".
+    title: "TREM Lite PiP",
     width: 276,
     height: 147,
     minWidth: 276,
