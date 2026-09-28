@@ -383,6 +383,9 @@ fn parse_dir(path: &Path) -> Option<i32> {
     path.file_name()?.to_str()?.parse().ok()
 }
 
+/// 前端一行最多幾個字元。
+const MAX_JS_CHARS: usize = 8_000;
+
 /// 前端的一行日誌。
 #[derive(Deserialize)]
 pub struct JsLine {
@@ -413,7 +416,15 @@ pub fn log_write(lines: Vec<JsLine>) {
             .timestamp_millis_opt(line.t)
             .single()
             .unwrap_or_else(Local::now);
-        logger.write(&at, level, &line.s, &line.m);
+        // 一筆的長度設上限（同 trem-monitor）：一個巨大的物件不該把日誌撐爆。
+        let message = if line.m.chars().count() > MAX_JS_CHARS {
+            let mut cut: String = line.m.chars().take(MAX_JS_CHARS).collect();
+            cut.push_str("…（截斷）");
+            cut
+        } else {
+            line.m
+        };
+        logger.write(&at, level, &line.s, &message);
     }
 }
 

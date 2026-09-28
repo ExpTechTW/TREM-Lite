@@ -5,6 +5,7 @@
  */
 import { useEffect } from "react";
 import ReactDOM from "react-dom/client";
+import { reactRootErrorHandlers } from "@/lib/logger";
 import "@/styles/globals.css";
 
 import { events } from "@/lib/events";
@@ -119,4 +120,4 @@ function PreviewApp() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(<PreviewApp />);
+ReactDOM.createRoot(document.getElementById("root")!, reactRootErrorHandlers).render(<PreviewApp />);

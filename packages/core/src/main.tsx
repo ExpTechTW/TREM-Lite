@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { reactRootErrorHandlers } from "@/lib/logger";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "@/styles/globals.css";
 
@@ -18,7 +19,7 @@ if (import.meta.env.DEV) {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById("root")!, reactRootErrorHandlers).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
