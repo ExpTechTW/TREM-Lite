@@ -22,16 +22,30 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
-# Never two release runs at once: both would compute a snapshot letter from the
-# same set of tags and hand out the same one twice.
+# Snapshots: one run at a time — two would compute a letter from the same set
+# of tags and hand out the same one twice — and a newer push cancels the run in
+# progress, so pushes in quick succession release their last commit once
+# instead of each becoming a version. The cancelled run's `discard` deletes its
+# draft and tag. A run that has already published is past cancelling harm:
+# `discard` leaves a published release alone.
+#
+# Releases (`v*` tags) have a group of their own and are never cancelled: a
+# human pushed that tag, and a snapshot pushed after it must not stop it.
 concurrency:
-  group: release
-  cancel-in-progress: false
+  group: release-${{ github.ref_type == 'tag' && github.ref_name || 'snapshot' }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 jobs:
   # The one place the version is decided; every job below reads it from here.
   # Recomputing it on a build runner would be wrong — see tool/release/version.sh.
   version:
+    # Once started, finished, even if a newer push cancels the run (see
+    # `publish`): cut short between pushing the tag and finishing, it would
+    # leave the tag without `discard` to delete it, because `discard` needs
+    # this to have succeeded — and an orphaned tag drops its commit's entries
+    # from the next snapshot's note. It takes half a minute; `discard` then
+    # deletes the draft and the tag.
+    if: ${{ !failure() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -41,6 +55,7 @@ jobs:
       code: ${{ steps.derive.outputs.code }}
       tag: ${{ steps.derive.outputs.tag }}
       is_release: ${{ steps.derive.outputs.is_release }}
+      skip: ${{ steps.derive.outputs.skip }}
       release_id: ${{ steps.release.outputs.id }}
     steps:
       # Full history: the label counts this year's commits and this week's tags.
@@ -51,16 +66,31 @@ jobs:
       - name: Derive the version
         id: derive
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           eval "$(tool/release/version.sh)"
+          skip=false
           if [ "$REF_TYPE" = tag ]; then
             is_release=true
             tag="$REF_NAME"
           else
             is_release=false
             tag="$TREM_LABEL"
+            # A commit already published as a snapshot is not published again:
+            # GitHub has delivered one push as two events (2400a0e, 0caf89a,
+            # which became 26w40q/r and 26w40u/v), and a run can be re-run.
+            # Published only: a tag on a draft is a run this one cancelled,
+            # whose `discard` is about to delete it — skipping for it would
+            # release nothing at all.
+            for done_as in $(git tag --points-at "$GITHUB_SHA" --list '[0-9][0-9]w[0-9]*'); do
+              if [ "$(gh release view "$done_as" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null)" = false ]; then
+                skip=true
+                echo "::notice::$GITHUB_SHA is snapshot $done_as already — nothing to release"
+                break
+              fi
+            done
           fi
           {
             echo "label=$TREM_LABEL"
@@ -68,6 +98,7 @@ jobs:
             echo "code=$TREM_CODE"
             echo "tag=$tag"
             echo "is_release=$is_release"
+            echo "skip=$skip"
           } >>"$GITHUB_OUTPUT"
           echo "$tag → $TREM_SEMVER (code $TREM_CODE)"
 
@@ -81,6 +112,7 @@ jobs:
       # and signed. The first snapshot lost its arm64 build exactly that way.
       - name: Create the draft release
         id: release
+        if: steps.derive.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.derive.outputs.tag }}
@@ -119,7 +151,7 @@ jobs:
       # draft, which the next run finds and reuses. Once it exists, `discard`
       # owns deleting it.
       - name: Tag the snapshot
-        if: steps.derive.outputs.is_release == 'false'
+        if: steps.derive.outputs.is_release == 'false' && steps.derive.outputs.skip != 'true'
         env:
           TAG: ${{ steps.derive.outputs.tag }}
         run: |
@@ -128,6 +160,9 @@ jobs:
 
   build:
     needs: version
+    # A duplicate run of a commit already released (see `Derive the version`):
+    # skipped here, and `publish`, which needs this, is skipped with it.
+    if: needs.version.outputs.skip != 'true'
     permissions:
       contents: write
     strategy:
@@ -250,6 +285,12 @@ jobs:
   # names, the release note, and — for a snapshot — publication.
   publish:
     needs: [version, build]
+    # Once started, finished, even if a newer push cancels the run: a cancel
+    # re-checks a running job's `if`, and `!failure()` holds for a cancelled
+    # run. Cut short, it could leave a snapshot published but never checked,
+    # fed to the update channel or announced. It takes a minute or two; the
+    # builds before it, which is where a newer push cancels, take ten.
+    if: ${{ !failure() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -469,8 +510,8 @@ jobs:
             echo "::warning::Discord announcement failed — the release itself is fine"
 
   # A snapshot that fails anywhere — a build, the rename, the note, the check
-  # after publishing — is deleted rather than left incomplete, tag and all, and
-  # the next snapshot reuses its name.
+  # after publishing — or that a newer push cancels, is deleted rather than
+  # left incomplete, tag and all, and the next snapshot reuses its name.
   #
   # A release is never touched: a human pushed its tag, and a human decides
   # what happens to its draft.
@@ -492,11 +533,18 @@ jobs:
           RELEASE_ID: ${{ needs.version.outputs.release_id }}
           TAG: ${{ needs.version.outputs.tag }}
         run: |
+          # A newer push can cancel this run after `Publish the snapshot` went
+          # through: that release is complete and out, and may already be what
+          # installed copies update to. It stays.
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -q .draft 2>/dev/null)" = false ]; then
+            echo "::notice::$TAG was already published — left as it is"
+            exit 0
+          fi
           gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID"
           # The tag was pushed by `version`, as its last step, and nothing else
-          # can own the name: it was free when `version` computed it, and release
-          # runs never overlap. Checked rather than assumed, so a discard is
-          # still clean if that step is what failed.
+          # can own the name: it was free when `version` computed it, and
+          # snapshot runs never overlap. Checked rather than assumed, so a
+          # discard is still clean if that step is what failed.
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
           fi
