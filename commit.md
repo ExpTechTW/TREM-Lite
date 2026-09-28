@@ -45,14 +45,20 @@ stage，必要時先建立可恢復的備份。
 ```text
 <type>(<scope>): <英文摘要>
 
+Platform: <all|web|desktop|macos|windows|linux>
+
 <Category>(zh-Hant): <繁體中文更新日誌條目>
 <Category>(en-US): <英文更新日誌條目>
 ```
+
+有更新日誌條目就一定要有 `Platform:`（見「平台 trailer」）。
 
 範例：
 
 ```text
 fix(speech): announce counties in intensity alerts
+
+Platform: all
 
 Fix(zh-Hant): 震度速報會念出最高震度地區的縣市名稱
 Fix(en-US): intensity alerts now announce the counties at the maximum intensity
@@ -140,6 +146,8 @@ GitHub release 與 Discord 公告上；正式版在人工發布時公告。沒�
 ```text
 perf(map): reduce terrain redraws while panning
 
+Platform: all
+
 Optimization(zh-Hant): 拖曳地形地圖時畫面更流暢
 Optimization(en-US): panning the terrain map is now smoother
 ```
@@ -158,7 +166,7 @@ Optimization(en-US): panning the terrain map is now smoother
 
 ## 平台 trailer
 
-只影響特定執行環境時，在更新日誌條目前加入：
+**有更新日誌條目的 commit 一定要寫 `Platform:`**，放在條目前：
 
 ```text
 fix(audio): keep alert playback outside the WebView
@@ -171,20 +179,23 @@ Fix(en-US): desktop window capture no longer captures app sound unexpectedly
 
 可用值：
 
+- `all`：瀏覽器版與所有桌面版都受影響。
 - `web`：只影響瀏覽器版。
-- `desktop`：影響所有 Tauri 桌面版。
+- `desktop`：影響所有 Tauri 桌面版，不影響瀏覽器版。
 - `macos`、`windows`、`linux`：只影響單一桌面作業系統。
 
-Web 與 desktop 都受影響就不加。只改 Tauri，但三個桌面作業系統都受影響時使用
-`desktop`，不要任選其中一個 OS。
+只改 Tauri，但三個桌面作業系統都受影響時使用 `desktop`，不要任選其中一個 OS。
 
-trailer 的值由閘門驗證 —— 打錯會被擋下，而不是悄悄從 release note 消失。
+**沒寫或寫錯都會被擋下**：commit-msg hook 與 CI 的閘門（`tool/check/commits.sh`）直接
+報錯，`tool/release/notes.sh` 遇到沒寫的 commit 也會中止，不產生發佈說明。以前「不寫就是
+全平台」，結果只影響桌面版的修正也被標成網頁版；`all` 是明確的判斷，不寫不是，所以不寫
+就報錯。沒有更新日誌條目的 commit（`refactor`、`ci`、`chore` 等）不需要寫，寫了也會檢查值。
 
 **發佈說明的每一條都會標平台**，不只被收窄的那些：
 
 | trailer | 標記 |
 |---|---|
-| 不加 | ![Web](.github/assets/web.svg) ![Windows](.github/assets/windows.svg) ![macOS](.github/assets/macos.svg) ![Linux](.github/assets/linux.svg) |
+| `all` | ![Web](.github/assets/web.svg) ![Windows](.github/assets/windows.svg) ![macOS](.github/assets/macos.svg) ![Linux](.github/assets/linux.svg) |
 | `desktop` | ![Windows](.github/assets/windows.svg) ![macOS](.github/assets/macos.svg) ![Linux](.github/assets/linux.svg) |
 | `web` | ![Web](.github/assets/web.svg) |
 | `windows` / `macos` / `linux` | ![Windows](.github/assets/windows.svg) / ![macOS](.github/assets/macos.svg) / ![Linux](.github/assets/linux.svg) |
@@ -400,6 +411,8 @@ Fix(en-US): replay now keeps the yellow alert frame visible and shows PiP at the
 ```text
 fix(speech): announce maximum-intensity counties
 
+Platform: all
+
 Fix(zh-Hant): 震度速報會念出最高震度地區的縣市名稱
 Fix(en-US): intensity alerts now announce counties at the maximum intensity
 ```
@@ -408,6 +421,8 @@ Fix(en-US): intensity alerts now announce counties at the maximum intensity
 
 ```text
 perf(map): reuse the terrain source while updating overlays
+
+Platform: all
 
 Optimization(zh-Hant): 更新即時資料時地形底圖不再閃爍
 Optimization(en-US): the terrain base map no longer flickers during real-time updates

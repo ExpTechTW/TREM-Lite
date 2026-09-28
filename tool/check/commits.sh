@@ -150,14 +150,20 @@ EOF
     fi
   fi
 
-  # 4. `Platform:` is optional, but a typo in it silently drops the tag from
-  #    the release note rather than failing anywhere.
+  # 4. `Platform:` is required once there are changelog entries. The release
+  #    note marks every entry with its platforms, and a missing trailer used to
+  #    mean "all of them" in silence — which is how desktop-only fixes shipped
+  #    marked for the web as well. `all` is a decision; leaving the trailer out
+  #    is not one, so it fails here, where whoever wrote the commit sees it.
   platform="$(printf '%s\n' "$body" | sed -n 's/^[Pp]latform: *//p' | head -n 1)"
-  if [ -n "$platform" ]; then
+  if [ -n "$entries" ] && [ -z "$platform" ]; then
+    note "Platform: is required with changelog entries — all, web, desktop, macos, windows or linux"
+    bad=1
+  elif [ -n "$platform" ]; then
     case "$(printf '%s' "$platform" | tr '[:upper:]' '[:lower:]')" in
-    web | desktop | macos | windows | linux) ;;
+    all | web | desktop | macos | windows | linux) ;;
     *)
-      note "Platform: must be web, desktop, macos, windows or linux (omit it when web and desktop are both affected) — got '$platform'"
+      note "Platform: must be all, web, desktop, macos, windows or linux — got '$platform'"
       bad=1
       ;;
     esac

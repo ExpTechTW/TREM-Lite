@@ -73,10 +73,12 @@ language_name() { # <locale>
 
 # Which platforms an entry applies to, always stated.
 #
-# A `Platform:` trailer narrows it; without one the change is everywhere, and
-# every marker is drawn. Marking only the narrowed entries would leave every
-# other line ambiguous — a reader cannot tell "applies to all" from "nobody
-# said", and those are different claims.
+# Every commit with an entry names them in a `Platform:` trailer — `all`, or
+# the ones it narrows to — and the commit gate (tool/check/commits.sh) rejects
+# one that does not. Marking only the narrowed entries would leave every other
+# line ambiguous: a reader cannot tell "applies to all" from "nobody said", and
+# those are different claims. So one without a trailer, or with a value this
+# does not know, stops the note rather than being marked for everything.
 #
 # The marks are 14 px SVGs kept in this repository, as in DPIP. Markdown image
 # syntax rather than an `<img>` tag, and a repo-hosted file rather than a badge
@@ -94,16 +96,24 @@ readonly TAG_LINUX="![Linux]($ASSETS/linux.svg)"
 readonly TAG_DESKTOP="$TAG_WINDOWS $TAG_MACOS $TAG_LINUX"
 
 platform_tag() { # <sha>
-  case "$(git log -1 --format=%b "$1" |
+  local platform
+  platform="$(git log -1 --format=%b "$1" |
     sed -n 's/^[Pp]latform: *\([a-zA-Z]*\).*/\1/p' | head -n 1 |
-    tr '[:upper:]' '[:lower:]')" in
+    tr '[:upper:]' '[:lower:]')"
+  case "$platform" in
+  all) printf '%s %s ' "$TAG_WEB" "$TAG_DESKTOP" ;;
   web) printf '%s ' "$TAG_WEB" ;;
   desktop) printf '%s ' "$TAG_DESKTOP" ;;
   macos) printf '%s ' "$TAG_MACOS" ;;
   windows) printf '%s ' "$TAG_WINDOWS" ;;
   linux) printf '%s ' "$TAG_LINUX" ;;
-  # No trailer: web and every desktop OS.
-  *) printf '%s %s ' "$TAG_WEB" "$TAG_DESKTOP" ;;
+  *)
+    local why="no Platform: trailer"
+    [ -z "$platform" ] || why="an unknown Platform: $platform"
+    printf 'notes.sh: %s has changelog entries but %s — see commit.md, 平台 trailer\n' \
+      "$(git log -1 --format=%h "$1")" "$why" >&2
+    return 1
+    ;;
   esac
 }
 
