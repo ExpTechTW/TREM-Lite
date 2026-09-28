@@ -379,7 +379,17 @@ class DataManager {
 
     Array.from(newData || []).forEach((data: EewItem) => {
       if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) {
-        log.debug(`略過預警 ${data.id} 第 ${data.serial} 報：${data.EewEnd ? "已結束" : "發震超過 240 秒或沒有發震時間"}`);
+        // The server still sends it as current (issued within 240 s of the
+        // shake) yet the clock here says it is old: the clock is wrong, and
+        // every EEW is being dropped. Said loudly, since nothing else shows it.
+        const current = data.time && data.eq?.time && data.time - data.eq.time <= EXPIRY_TIME;
+        if (variable.play_mode === 0 && current && !data.EewEnd) {
+          log.warn(
+            `略過預警 ${data.id} 第 ${data.serial} 報：本機時間比它的發布時間晚 ${Math.round((currentTime - (data.time ?? 0)) / 1000)} 秒，時鐘可能不準`,
+          );
+        } else {
+          log.debug(`略過預警 ${data.id} 第 ${data.serial} 報：${data.EewEnd ? "已結束" : "發震超過 240 秒或沒有發震時間"}`);
+        }
         return;
       }
 
@@ -391,7 +401,9 @@ class DataManager {
       if (existingIndex == -1) {
         if (!eewLast[data.id]) {
           if ((EEW_AUTHOR as readonly string[]).includes(data.author)) {
-            eewLast[data.id] = { last_time: currentTime, serial: 1 };
+            // The serial it arrived with: first seen at the 3rd, the same 3rd
+            // sent again (a reconnect, another EEW's change) is no update.
+            eewLast[data.id] = { last_time: currentTime, serial: data.serial };
             cur.push(data);
             events.emit("EewRelease", eventData);
           } else {
@@ -404,14 +416,21 @@ class DataManager {
       if (eewLast[data.id] && eewLast[data.id].serial < data.serial) {
         eewLast[data.id].serial = data.serial;
         if (data.status === 3) data.status3Time = currentTime;
+        // Ended here already (cancelled over 60 s ago) and yet a newer serial
+        // came: it is current again. Reading the missing entry's status threw,
+        // which dropped the stream and every EEW behind it in the frame, again
+        // at each reconnect.
+        const before = existingIndex === -1 ? undefined : cur[existingIndex];
+        if (!before) log.info(`預警 ${data.id} 本機已結束，又收到第 ${data.serial} 報，重新顯示`);
         events.emit("EewUpdate", eventData);
-        if (data.status == 3 && cur[existingIndex].status != data.status) {
+        if (data.status == 3 && before?.status != data.status) {
           events.emit("EewCancel", eventData);
         }
-        if (cur[existingIndex].status != 1 && data.status == 1) {
+        if (before?.status != 1 && data.status == 1) {
           events.emit("EewAlert", eventData);
         }
-        cur[existingIndex] = data;
+        if (before) cur[existingIndex] = data;
+        else cur.push(data);
       }
     });
 

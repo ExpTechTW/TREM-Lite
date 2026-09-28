@@ -16,6 +16,12 @@
  * both t2 and t3 — the server's own time between them is well under a
  * millisecond.
  *
+ * When neither answers (UDP blocked and the HTTP time server out of reach, or
+ * a round trip too slow to trust), the realtime stream's heartbeat, which
+ * carries the server's unix second, stands in: `adoptServerTime`. Without it a
+ * clock a few minutes fast made every EEW look older than 240 s, and all of
+ * them were dropped.
+ *
  * Elapsed time (a timeout, a rate) is not wall-clock time: it is measured with
  * performance.now(), which a calibration never moves.
  */
@@ -31,6 +37,10 @@ const CALIBRATE_MS = 600_000;
 const HTTP_NTP = "https://lb.exptech.dev/ntp";
 /** A sample whose round trip took longer than this says too little. */
 const MAX_RTT_MS = 1_000;
+/** A calibration younger than this outranks the stream's heartbeat. */
+const TRUSTED_MS = 30 * 60_000;
+/** performance.now() of the last successful calibration. */
+let calibratedAt = -Infinity;
 
 /** Calibrated wall-clock time in ms. */
 export function realNow(): number {
@@ -67,12 +77,29 @@ export async function syncClock(): Promise<void> {
     if (r.rtt_ms > MAX_RTT_MS) throw new Error(`來回 ${Math.round(r.rtt_ms)}ms，超過 ${MAX_RTT_MS}ms 不採用`);
     const before = variable.cache.time.offset;
     variable.cache.time.offset = r.offset_ms;
+    calibratedAt = performance.now();
     log.info(
       `校時（${r.via}）：本機時鐘差 ${r.offset_ms >= 0 ? "+" : ""}${r.offset_ms.toFixed(1)}ms（上次 ${before.toFixed(1)}ms），來回 ${r.rtt_ms.toFixed(1)}ms`,
     );
   } catch (err) {
     log.warn("校時失敗，沿用上次的時鐘差：", err);
   }
+}
+
+/**
+ * The server's time, from a heartbeat (`serverMs`, to the second), adopted when
+ * no calibration has succeeded for TRUSTED_MS and the clock is off by more than
+ * `skewMs`. Accurate to about a second — plenty for an EEW's 240 s window.
+ */
+export function adoptServerTime(serverMs: number, via: string): void {
+  if (performance.now() - calibratedAt < TRUSTED_MS) return;
+  const offset = serverMs - Date.now();
+  const before = variable.cache.time.offset;
+  if (Math.abs(offset - before) < 5_000) return;
+  variable.cache.time.offset = offset;
+  log.warn(
+    `校時一直失敗，改用${via}的伺服器時間：本機時鐘差 ${offset >= 0 ? "+" : ""}${Math.round(offset)}ms（原本 ${Math.round(before)}ms）`,
+  );
 }
 
 /** Calibrate now and every CALIBRATE_MS. */

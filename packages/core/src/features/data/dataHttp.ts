@@ -35,7 +35,7 @@ import { HOST, lbApiHost } from "@/lib/endpoints";
 import { http, withController, type HttpResponse } from "@/lib/http";
 import { INTENSITY_LIST } from "@/lib/constants";
 import { createLogger, fmtBytes, fmtDur } from "@/lib/logger";
-import { realNow } from "@/lib/ntp";
+import { adoptServerTime, realNow } from "@/lib/ntp";
 import { mark } from "@/lib/perf";
 import type { RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
@@ -158,6 +158,8 @@ class ConnLog {
       const skew = Math.round(realNow() / 1000 - ts);
       if (Math.abs(skew) > PING_SKEW_WARN_S) {
         log.warn(`${this.label} 心跳時間戳跟本機差 ${skew}s（伺服器 ${ts}）：傳輸延遲或時鐘不準`);
+        // Only when calibration has not been working (see ntp.ts).
+        adoptServerTime(ts * 1000, ` ${this.label} 心跳`);
       }
     }
     this.pings++;
