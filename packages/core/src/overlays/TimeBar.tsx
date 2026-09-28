@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
  * restart is a one-line note above it, positioned out of the layout so it
  * takes no room from anything; a click restarts now.
  *
- * Right of the time, in a box of their own, a light for each realtime stream:
- * EEW (the CWA EEW stream) and RTS (the station stream). Green and breathing
- * when it works, red when it does not — not connected, silent past its
+ * Right of the time, small and unboxed so they stay out of the way, a light
+ * for each realtime stream: EEW (the CWA EEW stream) and RTS (the station
+ * stream). Green and breathing when it works, red when it does not — not connected, silent past its
  * heartbeat, or, for RTS while the map is live, no station data. Grey during
  * a replay, when the streams are closed on purpose. Hovering says which.
  */
@@ -47,13 +47,15 @@ export function TimeBar() {
     replay ? `重播中，${name} 即時連線暫停` : ok ? `${name} 連線正常` : `${name} 異常：${why}`;
 
   // Legacy `.connect #time` sits INSIDE the nav-bar row right after the buttons,
-  // so this renders as inline pills (NavBar owns the absolute positioning).
-  const pill = { backgroundColor: "var(--panel-bg)", borderColor: "#00000008" };
+  // so this renders as an inline pill (NavBar owns the absolute positioning).
   return (
     <>
       <div
         className="relative flex min-w-[145px] items-center justify-around rounded-[5px] border-2 p-[3px]"
-        style={pill}
+        style={{
+          backgroundColor: "var(--panel-bg)",
+          borderColor: "#00000008",
+        }}
       >
         {ui.updateReady && (
           <button
@@ -73,10 +75,7 @@ export function TimeBar() {
           {formatTime(error && lost ? lost : now())}
         </span>
       </div>
-      <div
-        className="legacy-status-lights self-stretch rounded-[5px] border-2"
-        style={pill}
-      >
+      <div className="legacy-status-lights">
         <StatusLight
           label="EEW"
           state={light(eew.ok)}
