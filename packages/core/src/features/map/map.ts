@@ -189,7 +189,7 @@ function initMap(container: HTMLElement): Promise<MlMap> {
       if (done) return;
       done = true;
       restoreFrames();
-      log.info("ready:", why);
+      log.info(`地圖樣式就緒（${why}）`);
       resolve(map);
     };
     // Only resolve once the STYLE is actually loaded — feature modules add
@@ -206,7 +206,7 @@ function initMap(container: HTMLElement): Promise<MlMap> {
       // tile/glyph fetch failures (empty 404 tiles → "Load failed (0)") are
       // non-fatal — they must never block the style load.
       if (msg.includes(".pbf") || msg.includes(".png") || msg.includes("Load failed")) return;
-      log.warn("error:", msg);
+      log.warn(`地圖錯誤：${msg}`);
     });
     // Poll as a belt-and-braces (some styledata events don't refire once ready).
     const poll = setInterval(() => {
@@ -219,7 +219,7 @@ function initMap(container: HTMLElement): Promise<MlMap> {
     setTimeout(() => {
       clearInterval(poll);
       if (!done) {
-        log.warn("style not ready after 20s, proceeding anyway");
+        log.warn("地圖樣式 20s 內沒有就緒，照樣繼續，不讓資料流程卡住");
         finish("timeout");
       }
     }, 20000);
@@ -231,7 +231,7 @@ async function addPng(map: MlMap, id: string, url: string) {
     const img = await map.loadImage(url);
     if (!map.hasImage(id)) map.addImage(id, img.data);
   } catch (e) {
-    log.debug(`image ${id} failed`, e);
+    log.debug(`地圖圖示 ${id} 載入失敗：`, e);
   }
 }
 
@@ -285,11 +285,11 @@ export async function setupMap(container: HTMLElement): Promise<MlMap> {
   try {
     await addImages(map);
   } catch (e) {
-    log.warn("addImages failed (non-fatal):", e);
+    log.warn("地圖圖示載入失敗（不影響其他功能）：", e);
   }
   variable.map = map;
   mark("map-ready");
   events.emit("MapLoad");
-  log.info("MapLoad emitted");
+  log.info("地圖圖層與圖示都已加上，通知各模組（MapLoad）");
   return map;
 }

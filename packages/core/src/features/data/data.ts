@@ -9,6 +9,7 @@ import { stopAll as stopSounds } from "@/lib/audioClient";
 import { HTTP_TIMEOUT, LAST_DATA_TIMEOUT_ERROR, EEW_AUTHOR } from "@/lib/constants";
 import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
+import { createLogger, fmtDur } from "@/lib/logger";
 import { now, realNow } from "@/lib/ntp";
 import { stopSpeech } from "@/lib/speechClient";
 import { variable, type TremVariable } from "@/lib/variable";
@@ -16,6 +17,10 @@ import { ui } from "@/lib/variable.ui";
 import type { EewData } from "@/lib/types";
 
 import { abortAll, init as sseInit, getData, type SseManager } from "./dataHttp";
+
+const log = createLogger("data");
+
+const MODE_NAME: Record<number, string> = { 0: "即時", 2: "報告重播", 3: "檔案重播" };
 
 let fileList: string[] = [];
 let fileIndex = 0;
@@ -119,6 +124,7 @@ class DataManager {
         })
         .sort((a, b) => a.time - b.time);
       if (frames.length) {
+        log.info(`找到 ${frames.length} 個重播檔（replay/），進入檔案重播`);
         fileList = frames.map((frame) => frame.name);
         fileIndex = 0;
         this.switchMode(3, { start_time: frames[0].time, local_time: 0, dev: false });
@@ -165,8 +171,8 @@ class DataManager {
         events.emit("DataRts", { info: { type: variable.play_mode }, data: json.rts });
         this.processEEWData(json.eew);
         this.processIntensityData(json.intensity);
-      } catch {
-        /* ignore bad replay frame */
+      } catch (e) {
+        log.warn(`重播檔 replay/${fileName} 讀不出來，跳過：`, e);
       }
       return;
     }
@@ -226,12 +232,15 @@ class DataManager {
   /** Sleep the RTS stream once hidden for SLEEP_AFTER_MS; wake it at once. */
   setBackground(hidden: boolean): void {
     this.background = hidden;
+    const debouncing = this.sleepTimer !== null;
     if (this.sleepTimer) clearTimeout(this.sleepTimer);
     this.sleepTimer = null;
     if (!hidden) {
+      if (debouncing) log.info(`視窗在 ${fmtDur(SLEEP_AFTER_MS)} 內又被叫回，不切休眠`);
       this.applySleep(false);
       return;
     }
+    if (!this.asleep) log.info(`視窗收起：${fmtDur(SLEEP_AFTER_MS)} 後切成休眠模式`);
     this.sleepTimer = setTimeout(() => {
       this.sleepTimer = null;
       if (this.background) this.applySleep(true);
@@ -241,6 +250,11 @@ class DataManager {
   private applySleep(asleep: boolean): void {
     if (asleep === this.asleep) return;
     this.asleep = asleep;
+    log.info(
+      asleep
+        ? "休眠模式生效：rts 只收有測站觸發的資料，eew／intensity 照常即時"
+        : "視窗叫回：立即切回 live 模式",
+    );
     // Frames stopped coming on purpose; the first live one is a moment away.
     if (!asleep) variable.cache.last_data_time = realNow();
     this.sseManager?.setBackground(asleep);
@@ -315,6 +329,8 @@ class DataManager {
    * (every module clears its own on DataModeReset), and no sound or speech.
    */
   switchMode(mode: number, replay: TremVariable["replay"]): void {
+    const at = replay.start_time ? `，從 ${new Date(replay.start_time).toLocaleString("zh-TW", { hour12: false })} 開始` : "";
+    log.info(`資料模式：${MODE_NAME[variable.play_mode] ?? variable.play_mode} → ${MODE_NAME[mode] ?? mode}${at}`);
     this.resetTransport();
     variable.play_mode = mode;
     variable.replay = replay;
@@ -362,7 +378,10 @@ class DataManager {
     );
 
     Array.from(newData || []).forEach((data: EewItem) => {
-      if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) return;
+      if (!data.eq?.time || currentTime - data.eq.time > EXPIRY_TIME || data.EewEnd) {
+        log.debug(`略過預警 ${data.id} 第 ${data.serial} 報：${data.EewEnd ? "已結束" : "發震超過 240 秒或沒有發震時間"}`);
+        return;
+      }
 
       const cur = variable.data.eew as EewItem[];
       const existingIndex = cur.findIndex((item) => item.id == data.id);
@@ -375,6 +394,8 @@ class DataManager {
             eewLast[data.id] = { last_time: currentTime, serial: 1 };
             cur.push(data);
             events.emit("EewRelease", eventData);
+          } else {
+            log.debug(`略過 ${data.author} 的預警 ${data.id} 第 ${data.serial} 報：只顯示 ${EEW_AUTHOR.join("、")}`);
           }
           return;
         }

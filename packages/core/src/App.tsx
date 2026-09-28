@@ -17,6 +17,8 @@ import { WarningBanners } from "@/overlays/WarningBanners";
 import { WebWelcome } from "@/overlays/WebWelcome";
 
 const log = createLogger("app");
+/** The startup line is written once, not again for StrictMode's second run. */
+let announced = false;
 
 /** Main window. Loads config before booting the map + data + audio pipeline. */
 export function App() {
@@ -25,6 +27,18 @@ export function App() {
   const [welcomed, setWelcomed] = useState(inTauri);
 
   useEffect(() => {
+    if (!announced) {
+      announced = true;
+      log.info(
+        [
+          `主視窗啟動｜${inTauri ? "桌面版" : `網頁版 ${location.origin}${location.pathname}`}`,
+          `視窗 ${innerWidth}×${innerHeight}，螢幕 ${screen.width}×${screen.height} @${devicePixelRatio}x`,
+          `語系 ${navigator.language}，時區 ${Intl.DateTimeFormat().resolvedOptions().timeZone}`,
+          `${navigator.onLine ? "連線中" : "離線"}`,
+          navigator.userAgent,
+        ].join("｜"),
+      );
+    }
     let un: (() => void) | undefined;
     loadConfig()
       .then(async () => {
@@ -33,7 +47,7 @@ export function App() {
         un = await onConfigUpdated(() => {});
       })
       .catch((e) => {
-        log.error("config load failed", e);
+        log.error("設定載入失敗，改用預設值：", e);
         setReady(true); // still show the map with defaults
       });
     return () => un?.();

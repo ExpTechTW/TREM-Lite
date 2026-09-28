@@ -86,7 +86,7 @@ async function start(): Promise<Worker> {
     const buffer = bytes.slice().buffer;
     worker.postMessage({ type: "model", bytes: buffer, towns }, [buffer]);
   });
-  log.info("intensity model ready");
+  log.info("ML 震度模型就緒（網頁版在 worker 裡計算）");
   return worker;
 }
 
@@ -96,7 +96,7 @@ async function start(): Promise<Worker> {
  */
 export function prepareIntensityModel(): Promise<Worker> {
   ready ??= start().catch((err) => {
-    log.warn("intensity model unavailable, retrying", err);
+    log.warn("ML 震度模型無法使用，稍後重試：", err);
     ready = null;
     setTimeout(() => void prepareIntensityModel().catch(() => {}), RETRY_MS);
     throw err;

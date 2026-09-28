@@ -8,11 +8,14 @@ import {
 import { formatTimestamp, int_to_string, search_loc_name } from "@/domain/utils";
 import { inTauri } from "./env";
 import { events } from "./events";
+import { createLogger } from "./logger";
 import type { EewData, ReportListItem } from "./types";
 import { variable } from "./variable";
 
 let initialized = false;
 let permission: boolean | null = null;
+
+const log = createLogger("notify");
 
 export async function sendDesktopNotification(title: string, body: string): Promise<void> {
   if (!inTauri) return;
@@ -20,10 +23,17 @@ export async function sendDesktopNotification(title: string, body: string): Prom
     if (permission == null) {
       permission = await isPermissionGranted();
       if (!permission) permission = (await requestPermission()) === "granted";
+      if (!permission) log.warn("系統通知權限被拒：之後不會跳出系統通知");
     }
-    if (permission) sendNotification({ title, body });
-  } catch {
+    if (permission) {
+      log.info(`系統通知：${title}｜${body.replace(/\n/g, " ")}`);
+      sendNotification({ title, body });
+    } else {
+      log.debug(`沒有通知權限，略過：${title}`);
+    }
+  } catch (e) {
     // Notifications are supplementary; a denied OS permission must not affect alerts.
+    log.warn(`系統通知送不出去（${title}）：`, e);
   }
 }
 

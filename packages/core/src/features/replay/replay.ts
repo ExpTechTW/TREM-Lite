@@ -8,6 +8,7 @@
 // It leaves by itself once it has run REPLAY_MAX_MS, just as if its button
 // had been pressed again.
 import { events } from "@/lib/events";
+import { createLogger } from "@/lib/logger";
 import { now } from "@/lib/ntp";
 import { variable } from "@/lib/variable";
 
@@ -27,7 +28,10 @@ function clearTimeLimit(): void {
   timeLimit = null;
 }
 
+const log = createLogger("replay");
+
 export function startReplay(time: number, reportId?: string): void {
+  log.info(`開始重播${reportId ? `報告 ${reportId}` : ""}，最長 ${REPLAY_MAX_MS / 1000} 秒`);
   switchPlayMode(2, { start_time: Number(time), local_time: 0, dev: false });
   events.emit("ReplayStateChange", { active: true, ...(reportId ? { reportId } : {}) });
   clearTimeLimit();
@@ -38,7 +42,10 @@ export function startReplay(time: number, reportId?: string): void {
     }
     // Read on the replay's own clock, so a machine that slept through part of
     // the replay still leaves it at 600 s of replay.
-    if (now() - variable.replay.start_time > REPLAY_MAX_MS) stopReplay();
+    if (now() - variable.replay.start_time > REPLAY_MAX_MS) {
+      log.info(`重播滿 ${REPLAY_MAX_MS / 1000} 秒，自動結束`);
+      stopReplay();
+    }
   }, 1000);
 }
 

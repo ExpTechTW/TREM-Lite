@@ -5,7 +5,7 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { disable as disableAutostart, enable as enableAutostart } from "@tauri-apps/plugin-autostart";
 import { arch, type as osType, version as osVersion } from "@tauri-apps/plugin-os";
-import { BellRing, Copy, Info, Minus, Play, SlidersHorizontal, Volume2, X } from "lucide-react";
+import { BellRing, Copy, Download, FolderOpen, Info, Minus, Play, SlidersHorizontal, Volume2, X } from "lucide-react";
 
 import { region, regionReady } from "@/domain/region";
 import { search_loc_name } from "@/domain/utils";
@@ -14,6 +14,7 @@ import { preview } from "@/lib/audioClient";
 import { loadConfig, onConfigUpdated, resetConfig, writeConfig } from "@/lib/config";
 import { AUDIO } from "@/lib/constants";
 import { inTauri } from "@/lib/env";
+import { exportLogs } from "@/lib/logStore";
 import type { Station, TremConfig } from "@/lib/types";
 import { versionLabel } from "@/lib/version";
 
@@ -188,6 +189,28 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
     }
   };
 
+  /** Desktop: the log folder. Web: every hour kept, in one file. */
+  const openLogs = async () => {
+    if (inTauri) {
+      try {
+        await invoke("logs_open");
+      } catch {
+        setStatus("無法開啟日誌資料夾");
+      }
+      return;
+    }
+    const text = await exportLogs();
+    if (!text) return setStatus("還沒有日誌");
+    const d = new Date();
+    const two = (n: number) => String(n).padStart(2, "0");
+    const stamp = `${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}`;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    link.download = `trem-lite-${stamp}.log`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 10_000);
+  };
+
   const reset = async () => {
     setConfirmReset(false);
     setConfig(await resetConfig());
@@ -344,6 +367,12 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
                   <button type="button" onClick={() => void copyInfo()}>
                     <Copy aria-hidden />
                     複製
+                  </button>
+                </Row>
+                <Row label={inTauri ? "日誌（最近 7 天，每小時一份）" : "日誌（存在這個瀏覽器，最近 7 天內）"}>
+                  <button type="button" onClick={() => void openLogs()}>
+                    {inTauri ? <FolderOpen aria-hidden /> : <Download aria-hidden />}
+                    {inTauri ? "開啟資料夾" : "下載"}
                   </button>
                 </Row>
               </Group>

@@ -110,7 +110,7 @@ function reselect(pool: Pool): void {
     !current.healthy ||
     (there !== null && (current.latency === null || there * 2 <= current.latency));
   if (!move) return;
-  log.info(`${pool.service.balanced}: ${current.host} → ${pool.nodes[other].host}`);
+  log.info(`換節點：${pool.service.balanced} 從 ${current.host} 改走 ${pool.nodes[other].host}`);
   pool.active = other;
 }
 
@@ -155,7 +155,7 @@ export function report(target: Target, ok: boolean): void {
   }
   n.failures += 1;
   if (n.failures >= FAILOVER_AFTER && n.healthy) {
-    log.warn(`${n.host} failed ${FAILOVER_AFTER} requests in a row`);
+    log.warn(`${n.host} 連續 ${FAILOVER_AFTER} 個請求失敗，標為不健康`);
     n.healthy = false;
     n.latency = null;
   }
@@ -188,12 +188,12 @@ async function probeAll(): Promise<void> {
       pool.nodes.map(async (n) => {
         const rtt = await probe(pool.service, n.host);
         if (rtt === null) {
-          if (n.healthy) log.warn(`${n.host} failed its probe`);
+          if (n.healthy) log.warn(`${n.host} 探測失敗，標為不健康`);
           n.healthy = false;
           n.latency = null;
           return;
         }
-        if (!n.healthy) log.info(`${n.host} is back (${Math.round(rtt)} ms)`);
+        if (!n.healthy) log.info(`${n.host} 恢復（探測 ${Math.round(rtt)}ms）`);
         n.healthy = true;
         n.failures = 0;
         n.latency = n.latency === null ? rtt : n.latency + SMOOTHING * (rtt - n.latency);

@@ -33,7 +33,9 @@ import { boxOf } from "@/features/box/polygons";
 import { HTTP_TIMEOUT } from "@/lib/constants";
 import { HOST, lbApiHost } from "@/lib/endpoints";
 import { http, withController, type HttpResponse } from "@/lib/http";
-import { createLogger } from "@/lib/logger";
+import { INTENSITY_LIST } from "@/lib/constants";
+import { createLogger, fmtBytes, fmtDur } from "@/lib/logger";
+import { realNow } from "@/lib/ntp";
 import { mark } from "@/lib/perf";
 import type { RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
@@ -73,6 +75,143 @@ const BACKOFF_MAX_MS = 15_000;
 
 const TOPICS = "trem.intensity.v1,trem.rts.v1";
 
+/** 每條連線每隔多久在日誌寫一次統計。 */
+const SUMMARY_EVERY_MS = 300_000;
+/** 心跳間隔超過這個才記警告（伺服器固定 60 秒送一次）。 */
+const PING_GAP_WARN_MS = 75_000;
+/** 心跳時間戳跟本機（已對時）差超過這麼多秒才記警告。 */
+const PING_SKEW_WARN_S = 5;
+
+let connSeq = 0;
+
+/**
+ * 一條連線從撥出到結束的紀錄，照 trem-monitor（live.rs 的 ConnLog）：撥出、HTTP、
+ * 問候、心跳、每 5 分鐘的統計，結束時一行總結——被交接或停止收掉的也有，所以
+ * 日誌裡每條連線都有頭有尾。
+ */
+class ConnLog {
+  readonly label: string;
+  private readonly started = performance.now();
+  private ready: number | null = null;
+  private readonly frames = new Map<string, { n: number; bytes: number }>();
+  private pings = 0;
+  private lastPing: number | null = null;
+  private lastSummary = performance.now();
+  /** 失敗的原因；沒有＝被我們收掉（交接、切模式、進重播）。 */
+  outcome: string | null = null;
+
+  constructor(stream: string, url: string) {
+    this.label = `${stream}#${++connSeq}`;
+    log.info(`${this.label} 撥出 ${url}`);
+  }
+
+  since(): string {
+    return fmtDur(performance.now() - this.started);
+  }
+
+  http(res: Response): void {
+    // A browser only shows these where CORS exposes them: named when present.
+    const seen = ["x-served-by", "cf-ray"]
+      .map((name) => [name, res.headers.get(name)] as const)
+      .filter(([, value]) => value)
+      .map(([name, value]) => `，${name}=${value}`)
+      .join("");
+    log.info(`${this.label} HTTP ${res.status}（撥出後 ${this.since()}${seen}）`);
+  }
+
+  /** `event: info` 的內容：節點名稱、拿到的 topic、被拒的 topic 與原因。 */
+  greeting(data: string): void {
+    log.info(`${this.label} 問候（撥出後 ${this.since()}）：${data}`);
+    try {
+      const g = JSON.parse(data) as { location?: string; topics?: string[]; denied?: Record<string, string> };
+      const wanted = this.label.startsWith("trem") ? TOPICS.split(",") : [];
+      if (g.topics) log.info(`${this.label} 連上 ${g.location ?? "?"}：收 ${g.topics.length}/${wanted.length} 個 topic`);
+      else log.info(`${this.label} 連上 ${g.location ?? "?"}`);
+      for (const [topic, reason] of Object.entries(g.denied ?? {})) {
+        log.warn(`${this.label} ${topic} 沒拿到：${reason}。其他 topic 照收，這個等下次重連再要`);
+      }
+    } catch {
+      /* 問候不是 JSON：原文已經記下 */
+    }
+  }
+
+  up(): void {
+    this.ready = performance.now();
+  }
+
+  frame(kind: string, bytes: number): void {
+    const f = this.frames.get(kind) ?? { n: 0, bytes: 0 };
+    f.n++;
+    f.bytes += bytes;
+    this.frames.set(kind, f);
+    this.maybeSummary();
+  }
+
+  /** `: ping <unix 秒>`：記間隔，順便比對伺服器時間。 */
+  ping(text: string): void {
+    const now = performance.now();
+    if (this.lastPing !== null && now - this.lastPing > PING_GAP_WARN_MS) {
+      log.warn(`${this.label} 心跳間隔 ${fmtDur(now - this.lastPing)}（正常 60s）`);
+    }
+    const ts = Number(text.replace(/^ping\s*/, ""));
+    if (Number.isFinite(ts) && ts > 0) {
+      const skew = Math.round(realNow() / 1000 - ts);
+      if (Math.abs(skew) > PING_SKEW_WARN_S) {
+        log.warn(`${this.label} 心跳時間戳跟本機差 ${skew}s（伺服器 ${ts}）：傳輸延遲或時鐘不準`);
+      }
+    }
+    this.pings++;
+    this.lastPing = now;
+    this.maybeSummary();
+  }
+
+  private stats(): string {
+    const perTopic = [...this.frames].map(([k, f]) => `${k} ${f.n} 筆／${fmtBytes(f.bytes)}`).join("、") || "沒有資料";
+    const last = this.lastPing === null ? "" : `，最後一次 ${fmtDur(performance.now() - this.lastPing)} 前`;
+    return `${perTopic}；心跳 ${this.pings} 次${last}`;
+  }
+
+  private maybeSummary(): void {
+    if (performance.now() - this.lastSummary < SUMMARY_EVERY_MS) return;
+    this.lastSummary = performance.now();
+    log.info(`${this.label} 統計（已連 ${this.since()}）：${this.stats()}`);
+  }
+
+  end(): void {
+    const why = this.outcome ?? "被收掉（交接、切換模式、進入重播或停止）";
+    const write = this.outcome ? log.warn : log.info;
+    if (this.ready !== null) {
+      write(
+        `${this.label} 結束：${why}。歷時 ${this.since()}（連上 ${fmtDur(performance.now() - this.ready)}），${this.stats()}`,
+      );
+    } else {
+      write(`${this.label} 結束（沒連上）：${why}。歷時 ${this.since()}`);
+    }
+  }
+}
+
+const shindo = (i: number) => INTENSITY_LIST[i] ?? String(i);
+
+/** 一個 EEW 訊框的內容，一則一段：編號、第幾報、單位、預警或警報、規模與震央。 */
+function eewSummary(parsed: unknown): string {
+  const list = (Array.isArray(parsed) ? parsed : [parsed]) as {
+    id?: string;
+    serial?: number;
+    author?: string;
+    status?: number;
+    eq?: { mag?: number; loc?: string; max?: number };
+    time?: number;
+  }[];
+  if (!list.length) return "空的（目前沒有生效中的預警）";
+  return list
+    .map((e) => {
+      const kind = e.status === 1 ? "警報" : e.status === 3 ? "取消" : "預警";
+      const lag = e.time && e.time > 1e12 ? `，發布後 ${fmtDur(realNow() - e.time)} 收到` : "";
+      return `${e.author ?? "?"} ${e.id ?? "?"} 第 ${e.serial ?? "?"} 報 ${kind} M${e.eq?.mag ?? "?"} ${e.eq?.loc ?? "?"} 最大 ${shindo(e.eq?.max ?? -1)}${lag}`;
+    })
+    .join("；");
+}
+
 const lookups: RtsV1Lookups = {
   station: (id) => {
     const at = variable.station?.[id]?.info.at(-1);
@@ -109,14 +248,21 @@ export interface SseManager {
 interface SseFrame {
   event?: string;
   data: string;
+  /** A `:` comment line — the server's `: ping <unix s>` heartbeat. */
+  comment?: string;
 }
 
 /** One SSE block. `:` comments (the server's `: ping`) carry no data. */
 function parseFrame(block: string): SseFrame {
   let event: string | undefined;
+  let comment: string | undefined;
   const data: string[] = [];
   for (const line of block.split("\n")) {
-    if (!line || line.startsWith(":")) continue;
+    if (!line) continue;
+    if (line.startsWith(":")) {
+      comment = line.slice(1).trim();
+      continue;
+    }
     const colon = line.indexOf(":");
     const field = colon === -1 ? line : line.slice(0, colon);
     let value = colon === -1 ? "" : line.slice(colon + 1);
@@ -124,7 +270,7 @@ function parseFrame(block: string): SseFrame {
     if (field === "event") event = value;
     else if (field === "data") data.push(value);
   }
-  return { event, data: data.join("\n") };
+  return { event, data: data.join("\n"), comment };
 }
 
 /** Splits a byte stream into SSE frames, holding a partial one for the next chunk. */
@@ -143,7 +289,7 @@ interface Stream {
   name: string;
   /** Read at every connection, so a reconnect or handover takes the current mode. */
   url: () => string;
-  onFrame: (frame: SseFrame) => void;
+  onFrame: (frame: SseFrame, conn: ConnLog) => void;
 }
 
 /**
@@ -154,16 +300,20 @@ interface Stream {
  */
 function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { handover: () => void } {
   let failures = 0;
-  let frames = 0;
   /** The connection in use, and one taking over from it. */
   let active: AbortController | null = null;
   let pending: AbortController | null = null;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** The connection in use, for the handover's log line. */
+  let activeLabel = "";
+
   const later = (handover: boolean) => {
     if (signal.aborted) return;
     if (retryTimer) clearTimeout(retryTimer);
-    retryTimer = setTimeout(() => connect(handover), Math.min(reconnectDelay * 2 ** failures, BACKOFF_MAX_MS));
+    const delay = Math.min(reconnectDelay * 2 ** failures, BACKOFF_MAX_MS);
+    log.info(`${s.name} ${fmtDur(delay)} 後${handover ? "再試交接" : "重連"}（連續失敗 ${failures + 1} 次）`);
+    retryTimer = setTimeout(() => connect(handover), delay);
     failures++;
   };
 
@@ -183,20 +333,22 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
     }
     const end = () => attempt.abort();
     signal.addEventListener("abort", end, { once: true });
+    const url = s.url();
+    const conn = new ConnLog(s.name, url);
+    const waited = performance.now();
     let stale: ReturnType<typeof setTimeout> | undefined;
     const alive = () => {
       clearTimeout(stale);
       stale = setTimeout(() => {
-        log.warn(`${s.name}: nothing for ${STALE_MS / 1000} s → reconnect`);
+        conn.outcome = `${fmtDur(STALE_MS)} 沒有任何資料（心跳 60s 一次），視為斷線`;
         attempt.abort();
       }, STALE_MS);
     };
     let up = false;
     const notReady = setTimeout(() => {
-      log.warn(`${s.name}: no greeting within ${READY_MS / 1000} s → drop`);
+      conn.outcome = `${fmtDur(READY_MS)} 內沒有問候，放棄這條連線`;
       attempt.abort();
     }, READY_MS);
-    const url = s.url();
 
     http
       .stream(url, {
@@ -204,8 +356,8 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
         headers: { Accept: "text/event-stream", "Cache-Control": "no-cache" },
       })
       .then(async (res) => {
+        conn.http(res);
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
-        log.info(`${s.name} connected (${res.status}) ${url.replace(/^.*\?/, "?")}`);
         mark(`sse-${s.name}-connected`);
         alive();
         const reader = res.body.getReader();
@@ -215,12 +367,17 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
           if (done) throw new Error("stream ended");
           alive();
           for (const frame of split(value)) {
+            if (frame.comment?.startsWith("ping")) conn.ping(frame.comment);
             if (!frame.data && !frame.event) continue;
             if (!up) {
               up = true;
+              conn.up();
               clearTimeout(notReady);
               failures = 0;
               if (pending === attempt) {
+                log.info(
+                  `交接完成：${conn.label} 就緒（等了 ${fmtDur(performance.now() - waited)}），關閉舊連線 ${activeLabel}`,
+                );
                 // Also drops a reconnect the replaced connection had asked for.
                 if (retryTimer) clearTimeout(retryTimer);
                 retryTimer = null;
@@ -228,9 +385,11 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
                 active = attempt;
                 pending = null;
               }
+              activeLabel = conn.label;
             }
-            if (frames++ % 40 === 0) log.debug(`${s.name} frame #${frames} (${frame.event ?? "message"})`);
-            s.onFrame(frame);
+            conn.frame(frame.event ?? "message", frame.data.length);
+            if (frame.event === "info") conn.greeting(frame.data);
+            s.onFrame(frame, conn);
           }
         }
       })
@@ -238,21 +397,22 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
         // Entering replay aborts both streams on purpose, and a handover
         // closes the connection it replaced. Neither is a failure: no warning,
         // no reconnect. (Node health is the HTTP layer's; it ignores aborts too.)
+        if (!attempt.signal.aborted) conn.outcome = e instanceof Error ? e.message : String(e);
         if (signal.aborted) return;
         if (pending === attempt && !up) {
-          log.warn(`${s.name} handover failed → keeping the current connection`, e);
+          log.warn(`交接失敗：新連線 ${conn.label} 在就緒前就結束，保留目前的連線 ${activeLabel}`);
           pending = null;
           later(true);
           return;
         }
         if (attempt !== active) return;
-        if (!attempt.signal.aborted) log.warn(`${s.name} error → reconnect`, e);
         later(false);
       })
       .finally(() => {
         clearTimeout(stale);
         clearTimeout(notReady);
         signal.removeEventListener("abort", end);
+        conn.end();
       });
   }
 
@@ -269,17 +429,18 @@ export function init(options: SseHandlers = {}): SseManager {
   const controller = new AbortController();
   sseController = controller;
   const { signal } = controller;
+  log.info(
+    `啟動即時連線：節點 ${lbApiHost()}，trem topic ${TOPICS}（${background ? "休眠：rts 只收有測站觸發的資料" : "live"}），eew 為 CWA 預警`,
+  );
 
   const trem = openStream(
     {
       name: "trem",
       url: () => `https://${lbApiHost()}/api/v1/trem/sse?topics=${TOPICS}${background ? "" : "&mode=live"}`,
-      onFrame: (frame) => {
+      onFrame: (frame, conn) => {
         switch (frame.event) {
           case "info":
-            // What the server granted, and what it left out and why.
-            log.info(`trem greeting ${frame.data}`);
-            return;
+            return; // the greeting: logged by the connection
           case "trem.rts.v1": {
             let payload: RtsV1;
             try {
@@ -293,15 +454,25 @@ export function init(options: SseHandlers = {}): SseManager {
           }
           case "trem.intensity.v1": {
             const report = readIntensityXml(decodePayload(frame.data));
-            if (report) onIntensity?.([report]);
+            if (report) {
+              log.info(
+                `${conn.label} 收到 trem.intensity.v1：EventID=${report.id} 第 ${report.serial} 報 ${report.status} 最大震度 ${shindo(report.max)}（${fmtBytes(frame.data.length)}）`,
+              );
+              onIntensity?.([report]);
+            } else {
+              log.warn(`${conn.label} trem.intensity.v1 解不開，略過（${fmtBytes(frame.data.length)}）`);
+            }
             return;
           }
           case "unsubscribed":
+            log.warn(`${conn.label} topic 被伺服器停掉：${frame.data}。其他 topic 照收，等下次重連再要`);
+            return;
           case "close":
-            log.warn(`trem ${frame.event}: ${frame.data}`);
+            log.warn(`${conn.label} 伺服器主動關閉：${frame.data}`);
             return;
           default:
-            return; // a topic this client does not read
+            log.info(`${conn.label} 略過 app 不認得的 event ${frame.event ?? "message"}`);
+            return;
         }
       },
     },
@@ -313,17 +484,18 @@ export function init(options: SseHandlers = {}): SseManager {
     {
       name: "eew",
       url: () => `https://${lbApiHost()}/api/v2/eq/eew?sse=1`,
-      onFrame: (frame) => {
-        if (frame.event) {
-          // The `info` greeting names the node that answered; EEWs come unnamed.
-          if (frame.event === "info") log.info(`eew greeting ${frame.data}`);
-          return;
-        }
+      onFrame: (frame, conn) => {
+        // The `info` greeting names the node that answered (logged by the
+        // connection); EEWs come unnamed.
+        if (frame.event) return;
         try {
           const parsed: unknown = JSON.parse(frame.data);
-          if (parsed != null) onEew?.(parsed);
+          if (parsed != null) {
+            log.info(`${conn.label} 收到 EEW：${eewSummary(parsed)}（${fmtBytes(frame.data.length)}）`);
+            onEew?.(parsed);
+          }
         } catch {
-          /* skip invalid JSON */
+          log.warn(`${conn.label} EEW 不是合法的 JSON，略過：${frame.data.slice(0, 200)}`);
         }
       },
     },
@@ -337,7 +509,7 @@ export function init(options: SseHandlers = {}): SseManager {
   // take a fresh connection at once, each keeping the old until it is up.
   if (typeof window !== "undefined") {
     const renew = () => {
-      log.info("network back → fresh connections");
+      log.info("網路恢復：trem 與 eew 各建立新連線，舊的留到交接完成");
       trem.handover();
       eew.handover();
     };
@@ -347,13 +519,14 @@ export function init(options: SseHandlers = {}): SseManager {
 
   return {
     abort: () => {
+      if (!signal.aborted) log.info("停止即時連線（進入重播或重設）");
       controller.abort();
       if (sseController === controller) sseController = null;
     },
     setBackground: (value) => {
       if (value === background || signal.aborted) return;
       background = value;
-      log.info(`trem → ${background ? "sleep (alert frames only)" : "live"}`);
+      log.info(`切成${background ? "休眠" : " live "}模式，trem 建立新連線，舊的留到交接完成`);
       trem.handover();
     },
   };

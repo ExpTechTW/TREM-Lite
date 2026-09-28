@@ -98,13 +98,23 @@ pub async fn ntp_sync() -> Result<NtpResult, String> {
     let udp = tauri::async_runtime::spawn_blocking(sntp)
         .await
         .map_err(|e| e.to_string())?;
-    match udp {
+    let result = match udp {
         Ok(r) => Ok(r),
         Err(e) => {
-            log::debug!("SNTP failed ({e}), trying HTTP");
+            log::debug!("SNTP 失敗（{e}），改用 HTTP 對時");
             http(&reqwest::Client::new()).await
         }
+    };
+    match &result {
+        Ok(r) => log::debug!(
+            "對時（{}）：本機時鐘差 {:+.0}ms，來回 {:.0}ms",
+            r.via,
+            r.offset_ms,
+            r.rtt_ms
+        ),
+        Err(e) => log::warn!("對時失敗（SNTP 與 HTTP 都不通）：{e}"),
     }
+    result
 }
 
 #[cfg(test)]

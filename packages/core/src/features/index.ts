@@ -10,6 +10,7 @@ import { initPipBridge } from "@/lib/pipBridge";
 import { initNotifications } from "@/lib/notificationClient";
 import { initSpeech } from "@/lib/speechClient";
 
+import { initEventLog } from "./log/eventLog";
 import { initData } from "./data/data";
 import { initResource } from "./data/resource";
 import { initRts } from "./rts/rts";
@@ -31,11 +32,13 @@ function guard(name: string, fn: () => void) {
   try {
     fn();
   } catch (e) {
-    log.error(`${name}:`, e);
+    log.error(`功能模組 ${name} 初始化失敗：`, e);
   }
 }
 
 export function initFeatures(): void {
+  // First: every event is logged before any module acts on it.
+  guard("event-log", initEventLog);
   guard("autostart", initAutostart);
   guard("audio", initAudio);
   guard("notifications", initNotifications);

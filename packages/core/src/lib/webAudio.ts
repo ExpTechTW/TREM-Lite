@@ -21,6 +21,9 @@
  * the web build serves from packages/core/static.
  */
 import { http } from "./http";
+import { createLogger } from "./logger";
+
+const log = createLogger("audio");
 
 export type QueueName = "eew" | "pga" | "shindo" | "update";
 
@@ -77,7 +80,10 @@ function buffer(name: string): Promise<AudioBuffer | null> {
           .asset(`${import.meta.env.BASE_URL}audio/${name}.mp3`)
           // decodeAudioData takes (and detaches) an ArrayBuffer of its own.
           .then((bytes) => audio.decodeAudioData(bytes.slice().buffer))
-          .catch(() => null)
+          .catch((e: unknown) => {
+            log.warn(`音效 ${name} 下載或解碼失敗，這個音效不會播：`, e);
+            return null;
+          })
       : Promise.resolve(null);
     decoded.set(name, clip);
   }
@@ -94,6 +100,7 @@ async function start(name: string): Promise<AudioBufferSourceNode | null> {
   gain.gain.value = VOLUME[name] ?? 1;
   source.connect(gain).connect(ctx.destination);
   source.start();
+  log.info(`開始播放 ${name}（音量 ${VOLUME[name] ?? 1}，AudioContext ${ctx.state}）`);
   return source;
 }
 
@@ -132,8 +139,9 @@ export const webAudio = {
   unlock(): void {
     try {
       ctx ??= new AudioContext();
-      void ctx.resume();
-    } catch {
+      void ctx.resume().then(() => log.info(`音效解鎖（AudioContext ${ctx?.state}，${ctx?.sampleRate} Hz）`));
+    } catch (e) {
+      log.warn("這個瀏覽器不能用 Web Audio，音效都不會播：", e);
       return; // no Web Audio: effects stay silent
     }
     for (const name of CLIPS) void buffer(name);

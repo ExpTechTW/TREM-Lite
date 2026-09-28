@@ -4,6 +4,7 @@ import { extractLocation, int_to_string, search_loc_name } from "@/domain/utils"
 import { INTENSITY_LIST } from "./constants";
 import { getConfig } from "./config";
 import { events } from "./events";
+import { createLogger } from "./logger";
 import type { ReportListItem } from "./types";
 import { variable } from "./variable";
 
@@ -13,6 +14,8 @@ interface EewSpeechState {
   loc: string;
   intensity: number;
 }
+
+const log = createLogger("speech");
 
 const cache = new Map<string, EewSpeechState>();
 let initialized = false;
@@ -27,15 +30,21 @@ function enabled(): boolean {
 }
 
 function speak(text: string, queue = true, onEnd?: () => void): void {
-  if (!enabled()) return;
+  if (!enabled()) {
+    log.debug(`語音${available() ? "設定關閉" : "在這個環境無法使用"}，不念：${text}`);
+    return;
+  }
   if (!queue) window.speechSynthesis.cancel();
+  log.info(`語音${queue ? "" : "（插隊，先停掉正在念的）"}：${text}`);
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-TW";
   utterance.rate = 1;
-  if (onEnd) {
-    utterance.onend = onEnd;
-    utterance.onerror = onEnd;
-  }
+  utterance.onend = () => onEnd?.();
+  utterance.onerror = (e) => {
+    // `interrupted` and `canceled` are ours: a newer announcement or a stop.
+    if (e.error !== "interrupted" && e.error !== "canceled") log.warn(`語音失敗（${e.error}）：${text}`);
+    onEnd?.();
+  };
   window.speechSynthesis.speak(utterance);
 }
 
@@ -49,6 +58,7 @@ export function unlockSpeech(): void {
 
 /** Drop what is being said and what is queued — at a live/replay boundary. */
 export function stopSpeech(): void {
+  log.info("停止語音（念到一半的與排隊中的）");
   if (available()) window.speechSynthesis.cancel();
 }
 

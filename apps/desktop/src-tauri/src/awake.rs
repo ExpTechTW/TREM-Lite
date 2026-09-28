@@ -31,6 +31,17 @@ const WEBVIEW2_SWITCHES: &str = "--disable-background-timer-throttling \
 #[cfg(windows)]
 const WEBVIEW2_ARGS_VAR: &str = "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS";
 
+/// What [`keep_awake`] did, for [`log_state`]: it runs before the logger exists.
+static STATE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+/// Writes what [`keep_awake`] did to the log, once the logger is up.
+pub fn log_state() {
+    match STATE.get() {
+        Some(state) => log::info!("背景不降速：{state}"),
+        None => log::info!("背景不降速：這個平台沒有可設定的項目"),
+    }
+}
+
 /// Run first in `run()`: the environment variable must be in place before any
 /// other thread or any web view exists.
 pub fn keep_awake() {
@@ -43,6 +54,7 @@ pub fn keep_awake() {
         );
         // Held for the app's life: ending it would let App Nap back in.
         std::mem::forget(activity);
+        let _ = STATE.set("macOS App Nap 已排除（user-initiated activity）".into());
     }
 
     #[cfg(windows)]
@@ -61,7 +73,7 @@ pub fn keep_awake() {
         // SAFETY: ProcessPowerThrottling takes a PROCESS_POWER_THROTTLING_STATE
         // and its size; `state` is one, alive for the call. It fails only where
         // Windows has no power throttling to opt out of.
-        let _ = unsafe {
+        let qos = unsafe {
             SetProcessInformation(
                 GetCurrentProcess(),
                 ProcessPowerThrottling,
@@ -69,13 +81,23 @@ pub fn keep_awake() {
                 std::mem::size_of_val(&state) as u32,
             )
         };
+        let qos = match qos {
+            Ok(()) => "EcoQoS 已排除".to_string(),
+            Err(e) => format!("EcoQoS 排除失敗（{e}）"),
+        };
 
         let args = match std::env::var(WEBVIEW2_ARGS_VAR) {
             // Inherited from the copy of the app that started this one.
-            Ok(set) if set.contains(WEBVIEW2_SWITCHES) => return,
-            Ok(set) if !set.trim().is_empty() => format!("{set} {WEBVIEW2_SWITCHES}"),
-            _ => WEBVIEW2_SWITCHES.to_string(),
+            Ok(set) if set.contains(WEBVIEW2_SWITCHES) => None,
+            Ok(set) if !set.trim().is_empty() => Some(format!("{set} {WEBVIEW2_SWITCHES}")),
+            _ => Some(WEBVIEW2_SWITCHES.to_string()),
         };
-        std::env::set_var(WEBVIEW2_ARGS_VAR, args);
+        if let Some(args) = &args {
+            std::env::set_var(WEBVIEW2_ARGS_VAR, args);
+        }
+        let _ = STATE.set(format!(
+            "{qos}；{WEBVIEW2_ARGS_VAR}={}",
+            std::env::var(WEBVIEW2_ARGS_VAR).unwrap_or_default()
+        ));
     }
 }

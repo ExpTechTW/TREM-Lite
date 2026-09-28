@@ -58,5 +58,5 @@ export function registerMapProtocol(): void {
     return { data: await res.arrayBuffer() };
   });
 
-  log.debug(`registered ${SCHEME}:// protocol`);
+  log.debug(`地圖圖資改走 ${SCHEME}:// 經 HTTP 層（快取與節點切換）`);
 }

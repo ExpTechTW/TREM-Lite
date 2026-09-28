@@ -9,6 +9,8 @@
  * tiles are sent with, so a request with `maxAge` is kept in Cache Storage
  * instead, as the proxy keeps it on desktop.
  */
+import { createLogger, fmtBytes, fmtDur } from "@/lib/logger";
+
 import { alternative, report, route, type Route } from "./regions";
 import { HttpError, HttpResponse, type HttpBackend, type HttpOptions } from "./types";
 import { watchBody } from "./watchBody";
@@ -58,6 +60,36 @@ async function run(url: string, options: HttpOptions): Promise<Response> {
 }
 
 const aborted = (err: unknown) => err instanceof HttpError && err.type === "ABORTED";
+
+const log = createLogger("http");
+
+/** Map tiles, terrain and glyphs: hundreds a pan, so counted, not listed. */
+export const isMapAsset = (url: string) => /\/api\/v1\/map\/(tiles|terrain)\/|map-assets\//.test(url);
+
+const MAP_SUMMARY_MS = 60_000;
+const mapStats = { n: 0, kept: 0, failed: 0, bytes: 0, since: performance.now() };
+
+/** One map asset, and a line for the minute's worth once a minute has passed. */
+function countMapAsset(kept: boolean, ok: boolean, bytes: number): void {
+  mapStats.n++;
+  if (kept) mapStats.kept++;
+  if (!ok) mapStats.failed++;
+  mapStats.bytes += bytes;
+  const now = performance.now();
+  if (now - mapStats.since < MAP_SUMMARY_MS) return;
+  log.debug(
+    `地圖圖資 ${fmtDur(now - mapStats.since)} 內 ${mapStats.n} 個（本機副本 ${mapStats.kept}，失敗 ${mapStats.failed}，${fmtBytes(mapStats.bytes)}）`,
+  );
+  Object.assign(mapStats, { n: 0, kept: 0, failed: 0, bytes: 0, since: now });
+}
+
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+};
 
 const FRESH_CACHE = "trem-fresh";
 /** When a kept copy was stored (ms), on the copy itself. */
@@ -132,23 +164,34 @@ async function send(url: string, options: HttpOptions): Promise<Response> {
     const left = deadline - performance.now();
     if (left <= 0) break;
     let wait = BACKOFF_BASE_MS * 2 ** (tries - 1) * (0.9 + Math.random() * 0.2);
+    let why: string;
     try {
       const res = await attempt(target, { ...options, timeout: Number.isFinite(left) ? left : undefined });
       if (!retryable(res.status)) return res;
       last = res;
+      why = `HTTP ${res.status}`;
       const after = Number(res.headers.get("retry-after"));
       if (res.status === 429 && after > 0) wait = Math.min(after * 1000, MAX_RETRY_AFTER_MS);
     } catch (err) {
       if (aborted(err)) throw err;
       last = err;
+      why = err instanceof Error ? err.message : String(err);
     }
-    if (tries === MAX_ATTEMPTS) break;
+    if (tries === MAX_ATTEMPTS) {
+      log.warn(`${hostOf(target.url)} 第 ${tries} 次仍然 ${why}，放棄：${url}`);
+      break;
+    }
     const next = alternative(target);
     if (next) {
+      log.warn(`${hostOf(target.url)} 第 ${tries} 次 ${why}，改走 ${hostOf(next.url)}：${url}`);
       target = next;
       continue;
     }
-    if (performance.now() + wait >= deadline) break;
+    if (performance.now() + wait >= deadline) {
+      log.warn(`${hostOf(target.url)} 第 ${tries} 次 ${why}，剩下的時間不夠再試：${url}`);
+      break;
+    }
+    log.warn(`${hostOf(target.url)} 第 ${tries} 次 ${why}，${fmtDur(wait)} 後重試：${url}`);
     await sleep(wait, options.signal);
   }
   if (last instanceof Response) return last;
@@ -157,14 +200,30 @@ async function send(url: string, options: HttpOptions): Promise<Response> {
 
 export const webBackend: HttpBackend = {
   async request(url, options) {
+    const started = performance.now();
+    const method = options.method ?? "GET";
+    const mapAsset = isMapAsset(url);
     const kept = options.maxAge ? await freshCopy(url, options.maxAge) : null;
-    const res = kept ?? (await send(url, options));
+    let res: Response;
+    try {
+      res = kept ?? (await send(url, options));
+    } catch (err) {
+      if (mapAsset) countMapAsset(false, false, 0);
+      else if (!aborted(err)) log.warn(`${method} ${url} 失敗（${fmtDur(performance.now() - started)}）：${err instanceof Error ? err.message : String(err)}`);
+      throw err;
+    }
     if (!kept && options.maxAge && res.status === 200) void keep(url, res.clone());
     const headers: Record<string, string> = {};
     res.headers.forEach((value, name) => {
       headers[name.toLowerCase()] = value;
     });
     const bytes = new Uint8Array(await res.arrayBuffer());
+    if (mapAsset) countMapAsset(!!kept, res.ok, bytes.length);
+    else {
+      const line = `${method} ${url} → ${res.status}（${fmtDur(performance.now() - started)}，${fmtBytes(bytes.length)}${kept ? "，本機副本" : ""}）`;
+      if (res.ok || res.status === 304) log.debug(line);
+      else log.warn(line);
+    }
     return new HttpResponse(
       {
         status: res.status,

@@ -2,6 +2,9 @@
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import type { BackgroundThrottlingPolicy } from "@tauri-apps/api/window";
 import { inTauri } from "./env";
+import { createLogger } from "./logger";
+
+const log = createLogger("window");
 
 // Legacy main.js used `transparent: is_mac ? false : true` for the settings window
 // (macOS renders it opaque to avoid the transparent-decorationless corner artifact).
@@ -12,10 +15,12 @@ export async function openSettings(): Promise<void> {
   if (!inTauri) return;
   const existing = await WebviewWindow.getByLabel("settings");
   if (existing) {
+    log.info("設定視窗已開著，帶到前面");
     await existing.show();
     await existing.setFocus();
     return;
   }
+  log.info("開啟設定視窗");
   new WebviewWindow("settings", {
     url: "settings.html",
     title: "TREM-Lite 設定",
@@ -30,6 +35,7 @@ export async function openSettings(): Promise<void> {
 async function createPipWindow(): Promise<WebviewWindow> {
   const existing = await WebviewWindow.getByLabel("pip");
   if (existing) return existing;
+  log.info("建立 PiP 小視窗（先隱藏，畫好警報內容再顯示）");
 
   const created = new WebviewWindow("pip", {
     url: "pip.html",
@@ -66,7 +72,10 @@ async function createPipWindow(): Promise<WebviewWindow> {
       settled = true;
       clearTimeout(timeout);
       if (result.window) resolve(result.window);
-      else reject(result.error instanceof Error ? result.error : new Error(String(result.error)));
+      else {
+        log.error("PiP 小視窗建立失敗：", result.error);
+        reject(result.error instanceof Error ? result.error : new Error(String(result.error)));
+      }
     };
     const timeout = window.setTimeout(() => {
       void WebviewWindow.getByLabel("pip")

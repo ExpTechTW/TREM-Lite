@@ -24,7 +24,6 @@
     "notification:default",
     "os:default",
     "autostart:default",
-    "log:default",
     {
       "identifier": "http:default",
       "allow": [

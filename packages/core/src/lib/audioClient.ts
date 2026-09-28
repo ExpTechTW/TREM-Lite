@@ -12,35 +12,45 @@ import { AUDIO } from "./constants";
 import { getConfig } from "./config";
 import { events } from "./events";
 import { inTauri } from "./env";
+import { createLogger } from "./logger";
 import { webAudio, type QueueName } from "./webAudio";
 
+const log = createLogger("audio");
+
 export function enqueue(queue: QueueName, sound: string): void {
+  log.info(`音效排入 ${queue} 佇列：${sound}`);
   if (!inTauri) return webAudio.enqueue(queue, sound);
   void invoke("audio_enqueue", { queue, sound });
 }
 export function play(sound: string): void {
+  log.info(`播放音效：${sound}`);
   if (!inTauri) return webAudio.play(sound);
   void invoke("audio_play", { sound });
 }
 export function clearQueue(queue: QueueName): void {
+  log.debug(`清空 ${queue} 佇列裡還沒播的音效`);
   if (!inTauri) return webAudio.clear(queue);
   void invoke("audio_clear", { queue });
 }
 
 /** Play a clip once for the settings page, cutting off the previous preview. */
 export function preview(sound: string): void {
+  log.info(`試聽音效：${sound}`);
   if (!inTauri) return webAudio.preview(sound);
   void invoke("audio_preview", { sound });
 }
 
 /** Silence everything playing or queued — at a live/replay boundary. */
 export function stopAll(): void {
+  log.info("停止所有音效（播放中與排隊中的）");
   if (!inTauri) return webAudio.stopAll();
   void invoke("audio_stop_all");
 }
 function sfx(key: string): boolean {
   try {
-    return !!getConfig()["check-box"][key];
+    const on = !!getConfig()["check-box"][key];
+    if (!on) log.debug(`音效設定 ${key} 關閉，這次不播`);
+    return on;
   } catch {
     return false;
   }

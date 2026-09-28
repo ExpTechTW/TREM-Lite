@@ -148,7 +148,7 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
     let (_stream, handle) = match OutputStream::try_default() {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("[audio] no output device: {e}");
+            log::error!("沒有音訊輸出裝置，所有音效都不會播：{e}");
             // Drain commands so senders never block, but we cannot play anything.
             while rx.recv().is_ok() {}
             return;
@@ -158,16 +158,20 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
     let mut queues: HashMap<&'static str, QueueState> = HashMap::new();
     let mut preview: Option<Sink> = None;
     for &q in QUEUES.iter() {
-        if let Ok(sink) = Sink::try_new(&handle) {
-            queues.insert(
-                q,
-                QueueState {
-                    sink,
-                    pending: VecDeque::new(),
-                },
-            );
+        match Sink::try_new(&handle) {
+            Ok(sink) => {
+                queues.insert(
+                    q,
+                    QueueState {
+                        sink,
+                        pending: VecDeque::new(),
+                    },
+                );
+            }
+            Err(e) => log::error!("{q} 佇列建立失敗，這個佇列的音效不會播：{e}"),
         }
     }
+    log::info!("音效引擎就緒：{} 個佇列", queues.len());
 
     loop {
         // Wait for the next command — indefinitely while no clip is waiting on
@@ -207,10 +211,10 @@ fn run_audio_thread(rx: Receiver<AudioCommand>) {
         }
 
         // Advance each queue: if the sink finished, start the next pending clip.
-        for state in queues.values_mut() {
+        for (queue, state) in queues.iter_mut() {
             if state.sink.empty() {
                 if let Some(sound) = state.pending.pop_front() {
-                    play_clip(&state.sink, &sound);
+                    play_clip(&state.sink, &sound, queue);
                 }
             }
         }
@@ -230,20 +234,32 @@ fn handle_command(
                 // Evict pending lower-priority clips this clip preempts.
                 let evict = preempts(&sound);
                 if !evict.is_empty() {
+                    let before = state.pending.len();
                     state.pending.retain(|p| !evict.contains(&p.as_str()));
+                    if state.pending.len() < before {
+                        log::debug!(
+                            "{queue} 佇列：{sound} 取代了 {} 個還沒播的較低優先音效",
+                            before - state.pending.len()
+                        );
+                    }
                 }
                 // ALERT double-plays (audio.js:44-47).
                 if sound == "ALERT" {
                     state.pending.push_back(sound.clone());
                 }
                 state.pending.push_back(sound);
+            } else {
+                log::warn!("沒有 {queue} 這個佇列，{sound} 不播");
             }
         }
         AudioCommand::PlayDirect { sound } => {
-            if let Ok(sink) = Sink::try_new(handle) {
-                play_clip(&sink, &sound);
-                // Detach so it plays to completion independently (overlaps allowed).
-                sink.detach();
+            match Sink::try_new(handle) {
+                Ok(sink) => {
+                    play_clip(&sink, &sound, "直接播放");
+                    // Detach so it plays to completion independently (overlaps allowed).
+                    sink.detach();
+                }
+                Err(e) => log::error!("{sound} 沒辦法播：{e}"),
             }
         }
         AudioCommand::Clear { queue } => {
@@ -252,6 +268,8 @@ fn handle_command(
             }
         }
         AudioCommand::StopAll => {
+            let waiting: usize = queues.values().map(|q| q.pending.len()).sum();
+            log::info!("停止所有音效：播放中的停掉，排隊中的 {waiting} 個清掉");
             for state in queues.values_mut() {
                 state.pending.clear();
                 state.sink.stop();
@@ -264,9 +282,12 @@ fn handle_command(
             if let Some(sink) = preview.take() {
                 sink.stop();
             }
-            if let Ok(sink) = Sink::try_new(handle) {
-                play_clip(&sink, &sound);
-                *preview = Some(sink);
+            match Sink::try_new(handle) {
+                Ok(sink) => {
+                    play_clip(&sink, &sound, "試聽");
+                    *preview = Some(sink);
+                }
+                Err(e) => log::error!("試聽 {sound} 沒辦法播：{e}"),
             }
         }
     }
@@ -278,11 +299,17 @@ fn decode(sound: &str) -> Option<Decoder<Cursor<&'static [u8]>>> {
 }
 
 /// Decode `sound` and start it on `sink` at its per-clip volume (no-op if unknown).
-fn play_clip(sink: &Sink, sound: &str) {
-    if let Some(source) = decode(sound) {
-        sink.set_volume(volume_for(sound));
-        sink.append(source);
-        sink.play();
+/// `from` is the queue, or how it was asked for, for the log.
+fn play_clip(sink: &Sink, sound: &str, from: &str) {
+    match decode(sound) {
+        Some(source) => {
+            let volume = volume_for(sound);
+            log::info!("開始播放 {sound}（{from}，音量 {volume}）");
+            sink.set_volume(volume);
+            sink.append(source);
+            sink.play();
+        }
+        None => log::warn!("{sound} 不是內建的音效或解不開，略過（{from}）"),
     }
 }
 

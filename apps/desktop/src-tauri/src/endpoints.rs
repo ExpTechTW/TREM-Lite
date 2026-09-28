@@ -236,7 +236,7 @@ impl Endpoints {
         pool.reported(target.node, ok);
         if was_healthy && !pool.nodes[target.node].healthy {
             log::warn!(
-                "[endpoints] {} failed {FAILOVER_AFTER} requests in a row",
+                "{} 連續 {FAILOVER_AFTER} 個請求失敗，標為不健康",
                 target.host
             );
         }
@@ -264,8 +264,8 @@ impl Endpoints {
         for (pool, node, rtt) in results {
             let n = &pools[pool].nodes[node];
             match (n.healthy, rtt) {
-                (true, None) => log::warn!("[endpoints] {} failed its probe", n.host),
-                (false, Some(ms)) => log::info!("[endpoints] {} is back ({ms:.0} ms)", n.host),
+                (true, None) => log::warn!("{} 探測失敗，標為不健康", n.host),
+                (false, Some(ms)) => log::info!("{} 恢復（探測 {ms:.0}ms）", n.host),
                 _ => {}
             }
             pools[pool].probed(node, rtt);
@@ -291,7 +291,7 @@ fn log_move(pool: usize, moved: Option<(usize, usize)>) {
     if let Some((from, to)) = moved {
         let s = &SERVICES[pool];
         log::info!(
-            "[endpoints] {}: {} → {}",
+            "換節點：{} 從 {} 改走 {}",
             s.balanced,
             s.nodes[from],
             s.nodes[to]

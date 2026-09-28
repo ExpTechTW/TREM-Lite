@@ -47,6 +47,7 @@ use tauri_plugin_http::reqwest;
 use tokio::sync::{OnceCell, Semaphore};
 
 use crate::endpoints::{Endpoints, Target};
+use crate::logging::{fmt_bytes, fmt_dur};
 use crate::http_cache::{gunzip, now_ms, CacheEntry, HttpCache, StoredResponse};
 
 /// Hosts the proxy is willing to talk to. This command bypasses the
@@ -301,6 +302,8 @@ struct Fetched {
     body: Arc<Vec<u8>>,
     from_cache: bool,
     stale: bool,
+    /// Where the answer came from, in the log's words.
+    via: &'static str,
 }
 
 impl Fetched {
@@ -316,7 +319,13 @@ impl Fetched {
         frame(&meta, &self.body)
     }
 
-    fn from_entry(entry: CacheEntry, url: String, body: Vec<u8>, stale: bool) -> Self {
+    fn from_entry(
+        entry: CacheEntry,
+        url: String,
+        body: Vec<u8>,
+        stale: bool,
+        via: &'static str,
+    ) -> Self {
         Self {
             status: entry.status,
             url,
@@ -324,6 +333,7 @@ impl Fetched {
             body: Arc::new(body),
             from_cache: true,
             stale,
+            via,
         }
     }
 }
@@ -368,9 +378,87 @@ pub async fn http_request(
     if !host_allowed(&host) {
         return Err(format!("host not allowed: {host}"));
     }
-    request(&state, req, parsed, host)
-        .await
-        .map(|f| f.response())
+    let started = Instant::now();
+    let method = req.method.as_deref().unwrap_or("GET").to_ascii_uppercase();
+    let url = req.url.clone();
+    let result = request(&state, req, parsed, host).await;
+    log_exchange(&method, &url, started.elapsed(), &result);
+    result.map(|f| f.response())
+}
+
+/// Map tiles, terrain and glyphs: hundreds a pan, so counted, not listed.
+fn is_map_asset(url: &str) -> bool {
+    url.contains("/api/v1/map/tiles/") || url.contains("/api/v1/map/terrain/") || url.contains("map-assets/")
+}
+
+const MAP_SUMMARY_EVERY: Duration = Duration::from_secs(60);
+
+struct MapStats {
+    n: u64,
+    cached: u64,
+    failed: u64,
+    bytes: u64,
+    since: Option<Instant>,
+}
+
+static MAP_STATS: Mutex<MapStats> = Mutex::new(MapStats {
+    n: 0,
+    cached: 0,
+    failed: 0,
+    bytes: 0,
+    since: None,
+});
+
+/// One line per API request; map assets add to the minute's count instead.
+fn log_exchange(method: &str, url: &str, took: Duration, result: &Result<Fetched, String>) {
+    if is_map_asset(url) {
+        let mut stats = lock(&MAP_STATS);
+        let since = *stats.since.get_or_insert_with(Instant::now);
+        stats.n += 1;
+        match result {
+            Ok(f) => {
+                stats.bytes += f.body.len() as u64;
+                stats.cached += u64::from(f.from_cache);
+                stats.failed += u64::from(!(200..300).contains(&f.status));
+            }
+            Err(_) => stats.failed += 1,
+        }
+        if since.elapsed() >= MAP_SUMMARY_EVERY {
+            log::debug!(
+                "地圖圖資 {} 內 {} 個（本機副本 {}，失敗 {}，{}）",
+                fmt_dur(since.elapsed()),
+                stats.n,
+                stats.cached,
+                stats.failed,
+                fmt_bytes(stats.bytes)
+            );
+            *stats = MapStats {
+                n: 0,
+                cached: 0,
+                failed: 0,
+                bytes: 0,
+                since: Some(Instant::now()),
+            };
+        }
+        return;
+    }
+    match result {
+        Ok(f) => {
+            let line = format!(
+                "{method} {url} → {}（{}，{}，{}）",
+                f.status,
+                f.via,
+                fmt_dur(took),
+                fmt_bytes(f.body.len() as u64)
+            );
+            if f.stale || f.status >= 400 {
+                log::warn!("{line}");
+            } else {
+                log::debug!("{line}");
+            }
+        }
+        Err(e) => log::warn!("{method} {url} 失敗（{}）：{e}", fmt_dur(took)),
+    }
 }
 
 /// A checked request: the cache, the in-flight table, then [`fetch`].
@@ -433,7 +521,15 @@ async fn fetch(
         Some(entry) if fresh(&entry, req.max_age_ms, now_ms()) => {
             let body_gz = entry.body_gz.clone();
             match cache_replay(&state.cache, key.to_string(), body_gz).await {
-                Some(body) => return Ok(Fetched::from_entry(entry, req.url.clone(), body, false)),
+                Some(body) => {
+                    return Ok(Fetched::from_entry(
+                        entry,
+                        req.url.clone(),
+                        body,
+                        false,
+                        "本機副本，仍新鮮，沒發請求",
+                    ))
+                }
                 None => None,
             }
         }
@@ -445,7 +541,13 @@ async fn fetch(
         if let Some(entry) = cached.clone() {
             let body_gz = entry.body_gz.clone();
             if let Some(body) = cache_replay(&state.cache, key.to_string(), body_gz).await {
-                return Ok(Fetched::from_entry(entry, req.url.clone(), body, true));
+                return Ok(Fetched::from_entry(
+                    entry,
+                    req.url.clone(),
+                    body,
+                    true,
+                    "過期副本，上游要求暫停中",
+                ));
             }
         }
         if Instant::now() + wait >= deadline {
@@ -512,6 +614,11 @@ async fn fetch(
             .and_then(retry_after);
         if let Some(wait) = cooldown {
             state.cool_down(&upstream, wait);
+            log::warn!(
+                "{upstream} 回 HTTP {} 要求放慢：{} 內不再送請求",
+                status.unwrap_or_default(),
+                fmt_dur(wait)
+            );
         }
         result = sent.map_err(|e| {
             if e.is_timeout() {
@@ -520,18 +627,36 @@ async fn fetch(
                 format!("network error: {e}")
             }
         });
+        let why = match (&result, status) {
+            (Err(e), _) => e.clone(),
+            (Ok(_), Some(s)) => format!("HTTP {s}"),
+            (Ok(_), None) => "沒有回應".to_string(),
+        };
         if !failed || attempt == MAX_ATTEMPTS {
+            if failed {
+                log::warn!("{upstream} 第 {attempt} 次仍然 {why}，放棄：{}", req.url);
+            }
             break;
         }
         // Next: another healthy node at once, else this one after a backoff.
         match target.and_then(|t| state.endpoints.alternative(t)) {
-            Some(next) => target = Some(next),
+            Some(next) => {
+                let next_host = at(&parsed, Some(next)).host_str().unwrap_or(host).to_string();
+                log::warn!("{upstream} 第 {attempt} 次 {why}，改走 {next_host}：{}", req.url);
+                target = Some(next);
+            }
             None => {
                 let backoff =
                     cooldown.unwrap_or_else(|| jitter(BACKOFF_BASE * 2u32.pow(attempt - 1)));
                 if Instant::now() + backoff >= deadline {
+                    log::warn!("{upstream} 第 {attempt} 次 {why}，剩下的時間不夠再試：{}", req.url);
                     break;
                 }
+                log::warn!(
+                    "{upstream} 第 {attempt} 次 {why}，{} 後重試：{}",
+                    fmt_dur(backoff),
+                    req.url
+                );
                 tokio::time::sleep(backoff).await;
             }
         }
@@ -548,7 +673,13 @@ async fn fetch(
         if let Some(entry) = cached.clone() {
             let body_gz = entry.body_gz.clone();
             if let Some(body) = cache_replay(&state.cache, key.to_string(), body_gz).await {
-                return Ok(Fetched::from_entry(entry, req.url.clone(), body, true));
+                return Ok(Fetched::from_entry(
+                    entry,
+                    req.url.clone(),
+                    body,
+                    true,
+                    "過期副本，上游沒有可用的回應",
+                ));
             }
         }
     }
@@ -572,7 +703,7 @@ async fn fetch(
             state.cache.validated(key);
             let body_gz = entry.body_gz.clone();
             if let Some(body) = cache_replay(&state.cache, key.to_string(), body_gz).await {
-                return Ok(Fetched::from_entry(entry, final_url, body, false));
+                return Ok(Fetched::from_entry(entry, final_url, body, false, "304 沒變，用本機副本"));
             }
         }
         // Server said "unchanged" but our row is gone or corrupt. Nothing to
@@ -615,6 +746,7 @@ async fn fetch(
         body: Arc::new(body),
         from_cache: false,
         stale: false,
+        via: "網路",
     })
 }
 

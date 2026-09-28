@@ -19,7 +19,7 @@ export function MapView() {
     // Register every feature's event subscriptions BEFORE the map emits MapLoad.
     initFeatures();
     mark("features-init");
-    setupMap(ref.current).catch((e) => log.error("boot failed", e));
+    setupMap(ref.current).catch((e) => log.error("地圖啟動失敗：", e));
   }, []);
 
   return <div ref={ref} className="legacy-map absolute inset-0 h-full w-full" />;

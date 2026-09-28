@@ -12,6 +12,11 @@ fn window(app: &tauri::AppHandle, label: &str) -> Option<WebviewWindow> {
 /// Shared by the `window_focus` command and the single-instance handler.
 pub fn focus_main(app: &tauri::AppHandle) {
     if let Some(w) = window(app, "main") {
+        log::debug!(
+            "主視窗還原、顯示並聚焦（原本{}，{}）",
+            if w.is_visible().unwrap_or(false) { "顯示中" } else { "隱藏" },
+            if w.is_minimized().unwrap_or(false) { "最小化" } else { "未最小化" }
+        );
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
@@ -20,6 +25,7 @@ pub fn focus_main(app: &tauri::AppHandle) {
 
 #[tauri::command]
 pub fn window_focus(app: tauri::AppHandle) {
+    log::info!("前端要求叫出主視窗");
     focus_main(&app);
 }
 
@@ -39,6 +45,10 @@ pub fn window_state(app: tauri::AppHandle, label: String) -> (bool, bool) {
 /// Flash the taskbar / bounce the dock to grab attention.
 #[tauri::command]
 pub fn window_request_attention(app: tauri::AppHandle, critical: bool) {
+    log::info!(
+        "要求使用者注意（{}）：工作列閃爍／Dock 跳動",
+        if critical { "緊急" } else { "一般" }
+    );
     if let Some(w) = window(&app, "main") {
         let kind = Some(if critical {
             tauri::UserAttentionType::Critical
@@ -51,6 +61,7 @@ pub fn window_request_attention(app: tauri::AppHandle, critical: bool) {
 
 #[tauri::command]
 pub fn window_hide(app: tauri::AppHandle, label: String) {
+    log::info!("隱藏視窗 {label}");
     if let Some(w) = window(&app, &label) {
         let _ = w.hide();
     }
@@ -58,6 +69,7 @@ pub fn window_hide(app: tauri::AppHandle, label: String) {
 
 #[tauri::command]
 pub fn window_show(app: tauri::AppHandle, label: String) {
+    log::info!("顯示並聚焦視窗 {label}");
     if let Some(w) = window(&app, &label) {
         let _ = w.show();
         let _ = w.set_focus();
@@ -67,6 +79,7 @@ pub fn window_show(app: tauri::AppHandle, label: String) {
 /// Show the always-on-top picture-in-picture window.
 #[tauri::command]
 pub fn pip_show(app: tauri::AppHandle) {
+    log::info!("顯示 PiP 小視窗");
     if let Some(w) = window(&app, "pip") {
         let _ = w.show();
     }
@@ -74,6 +87,7 @@ pub fn pip_show(app: tauri::AppHandle) {
 
 #[tauri::command]
 pub fn pip_hide(app: tauri::AppHandle) {
+    log::info!("隱藏 PiP 小視窗");
     if let Some(w) = window(&app, "pip") {
         let _ = w.hide();
     }

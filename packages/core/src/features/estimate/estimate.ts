@@ -1,7 +1,9 @@
 // Ported from legacy/src/js/index/core/estimate.js
 
+import { INTENSITY_LIST } from "@/lib/constants";
 import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
+import { createLogger, fmtDur } from "@/lib/logger";
 import type { Ans, EewData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { eewAreaIntensity, prepareIntensityModel, type EewArea } from "@/domain/eewMath";
@@ -20,12 +22,16 @@ interface MergedArea {
   [code: string]: MergedTown | number;
 }
 
+const log = createLogger("estimate");
+
 /** Cities we've already fired an `EewNewAreaAlert` for this episode. */
 const alertedCities = new Set<string>();
 
 async function updateEewArea(ans: Ans<EewData>): Promise<void> {
   // The ML model runs in Rust (src-tauri/src/math.rs, ml_intensity.rs).
   let area: EewArea["area"];
+  const started = performance.now();
+  const which = `預警 ${ans.data.id} 第 ${ans.data.serial} 報`;
   try {
     ({ area } = await eewAreaIntensity(
       ans.data.eq.lat,
@@ -33,7 +39,8 @@ async function updateEewArea(ans: Ans<EewData>): Promise<void> {
       ans.data.eq.depth,
       ans.data.eq.mag,
     ));
-  } catch {
+  } catch (e) {
+    log.warn(`${which} 的預估震度算不出來，地圖不上色：`, e);
     return;
   }
 
@@ -42,9 +49,24 @@ async function updateEewArea(ans: Ans<EewData>): Promise<void> {
   const stillActive = variable.data.eew.some(
     (item) => item.id === ans.data.id && item.serial === ans.data.serial && !item.EewEnd,
   );
-  if (!stillActive) return;
+  if (!stillActive) {
+    log.debug(`${which} 的預估震度算完時，這一報已被更新或結束，丟棄`);
+    return;
+  }
 
   const mergedArea = mergeEqArea(area, ans.data.eq.area ?? {});
+  const felt = Object.entries(area).filter(([, t]) => t.level > 0);
+  const top = [...felt]
+    .sort(([, a], [, b]) => b.level - a.level || a.dist - b.dist)
+    .slice(0, 8)
+    .map(([code, t]) => {
+      const place = search_loc_name(Number(code));
+      return `${place ? `${place.city}${place.town}` : code} ${INTENSITY_LIST[t.level] ?? t.level}`;
+    })
+    .join("、");
+  log.info(
+    `${which} 預估震度：${felt.length} 個鄉鎮有感，最大 ${INTENSITY_LIST[mergedArea.max_i] ?? mergedArea.max_i}｜${top || "無"}｜計算 ${fmtDur(performance.now() - started)}`,
+  );
   variable.cache.eewIntensityArea[ans.data.id] = mergedArea;
   drawEewArea();
 }

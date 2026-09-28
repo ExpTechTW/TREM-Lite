@@ -56,14 +56,26 @@ fn load_or_init(app: &tauri::AppHandle) -> Result<Value, String> {
     let defaults = default_value();
 
     if !path.exists() {
+        log::info!("沒有設定檔，用預設值建立 {}", path.display());
         return reset_to_defaults(app);
     }
 
-    let raw = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let mut user: Value = serde_yaml::from_str(&raw).map_err(|e| e.to_string())?;
+    let raw = std::fs::read_to_string(&path).map_err(|e| {
+        log::error!("讀不到設定檔 {}：{e}", path.display());
+        e.to_string()
+    })?;
+    let mut user: Value = serde_yaml::from_str(&raw).map_err(|e| {
+        log::error!("設定檔 {} 不是合法的 YAML：{e}", path.display());
+        e.to_string()
+    })?;
 
     // Migrate when the bundled schema is newer.
     if version_of(&defaults) > version_of(&user) {
+        log::info!(
+            "設定檔格式 {} → {}：舊檔備份成 .yml.backup，補上新的預設項目",
+            version_of(&user),
+            version_of(&defaults)
+        );
         // backup, then merge new default keys onto the user's values.
         let _ = std::fs::write(path.with_extension("yml.backup"), &raw);
         merge_defaults(&mut user, &defaults);
@@ -79,7 +91,11 @@ fn load_or_init(app: &tauri::AppHandle) -> Result<Value, String> {
 fn write_value(app: &tauri::AppHandle, value: &Value) -> Result<(), String> {
     let path = config_path(app)?;
     let text = serde_yaml::to_string(value).map_err(|e| e.to_string())?;
-    std::fs::write(&path, text).map_err(|e| e.to_string())?;
+    std::fs::write(&path, text).map_err(|e| {
+        log::error!("寫不進設定檔 {}：{e}", path.display());
+        e.to_string()
+    })?;
+    log::debug!("設定已寫入 {}", path.display());
     Ok(())
 }
 
@@ -107,6 +123,7 @@ pub fn config_set(app: tauri::AppHandle, value: serde_json::Value) -> Result<(),
 /// Reset config back to the bundled defaults.
 #[tauri::command]
 pub fn config_reset(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    log::info!("設定還原為預設值");
     let value = reset_to_defaults(&app)?;
     let _ = app.emit("config-updated", ());
     serde_json::to_value(value).map_err(|e| e.to_string())

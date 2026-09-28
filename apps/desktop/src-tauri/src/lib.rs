@@ -44,14 +44,14 @@ pub fn run() {
     // Single-instance must be registered first (desktop only).
     #[cfg(desktop)]
     {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             // Second launch → focus the existing main window (same as window_focus).
+            log::info!(target: "app", "第二次啟動（參數 {:?}）：叫出已經在跑的主視窗", &args[1.min(args.len())..]);
             window::focus_main(app);
         }));
     }
 
     builder = builder
-        .plugin(logging::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
@@ -72,7 +72,18 @@ pub fn run() {
     builder
         .manage(AudioEngine::new())
         .setup(|app| {
-            logging::prune_old_logs(app.handle());
+            logging::init(app.handle());
+            log::info!(
+                target: "app",
+                "TREM-Lite {} 啟動｜{} {} {}｜語系 {}｜參數 {:?}",
+                app.package_info().version,
+                tauri_plugin_os::platform(),
+                tauri_plugin_os::version(),
+                tauri_plugin_os::arch(),
+                tauri_plugin_os::locale().unwrap_or_else(|| "?".into()),
+                std::env::args().skip(1).collect::<Vec<_>>(),
+            );
+            awake::log_state();
             // The intensity model: read from the app's data, or downloaded
             // there on first launch, then built ahead of the first EEW.
             match app.path().app_local_data_dir() {
@@ -138,9 +149,18 @@ pub fn run() {
                     .menu(&menu)
                     .show_menu_on_left_click(false)
                     .on_menu_event(|app, event| match event.id().as_ref() {
-                        "show" => window::focus_main(app),
-                        "restart" => app.restart(),
-                        "quit" => app.exit(0),
+                        "show" => {
+                            log::info!(target: "tray", "顯示視窗");
+                            window::focus_main(app);
+                        }
+                        "restart" => {
+                            log::info!(target: "tray", "重新啟動");
+                            app.restart();
+                        }
+                        "quit" => {
+                            log::info!(target: "tray", "結束程式");
+                            app.exit(0);
+                        }
                         _ => {}
                     })
                     .on_tray_icon_event(|tray, event| {
@@ -152,8 +172,10 @@ pub fn run() {
                         {
                             if let Some(window) = tray.app_handle().get_webview_window("main") {
                                 if window.is_visible().unwrap_or(false) {
+                                    log::info!(target: "tray", "點擊圖示：收起主視窗");
                                     let _ = window.hide();
                                 } else {
+                                    log::info!(target: "tray", "點擊圖示：叫出主視窗");
                                     window::focus_main(tray.app_handle());
                                 }
                             }
@@ -186,6 +208,8 @@ pub fn run() {
             updater::update_check,
             updater::update_pending,
             updater::update_restart,
+            logging::log_write,
+            logging::logs_open,
             window::window_focus,
             window::window_request_attention,
             window::window_hide,
@@ -199,6 +223,7 @@ pub fn run() {
             // system tray, matching the legacy Electron lifecycle.
             if window.label() == "main" {
                 if let WindowEvent::CloseRequested { api, .. } = event {
+                    log::info!(target: "window", "關閉主視窗：縮到系統匣，繼續監測");
                     api.prevent_close();
                     let _ = window.hide();
                 }
@@ -211,13 +236,20 @@ pub fn run() {
 
 /// A click on the Dock icon while the app runs (macOS): the main window comes
 /// back, closed to the tray or minimised. macOS leaves it to the app, and the
-/// app did nothing, so a hidden window stayed hidden.
-#[cfg(target_os = "macos")]
+/// app did nothing, so a hidden window stayed hidden. And the app's end, which
+/// is the last line of every run's log.
+#[cfg_attr(not(target_os = "macos"), allow(unused_variables))]
 fn on_run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
-    if let tauri::RunEvent::Reopen { .. } = event {
-        window::focus_main(app);
+    match event {
+        #[cfg(target_os = "macos")]
+        tauri::RunEvent::Reopen { .. } => {
+            log::info!(target: "app", "點擊 Dock 圖示：叫出主視窗");
+            window::focus_main(app);
+        }
+        tauri::RunEvent::Exit => {
+            log::info!(target: "app", "程式結束");
+            log::logger().flush();
+        }
+        _ => {}
     }
 }
-
-#[cfg(not(target_os = "macos"))]
-fn on_run_event(_: &tauri::AppHandle, _: tauri::RunEvent) {}

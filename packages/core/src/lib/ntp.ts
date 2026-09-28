@@ -64,11 +64,14 @@ async function measure(): Promise<{ offset_ms: number; rtt_ms: number; via: stri
 export async function syncClock(): Promise<void> {
   try {
     const r = await measure();
-    if (r.rtt_ms > MAX_RTT_MS) throw new Error(`round trip ${Math.round(r.rtt_ms)} ms`);
+    if (r.rtt_ms > MAX_RTT_MS) throw new Error(`來回 ${Math.round(r.rtt_ms)}ms，超過 ${MAX_RTT_MS}ms 不採用`);
+    const before = variable.cache.time.offset;
     variable.cache.time.offset = r.offset_ms;
-    log.info(`calibrated via ${r.via}: offset ${r.offset_ms.toFixed(1)} ms, rtt ${r.rtt_ms.toFixed(1)} ms`);
+    log.info(
+      `校時（${r.via}）：本機時鐘差 ${r.offset_ms >= 0 ? "+" : ""}${r.offset_ms.toFixed(1)}ms（上次 ${before.toFixed(1)}ms），來回 ${r.rtt_ms.toFixed(1)}ms`,
+    );
   } catch (err) {
-    log.warn("calibration failed, keeping the last offset", err);
+    log.warn("校時失敗，沿用上次的時鐘差：", err);
   }
 }
 

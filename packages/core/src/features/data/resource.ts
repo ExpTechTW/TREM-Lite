@@ -79,22 +79,30 @@ function keepFresh(
     let text: string;
     try {
       const res = await fetchData(url, HTTP_TIMEOUT.RESOURCE);
-      if (!res.ok) return;
+      if (!res.ok) {
+        log.warn(`${name} 取得失敗（HTTP ${res.status}），沿用現有的`);
+        return;
+      }
       text = await res.text();
-    } catch {
+    } catch (e) {
+      log.warn(`${name} 取得失敗，沿用現有的：`, e);
       return;
     }
     if (text === last) return;
     let list: Record<string, Station>;
     try {
       list = parse(text);
-    } catch {
+    } catch (e) {
+      log.warn(`${name} 解析失敗，沿用現有的：`, e);
       return;
     }
-    if (!Object.keys(list).length) return;
+    if (!Object.keys(list).length) {
+      log.warn(`${name} 上游回空表，沿用現有的`);
+      return;
+    }
     last = text;
     apply(list, text);
-    log.info(`loaded ${Object.keys(list).length} ${name}`);
+    log.info(`${name} 更新：${Object.keys(list).length} 站`);
   };
   void fetchList();
   setInterval(() => void fetchList(), REFRESH_MS);
@@ -136,7 +144,7 @@ function migrateRealtimeStation(): void {
     }
   }
   if (!nearest) return;
-  log.info(`realtime station ${chosen} → ${nearest} (${best.toFixed(1)} km)`);
+  log.info(`我的測站 ${chosen} 不在新的測站清單裡，改用最近的 ${nearest}（相距 ${best.toFixed(1)} km）`);
   void writeConfig({ ...config, "realtime-station-id": nearest });
 }
 
@@ -157,13 +165,13 @@ export function initResource(): void {
   variable.station = readCache(STATION_CACHE_KEY);
   variable.legacyStation = readCache(LEGACY_CACHE_KEY);
 
-  keepFresh("stations", STATIONS_URL, parseStationCsv, (list) => {
+  keepFresh("測站清單", STATIONS_URL, parseStationCsv, (list) => {
     variable.station = list;
     keep(STATION_CACHE_KEY, list);
     mark("station-loaded");
     migrateRealtimeStation();
   });
-  keepFresh("legacy stations", LEGACY_STATIONS_URL, parseLegacy, (list) => {
+  keepFresh("舊版測站清單", LEGACY_STATIONS_URL, parseLegacy, (list) => {
     variable.legacyStation = list;
     keep(LEGACY_CACHE_KEY, list);
     migrateRealtimeStation();

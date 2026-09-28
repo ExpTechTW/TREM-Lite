@@ -18,6 +18,6 @@ export function mark(name: string): void {
   if (seen.has(name)) return;
   seen.add(name);
   const now = performance.now();
-  log.info(`${name} +${Math.round(now - t0)}ms (Δ${Math.round(now - last)}ms)`);
+  log.info(`載入里程碑 ${name}：啟動後 ${Math.round(now - t0)}ms（距上一個 ${Math.round(now - last)}ms）`);
   last = now;
 }

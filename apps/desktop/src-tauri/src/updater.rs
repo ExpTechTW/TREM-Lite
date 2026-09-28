@@ -124,6 +124,11 @@ async fn check_and_stage(
     let _one_at_a_time = state.0.lock().await;
 
     let current = app.package_info().version.to_string();
+    let snapshot = !app.package_info().version.pre.is_empty();
+    log::debug!(
+        "檢查更新：目前 {current}，{}通道",
+        if snapshot { "快照（Pages 上的 snapshot.json）" } else { "正式版（releases/latest）" }
+    );
     let checked = channel(app)?
         .build()
         .map_err(|e| e.to_string())?
@@ -135,17 +140,23 @@ async fn check_and_stage(
         // published to update to (for a release build, until the first
         // release is). Not an error to show anyone.
         Err(tauri_plugin_updater::Error::ReleaseNotFound) => {
-            log::debug!("no update manifest published for this build's channel");
+            log::debug!("這個通道還沒有發布任何更新資訊");
             None
         }
-        Err(e) => return Err(e.to_string()),
+        Err(e) => {
+            log::warn!("檢查更新失敗：{e}");
+            return Err(e.to_string());
+        }
     };
     let Some(update) = update else {
+        log::debug!("已是最新版 {current}");
         return Ok(CheckResult::UpToDate { current });
     };
+    log::info!("有新版本 {}（目前 {current}），開始下載", update.version);
 
     let dir = staging_dir(app)?;
     if staged_version(&dir).as_deref() == Some(update.version.as_str()) {
+        log::debug!("{} 已經下載好了，等重新啟動", update.version);
         let _ = app.emit("update-staged", &update.version);
         return Ok(CheckResult::Staged {
             version: update.version,
@@ -153,6 +164,7 @@ async fn check_and_stage(
     }
 
     let mut downloaded = 0u64;
+    let started = std::time::Instant::now();
     let bytes = update
         .download(
             |chunk, total| {
@@ -162,9 +174,17 @@ async fn check_and_stage(
             || {},
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            log::warn!("下載 {} 失敗：{e}", update.version);
+            e.to_string()
+        })?;
     stage(&dir, &update.version, &bytes)?;
-    log::info!("update {} staged for the next launch", update.version);
+    log::info!(
+        "{} 下載完成（{}，花了 {}），下次啟動時安裝",
+        update.version,
+        crate::logging::fmt_bytes(bytes.len() as u64),
+        crate::logging::fmt_dur(started.elapsed())
+    );
 
     let _ = app
         .notification()
@@ -200,7 +220,10 @@ pub fn update_restart(app: AppHandle, hidden: bool) {
             let _ = std::fs::write(dir.join(HIDDEN_MARKER), "");
         }
     }
-    log::info!("restarting to install the staged update");
+    log::info!(
+        "重新啟動以安裝已下載的更新（主視窗{}）",
+        if hidden { "隱藏中，重啟後維持隱藏" } else { "顯示中" }
+    );
     app.restart();
 }
 
@@ -232,6 +255,7 @@ async fn apply_staged(app: &AppHandle) -> Result<(), String> {
     let Some(version) = staged_version(&dir) else {
         return Ok(());
     };
+    log::info!("啟動時發現已下載的更新 {version}，先確認它仍是最新版");
 
     // Offline, this fails and the package stays staged for the next launch.
     let update = channel(app)?
@@ -253,12 +277,15 @@ async fn apply_staged(app: &AppHandle) -> Result<(), String> {
     // running version already has it, or a newer one has shipped since, which
     // the background check downloads for the launch after this one.
     let Some(update) = update.filter(|u| u.version == version) else {
+        log::info!("已下載的 {version} 不再是最新版，丟棄，改由背景檢查下載新的");
         return Ok(());
     };
     let bytes = bytes.map_err(|e| e.to_string())?;
-    verify(app, &bytes, &update.signature)?;
+    verify(app, &bytes, &update.signature).inspect_err(|e| {
+        log::error!("{version} 的簽章驗證失敗，不安裝：{e}");
+    })?;
 
-    log::info!("installing staged update {version}");
+    log::info!("安裝已下載的更新 {version}，完成後重新啟動");
     update.install(bytes).map_err(|e| e.to_string())?;
     app.restart()
 }
@@ -323,18 +350,19 @@ fn snapshot_key(version: &str) -> Option<(&str, LabelKey<'_>)> {
 pub fn start(app: &AppHandle, reveal: impl FnOnce(&AppHandle) + Send + 'static) {
     // The legacy client never updated a development build, and neither does this.
     if cfg!(debug_assertions) {
+        log::info!("開發版不自動更新");
         reveal(app);
         return;
     }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         if let Err(e) = apply_staged(&app).await {
-            log::warn!("staged update not applied: {e}");
+            log::warn!("已下載的更新這次沒有安裝，留到下次啟動：{e}");
         }
         reveal(&app);
         loop {
             if let Err(e) = check_and_stage(&app, |_, _| {}).await {
-                log::debug!("update check skipped: {e}");
+                log::debug!("這次檢查更新沒有完成：{e}");
             }
             tokio::time::sleep(CHECK_EVERY).await;
         }
@@ -347,6 +375,7 @@ pub async fn update_check(
     app: AppHandle,
     on_progress: Channel<Progress>,
 ) -> Result<CheckResult, String> {
+    log::info!("使用者按下「檢查更新」");
     check_and_stage(&app, |downloaded, total| {
         let _ = on_progress.send(Progress { downloaded, total });
     })

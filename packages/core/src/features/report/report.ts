@@ -73,8 +73,10 @@ const FULL_MS = 600_000;
 async function getReportListText(url: string): Promise<string | null> {
   try {
     const res = await http.request(url, { timeout: HTTP_TIMEOUT.REPORT });
+    if (!res.ok) log.warn(`地震報告取得失敗（HTTP ${res.status}）：${url}`);
     return res.ok ? await res.text() : null;
-  } catch {
+  } catch (e) {
+    log.warn(`地震報告取得失敗：${url}`, e);
     return null;
   }
 }
@@ -224,8 +226,8 @@ async function refresh() {
   if (!list) return;
   lastListText = text!;
   // 首次載入用 info（里程碑）；之後的更新降為 debug，避免洗版日誌檔。
-  if (seeded) log.debug("list", list.length);
-  else log.info("list", list.length, "(initial)");
+  if (seeded) log.debug(`報告列表有變動，共 ${list.length} 筆`);
+  else log.info(`報告列表首次載入，共 ${list.length} 筆`);
   mark("report-loaded");
 
   // Keep the live response separate from the replay-filtered panel. Persisting
@@ -273,7 +275,9 @@ async function refresh() {
     const update = before !== undefined;
     const fresh = now() - r.time < FRESH_MS;
     // Named in the log, so the next "why did this report pop up" has an answer.
-    log.info(`${update ? "updated" : "new"}${fresh ? "" : ", over 48 h old, not released"}: ${r.id}`);
+    log.info(
+      `${update ? "報告修正" : "新報告"} ${r.id}｜${r.loc} M${r.mag} 深 ${r.depth} km${fresh ? "" : "｜發震超過 48 小時，不發布"}`,
+    );
     if (fresh) changes.push({ report: r, update });
   }
 

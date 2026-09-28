@@ -90,11 +90,11 @@ pub async fn prepare(dir: PathBuf, client: reqwest::Client) {
             match built {
                 Ok(Ok(m)) => {
                     let _ = MODEL.set(m);
-                    log::info!("intensity model ready");
+                    log::info!("ML 震度模型就緒");
                     return;
                 }
-                Ok(Err(e)) => log::error!("intensity model unusable: {e}"),
-                Err(e) => log::error!("intensity model build failed: {e}"),
+                Ok(Err(e)) => log::error!("ML 震度模型無法使用，刪掉重下載：{e}"),
+                Err(e) => log::error!("ML 震度模型建置失敗：{e}"),
             }
             let _ = std::fs::remove_file(&path);
         }
@@ -127,13 +127,16 @@ async fn download(client: &reqwest::Client, path: &Path) -> Option<Vec<u8>> {
                     .and_then(|()| std::fs::write(&tmp, &bytes))
                     .and_then(|()| std::fs::rename(&tmp, path));
                 if let Err(e) = saved {
-                    log::warn!("intensity model not kept on disk: {e}");
+                    log::warn!("ML 震度模型沒能存到磁碟，下次啟動會再下載：{e}");
                 }
-                log::info!("intensity model downloaded from {url}");
+                log::info!(
+                    "ML 震度模型下載完成：{url}（{}）",
+                    crate::logging::fmt_bytes(bytes.len() as u64)
+                );
                 return Some(bytes.to_vec());
             }
-            Ok(_) => log::warn!("intensity model from {url} failed its SHA-256 check"),
-            Err(e) => log::warn!("intensity model download from {url} failed: {e}"),
+            Ok(_) => log::warn!("{url} 下載的 ML 震度模型 SHA-256 不符，換下一個來源"),
+            Err(e) => log::warn!("{url} 下載 ML 震度模型失敗，換下一個來源：{e}"),
         }
     }
     None

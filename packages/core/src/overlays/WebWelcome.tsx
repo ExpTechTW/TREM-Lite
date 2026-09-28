@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Volume2 } from "lucide-react";
 
 import icon from "../../../../apps/desktop/src-tauri/icons/128x128.png";
+import { createLogger } from "@/lib/logger";
 import { unlockSpeech } from "@/lib/speechClient";
 import { webAudio } from "@/lib/webAudio";
 
@@ -14,11 +15,14 @@ const REPO = "https://github.com/ExpTechTW/TREM-Lite";
  * unlocks both (webAudio, speechClient). There is no other way out: no close
  * button, no backdrop click, no Esc.
  */
+const log = createLogger("app");
+
 export function WebWelcome({ onStart }: { onStart: () => void }) {
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => button.current?.focus(), []);
 
   const start = () => {
+    log.info("使用者按下「開始使用」：解鎖音效與語音");
     webAudio.unlock();
     unlockSpeech();
     onStart();
