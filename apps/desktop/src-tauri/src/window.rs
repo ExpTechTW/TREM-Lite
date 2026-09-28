@@ -8,9 +8,42 @@ fn window(app: &tauri::AppHandle, label: &str) -> Option<WebviewWindow> {
     app.get_webview_window(label)
 }
 
+/// macOS: the Dock icon follows the main window. It is there while the window
+/// is open — on screen, behind other windows or minimised — and a click on it
+/// brings the window to the front (lib.rs, `RunEvent::Reopen`). Closed to the
+/// tray, the window has no Dock icon: the tray is the way back.
+///
+/// The activation policy rather than tao's `set_dock_visibility`: that one
+/// ignores a hide within a second of a show, which left the icon behind when
+/// the window was closed right after being brought back.
+#[cfg_attr(not(target_os = "macos"), allow(unused_variables))]
+pub fn set_dock(app: &tauri::AppHandle, visible: bool) {
+    #[cfg(target_os = "macos")]
+    {
+        let policy = if visible {
+            tauri::ActivationPolicy::Regular
+        } else {
+            tauri::ActivationPolicy::Accessory
+        };
+        match app.set_activation_policy(policy) {
+            Ok(()) => log::debug!("Dock 圖示{}", if visible { "顯示" } else { "隱藏" }),
+            Err(e) => log::warn!("Dock 圖示切換失敗：{e}"),
+        }
+    }
+}
+
+/// Close the main window to the tray: hidden, and on macOS out of the Dock.
+pub fn hide_main(app: &tauri::AppHandle) {
+    if let Some(w) = window(app, "main") {
+        let _ = w.hide();
+    }
+    set_dock(app, false);
+}
+
 /// Bring the main window to the foreground (unminimize + show + focus).
 /// Shared by the `window_focus` command and the single-instance handler.
 pub fn focus_main(app: &tauri::AppHandle) {
+    set_dock(app, true);
     if let Some(w) = window(app, "main") {
         log::debug!(
             "主視窗還原、顯示並聚焦（原本{}，{}）",
@@ -62,6 +95,9 @@ pub fn window_request_attention(app: tauri::AppHandle, critical: bool) {
 #[tauri::command]
 pub fn window_hide(app: tauri::AppHandle, label: String) {
     log::info!("隱藏視窗 {label}");
+    if label == "main" {
+        return hide_main(&app);
+    }
     if let Some(w) = window(&app, &label) {
         let _ = w.hide();
     }
@@ -70,6 +106,9 @@ pub fn window_hide(app: tauri::AppHandle, label: String) {
 #[tauri::command]
 pub fn window_show(app: tauri::AppHandle, label: String) {
     log::info!("顯示並聚焦視窗 {label}");
+    if label == "main" {
+        set_dock(&app, true);
+    }
     if let Some(w) = window(&app, &label) {
         let _ = w.show();
         let _ = w.set_focus();

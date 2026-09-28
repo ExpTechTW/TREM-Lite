@@ -114,12 +114,11 @@ pub fn run() {
             let reveal = move |app: &tauri::AppHandle| {
                 #[cfg(desktop)]
                 updater::clear_restart_hidden(app);
-                if let Some(window) = app.get_webview_window("main") {
-                    if start_hidden {
-                        let _ = window.hide();
-                    } else {
-                        let _ = window.show();
-                    }
+                if start_hidden {
+                    log::info!(target: "app", "隱藏啟動（開機自動啟動或更新後重啟）：只在系統匣");
+                    window::hide_main(app);
+                } else if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
                 }
             };
             #[cfg(desktop)]
@@ -173,7 +172,7 @@ pub fn run() {
                             if let Some(window) = tray.app_handle().get_webview_window("main") {
                                 if window.is_visible().unwrap_or(false) {
                                     log::info!(target: "tray", "點擊圖示：收起主視窗");
-                                    let _ = window.hide();
+                                    window::hide_main(tray.app_handle());
                                 } else {
                                     log::info!(target: "tray", "點擊圖示：叫出主視窗");
                                     window::focus_main(tray.app_handle());
@@ -225,7 +224,7 @@ pub fn run() {
                 if let WindowEvent::CloseRequested { api, .. } = event {
                     log::info!(target: "window", "關閉主視窗：縮到系統匣，繼續監測");
                     api.prevent_close();
-                    let _ = window.hide();
+                    window::hide_main(window.app_handle());
                 }
             }
         })
