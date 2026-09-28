@@ -194,6 +194,28 @@ class ConnLog {
 
 const shindo = (i: number) => INTENSITY_LIST[i] ?? String(i);
 
+/** A stream's state, for the status lights next to the clock (TimeBar). */
+interface Health {
+  /** The connection in use has had its greeting and has not ended since. */
+  up: boolean;
+  /** performance.now() of its last byte: a frame or a heartbeat. */
+  last: number;
+}
+
+const health: Record<string, Health> = {};
+
+/**
+ * Whether a stream is working: connected, and heard from within STALE_MS (the
+ * server's heartbeat comes each 60 s). `why` says what is wrong when it is not.
+ */
+export function streamStatus(name: "trem" | "eew"): { ok: boolean; why: string } {
+  const h = health[name];
+  if (!h?.up) return { ok: false, why: h ? "連線中斷，重連中" : "尚未連線" };
+  const quiet = performance.now() - h.last;
+  if (quiet > STALE_MS) return { ok: false, why: `${fmtDur(quiet)} 沒有收到任何資料` };
+  return { ok: true, why: "" };
+}
+
 /** 一個 EEW 訊框的內容，一則一段：編號、第幾報、單位、預警或警報、規模與震央。 */
 function eewSummary(parsed: unknown): string {
   const list = (Array.isArray(parsed) ? parsed : [parsed]) as {
@@ -309,6 +331,8 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
 
   /** The connection in use, for the handover's log line. */
   let activeLabel = "";
+  const state: Health = (health[s.name] = { up: false, last: 0 });
+  signal.addEventListener("abort", () => (state.up = false), { once: true });
 
   const later = (handover: boolean) => {
     if (signal.aborted) return;
@@ -368,6 +392,7 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
           const { value, done } = await reader.read();
           if (done) throw new Error("stream ended");
           alive();
+          if (attempt === active) state.last = performance.now();
           for (const frame of split(value)) {
             if (frame.comment?.startsWith("ping")) conn.ping(frame.comment);
             if (!frame.data && !frame.event) continue;
@@ -388,6 +413,8 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
                 pending = null;
               }
               activeLabel = conn.label;
+              state.up = true;
+              state.last = performance.now();
             }
             conn.frame(frame.event ?? "message", frame.data.length);
             if (frame.event === "info") conn.greeting(frame.data);
@@ -414,6 +441,8 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
         clearTimeout(stale);
         clearTimeout(notReady);
         signal.removeEventListener("abort", end);
+        // The connection in use ended (not one a handover replaced).
+        if (attempt === active) state.up = false;
         conn.end();
       });
   }

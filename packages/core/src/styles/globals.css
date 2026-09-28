@@ -1152,6 +1152,72 @@
   }
 }
 
+/* Status lights right of the clock (overlays/TimeBar.tsx): green and
+   breathing when a realtime stream works, red when it does not, grey while a
+   replay has the streams closed. */
+.legacy-status-lights {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 8px;
+}
+
+.legacy-status-light {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--light);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+  cursor: default;
+}
+
+.legacy-status-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.legacy-status-light[data-state="ok"] .legacy-status-dot {
+  background: #34c759;
+  animation: legacy-status-breathe 2.4s ease-in-out infinite;
+}
+
+.legacy-status-light[data-state="down"] .legacy-status-dot {
+  background: #ff3b30;
+  box-shadow: 0 0 6px #ff3b30cc;
+}
+
+.legacy-status-light[data-state="down"] {
+  color: #ff6b61;
+  opacity: 1;
+}
+
+.legacy-status-light[data-state="paused"] .legacy-status-dot {
+  background: #8e8e93;
+}
+
+@keyframes legacy-status-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px #34c759cc;
+  }
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 0 #34c75900;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legacy-status-light[data-state="ok"] .legacy-status-dot {
+    animation: none;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Settings window (features/settings/SettingsApp.tsx).
    --------------------------------------------------------------------------- */
