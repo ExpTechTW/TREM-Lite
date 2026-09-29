@@ -4,7 +4,10 @@ import maplibregl, { type FitBoundsOptions, type LngLatBoundsLike, type Map as M
 import { getConfig } from "@/lib/config";
 import { MAP } from "@/lib/constants";
 import { events } from "@/lib/events";
+import { createLogger } from "@/lib/logger";
 import { variable } from "@/lib/variable";
+
+const log = createLogger("focus");
 
 /** A single map coordinate. The `variable.cache.bounds.*` arrays hold these at runtime. */
 interface Coord {
@@ -27,6 +30,36 @@ let lock = false;
 let isMouseDown = false;
 let mapInitialized = false;
 let focusInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * The quickest the camera follows a change, and the fit's own duration: a
+ * frame every 0.5 s must not restart the move before it lands.
+ */
+const FOCUS_GAP_MS = 800;
+let lastFocus = -Infinity;
+let pendingFocus: ReturnType<typeof setTimeout> | null = null;
+/** The triggered stations the camera last followed, as a key. */
+let rtsKey = "";
+
+/**
+ * Focus now, or — within FOCUS_GAP_MS of the last — once that has passed,
+ * however many changes came meanwhile.
+ */
+function focusSoon(): void {
+  if (pendingFocus) return;
+  const wait = lastFocus + FOCUS_GAP_MS - performance.now();
+  if (wait <= 0) {
+    lastFocus = performance.now();
+    focus();
+    return;
+  }
+  pendingFocus = setTimeout(() => {
+    pendingFocus = null;
+    lastFocus = performance.now();
+    focus();
+  }, wait);
+}
+
 
 /** Set the auto-focus lock and notify the UI (e.g. tint the nav button). */
 function setLock(v: boolean): void {
@@ -54,6 +87,23 @@ export function initFocus(): void {
   events.on("EewUpdate", () => focus());
   events.on("EewEnd", () => focus());
   events.on("MapLoad", () => onMapLoad());
+
+  // The triggered stations change: follow at once rather than at the next
+  // three-second tick, which left a short trigger never followed at all. After
+  // the frame's other handlers, rts.ts's among them, which sets the bounds.
+  events.on("DataRts", () =>
+    queueMicrotask(() => {
+      const stations = asCoords(variable.cache.bounds.rts);
+      const key = stations.map((c) => `${c.lon},${c.lat}`).sort().join("|");
+      if (key === rtsKey) return;
+      rtsKey = key;
+      focusSoon();
+    }),
+  );
+  // Brought forward, by an alert or by hand: where things are, now.
+  events.on("MainWindowHidden", (hidden) => {
+    if (!hidden) focusSoon();
+  });
 }
 
 /** Any manual pan/zoom locks auto-focus until the React nav button resets it. */
@@ -67,19 +117,31 @@ function onMapLoad(): void {
   }
   mapInitialized = true;
 
-  // Manual pan (mousedown) / zoom (wheel) locks auto-focus so the camera stops
-  // fighting the user, until they press the nav focus button to re-enable it.
+  // Any touch of the map locks auto-focus so the camera stops fighting the
+  // user, until they press the nav focus button (red while locked) to release
+  // it — nothing else releases it. A touch counts as much as a click: on a
+  // phone a pinch sends no mouse event at all, and used to leave auto-focus
+  // free to undo the zoom a moment later.
+  const manual = (how: string) => {
+    if (lock) return;
+    log.debug(`使用者${how}地圖，自動聚焦暫停，按定位鈕恢復`);
+    setLock(true);
+  };
   map.on("mousedown", () => {
     isMouseDown = true;
-    setLock(true);
+    manual("點擊");
   });
 
   map.on("mouseup", () => {
     isMouseDown = false;
   });
 
-  map.on("wheel", () => {
-    setLock(true);
+  map.on("touchstart", () => manual("觸控"));
+  map.on("wheel", () => manual("捲動縮放"));
+  // The keyboard, or anything else a person started: only such a move carries
+  // its originating event.
+  map.on("movestart", (e) => {
+    if (e.originalEvent) manual("操作");
   });
 }
 
