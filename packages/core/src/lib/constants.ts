@@ -75,7 +75,6 @@ export const AUDIO = {
   SHINDO2: "SHINDO2",
   TSUNAMI: "TSUNAMI",
   UPDATE: "UPDATE",
-  CANCEL: "CANCEL",
 } as const;
 
 export const HTTP_TIMEOUT = {

@@ -16,7 +16,7 @@
  *
  * A browser plays nothing until the page has been interacted with, so every
  * clip is silent until the welcome dialog's button (WebWelcome.tsx) calls
- * `unlock()`, which also decodes all twelve at once — an EEW's first sound
+ * `unlock()`, which also decodes all eleven at once — an EEW's first sound
  * must not wait for a download. The clips are the desktop's own mp3s, which
  * the web build serves from packages/core/static.
  */
@@ -29,7 +29,6 @@ export type QueueName = "eew" | "pga" | "shindo" | "update";
 
 const CLIPS = [
   "ALERT",
-  "CANCEL",
   "EEW",
   "INTENSITY",
   "PGA1",

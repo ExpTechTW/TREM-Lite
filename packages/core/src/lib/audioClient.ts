@@ -80,11 +80,6 @@ export function initAudio(): void {
     if (sfx("sound-effects-Update")) enqueue("update", AUDIO.UPDATE);
   });
 
-  // CANCEL always plays (no config gate), via the eew queue.
-  events.on("EewCancel", () => {
-    enqueue("eew", AUDIO.CANCEL);
-  });
-
   events.on("RtsPga2", () => {
     if (sfx("sound-effects-PGA2")) enqueue("pga", AUDIO.PGA2);
   });

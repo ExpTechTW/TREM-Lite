@@ -313,7 +313,7 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
           )}
 
           {tab === "sound" &&
-            SOUNDS.map(([group, sounds], i) => (
+            SOUNDS.map(([group, sounds]) => (
               <Group key={group} title={group}>
                 {sounds.map(([key, label, hint, clip]) => (
                   <Toggle
@@ -325,15 +325,6 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
                     extra={<PreviewButton sound={clip} />}
                   />
                 ))}
-                {i === 0 && (
-                  <div className="settings-row">
-                    <span className="settings-label">
-                      預警取消
-                      <small>地震預警被取消時，一律播放</small>
-                    </span>
-                    <PreviewButton sound={AUDIO.CANCEL} />
-                  </div>
-                )}
               </Group>
             ))}
 
