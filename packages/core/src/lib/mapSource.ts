@@ -4,6 +4,7 @@ import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 const TOWNS = { source: "map", sourceLayer: "town" } as const;
 /** The towns paintTowns last coloured, so an unchanged colouring costs nothing. */
 let painted = "";
+let paintedColors: Record<number, string> | null = null;
 
 /**
  * Colour towns by code — the EEW's predicted area, an intensity or a
@@ -19,10 +20,24 @@ export function paintTowns(map: MlMap, colors: Record<number, string> | null): v
   const signature = colors ? JSON.stringify(colors) : "";
   if (signature === painted) return;
   painted = signature;
+  paintedColors = colors;
+  applyTowns(map, colors);
+}
+
+function applyTowns(map: MlMap, colors: Record<number, string> | null): void {
   map.removeFeatureState(TOWNS);
   for (const [code, color] of Object.entries(colors ?? {})) {
     map.setFeatureState({ ...TOWNS, id: Number(code) }, { color });
   }
+}
+
+/**
+ * Colour the towns again as paintTowns last did. For a map whose style came
+ * back after its WebGL context was lost: the style is restored, but feature
+ * state is not part of it.
+ */
+export function repaintTowns(map: MlMap): void {
+  applyTowns(map, paintedColors);
 }
 
 /** What each source was last given, keyed by the source object itself. */

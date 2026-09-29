@@ -194,6 +194,22 @@ class ConnLog {
 
 const shindo = (i: number) => INTENSITY_LIST[i] ?? String(i);
 
+/** A frame that failed to process, logged once a minute per error. */
+const frameFailures = new Map<string, { at: number; again: number }>();
+
+function frameFailed(label: string, kind: string, e: unknown): void {
+  const key = `${kind}|${e instanceof Error ? e.message : String(e)}`;
+  const now = performance.now();
+  const seen = frameFailures.get(key);
+  if (seen && now - seen.at < 60_000) {
+    seen.again++;
+    return;
+  }
+  const again = seen?.again ? `（前 60s 又發生 ${seen.again} 次）` : "";
+  frameFailures.set(key, { at: now, again: 0 });
+  log.error(`${label} 處理 ${kind} 時出錯，連線保留${again}：`, e);
+}
+
 /** A stream's state, for the status lights next to the clock (TimeBar). */
 interface Health {
   /** The connection in use has had its greeting and has not ended since. */
@@ -418,7 +434,13 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
             }
             conn.frame(frame.event ?? "message", frame.data.length);
             if (frame.event === "info") conn.greeting(frame.data);
-            s.onFrame(frame, conn);
+            try {
+              s.onFrame(frame, conn);
+            } catch (e) {
+              // A frame this app failed to process is the app's fault, not
+              // the connection's: dropping it would lose every frame after.
+              frameFailed(conn.label, frame.event ?? "message", e);
+            }
           }
         }
       })

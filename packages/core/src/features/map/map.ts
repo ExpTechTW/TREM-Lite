@@ -14,6 +14,7 @@ import { COLOR, MAP } from "@/lib/constants";
 import { proxied, registerMapProtocol } from "@/lib/http/mapProtocol";
 import { events } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
+import { repaintTowns } from "@/lib/mapSource";
 import { mark } from "@/lib/perf";
 import { variable } from "@/lib/variable";
 import { createIntensityIcon, createIntensityIconSquare } from "@/domain/utils";
@@ -275,9 +276,82 @@ async function addImages(map: MlMap) {
   await addPng(map, "cross4", cross4Png);
 }
 
+/** How long a lost WebGL context gets to come back before the page reloads. */
+const RESTORE_MS = 5_000;
+/** At most one reload for the map per this long, so a failing GPU cannot loop. */
+const RELOAD_EVERY_MS = 10 * 60_000;
+const RELOADED_AT_KEY = "trem.map.reloadedAt";
+
+/**
+ * The WebGL context behind the map can be lost: macOS terminates WebKit's GPU
+ * process when it stops answering (it did at 20:17 on 9-29, just after the
+ * display woke), and memory pressure can take it. MapLibre then drops its
+ * style — `map.style` is null — and waits for the context to return; any
+ * getSource or setFeatureState meanwhile throws. On 9-29 it never returned:
+ * the map was blank for hours, and every RTS frame threw.
+ *
+ * While lost, `variable.map` is null. Every module already skips its map work
+ * then, so data, sound, speech and notifications go on. Restored, and its
+ * style loaded again, within RESTORE_MS, the map is handed back and the towns
+ * coloured again. Not, the page reloads — a new context, a new map, every
+ * module's state fresh — at most once per RELOAD_EVERY_MS.
+ */
+function watchContext(map: MlMap): void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  map.on("webglcontextlost", () => {
+    log.warn(
+      `地圖的 WebGL context 遺失（GPU 程序重啟或記憶體不足）：地圖先停用，其他功能照常，等 ${RESTORE_MS / 1000}s 看會不會恢復`,
+    );
+    if (variable.map === map) variable.map = null;
+    timer ??= setTimeout(() => {
+      timer = null;
+      reloadForMap();
+    }, RESTORE_MS);
+  });
+  // MapLibre sets the saved style again, which is processed on a later frame:
+  // until then a feature-state write throws "Style is not done loading". The
+  // map is handed back on `style.load` — tiles may still be on their way,
+  // which nothing here needs — and the reload stays armed until then. (A
+  // hidden window draws no frames, so there the reload is what recovers it.)
+  map.on("webglcontextrestored", () => {
+    log.info("地圖的 WebGL context 已恢復，等樣式重新載入");
+    map.once("style.load", () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      variable.map = map;
+      repaintTowns(map);
+      log.info("地圖樣式已重新載入，地圖重新啟用");
+    });
+  });
+}
+
+function reloadForMap(): void {
+  let last = 0;
+  try {
+    last = Number(sessionStorage.getItem(RELOADED_AT_KEY)) || 0;
+  } catch {
+    /* no sessionStorage: reload anyway */
+  }
+  if (Date.now() - last < RELOAD_EVERY_MS) {
+    log.error(
+      `地圖的 WebGL context 仍未恢復，而 ${RELOAD_EVERY_MS / 60_000} 分鐘內已經為此重新載入過：不再重新載入，地圖維持停用，其他功能照常`,
+    );
+    return;
+  }
+  try {
+    sessionStorage.setItem(RELOADED_AT_KEY, String(Date.now()));
+  } catch {
+    /* the guard is lost, the reload is not */
+  }
+  log.warn(`地圖的 WebGL context ${RESTORE_MS / 1000}s 內沒有恢復，重新載入主畫面`);
+  // A moment for that line to reach the log before the page goes.
+  setTimeout(() => location.reload(), 300);
+}
+
 /** Boot the map into `container`, populate `variable.map`, emit `MapLoad`. */
 export async function setupMap(container: HTMLElement): Promise<MlMap> {
   const map = await initMap(container);
+  watchContext(map);
   map.on("resize", () => map.fitBounds(MAP.BOUNDS, MAP.OPTIONS));
   map.resize();
   map.fitBounds(MAP.BOUNDS, MAP.OPTIONS);
