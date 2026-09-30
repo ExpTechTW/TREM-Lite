@@ -118,6 +118,7 @@ pub fn run() {
                     log::info!(target: "app", "隱藏啟動（開機自動啟動或更新後重啟）：只在系統匣");
                     window::hide_main(app);
                 } else if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.center();
                     let _ = window.show();
                 }
             };

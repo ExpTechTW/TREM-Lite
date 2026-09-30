@@ -26,6 +26,7 @@ export async function openSettings(): Promise<void> {
     title: "TREM-Lite 設定",
     width: 970,
     height: 590,
+    center: true,
     resizable: false,
     decorations: false,
     transparent: !isMac,
