@@ -36,8 +36,11 @@ export class EEWCalculator {
 
   /** Interpolate the P/S wavefront radii (km) reached `now - time` after origin. */
   psWaveDist(depth: number, time: number, now: number): PsWaveDist {
-    let pDist = 0;
-    let sDist = 0;
+    // null until a row yields a distance. 0 is a real radius — the first row
+    // of every depth — so it cannot also mean "not found": that one frame
+    // kept searching and drew the ring about 1.3 km too far.
+    let pDist: number | null = null;
+    let sDist: number | null = null;
     let sT = 0;
 
     const t = (now - time) / 1000.0;
@@ -48,7 +51,7 @@ export class EEWCalculator {
     let prevTable: TimeTableRow | null = null;
 
     for (const table of timeTable) {
-      if (pDist === 0 && table.P > t) {
+      if (pDist === null && table.P > t) {
         if (prevTable) {
           const tDiff = table.P - prevTable.P;
           const rDiff = table.R - prevTable.R;
@@ -60,7 +63,7 @@ export class EEWCalculator {
         }
       }
 
-      if (sDist === 0 && table.S > t) {
+      if (sDist === null && table.S > t) {
         if (prevTable) {
           const tDiff = table.S - prevTable.S;
           const rDiff = table.R - prevTable.R;
@@ -73,14 +76,14 @@ export class EEWCalculator {
         }
       }
 
-      if (pDist !== 0 && sDist !== 0) {
+      if (pDist !== null && sDist !== null) {
         break;
       }
       prevTable = table;
     }
 
-    if (pDist < 0) pDist = 0;
-    if (sDist < 0) sDist = 0;
+    if (pDist === null || pDist < 0) pDist = 0;
+    if (sDist === null || sDist < 0) sDist = 0;
 
     return { p_dist: pDist, s_dist: sDist, s_t: sT };
   }
