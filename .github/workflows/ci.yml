@@ -147,7 +147,13 @@ jobs:
   # --no-bundle: no installer/updater bundling, so no signing key is needed
   # (works on fork PRs) and it's fast. Public repo → GitHub-hosted runners
   # (incl. Linux/Windows arm64) are free with unlimited minutes.
+  #
+  # Pull requests only. A push to main starts release.yml, which compiles the
+  # same seven targets — bundled and signed — and fails that push just as this
+  # would; running both spent seven more runners, two of them macOS, on a
+  # build nobody installs. The gates and `check` above still run on the push.
   build:
+    if: github.event_name == 'pull_request'
     needs: check
     strategy:
       fail-fast: false
