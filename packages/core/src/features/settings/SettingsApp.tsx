@@ -5,7 +5,7 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { disable as disableAutostart, enable as enableAutostart } from "@tauri-apps/plugin-autostart";
 import { arch, type as osType, version as osVersion } from "@tauri-apps/plugin-os";
-import { BellRing, ChevronDown, Copy, Download, FolderOpen, Info, Minus, Play, SlidersHorizontal, Volume2, X } from "lucide-react";
+import { BellRing, ChevronDown, Copy, Download, FolderOpen, Info, Minus, Play, Puzzle, SlidersHorizontal, Volume2, X } from "lucide-react";
 
 import { region, regionReady } from "@/domain/region";
 import { search_loc_name } from "@/domain/utils";
@@ -19,14 +19,16 @@ import type { IdleMap, Station, TremConfig } from "@/lib/types";
 import { versionLabel } from "@/lib/version";
 
 import { StationPicker, type CityStations } from "./StationPicker";
+import { ExtensionsTab } from "./Extensions";
 
 /**
- * The settings window. Four pages, each only what is used:
+ * The settings window. Five pages, each only what is used:
  *
  *   一般  the station shown on the map, what an idle map shows, starting
  *         with the system, the map's automatic zoom
  *   警報  which events bring the window forward, speech announcements
  *   音效  each sound effect, on or off
+ *   擴充  installed extensions: verified or not, what they may touch
  *   關於  version and updates, data sources, links, and the reset
  *
  * Every change is saved at once (config.rs broadcasts it to the main window).
@@ -41,6 +43,7 @@ const TABS = [
   { id: "general", label: "一般", icon: SlidersHorizontal },
   { id: "alerts", label: "警報", icon: BellRing },
   { id: "sound", label: "音效", icon: Volume2 },
+  { id: "extensions", label: "擴充", icon: Puzzle },
   { id: "about", label: "關於", icon: Info },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -337,6 +340,8 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
                 ))}
               </Group>
             ))}
+
+          {tab === "extensions" && <ExtensionsTab />}
 
           {tab === "about" && (
             <>

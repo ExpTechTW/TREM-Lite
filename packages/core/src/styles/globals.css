@@ -1152,6 +1152,37 @@
   }
 }
 
+/* The nav button classes of TREM-Lite 3, kept because extensions inject their
+   own buttons into that row: weather and websocket look up `#focus` and insert
+   a sibling carrying `nav-bar-location`, exactly as legacy/src/view/index.html
+   laid it out. Styling the class here is what makes an injected button sit in
+   the row like one of ours instead of a bare 24px icon. The geometry is
+   nav_bar/box.css; the colours match the React buttons next to it. */
+.nav-bar-location,
+.nav-bar-setting {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 3px;
+  border: 1px solid #00000008;
+  border-radius: 5px;
+  background: var(--panel-bg);
+  color: var(--light);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.nav-bar-location:hover,
+.nav-bar-setting:hover {
+  border: 1px solid #ffffff47;
+  background-color: #252424c7;
+}
+
 /* Status lights right of the clock (overlays/TimeBar.tsx): small, unboxed and
    dim so they stay out of the way — green and slowly breathing when a realtime
    stream works; red, and fully lit, when it does not; grey while a replay has
@@ -1689,6 +1720,126 @@
 .settings-row > .is-danger {
   color: #ff6b6b;
   border-color: #ff6b6b55;
+}
+
+/* 擴充: how one extension is doing, and the target that installs one. */
+.settings-badge {
+  padding: 3px 8px;
+  border: 1px solid #ffffff1f;
+  border-radius: 999px;
+  color: #8b8b94;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.settings-badge.is-ok {
+  color: #6ee7a8;
+  border-color: #6ee7a855;
+}
+
+.settings-badge.is-warn {
+  color: #ffc861;
+  border-color: #ffc86155;
+}
+
+/* One extension per row, and its facts unfold inside that row: the head is the
+   button, so the name reads as the thing that opens them. */
+.settings-extension + .settings-extension {
+  border-top: 1px solid #ffffff0d;
+}
+
+.settings-row > .settings-extension-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-row > .settings-extension-head:hover {
+  color: #fff;
+  /* The row's generic button hover would draw a pill around a button that is
+     only text and a chevron. */
+  background: none;
+}
+
+.settings-extension-head svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: #8b8b94;
+  transition: transform 0.15s ease;
+}
+
+.settings-extension-head[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+.settings-extension-version {
+  color: #8b8b94;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* Indented to the name, not to the row edge, so the folded facts read as part
+   of the extension above them. */
+.settings-extension-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px 14px 39px;
+  color: #d7d7de;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.settings-extension-body p {
+  margin: 0;
+}
+
+.settings-extension-description {
+  max-width: 72ch;
+}
+
+.settings-error {
+  margin: 0;
+  color: #ff6b6b;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.settings-extension-note {
+  margin: 12px 4px 0;
+  color: #d7d7de;
+  font-size: 13px;
+}
+
+.settings-drop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px dashed #ffffff2e;
+  border-radius: 10px;
+  color: #8b8b94;
+  font-size: 13px;
+}
+
+.settings-drop.is-active {
+  border-color: #6ee7a8;
+  background: #6ee7a814;
+  color: #d7d7de;
+}
+
+.settings-drop svg {
+  width: 16px;
+  height: 16px;
 }
 
 .settings-toast {

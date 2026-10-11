@@ -8,6 +8,8 @@ mod logging;
 mod math;
 mod ml_intensity;
 mod ntp;
+mod plugin;
+mod plugin_window;
 #[cfg(desktop)]
 mod updater;
 #[cfg(not(desktop))]
@@ -57,6 +59,10 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init());
+
+    // Extensions get their own windows, served over a scheme of our own, and
+    // the protocol has to exist before the first one asks for a page.
+    builder = plugin_window::register(builder);
 
     #[cfg(desktop)]
     {
@@ -205,6 +211,20 @@ pub fn run() {
             http_proxy::http_report,
             math::eew_area_intensity,
             ntp::ntp_sync,
+            plugin::plugin_root,
+            plugin::plugin_list,
+            plugin::plugin_write,
+            plugin::plugin_install,
+            plugin::plugin_remove,
+            plugin::plugin_packages,
+            plugin::plugin_discard,
+            plugin::plugin_keys,
+            plugin_window::plugin_window_open,
+            plugin_window::plugin_window_close,
+            plugin_window::plugin_window_send,
+            plugin_window::plugin_window_broadcast,
+            plugin_window::plugin_window_list,
+            plugin_window::plugin_window_ipc,
             updater::update_check,
             updater::update_pending,
             updater::update_restart,
@@ -226,6 +246,14 @@ pub fn run() {
                     log::info!(target: "window", "關閉主視窗：縮到系統匣，繼續監測");
                     api.prevent_close();
                     window::hide_main(window.app_handle());
+                }
+            }
+            // A plugin window is disposable: closed by the user, by its own
+            // page or by the extension being turned off, the main window hears
+            // about it under the name V3 used.
+            if window.label().starts_with("plugin-") {
+                if let WindowEvent::Destroyed = event {
+                    plugin_window::closed(window.app_handle(), window.label());
                 }
             }
         })
