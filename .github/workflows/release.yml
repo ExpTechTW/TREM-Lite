@@ -3,7 +3,10 @@ name: Release
 # Two kinds of build, one pipeline — the naming scheme is in commit.md.
 #
 #   push to main   a snapshot: `26w39a`, published as a PRE-release once every
-#                  target is in.
+#                  target is in — when it has something to say. A push whose
+#                  snapshot note would be empty, no commit since the last tag
+#                  carrying a changelog entry, publishes nothing; ci.yml compiles
+#                  it instead. Run by hand, a snapshot is published regardless.
 #   push of `v*`   a release:  `v26.2`, left as a DRAFT for a human.
 #
 # The asymmetry is deliberate. GitHub's "latest" release never points at a
@@ -69,6 +72,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
+          EVENT: ${{ github.event_name }}
         run: |
           eval "$(tool/release/version.sh)"
           skip=false
@@ -91,6 +95,27 @@ jobs:
                 break
               fi
             done
+            # Nothing a user would see: the snapshot's note would say so and
+            # nothing else. A push only — run by hand, someone asked for one.
+            # The next push that does bring an entry publishes these commits
+            # too, since its note runs from the same tag.
+            #
+            # From the nearest tag below this commit, as the note counts — but
+            # past a snapshot tag still on a draft, as the check above does.
+            # That is a run this one cancelled, whose `discard` may not have
+            # deleted it yet; counted from it, its entries would look published
+            # and this run would skip them along with everything else.
+            if [ "$skip" = false ] && [ "$EVENT" = push ]; then
+              since="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
+              while [[ "$since" =~ ^[0-9]{2}w[0-9]+[a-z]+$ ]] &&
+                [ "$(gh release view "$since" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null)" = true ]; do
+                since="$(git describe --tags --abbrev=0 "$since^" 2>/dev/null || true)"
+              done
+              if ! bash tool/release/notes.sh --any "${since:+$since..}HEAD"; then
+                skip=true
+                echo "::notice::no commit since ${since:-the first} carries a changelog entry — no snapshot; ci.yml compiles this push"
+              fi
+            fi
           fi
           {
             echo "label=$TREM_LABEL"
@@ -160,8 +185,9 @@ jobs:
 
   build:
     needs: version
-    # A duplicate run of a commit already released (see `Derive the version`):
-    # skipped here, and `publish`, which needs this, is skipped with it.
+    # A duplicate run of a commit already released, or a push with no changelog
+    # entry (see `Derive the version`): skipped here, and `publish`, which needs
+    # this, is skipped with it.
     if: needs.version.outputs.skip != 'true'
     permissions:
       contents: write

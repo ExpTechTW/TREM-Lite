@@ -21,6 +21,8 @@ jobs:
     # Naming any permission sets every one not listed to none.
     permissions:
       contents: read
+    outputs:
+      snapshot: ${{ steps.snapshot.outputs.publishes }}
     steps:
       # Full history: these gates walk the range this push or pull request
       # adds, and a shallow clone has no base to compare against.
@@ -99,6 +101,26 @@ jobs:
           bash <(curl -sSf https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null
           ./actionlint -shellcheck= .github/workflows/*.yml
 
+      # Whether release.yml compiles this push, for `build` below. It publishes
+      # a snapshot only when a commit since the last tag carries a changelog
+      # entry; asked here of the push's own commits, which are always within
+      # that range. So "yes" here is always "yes" there, and a push this
+      # answers "no" for is compiled by `build` — at worst by both, never by
+      # neither.
+      - name: Does release.yml build this push
+        id: snapshot
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if bash tool/release/notes.sh --any "$BEFORE..$GITHUB_SHA"; then
+            echo "publishes=true" >>"$GITHUB_OUTPUT"
+            echo "this push brings a changelog entry: release.yml builds it"
+          else
+            echo "publishes=false" >>"$GITHUB_OUTPUT"
+            echo "no changelog entry in this push: no snapshot, so it is built here"
+          fi
+
   # Fast, platform-independent checks — run once before spending the build matrix.
   check:
     # Behind the gates: a rejected commit message or an unrebased branch is
@@ -148,13 +170,14 @@ jobs:
   # (works on fork PRs) and it's fast. Public repo → GitHub-hosted runners
   # (incl. Linux/Windows arm64) are free with unlimited minutes.
   #
-  # Pull requests only. A push to main starts release.yml, which compiles the
-  # same seven targets — bundled and signed — and fails that push just as this
-  # would; running both spent seven more runners, two of them macOS, on a
-  # build nobody installs. The gates and `check` above still run on the push.
+  # Every pull request, and only the pushes to main that publish no snapshot.
+  # A push that does starts release.yml, which compiles the same seven targets
+  # — bundled and signed — and fails that push just as this would; running both
+  # spent seven more runners, two of them macOS, on a build nobody installs.
+  # The gates and `check` above still run on every push.
   build:
-    if: github.event_name == 'pull_request'
-    needs: check
+    if: github.event_name == 'pull_request' || needs.gates.outputs.snapshot != 'true'
+    needs: [gates, check]
     strategy:
       fail-fast: false
       matrix:

@@ -31,11 +31,25 @@
 #              between, and a delta would describe a fraction of what changed.
 #
 # Usage:  tool/release/notes.sh <label> <code> [--release]
+#         tool/release/notes.sh --any [<range>]
+#
+# `--any` writes no note. It exits 0 when a commit in <range> carries a
+# changelog entry and 1 when none does — by default the range a snapshot note
+# would cover, so 1 means that note would say there is nothing user-facing.
+# release.yml publishes no snapshot then; ci.yml asks about the push's own
+# commits, to compile the pushes release.yml does not.
 set -euo pipefail
 
-label="${1:?label required}"
-code="${2:?build code required}"
-kind="${3:-}"
+if [ "${1:-}" = "--any" ]; then
+  mode=any
+  any_range="${2:-}"
+  label="" code="" kind=""
+else
+  mode=note
+  label="${1:?label required}"
+  code="${2:?build code required}"
+  kind="${3:-}"
+fi
 
 # The primary language, printed unfolded. Every other language is published in
 # its own folded block.
@@ -192,8 +206,9 @@ EOF
 
 # The snapshot a change first shipped in — the nearest snapshot tag at or after
 # the commit. Only meaningful in a release note; a snapshot's own entries all
-# came from itself. It is here because every push to main publishes a snapshot,
-# so a tester who has been running them can see which entries they already have.
+# came from itself. It is here because every push to main that brings a
+# changelog entry publishes a snapshot, so a tester who has been running them
+# can see which entries they already have.
 first_seen_in() { # <sha>
   [ "$kind" = "--release" ] || return 0
   git tag --list '[0-9][0-9]w[0-9][0-9]*' --contains "$1" 2>/dev/null |
@@ -218,6 +233,7 @@ else
   since="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
 fi
 range="${since:+$since..}HEAD"
+[ "$mode" = any ] && [ -n "$any_range" ] && range="$any_range"
 
 # One file per category+locale: macOS still ships bash 3.2, which has no
 # associative arrays, and this has to run the same on a laptop as on a runner.
@@ -241,6 +257,7 @@ for sha in $(git rev-list --no-merges --reverse "$range" 2>/dev/null); do
     END { if (held) printf "\n" }
   ')"
   printf '%s\n' "$body" | grep -Eq "$LINE_RE" || continue
+  [ "$mode" = any ] && exit 0
 
   tag="$(platform_tag "$sha")"
   who="$(authors_of "$sha")"
@@ -266,6 +283,11 @@ for sha in $(git rev-list --no-merges --reverse "$range" 2>/dev/null); do
 $body
 EOF
 done
+
+# A range that does not resolve (a `before` the clone does not have) lists no
+# commits and lands here too: "no entry" is the answer that gets a push
+# compiled, so an unknown range errs toward building.
+[ "$mode" = any ] && exit 1
 
 # Primary first, then the rest alphabetically, so a note's language order does
 # not shuffle between builds.
