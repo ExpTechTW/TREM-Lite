@@ -71,30 +71,34 @@ pub struct FileLogger {
 }
 
 impl FileLogger {
-    /// 寫一行。`at` 是事情發生的時間（前端的行帶著自己的時間過來）；寫進哪個檔
-    /// 看的是現在，跨小時邊界時晚到幾毫秒的行不會把上一小時的檔再開回來。
-    fn write(&self, at: &DateTime<Local>, level: Level, target: &str, msg: &dyn std::fmt::Display) {
-        let line = format_line(at, level, target, msg);
+    /// 寫下已經排好的一或多行（[`push_line`]）：一次上鎖、一次寫入。行首的時間
+    /// 是事情發生的時間（前端的行帶著自己的時間過來）；寫進哪個檔看的是現在，
+    /// 跨小時邊界時晚到幾毫秒的行不會把上一小時的檔再開回來。
+    fn append(&self, lines: &str) {
         if cfg!(debug_assertions) {
-            eprint!("{line}");
+            eprint!("{lines}");
         }
         if let Ok(mut sink) = self.sink.lock() {
             if let Some(file) = sink.file_for(&Local::now()) {
-                let _ = file.write_all(line.as_bytes());
+                let _ = file.write_all(lines.as_bytes());
             }
         }
     }
 }
 
-/// `[HH:MM:SS.mmm][LEVEL][target]: 訊息`
-fn format_line(
+/// 在 `out` 後面接上一行 `[HH:MM:SS.mmm][LEVEL][target]: 訊息`。
+fn push_line(
+    out: &mut String,
     at: &DateTime<Local>,
     level: Level,
     target: &str,
     msg: &dyn std::fmt::Display,
-) -> String {
-    format!(
-        "[{:02}:{:02}:{:02}.{:03}][{}][{}]: {}\n",
+) {
+    use std::fmt::Write as _;
+    // 寫進 String 不會失敗。
+    let _ = writeln!(
+        out,
+        "[{:02}:{:02}:{:02}.{:03}][{}][{}]: {}",
         at.hour(),
         at.minute(),
         at.second(),
@@ -102,7 +106,7 @@ fn format_line(
         level,
         target,
         msg,
-    )
+    );
 }
 
 /// 本程式的模組路徑去掉 crate 名；自訂 target（`log::info!(target: "app", …)`）照舊。
@@ -132,7 +136,15 @@ impl Log for FileLogger {
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             let target = short_target(record.target());
-            self.write(&Local::now(), record.level(), target, record.args());
+            let mut line = String::new();
+            push_line(
+                &mut line,
+                &Local::now(),
+                record.level(),
+                target,
+                record.args(),
+            );
+            self.append(&line);
         }
     }
 
@@ -398,12 +410,14 @@ pub struct JsLine {
     m: String,
 }
 
-/// 前端的日誌寫進同一個檔案。前端把同一個工作階段（task）裡產生的行合成一批送來。
+/// 前端的日誌寫進同一個檔案。前端把同一個工作階段（task）裡產生的行合成一批送來，
+/// 這裡也整批排好、一次寫入。
 #[tauri::command]
 pub fn log_write(lines: Vec<JsLine>) {
     let Some(logger) = LOGGER.get() else {
         return;
     };
+    let mut text = String::new();
     for line in lines {
         let level = match line.l.as_str() {
             "error" => Level::Error,
@@ -417,14 +431,20 @@ pub fn log_write(lines: Vec<JsLine>) {
             .single()
             .unwrap_or_else(Local::now);
         // 一筆的長度設上限（同 trem-monitor）：一個巨大的物件不該把日誌撐爆。
-        let message = if line.m.chars().count() > MAX_JS_CHARS {
-            let mut cut: String = line.m.chars().take(MAX_JS_CHARS).collect();
-            cut.push_str("…（截斷）");
-            cut
-        } else {
-            line.m
-        };
-        logger.write(&at, level, &line.s, &message);
+        let mut message = line.m;
+        truncate_chars(&mut message, MAX_JS_CHARS);
+        push_line(&mut text, &at, level, &line.s, &message);
+    }
+    if !text.is_empty() {
+        logger.append(&text);
+    }
+}
+
+/// 超過 `max` 個字元就留前 `max` 個，接上「…（截斷）」。
+fn truncate_chars(s: &mut String, max: usize) {
+    if let Some((cut, _)) = s.char_indices().nth(max) {
+        s.truncate(cut);
+        s.push_str("…（截斷）");
     }
 }
 
@@ -474,10 +494,26 @@ mod tests {
     fn a_line_is_trem_monitors_format() {
         let at = Local.with_ymd_and_hms(2026, 9, 29, 3, 5, 9).unwrap()
             + chrono::Duration::milliseconds(42);
+        let mut text = String::new();
+        push_line(&mut text, &at, Level::Info, "sse", &"trem 已連線");
+        assert_eq!(text, "[03:05:09.042][INFO][sse]: trem 已連線\n");
+        // 一批的行一個接一個
+        push_line(&mut text, &at, Level::Warn, "http", &"x");
         assert_eq!(
-            format_line(&at, Level::Info, "sse", &"trem 已連線"),
-            "[03:05:09.042][INFO][sse]: trem 已連線\n"
+            text,
+            "[03:05:09.042][INFO][sse]: trem 已連線\n[03:05:09.042][WARN][http]: x\n"
         );
+    }
+
+    #[test]
+    fn a_long_message_keeps_its_first_chars() {
+        let mut short = "地震".repeat(4);
+        truncate_chars(&mut short, 8);
+        assert_eq!(short, "地震".repeat(4), "正好上限不截");
+
+        let mut long = "地震".repeat(5);
+        truncate_chars(&mut long, 8);
+        assert_eq!(long, format!("{}…（截斷）", "地震".repeat(4)));
     }
 
     #[test]

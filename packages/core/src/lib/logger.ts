@@ -56,11 +56,14 @@ export function describe(value: unknown): string {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** `[HH:MM:SS.mmm][LEVEL][模組]: 訊息`，與 Rust 端寫出來的一模一樣。 */
-export function formatLine(t: number, level: Level, scope: string, message: string): string {
+/**
+ * 一行的開頭 `[HH:MM:SS.mmm][LEVEL][模組]:`；接上 ` 訊息\n` 就是整行，與 Rust 端
+ * 寫出來的一模一樣。
+ */
+function lineHead(t: number, level: Level, scope: string): string {
   const d = new Date(t);
   const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${String(d.getMilliseconds()).padStart(3, "0")}`;
-  return `[${time}][${level.toUpperCase()}][${scope}]: ${message}\n`;
+  return `[${time}][${level.toUpperCase()}][${scope}]:`;
 }
 
 /** 送往 Rust 的一行：時間、等級、模組、訊息（欄位名縮短，因為每行都要送）。 */
@@ -83,6 +86,10 @@ function send(): void {
 
 function emit(level: Level, scope: string, args: unknown[]): void {
   const t = Date.now();
+  // 網頁版寫下的每一行也都印到 console，開頭排一次兩邊共用；桌面版的正式版
+  // 兩者都不用（Rust 自己排版），不排。
+  const toConsole = DEV || (!inTauri && level !== "trace");
+  const head = toConsole ? lineHead(t, level, scope) : "";
   if (level !== "trace") {
     let message = args.map(describe).join(" ");
     if (message.length > MAX_MESSAGE) {
@@ -94,12 +101,11 @@ function emit(level: Level, scope: string, args: unknown[]): void {
       if (!pending.length) queueMicrotask(send);
       pending.push({ t, l: level, s: scope, m: message });
     } else {
-      appendLine(formatLine(t, level, scope, message));
+      appendLine(`${head} ${message}\n`);
     }
   }
 
-  if ((DEV || !inTauri) && (level !== "trace" || DEV)) {
-    const head = formatLine(t, level, scope, "").slice(0, -2);
+  if (toConsole) {
     if (level === "error") rawConsole.error(head, ...args);
     else if (level === "warn") rawConsole.warn(head, ...args);
     else rawConsole.log(head, ...args);
