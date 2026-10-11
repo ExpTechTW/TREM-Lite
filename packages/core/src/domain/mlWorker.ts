@@ -28,9 +28,11 @@ function hypocentral(lat: number, lon: number, depth: number, t: Town): number {
   const d2r = Math.PI / 180;
   const la = lat * d2r;
   const lb = t.lat * d2r;
-  const surface =
-    Math.acos(Math.sin(la) * Math.sin(lb) + Math.cos(la) * Math.cos(lb) * Math.cos(lon * d2r - t.lon * d2r)) *
-    6371.008;
+  // Identical points round the cosine to just over 1, and acos of that is NaN.
+  // Capped at 1, the distance is 0 — the same cap as distance() in utils.ts.
+  const cos =
+    Math.sin(la) * Math.sin(lb) + Math.cos(la) * Math.cos(lb) * Math.cos(lon * d2r - t.lon * d2r);
+  const surface = Math.acos(Math.min(1, cos)) * 6371.008;
   return Math.sqrt(surface * surface + depth * depth);
 }
 

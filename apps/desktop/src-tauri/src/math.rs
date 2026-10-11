@@ -102,7 +102,10 @@ fn towns() -> &'static Vec<Town> {
 /// Great-circle distance in km (spherical law of cosines), from each end's
 /// sine and cosine of latitude and its longitude, all in radians.
 fn distance(sin_a: f64, cos_a: f64, lng_a: f64, sin_b: f64, cos_b: f64, lng_b: f64) -> f64 {
-    (sin_a * sin_b + cos_a * cos_b * (lng_a - lng_b).cos()).acos() * 6371.008
+    // Identical points round this to just over 1, and acos of that is NaN.
+    // Capped at 1, the distance is 0 — the same cap as domain/utils.ts.
+    let cos = sin_a * sin_b + cos_a * cos_b * (lng_a - lng_b).cos();
+    cos.min(1.0).acos() * 6371.008
 }
 
 #[derive(Serialize, Clone)]
@@ -196,6 +199,19 @@ mod tests {
         let (a, b) = (r(25.03), r(22.63));
         let d = distance(a.sin(), a.cos(), r(121.56), b.sin(), b.cos(), r(120.30));
         assert!((d - 296.0).abs() < 15.0, "got {d}");
+    }
+
+    #[test]
+    fn distance_same_point_is_zero_not_nan() {
+        // The cosine of one point with itself can round to just over 1.
+        let d = distance(0.0, 1.0, 0.0, 0.0, 1.0 + 1e-12, 0.0);
+        assert!(d.is_finite() && d == 0.0, "got {d}");
+
+        let r = |deg: f64| deg * PI / 180.0;
+        let lat = r(23.5);
+        let lon = r(121.0);
+        let same = distance(lat.sin(), lat.cos(), lon, lat.sin(), lat.cos(), lon);
+        assert!(same.is_finite() && same < 1e-6, "got {same}");
     }
 
     #[test]
