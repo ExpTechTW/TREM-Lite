@@ -253,10 +253,9 @@ function eewSummary(parsed: unknown): string {
 }
 
 const lookups: RtsV1Lookups = {
-  station: (id) => {
-    const at = variable.station?.[id]?.info.at(-1);
-    return at ? { lon: at.lon, lat: at.lat, code: at.code } : null;
-  },
+  // The station's own entry, which the reader only reads: no copy of it for
+  // each alerting station of each frame.
+  station: (id) => variable.station?.[id]?.info.at(-1) || null,
   boxOf,
   townOf: search_loc_name,
 };

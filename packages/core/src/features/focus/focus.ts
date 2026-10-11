@@ -40,6 +40,20 @@ let lastFocus = -Infinity;
 let pendingFocus: ReturnType<typeof setTimeout> | null = null;
 /** The triggered stations the camera last followed, as a key. */
 let rtsKey = "";
+/**
+ * The stations `rtsKey` was last taken from, as lon, lat, lon, lat, …. A
+ * trigger lists the same stations in the same order frame after frame, and
+ * then the key is the same: it is not built and sorted again.
+ */
+const rtsKeyFrom: number[] = [];
+
+function sameAsKeyed(stations: Coord[]): boolean {
+  if (stations.length * 2 !== rtsKeyFrom.length) return false;
+  for (let i = 0; i < stations.length; i++) {
+    if (stations[i].lon !== rtsKeyFrom[2 * i] || stations[i].lat !== rtsKeyFrom[2 * i + 1]) return false;
+  }
+  return true;
+}
 
 /**
  * Focus now, or — within FOCUS_GAP_MS of the last — once that has passed,
@@ -94,7 +108,9 @@ export function initFocus(): void {
   events.on("DataRts", () =>
     queueMicrotask(() => {
       const stations = asCoords(variable.cache.bounds.rts);
-      if (!stations.length && !rtsKey) return;
+      if (sameAsKeyed(stations)) return;
+      rtsKeyFrom.length = 0;
+      for (const c of stations) rtsKeyFrom.push(c.lon, c.lat);
       const key = stations.map((c) => `${c.lon},${c.lat}`).sort().join("|");
       if (key === rtsKey) return;
       rtsKey = key;

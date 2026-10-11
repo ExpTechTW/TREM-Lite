@@ -101,7 +101,10 @@ function nearEew(lat: number, lon: number): boolean {
  */
 function eqLevels(rts: RtsData, eqs: RtsEq[]): number[] {
   const levels = eqs.map(() => 0);
-  for (const [id, s] of Object.entries(rts.station)) {
+  // Every station, about a thousand, once a second: not through
+  // Object.entries, which built a pair for each of them first.
+  for (const id in rts.station) {
+    const s = rts.station[id];
     if (!s.alert) continue;
     let nearest = 0;
     if (eqs.length > 1) {
@@ -183,17 +186,7 @@ export function refresh_box(show: boolean): void {
         continue;
       }
 
-      let shouldSkip = false;
-      for (const eew of variable.data.eew) {
-        if (!eew.dist) {
-          continue;
-        }
-        if (checkBoxSkip(eew, area)) {
-          shouldSkip = true;
-          break;
-        }
-      }
-      if (shouldSkip) {
+      if (variable.data.eew.some((eew) => checkBoxSkip(eew, area))) {
         continue;
       }
 

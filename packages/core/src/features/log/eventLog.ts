@@ -101,7 +101,7 @@ function rtsState(rts: RtsData) {
     if (s.i > maxI) maxI = s.i;
     if (s.pga > maxPga) maxPga = s.pga;
   }
-  return { stations: count, alerted, maxI, maxPga, boxes: Object.keys(rts.box ?? {}).length };
+  return { stations: count, alerted, maxI, maxPga };
 }
 
 function stationCount(rts: RtsData): number {
@@ -121,42 +121,29 @@ function rtsLog() {
     }
     frames++;
     const now = Date.now();
-    const summarize = now - windowStart >= 60_000;
-    // 平時沒有警戒框：不為了日誌把每個測站展開。摘要才數一次。
-    if (!rts.box || !Object.keys(rts.box).length) {
-      if (lastKey && !lastKey.startsWith("0|")) log.info("RTS 觸發結束，沒有測站在警戒中");
-      lastKey = "0|-1|0|0";
-      if (summarize) {
-        const lag = rts.time ? ((now - rts.time) / 1000).toFixed(1) : "?";
-        log.debug(
-          `RTS 近 ${Math.round((now - windowStart) / 1000)} 秒 ${frames} 筆｜回報測站 ${stationCount(rts)}｜觸發 0｜資料時間 ${when(rts.time)}（落後 ${lag} 秒）`,
-        );
-        frames = 0;
-        windowStart = now;
-      }
-      return;
-    }
-    const s = rtsState(rts);
-    const key = `${s.alerted.length}|${Math.round(s.maxI)}|${Math.round(s.maxPga)}|${s.boxes}`;
+    // 平時沒有警戒框：不為了日誌把每個測站展開，狀態就是「沒有觸發」。摘要才數一次。
+    const boxes = rts.box ? Object.keys(rts.box).length : 0;
+    const s = boxes ? rtsState(rts) : null;
+    const key = s ? `${s.alerted.length}|${Math.round(s.maxI)}|${Math.round(s.maxPga)}|${boxes}` : "0|-1|0|0";
     if (key !== lastKey) {
-      if (s.alerted.length) {
+      if (s?.alerted.length) {
         const top = [...s.alerted]
           .sort(([, a], [, b]) => b.i - a.i || b.pga - a.pga)
           .slice(0, 5)
           .map(([id, st]) => `${id} ${stationPlace(id)} 震度 ${st.i.toFixed(1)} PGA ${st.pga.toFixed(1)}`)
           .join("；");
         log.info(
-          `RTS 觸發 ${s.alerted.length} 站｜最大震度 ${s.maxI.toFixed(1)}｜最大 PGA ${s.maxPga.toFixed(1)} gal｜警戒框 ${s.boxes} 區｜${top}`,
+          `RTS 觸發 ${s.alerted.length} 站｜最大震度 ${s.maxI.toFixed(1)}｜最大 PGA ${s.maxPga.toFixed(1)} gal｜警戒框 ${boxes} 區｜${top}`,
         );
       } else if (lastKey && !lastKey.startsWith("0|")) {
         log.info("RTS 觸發結束，沒有測站在警戒中");
       }
       lastKey = key;
     }
-    if (summarize) {
+    if (now - windowStart >= 60_000) {
       const lag = rts.time ? ((now - rts.time) / 1000).toFixed(1) : "?";
       log.debug(
-        `RTS 近 ${Math.round((now - windowStart) / 1000)} 秒 ${frames} 筆｜回報測站 ${s.stations}｜觸發 ${s.alerted.length}｜資料時間 ${when(rts.time)}（落後 ${lag} 秒）`,
+        `RTS 近 ${Math.round((now - windowStart) / 1000)} 秒 ${frames} 筆｜回報測站 ${s ? s.stations : stationCount(rts)}｜觸發 ${s ? s.alerted.length : 0}｜資料時間 ${when(rts.time)}（落後 ${lag} 秒）`,
       );
       frames = 0;
       windowStart = now;

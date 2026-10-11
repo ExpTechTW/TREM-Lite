@@ -287,6 +287,10 @@ export function initRts(): void {
         variable.cache.last_rts_alert = rts.time ?? 0;
         variable.cache.rts_alert = true;
       }
+      // Nothing the loop below calls replaces this object, so one reference serves.
+      const audio = variable.cache.audio;
+      // String(): YAML reads an all-digit hex id back as a number.
+      const ownStation = String(config["realtime-station-id"]);
 
       for (const id in rts.station) {
         const station_info = stationMeta[id];
@@ -306,8 +310,7 @@ export function initRts(): void {
           pga = st.pga;
         }
 
-        // String(): YAML reads an all-digit hex id back as a number.
-        if (id === String(config["realtime-station-id"])) {
+        if (id === ownStation) {
           const loc = search_loc_name(station_location.code);
           ui.currentStation = {
             loc: loc ? `${loc.city}${loc.town}` : "",
@@ -340,13 +343,13 @@ export function initRts(): void {
             pushDot(1, rtsColorIndex(I), lon, lat);
           } else if (I > 0) {
             pushDot(2, I, lon, lat);
-          } else if (eew_alert && variable.data.eew) {
+          } else if (eew_alert) {
             pushDot(3, 0, lon, lat);
           } else {
             pushDot(1, rtsColorIndex(I), lon, lat);
           }
 
-          coordinates.push({ lon: station_location.lon, lat: station_location.lat });
+          coordinates.push({ lon, lat });
 
           if (rts_max_pga < st.pga) {
             rts_max_pga = st.pga;
@@ -355,43 +358,43 @@ export function initRts(): void {
             rts_max_shindo = I;
           }
 
-          if (pga > variable.cache.audio.pga) {
-            if (pga > 200 && variable.cache.audio.status.pga != 2) {
+          if (pga > audio.pga) {
+            if (pga > 200 && audio.status.pga != 2) {
               events.emit("RtsPga2");
-              variable.cache.audio.status.pga = 2;
-            } else if (pga > 8 && !variable.cache.audio.status.pga) {
+              audio.status.pga = 2;
+            } else if (pga > 8 && !audio.status.pga) {
               events.emit("RtsPga1");
-              variable.cache.audio.status.pga = 1;
+              audio.status.pga = 1;
             }
 
-            variable.cache.audio.pga = pga;
+            audio.pga = pga;
             if (pga > 8) {
-              variable.cache.audio.count.pga_1 = 0;
+              audio.count.pga_1 = 0;
             }
             if (pga > 200) {
-              variable.cache.audio.count.pga_2 = 0;
+              audio.count.pga_2 = 0;
             }
           }
 
-          if (I > variable.cache.audio.shindo) {
-            if (I > 3 && variable.cache.audio.status.shindo != 3) {
+          if (I > audio.shindo) {
+            if (I > 3 && audio.status.shindo != 3) {
               events.emit("RtsShindo2");
-              variable.cache.audio.status.shindo = 3;
-            } else if (I > 1 && variable.cache.audio.status.shindo < 2) {
+              audio.status.shindo = 3;
+            } else if (I > 1 && audio.status.shindo < 2) {
               events.emit("RtsShindo1");
-              variable.cache.audio.status.shindo = 2;
-            } else if (!variable.cache.audio.status.shindo) {
+              audio.status.shindo = 2;
+            } else if (!audio.status.shindo) {
               events.emit("RtsShindo0");
-              variable.cache.audio.status.shindo = 1;
+              audio.status.shindo = 1;
             }
 
             if (I > 3) {
-              variable.cache.audio.count.shindo_2 = 0;
+              audio.count.shindo_2 = 0;
             }
             if (I > 1) {
-              variable.cache.audio.count.shindo_1 = 0;
+              audio.count.shindo_1 = 0;
             }
-            variable.cache.audio.shindo = I;
+            audio.shindo = I;
           }
         } else if (!eew_alert) {
           pushDot(1, rtsColorIndex(st.i), station_location.lon, station_location.lat);
@@ -403,56 +406,56 @@ export function initRts(): void {
       shakeBuf.length = shakeN;
       level = shakeLevel(shakeBuf);
 
-      if (variable.cache.audio.pga && rts_max_pga < variable.cache.audio.pga) {
-        if (variable.cache.audio.status.pga == 2) {
+      if (audio.pga && rts_max_pga < audio.pga) {
+        if (audio.status.pga == 2) {
           if (rts_max_pga < 200) {
-            variable.cache.audio.count.pga_2++;
-            if (variable.cache.audio.count.pga_2 >= 30) {
-              variable.cache.audio.count.pga_2 = 0;
-              variable.cache.audio.status.pga = 1;
+            audio.count.pga_2++;
+            if (audio.count.pga_2 >= 30) {
+              audio.count.pga_2 = 0;
+              audio.status.pga = 1;
             }
           } else {
-            variable.cache.audio.count.pga_2 = 0;
+            audio.count.pga_2 = 0;
           }
-        } else if (variable.cache.audio.status.pga == 1) {
+        } else if (audio.status.pga == 1) {
           if (rts_max_pga < 8) {
-            variable.cache.audio.count.pga_1++;
-            if (variable.cache.audio.count.pga_1 >= 30) {
-              variable.cache.audio.count.pga_1 = 0;
-              variable.cache.audio.status.pga = 0;
+            audio.count.pga_1++;
+            if (audio.count.pga_1 >= 30) {
+              audio.count.pga_1 = 0;
+              audio.status.pga = 0;
             }
           } else {
-            variable.cache.audio.count.pga_1 = 0;
+            audio.count.pga_1 = 0;
           }
         }
 
-        variable.cache.audio.pga = rts_max_pga;
+        audio.pga = rts_max_pga;
       }
 
-      if (variable.cache.audio.shindo && rts_max_shindo < variable.cache.audio.shindo) {
-        if (variable.cache.audio.status.shindo == 3) {
+      if (audio.shindo && rts_max_shindo < audio.shindo) {
+        if (audio.status.shindo == 3) {
           if (rts_max_shindo < 4) {
-            variable.cache.audio.count.shindo_2++;
-            if (variable.cache.audio.count.shindo_2 >= 15) {
-              variable.cache.audio.count.shindo_2 = 0;
-              variable.cache.audio.status.shindo = 2;
+            audio.count.shindo_2++;
+            if (audio.count.shindo_2 >= 15) {
+              audio.count.shindo_2 = 0;
+              audio.status.shindo = 2;
             }
           } else {
-            variable.cache.audio.count.shindo_2 = 0;
+            audio.count.shindo_2 = 0;
           }
-        } else if (variable.cache.audio.status.shindo == 2) {
+        } else if (audio.status.shindo == 2) {
           if (rts_max_shindo < 2) {
-            variable.cache.audio.count.shindo_1++;
-            if (variable.cache.audio.count.shindo_1 >= 15) {
-              variable.cache.audio.count.shindo_1 = 0;
-              variable.cache.audio.status.shindo = 1;
+            audio.count.shindo_1++;
+            if (audio.count.shindo_1 >= 15) {
+              audio.count.shindo_1 = 0;
+              audio.status.shindo = 1;
             }
           } else {
-            variable.cache.audio.count.shindo_1 = 0;
+            audio.count.shindo_1 = 0;
           }
         }
 
-        variable.cache.audio.shindo = rts_max_shindo;
+        audio.shindo = rts_max_shindo;
       }
 
       if (
@@ -463,11 +466,9 @@ export function initRts(): void {
         variable.play_mode == 2 ||
         variable.play_mode == 3
       ) {
-        if (variable.cache.bounds.report) {
-          variable.cache.bounds.report = [];
-          forgetReportPoint();
-          if (variable.map) setFeatures(variable.map, "report-markers-geojson", []);
-        }
+        variable.cache.bounds.report = [];
+        forgetReportPoint();
+        if (variable.map) setFeatures(variable.map, "report-markers-geojson", []);
       } else if (SHOW_REPORT && idleMap(config) === "report") {
         dotCount = 0;
         // 使用者鎖定地圖查看報告時不重畫報告點，避免打斷（對應舊版 rts.js:354）。
@@ -530,9 +531,8 @@ export function initRts(): void {
     const maxI = int_list[0]?.i ?? 0;
     ui.maxIntensity = { i: maxI, label: int_to_string(maxI) };
     ui.maxPga = pga;
-    const hasAlert = alert;
     ui.maxPgaIntensity =
-      hasAlert && pga >= 5
+      alert && pga >= 5
         ? intensity_float_to_int(2 * Math.log10(pga) + 0.7)
         : 0;
 

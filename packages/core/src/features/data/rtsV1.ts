@@ -81,12 +81,17 @@ function readEq(value: unknown): RtsEq[] {
 }
 
 export function readRtsV1(payload: RtsV1, lookups: RtsV1Lookups): RtsData | null {
-  if (!payload.stations) return null;
+  const stations = payload.stations;
+  if (!stations) return null;
   const station: Record<string, RtsStation> = {};
   const box: Record<string, number> = {};
-  const towns = new Map<string, { code: number; level: number }>();
+  // Each town's entry is already the `int` row it becomes: sorted, not copied.
+  const towns = new Map<string, { code: number; i: number }>();
 
-  for (const [id, s] of Object.entries(payload.stations)) {
+  // By key, not Object.entries: the same stations in the same order, without
+  // an [id, value] pair made for every station of every frame.
+  for (const id of Object.keys(stations)) {
+    const s = stations[id];
     if (typeof s.i !== "number") continue;
     const alert = alerting(s.alert);
     // pga is omitted until a station's first measurement; 0 adds nothing to
@@ -104,9 +109,9 @@ export function readRtsV1(payload: RtsV1, lookups: RtsV1Lookups): RtsData | null
     if (!name) continue;
     const key = `${name.city}${name.town}`;
     const town = towns.get(key);
-    if (!town || town.level < level) towns.set(key, { code: at.code, level });
+    if (!town || town.i < level) towns.set(key, { code: at.code, i: level });
   }
 
-  const int = [...towns.values()].sort((a, b) => b.level - a.level).map((t) => ({ code: t.code, i: t.level }));
+  const int = [...towns.values()].sort((a, b) => b.i - a.i);
   return { station, box, int, time: payload.ts ?? 0, eq: readEq(payload.eq) };
 }
