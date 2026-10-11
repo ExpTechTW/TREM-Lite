@@ -59,7 +59,7 @@ jobs:
       release_id: ${{ steps.release.outputs.id }}
     steps:
       # Full history: the label counts this year's commits and this week's tags.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -204,7 +204,7 @@ jobs:
       # The commit this run was started for, not the branch: a push to main that
       # lands while this matrix is running would otherwise have some targets
       # build a different tree than the others, all attached to one release.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.sha }}
 
@@ -236,7 +236,7 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
@@ -299,7 +299,7 @@ jobs:
     steps:
       # Full history: the note walks back to the previous tag, and for a release
       # back to the previous *release* tag.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
