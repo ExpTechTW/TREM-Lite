@@ -54,16 +54,17 @@ export function ringStepKm(lat: number, zoom: number): number {
   return metersPerPixel(lat, zoom) / 1000;
 }
 
+/** The one source an EEW's P and S rings are drawn from (eew.ts; cross.ts reads it). */
+export const waveSource = (id: string) => `${id}-wave`;
+
 /**
  * Build a great-circle polygon (km radius) around `center`.
  *
  * Bearings come from the table above. `sin φ2` is `a + b·cos θ` — the value
- * `asin` is given — so it is not computed again. `zoom` drops vertices that
+ * `asin` is given — so it is not computed again, and `b`, `cos φ1·sin δ`, is
+ * also the factor of `sin θ` in the `atan2`. `zoom` drops vertices that
  * would land on the same pixel; each kept vertex is one of the 256.
  */
-/** The one source an EEW's P and S rings are drawn from (eew.ts; cross.ts reads it). */
-export const waveSource = (id: string) => `${id}-wave`;
-
 export function createCircleFeature(
   center: [number, number],
   radius: number,
@@ -78,7 +79,6 @@ export function createCircleFeature(
   const cosDelta = Math.cos(delta);
   const a = sinPhi1 * cosDelta;
   const b = cosPhi1 * sinDelta;
-  const yScale = sinDelta * cosPhi1;
 
   const mpp = metersPerPixel(center[1], zoom);
   const circumferencePx = mpp > 0 && radius > 0 ? (2 * Math.PI * radius * 1000) / mpp : RING_STEPS;
@@ -89,7 +89,7 @@ export function createCircleFeature(
   for (let i = 0; i <= RING_STEPS; i += stride) {
     const sinPhi2 = a + b * BEARING_COS[i];
     const phi2 = Math.asin(sinPhi2 > 1 ? 1 : sinPhi2 < -1 ? -1 : sinPhi2);
-    const lambda2 = lambda1 + Math.atan2(BEARING_SIN[i] * yScale, cosDelta - sinPhi1 * sinPhi2);
+    const lambda2 = lambda1 + Math.atan2(BEARING_SIN[i] * b, cosDelta - sinPhi1 * sinPhi2);
     ring.push([lambda2 * DEG, phi2 * DEG]);
   }
   ring.push(ring[0]);

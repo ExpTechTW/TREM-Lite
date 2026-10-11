@@ -87,34 +87,21 @@ export function formatTimestamp(Timestamp: number, offsetMs = 0): string {
   return `${hours}:${minutes}`;
 }
 
+/**
+ * CWA level for a measured intensity: rounded below 4.5, then one level per
+ * half step — 5弱 from 4.5, 5強 from 5, 6弱 from 5.5, 6強 from 6 — and 7 from
+ * 6.5. `float * 2` is exact, so the floor splits exactly on those bounds. NaN
+ * still gives 9 (7級), as the chain of comparisons this replaced did.
+ */
 export function intensity_float_to_int(float: number): number {
-  return float < 0
-    ? 0
-    : float < 4.5
-      ? Math.round(float)
-      : float < 5
-        ? 5
-        : float < 5.5
-          ? 6
-          : float < 6
-            ? 7
-            : float < 6.5
-              ? 8
-              : 9;
+  return float < 0 ? 0 : float < 4.5 ? Math.round(float) : float < 6.5 ? Math.floor(float * 2) - 4 : 9;
 }
 
+/** Levels 5-9 by name; the rest are their number. */
+const LEVEL_NAMES: Record<number, string> = { 5: "5弱", 6: "5強", 7: "6弱", 8: "6強", 9: "7級" };
+
 export function int_to_string(max: number): string {
-  return max == 5
-    ? "5弱"
-    : max == 6
-      ? "5強"
-      : max == 7
-        ? "6弱"
-        : max == 8
-          ? "6強"
-          : max == 9
-            ? "7級"
-            : `${max}級`;
+  return LEVEL_NAMES[max] ?? `${max}級`;
 }
 
 export function extractLocation(loc: string): string {
@@ -171,8 +158,9 @@ export function createIntensityIcon(
 /** Each town's colour for its level: intensity's or long-period's palette, 0 unlit. */
 export function townColors(area: Record<string, number>, lpgm = false): Record<number, string> {
   const colors: Record<number, string> = {};
+  const palette = lpgm ? COLOR.LPGM : COLOR.INTENSITY;
   for (const [code, level] of Object.entries(area)) {
-    colors[parseInt(code)] = level ? (lpgm ? COLOR.LPGM[level] : COLOR.INTENSITY[level]) : COLOR.MAP.TW_COUNTY_FILL;
+    colors[parseInt(code)] = level ? palette[level] : COLOR.MAP.TW_COUNTY_FILL;
   }
   return colors;
 }
@@ -182,8 +170,9 @@ export function convertIntensityToAreaFormat(
 ): Record<number, number> {
   const result: Record<number, number> = {};
   Object.entries(intensityData).forEach(([intensity, codes]) => {
+    const level = parseInt(intensity);
     codes.forEach((code) => {
-      result[code] = parseInt(intensity);
+      result[code] = level;
     });
   });
   return result;
