@@ -102,7 +102,8 @@ pub struct StoredResponse {
     pub etag: Option<String>,
     pub last_modified: Option<String>,
     pub headers: HashMap<String, String>,
-    pub body: Vec<u8>,
+    /// Shared with the answer already on its way to the renderer, not a copy.
+    pub body: Arc<Vec<u8>>,
 }
 
 /// A response already compressed and serialised, ready to queue.
@@ -252,9 +253,9 @@ impl ReaderPool {
 pub struct HttpCache {
     readers: ReaderPool,
     writes: Sender<WriteOp>,
-    /// Running total of `bytes`, maintained by the writer. Read here only by
+    /// Running total of `bytes`, maintained by the writer. Kept here only for
     /// the tests, which check the accounting eviction depends on.
-    #[cfg_attr(not(test), allow(dead_code))]
+    #[cfg(test)]
     used: Arc<AtomicI64>,
     max_bytes: i64,
 }
@@ -323,6 +324,7 @@ impl HttpCache {
         let cache = Self {
             readers,
             writes: tx,
+            #[cfg(test)]
             used,
             max_bytes,
         };
@@ -334,12 +336,16 @@ impl HttpCache {
     }
 
     /// Read a row on a pooled connection, in parallel with other reads.
+    ///
+    /// Every statement here and in the writer is `prepare_cached`: compiled
+    /// once per connection, not once per request and per queued write.
     pub fn get(&self, key: &str) -> Option<CacheEntry> {
         self.readers.with(|conn| {
-            conn.query_row(
+            conn.prepare_cached(
                 "SELECT status, etag, last_modified, headers, body, created_at FROM entries WHERE key = ?1",
-                params![key],
-                |row| {
+            )
+            .and_then(|mut stmt| {
+                stmt.query_row(params![key], |row| {
                     let headers_json: String = row.get(3)?;
                     Ok(CacheEntry {
                         status: row.get::<_, i64>(0)? as u16,
@@ -349,9 +355,9 @@ impl HttpCache {
                         body_gz: row.get(4)?,
                         stored_at: row.get(5)?,
                     })
-                },
-            )
-            .optional()
+                })
+                .optional()
+            })
             .ok()
             .flatten()
         })?
@@ -466,58 +472,55 @@ fn apply_batch(
     let mut delta: i64 = 0;
     for p in &puts {
         let previous: i64 = tx
-            .query_row(
-                "SELECT bytes FROM entries WHERE key = ?1",
-                params![p.key],
-                |r| r.get(0),
-            )
-            .optional()
+            .prepare_cached("SELECT bytes FROM entries WHERE key = ?1")
+            .and_then(|mut stmt| stmt.query_row(params![p.key], |r| r.get(0)).optional())
             .ok()
             .flatten()
             .unwrap_or(0);
 
-        let written = tx.execute(
-            "INSERT INTO entries
-               (key, url, status, etag, last_modified, headers, body, bytes, created_at, accessed_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
-             ON CONFLICT(key) DO UPDATE SET
-               url = excluded.url,
-               status = excluded.status,
-               etag = excluded.etag,
-               last_modified = excluded.last_modified,
-               headers = excluded.headers,
-               body = excluded.body,
-               bytes = excluded.bytes,
-               created_at = excluded.created_at,
-               accessed_at = excluded.accessed_at",
-            params![
-                p.key,
-                p.url,
-                p.status,
-                p.etag,
-                p.last_modified,
-                p.headers_json,
-                p.body_gz,
-                p.bytes,
-                now
-            ],
-        );
+        let written = tx
+            .prepare_cached(
+                "INSERT INTO entries
+                   (key, url, status, etag, last_modified, headers, body, bytes, created_at, accessed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
+                 ON CONFLICT(key) DO UPDATE SET
+                   url = excluded.url,
+                   status = excluded.status,
+                   etag = excluded.etag,
+                   last_modified = excluded.last_modified,
+                   headers = excluded.headers,
+                   body = excluded.body,
+                   bytes = excluded.bytes,
+                   created_at = excluded.created_at,
+                   accessed_at = excluded.accessed_at",
+            )
+            .and_then(|mut stmt| {
+                stmt.execute(params![
+                    p.key,
+                    p.url,
+                    p.status,
+                    p.etag,
+                    p.last_modified,
+                    p.headers_json,
+                    p.body_gz,
+                    p.bytes,
+                    now
+                ])
+            });
         if written.is_ok() {
             delta += p.bytes - previous;
         }
     }
 
     for key in &touches {
-        let _ = tx.execute(
-            "UPDATE entries SET accessed_at = ?2 WHERE key = ?1",
-            params![key, now],
-        );
+        let _ = tx
+            .prepare_cached("UPDATE entries SET accessed_at = ?2 WHERE key = ?1")
+            .and_then(|mut stmt| stmt.execute(params![key, now]));
     }
     for key in &validated {
-        let _ = tx.execute(
-            "UPDATE entries SET created_at = ?2, accessed_at = ?2 WHERE key = ?1",
-            params![key, now],
-        );
+        let _ = tx
+            .prepare_cached("UPDATE entries SET created_at = ?2, accessed_at = ?2 WHERE key = ?1")
+            .and_then(|mut stmt| stmt.execute(params![key, now]));
     }
 
     if tx.commit().is_ok() && delta != 0 {
@@ -558,7 +561,8 @@ fn evict(conn: &mut Connection, used: &AtomicI64, max_bytes: i64) {
                 break;
             }
             if tx
-                .execute("DELETE FROM entries WHERE key = ?1", params![key])
+                .prepare_cached("DELETE FROM entries WHERE key = ?1")
+                .and_then(|mut stmt| stmt.execute(params![key]))
                 .is_ok()
             {
                 freed += bytes;
@@ -586,7 +590,7 @@ mod tests {
             etag: Some(format!("\"{key}\"")),
             last_modified: None,
             headers: HashMap::new(),
-            body: body.to_vec(),
+            body: Arc::new(body.to_vec()),
         }
     }
 

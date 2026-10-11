@@ -61,14 +61,16 @@ const ALLOWED_HOSTS: &[&str] = &["*.exptech.dev", "*.exptech.com.tw", "cdn.jsdel
 /// Response headers worth carrying back to the renderer / storing. Keeping the
 /// set small stops per-connection noise (`set-cookie`, `date`, `server`, …)
 /// from bloating every cache row.
+///
+/// Content-Encoding/Length are left out on purpose: they describe the wire
+/// form reqwest already undid, and passing them on would make the renderer
+/// think the bytes are compressed.
 const KEPT_HEADERS: &[&str] = &[
     "content-type",
-    "content-length",
     "etag",
     "last-modified",
     "cache-control",
     "age",
-    "content-encoding",
 ];
 
 const DEFAULT_TIMEOUT_MS: u64 = 10_000;
@@ -106,13 +108,15 @@ pub struct ProxyRequest {
     max_age_ms: Option<u64>,
 }
 
+/// Borrows from the [`Fetched`] it describes: every caller of a single flight
+/// serialises the same answer, and nothing needs copying to do so.
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ProxyMeta {
+struct ProxyMeta<'a> {
     status: u16,
     ok: bool,
-    url: String,
-    headers: HashMap<String, String>,
+    url: &'a str,
+    headers: &'a HashMap<String, String>,
     /// Body came from SQLite rather than the wire (304 replay, or stale-on-error).
     from_cache: bool,
     /// Served despite a failed/absent revalidation — the body may be out of date.
@@ -138,10 +142,15 @@ pub struct ProxyState {
 
 impl ProxyState {
     fn gate(&self, host: &str) -> Arc<Semaphore> {
-        lock(&self.gates)
-            .entry(host.to_string())
-            .or_insert_with(|| Arc::new(Semaphore::new(HOST_CONCURRENCY)))
-            .clone()
+        let mut gates = lock(&self.gates);
+        // Looked up by `&str` first: the key is allocated once per host, not
+        // once per request.
+        if let Some(gate) = gates.get(host) {
+            return gate.clone();
+        }
+        let gate = Arc::new(Semaphore::new(HOST_CONCURRENCY));
+        gates.insert(host.to_string(), gate.clone());
+        gate
     }
 
     fn cooling(&self, host: &str) -> Option<Duration> {
@@ -185,7 +194,9 @@ fn host_allowed(host: &str) -> bool {
     ALLOWED_HOSTS.iter().any(|pattern| {
         match pattern.strip_prefix("*.") {
             // `*.example.com` covers sub.example.com and example.com itself.
-            Some(suffix) => host == suffix || host.ends_with(&format!(".{suffix}")),
+            Some(suffix) => host
+                .strip_suffix(suffix)
+                .is_some_and(|rest| rest.is_empty() || rest.ends_with('.')),
             None => host == *pattern,
         }
     })
@@ -261,16 +272,90 @@ async fn cache_get(cache: &Arc<HttpCache>, key: String) -> Option<CacheEntry> {
         .flatten()
 }
 
-/// Bump an entry's LRU position and decompress it.
+/// Serve a stored row: bump its LRU position and decompress it. None when the
+/// stored body does not decode.
 ///
 /// `touch` is a channel send that returns at once; only the gunzip needs the
 /// blocking pool, and it runs in parallel with every other in-flight replay.
-async fn cache_replay(cache: &Arc<HttpCache>, key: String, body_gz: Vec<u8>) -> Option<Vec<u8>> {
-    cache.touch(&key);
-    tauri::async_runtime::spawn_blocking(move || gunzip(&body_gz))
+/// The row is consumed, so its body moves to the blocking pool uncopied.
+async fn replay(
+    cache: &HttpCache,
+    key: &str,
+    mut entry: CacheEntry,
+    url: String,
+    stale: bool,
+    via: &'static str,
+) -> Option<Fetched> {
+    cache.touch(key);
+    let body_gz = std::mem::take(&mut entry.body_gz);
+    let body = tauri::async_runtime::spawn_blocking(move || gunzip(&body_gz))
         .await
         .ok()
-        .flatten()
+        .flatten()?;
+    Some(Fetched {
+        status: entry.status,
+        url,
+        headers: entry.headers,
+        body: Arc::new(body),
+        from_cache: true,
+        stale,
+        via,
+    })
+}
+
+/// Headers and body of a network response, stored when it is a cacheable 200.
+async fn read_network(
+    cache: &Arc<HttpCache>,
+    req: &ProxyRequest,
+    key: &str,
+    store: bool,
+    response: reqwest::Response,
+) -> Result<Fetched, String> {
+    let status = response.status().as_u16();
+    let final_url = response.url().to_string();
+    let mut headers: HashMap<String, String> = HashMap::new();
+    for name in KEPT_HEADERS {
+        if let Some(value) = response.headers().get(*name) {
+            if let Ok(text) = value.to_str() {
+                headers.insert((*name).to_string(), text.to_string());
+            }
+        }
+    }
+    let etag = headers.get("etag").cloned();
+    let last_modified = headers.get("last-modified").cloned();
+    // Into a Vec without a copy whenever reqwest's buffer is no longer shared;
+    // then one allocation for the renderer and the cache writer both.
+    let body = Arc::new(Vec::from(
+        response
+            .bytes()
+            .await
+            .map_err(|e| format!("body error: {e}"))?,
+    ));
+
+    if store && status == 200 {
+        cache_put_detached(
+            cache,
+            StoredResponse {
+                key: key.to_string(),
+                url: req.url.clone(),
+                status,
+                etag,
+                last_modified,
+                headers: headers.clone(),
+                body: Arc::clone(&body),
+            },
+        );
+    }
+
+    Ok(Fetched {
+        status,
+        url: final_url,
+        headers,
+        body,
+        from_cache: false,
+        stale: false,
+        via: "網路",
+    })
 }
 
 /// Compress and store without blocking the response.
@@ -311,30 +396,12 @@ impl Fetched {
         let meta = ProxyMeta {
             status: self.status,
             ok: (200..300).contains(&self.status),
-            url: self.url.clone(),
-            headers: self.headers.clone(),
+            url: &self.url,
+            headers: &self.headers,
             from_cache: self.from_cache,
             stale: self.stale,
         };
         frame(&meta, &self.body)
-    }
-
-    fn from_entry(
-        entry: CacheEntry,
-        url: String,
-        body: Vec<u8>,
-        stale: bool,
-        via: &'static str,
-    ) -> Self {
-        Self {
-            status: entry.status,
-            url,
-            headers: entry.headers,
-            body: Arc::new(body),
-            from_cache: true,
-            stale,
-            via,
-        }
     }
 }
 
@@ -380,9 +447,8 @@ pub async fn http_request(
     }
     let started = Instant::now();
     let method = req.method.as_deref().unwrap_or("GET").to_ascii_uppercase();
-    let url = req.url.clone();
-    let result = request(&state, req, parsed, host).await;
-    log_exchange(&method, &url, started.elapsed(), &result);
+    let result = request(&state, &req, &method, parsed, host).await;
+    log_exchange(&method, &req.url, started.elapsed(), &result);
     result.map(|f| f.response())
 }
 
@@ -444,54 +510,60 @@ fn log_exchange(method: &str, url: &str, took: Duration, result: &Result<Fetched
     }
     match result {
         Ok(f) => {
-            let line = format!(
+            let level = if f.stale || f.status >= 400 {
+                log::Level::Warn
+            } else {
+                log::Level::Debug
+            };
+            log::log!(
+                level,
                 "{method} {url} → {}（{}，{}，{}）",
                 f.status,
                 f.via,
                 fmt_dur(took),
                 fmt_bytes(f.body.len() as u64)
             );
-            if f.stale || f.status >= 400 {
-                log::warn!("{line}");
-            } else {
-                log::debug!("{line}");
-            }
         }
         Err(e) => log::warn!("{method} {url} 失敗（{}）：{e}", fmt_dur(took)),
     }
 }
 
 /// A checked request: the cache, the in-flight table, then [`fetch`].
+/// `method` is the request's, upper-cased.
 async fn request(
     state: &ProxyState,
-    req: ProxyRequest,
+    req: &ProxyRequest,
+    method: &str,
     parsed: reqwest::Url,
     host: String,
 ) -> Result<Fetched, String> {
-    let method = req.method.as_deref().unwrap_or("GET").to_ascii_uppercase();
     // Only idempotent, body-less methods are ever cacheable.
     let store = req.store.unwrap_or(true) && (method == "GET" || method == "HEAD");
     let key = format!("{method} {}", req.url);
 
     if !store {
-        return fetch(state, &req, parsed, &host, &method, &key, false).await;
+        return fetch(state, req, parsed, &host, method, &key, false).await;
     }
     // A cacheable request joins one already in flight, or becomes it.
     let cell = lock(&state.inflight)
         .entry(key.clone())
         .or_insert_with(|| Arc::new(OnceCell::new()))
         .clone();
-    let result = cell
-        .get_or_init(|| fetch(state, &req, parsed, &host, &method, &key, true))
-        .await
-        .clone();
+    cell.get_or_init(|| fetch(state, req, parsed, &host, method, &key, true))
+        .await;
     {
         let mut inflight = lock(&state.inflight);
         if inflight.get(&key).is_some_and(|c| Arc::ptr_eq(c, &cell)) {
             inflight.remove(&key);
         }
     }
-    result
+    // The last caller out takes the answer as it is; any other gets a copy.
+    // Most requests are their flight's only caller, so most copy nothing.
+    match Arc::try_unwrap(cell) {
+        Ok(cell) => cell.into_inner(),
+        Err(cell) => cell.get().cloned(),
+    }
+    .expect("get_or_init has set the cell")
 }
 
 /// One request, from the cache or the network, retried as the top of this
@@ -517,37 +589,24 @@ async fn fetch(
 
     // Still fresh: no request at all. A row that fails to decode is treated
     // as absent.
-    let cached = match cached {
+    let mut cached = match cached {
         Some(entry) if fresh(&entry, req.max_age_ms, now_ms()) => {
-            let body_gz = entry.body_gz.clone();
-            match cache_replay(&state.cache, key.to_string(), body_gz).await {
-                Some(body) => {
-                    return Ok(Fetched::from_entry(
-                        entry,
-                        req.url.clone(),
-                        body,
-                        false,
-                        "本機副本，仍新鮮，沒發請求",
-                    ))
-                }
-                None => None,
+            let via = "本機副本，仍新鮮，沒發請求";
+            if let Some(f) = replay(&state.cache, key, entry, req.url.clone(), false, via).await {
+                return Ok(f);
             }
+            None
         }
         other => other,
     };
 
-    // A host cooling down: its stored copy, or a wait the timeout allows.
+    // A host cooling down: its stored copy, or a wait the timeout allows. The
+    // row is copied: the validators still go out with the request below.
     if let Some(wait) = state.cooling(host) {
         if let Some(entry) = cached.clone() {
-            let body_gz = entry.body_gz.clone();
-            if let Some(body) = cache_replay(&state.cache, key.to_string(), body_gz).await {
-                return Ok(Fetched::from_entry(
-                    entry,
-                    req.url.clone(),
-                    body,
-                    true,
-                    "過期副本，上游要求暫停中",
-                ));
+            let via = "過期副本，上游要求暫停中";
+            if let Some(f) = replay(&state.cache, key, entry, req.url.clone(), true, via).await {
+                return Ok(f);
             }
         }
         if Instant::now() + wait >= deadline {
@@ -561,7 +620,7 @@ async fn fetch(
 
     let http_method =
         reqwest::Method::from_bytes(method.as_bytes()).map_err(|e| format!("bad method: {e}"))?;
-    let send = |url: reqwest::Url, left: Duration| {
+    let send = |url: reqwest::Url, left: Duration, validators: Option<&CacheEntry>| {
         let mut builder = state.client.request(http_method.clone(), url).timeout(left);
         for (name, value) in &req.headers {
             // Never let a caller hand-set Accept-Encoding: doing so switches
@@ -571,7 +630,7 @@ async fn fetch(
             }
             builder = builder.header(name, value);
         }
-        if let Some(entry) = &cached {
+        if let Some(entry) = validators {
             if let Some(etag) = &entry.etag {
                 builder = builder.header("If-None-Match", etag);
             }
@@ -593,14 +652,15 @@ async fn fetch(
             break;
         }
         let url = at(&parsed, target);
-        let upstream = url.host_str().unwrap_or(host).to_string();
-        let gate = state.gate(&upstream);
+        // The host `at` just put in the URL; `host` is the URL's own, lower-cased.
+        let upstream = target.map_or(host, |t| t.host);
+        let gate = state.gate(upstream);
         let Ok(_permit) = tokio::time::timeout(left, gate.acquire_owned()).await else {
             result = Err(format!("timed out waiting for {upstream}"));
             break;
         };
         let left = deadline.saturating_duration_since(Instant::now());
-        let sent = send(url, left).await;
+        let sent = send(url, left, cached.as_ref()).await;
         let status = sent.as_ref().map(|r| r.status().as_u16()).ok();
         let failed = status.is_none_or(|s| s >= 500 || s == 429);
         if let Some(t) = target {
@@ -613,7 +673,7 @@ async fn fetch(
             .filter(|_| matches!(status, Some(429 | 503)))
             .and_then(retry_after);
         if let Some(wait) = cooldown {
-            state.cool_down(&upstream, wait);
+            state.cool_down(upstream, wait);
             log::warn!(
                 "{upstream} 回 HTTP {} 要求放慢：{} 內不再送請求",
                 status.unwrap_or_default(),
@@ -641,7 +701,7 @@ async fn fetch(
         // Next: another healthy node at once, else this one after a backoff.
         match target.and_then(|t| state.endpoints.alternative(t)) {
             Some(next) => {
-                let next_host = at(&parsed, Some(next)).host_str().unwrap_or(host).to_string();
+                let next_host = next.host;
                 log::warn!("{upstream} 第 {attempt} 次 {why}，改走 {next_host}：{}", req.url);
                 target = Some(next);
             }
@@ -664,22 +724,17 @@ async fn fetch(
 
     // No usable answer — none at all, or a 5xx / 429 the retries did not get
     // past: a stale body beats no body. The failed answer is passed on only
-    // when there is nothing stored.
+    // when there is nothing stored. Past this point the row is needed only
+    // for a 304, which an unusable answer is not, so it is handed over whole.
     let usable = result.as_ref().is_ok_and(|r| {
         let s = r.status().as_u16();
         s < 500 && s != 429
     });
     if !usable {
-        if let Some(entry) = cached.clone() {
-            let body_gz = entry.body_gz.clone();
-            if let Some(body) = cache_replay(&state.cache, key.to_string(), body_gz).await {
-                return Ok(Fetched::from_entry(
-                    entry,
-                    req.url.clone(),
-                    body,
-                    true,
-                    "過期副本，上游沒有可用的回應",
-                ));
+        if let Some(entry) = cached.take() {
+            let via = "過期副本，上游沒有可用的回應";
+            if let Some(f) = replay(&state.cache, key, entry, req.url.clone(), true, via).await {
+                return Ok(f);
             }
         }
     }
@@ -687,23 +742,15 @@ async fn fetch(
 
     let status = response.status().as_u16();
     let final_url = response.url().to_string();
-    let mut headers: HashMap<String, String> = HashMap::new();
-    for name in KEPT_HEADERS {
-        if let Some(value) = response.headers().get(*name) {
-            if let Ok(text) = value.to_str() {
-                headers.insert((*name).to_string(), text.to_string());
-            }
-        }
-    }
 
     // 304: the stored body is still current. Its freshness starts over; bump
     // its LRU position and replay it.
     if status == 304 {
-        if let Some(entry) = cached {
+        if let Some(entry) = cached.take() {
             state.cache.validated(key);
-            let body_gz = entry.body_gz.clone();
-            if let Some(body) = cache_replay(&state.cache, key.to_string(), body_gz).await {
-                return Ok(Fetched::from_entry(entry, final_url, body, false, "304 沒變，用本機副本"));
+            let via = "304 沒變，用本機副本";
+            if let Some(f) = replay(&state.cache, key, entry, final_url, false, via).await {
+                return Ok(f);
             }
         }
         // Server said "unchanged" but our row is gone or corrupt. Nothing to
@@ -711,43 +758,7 @@ async fn fetch(
         return Err("304 without a usable cached body".into());
     }
 
-    let etag = headers.get("etag").cloned();
-    let last_modified = headers.get("last-modified").cloned();
-    let body = response
-        .bytes()
-        .await
-        .map_err(|e| format!("body error: {e}"))?
-        .to_vec();
-
-    // Content-Encoding/Length describe the wire form reqwest already undid;
-    // leaving them on would make the renderer think the bytes are compressed.
-    headers.remove("content-encoding");
-    headers.remove("content-length");
-
-    if store && status == 200 {
-        cache_put_detached(
-            &state.cache,
-            StoredResponse {
-                key: key.to_string(),
-                url: req.url.clone(),
-                status,
-                etag,
-                last_modified,
-                headers: headers.clone(),
-                body: body.clone(),
-            },
-        );
-    }
-
-    Ok(Fetched {
-        status,
-        url: final_url,
-        headers,
-        body: Arc::new(body),
-        from_cache: false,
-        stale: false,
-        via: "網路",
-    })
+    read_network(&state.cache, req, key, store, response).await
 }
 
 /// The URL a stream should open: a balanced name swapped for its pool's
@@ -835,7 +846,7 @@ mod tests {
             max_age_ms: None,
         };
         let parsed = reqwest::Url::parse(&url).unwrap();
-        request(state, req, parsed, "test.exptech.dev".into()).await
+        request(state, &req, "GET", parsed, "test.exptech.dev".into()).await
     }
 
     fn http(status: &str, extra: &str, body: &str) -> String {
@@ -953,6 +964,16 @@ mod tests {
         assert!(!fresh(&entry(&[], now), None, now));
         // A clock that went backwards does not make anything fresher.
         assert!(!fresh(&entry(&[], now + 5_000), Some(1_000), now));
+    }
+
+    #[test]
+    fn only_listed_hosts_and_their_subdomains_are_allowed() {
+        assert!(host_allowed("exptech.dev"));
+        assert!(host_allowed("api.core-tnn1.exptech.dev"));
+        assert!(host_allowed("cdn.jsdelivr.net"));
+        assert!(!host_allowed("evilexptech.dev"));
+        assert!(!host_allowed("exptech.dev.example.com"));
+        assert!(!host_allowed("x.cdn.jsdelivr.net"));
     }
 
     #[test]
