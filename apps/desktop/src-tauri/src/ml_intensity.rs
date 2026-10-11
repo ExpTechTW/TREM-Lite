@@ -571,7 +571,8 @@ impl Model {
 /// transform), laid out for speed: each branch's children sit side by side
 /// (true first) and every test is "go right when x > thr", so a step is
 /// `child + (x > thr)` with no branch to mispredict. Leaves point at
-/// themselves with thr = +inf, so a tree is walked a fixed number of steps.
+/// themselves with thr = +inf, so a step past a leaf stays on it, and a
+/// branch's children always come after it, so only a leaf steps to itself.
 struct Forest {
     nodes: Vec<TreeNode>,
     /// Leaf weight by node index; 0 for branches.
@@ -720,8 +721,11 @@ impl Forest {
 
     /// Ensemble output per row. Tree-major, so a tree stays in cache across the
     /// batch, and eight rows advance in lockstep so their independent load /
-    /// compare chains overlap. Inputs must be finite: a NaN would take the
-    /// false branch where ONNX's missing-value rule might not.
+    /// compare chains overlap. A walk ends after the tree's depth in steps, or
+    /// as soon as no row moves — all at their leaves: the LightGBM trees are
+    /// lopsided, and running every walk to the deepest leaf spent nearly two
+    /// steps in three standing on a leaf. Inputs must be finite: a NaN would
+    /// take the false branch where ONNX's missing-value rule might not.
     fn eval(&self, rows: &[Row]) -> Vec<f32> {
         let mut out = vec![0.0f32; rows.len()];
         let nodes = &self.nodes;
@@ -735,8 +739,14 @@ impl Forest {
             for (r, o) in (&mut chunks).zip(&mut o) {
                 let mut n = [root; 8];
                 for _ in 0..depth {
+                    let mut moved = 0;
                     for k in 0..8 {
-                        n[k] = step(n[k], &r[k]);
+                        let next = step(n[k], &r[k]);
+                        moved |= next ^ n[k];
+                        n[k] = next;
+                    }
+                    if moved == 0 {
+                        break;
                     }
                 }
                 for k in 0..8 {
@@ -746,7 +756,11 @@ impl Forest {
             for (r, o) in chunks.remainder().iter().zip(o.into_remainder()) {
                 let mut n = root;
                 for _ in 0..depth {
-                    n = step(n, r);
+                    let next = step(n, r);
+                    if next == n {
+                        break;
+                    }
+                    n = next;
                 }
                 *o += self.values[n as usize];
             }

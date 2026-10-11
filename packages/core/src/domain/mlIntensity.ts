@@ -407,7 +407,10 @@ function compile(g: Graph): Model {
 export function predict(model: Model, rows: Float32Array, n: number): { pga: Float32Array; pgv: Float32Array } {
   const cols: Float32Array[] = [];
   const get = (a: Arg, i: number) => ("c" in a ? a.c : cols[a.col][i]);
-  for (const { op, out } of model.steps) {
+  // Indexed, not for…of: under V8 the tree walks, inlined into a for…of here,
+  // ran 1.7 times slower than on their own (JavaScriptCore was unaffected).
+  for (let s = 0; s < model.steps.length; s++) {
+    const { op, out } = model.steps[s];
     const col = new Float32Array(n);
     switch (op.kind) {
       case "gather":
@@ -440,7 +443,8 @@ export function predict(model: Model, rows: Float32Array, n: number): { pga: Flo
  * A compiled `ai.onnx.ml` TreeEnsembleRegressor (one target, SUM, no post
  * transform): each branch's children sit side by side (true first) and every
  * test is "go right when x > thr", so a step is `child + (x > thr)`. Leaves
- * point at themselves with thr = +inf, so a tree is walked `depth` steps.
+ * point at themselves with thr = +inf, and a branch's children always come
+ * after it, so a walk has reached its leaf when the child is the node itself.
  */
 interface Forest {
   thr: Float32Array;
@@ -449,7 +453,6 @@ interface Forest {
   /** Leaf weight by node index; 0 for branches. */
   values: Float32Array;
   roots: Uint32Array;
-  depths: Uint8Array;
   base: number;
 }
 
@@ -500,7 +503,6 @@ function compileForest(attrs: Map<string, Attr>): Forest {
   const child: number[] = [];
   const values: number[] = [];
   const roots: number[] = [];
-  const depths: number[] = [];
   const push = () => {
     thr.push(0);
     feat.push(0);
@@ -519,7 +521,6 @@ function compileForest(attrs: Map<string, Attr>): Forest {
     if (start === undefined) throw new Error(`onnx: trees: tree ${t} has no root`);
     // Explicit stack instead of recursion: (onnx node, slot, depth).
     const stack: [number, number, number][] = [[start, root, 0]];
-    let depth = 0;
     while (stack.length) {
       const [i, slot, d] = stack.pop()!;
       if (d > 255) throw new Error(`onnx: trees: tree ${t} too deep`);
@@ -528,7 +529,6 @@ function compileForest(attrs: Map<string, Attr>): Forest {
         feat[slot] = 0;
         child[slot] = slot;
         values[slot] = weight.get(key(t, node[i])) ?? 0;
-        depth = Math.max(depth, d);
         continue;
       }
       if (mode[i] !== "BRANCH_LEQ" && mode[i] !== "BRANCH_LT") {
@@ -548,7 +548,6 @@ function compileForest(attrs: Map<string, Attr>): Forest {
       stack.push([ti, c, d + 1]);
     }
     roots.push(root);
-    depths.push(depth);
   }
   return {
     thr: Float32Array.from(thr),
@@ -556,21 +555,24 @@ function compileForest(attrs: Map<string, Attr>): Forest {
     child: Uint32Array.from(child),
     values: Float32Array.from(values),
     roots: Uint32Array.from(roots),
-    depths: Uint8Array.from(depths),
     base: get("base_values").floats[0] ?? 0,
   };
 }
 
-/** Ensemble output per row, into `out` (f32, so every addition rounds as f32). */
+/**
+ * Ensemble output per row, into `out` (f32, so every addition rounds as f32).
+ * Each walk stops at its leaf. It used to take as many steps as the tree's
+ * deepest leaf needs, the extra ones standing still on the leaf: the LightGBM
+ * trees are lopsided, and nearly two steps in three were spent that way.
+ */
 function evalForest(f: Forest, rows: Float32Array, n: number, out: Float32Array): void {
-  const { thr, feat, child, values } = f;
-  for (let t = 0; t < f.roots.length; t++) {
-    const root = f.roots[t];
-    const depth = f.depths[t];
+  const { thr, feat, child, values, roots } = f;
+  for (let t = 0; t < roots.length; t++) {
+    const root = roots[t];
     for (let i = 0; i < n; i++) {
       const base = i * N_FEAT;
       let nd = root;
-      for (let d = 0; d < depth; d++) nd = child[nd] + (rows[base + feat[nd]] > thr[nd] ? 1 : 0);
+      for (let c; (c = child[nd]) !== nd; ) nd = rows[base + feat[nd]] > thr[nd] ? c + 1 : c;
       out[i] += values[nd];
     }
   }
