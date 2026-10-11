@@ -489,9 +489,15 @@ class DataManager {
 
       if (last[data.id] && last[data.id].serial < data.serial) {
         last[data.id].serial = data.serial;
-        if (this.isAreaDifferent(data.area, cur[existingIndex].area)) {
+        // Ended here already (older than 600 s, or marked ended) and yet a
+        // newer serial came. Reading the missing entry threw, which dropped
+        // this report and every intensity behind it in the frame.
+        const before = existingIndex === -1 ? undefined : cur[existingIndex];
+        if (!before) log.info(`震度報告 ${data.id} 本機已結束，又收到第 ${data.serial} 報，重新顯示`);
+        if (this.isAreaDifferent(data.area, before?.area)) {
           events.emit("IntensityUpdate", eventData as never);
-          cur[existingIndex] = data;
+          if (before) cur[existingIndex] = data;
+          else cur.push(data);
         }
       }
     });
