@@ -20,7 +20,7 @@
  *
  * Two shapes of request exist:
  *
- * * {@link http.request} / {@link http.json} / {@link http.bytes} — buffered,
+ * * {@link http.request} / {@link http.json} — buffered,
  *   cached by default.
  * * {@link http.stream} — long-lived SSE, never cached. A cache has nothing to
  *   offer an endless stream, but the call still routes through this layer so

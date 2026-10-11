@@ -166,7 +166,6 @@ export function show_eew(rotation = true): void {
         max: eew.eq.max,
         time: eew.eq.time,
       };
-      variable.last_rotation = eew_rotation;
     }
 
     if (rotation) {
@@ -184,7 +183,6 @@ export function show_eew(rotation = true): void {
         locations: locationArray.slice(0, 8),
       };
     } else {
-      variable.last_rotation = 0; // was null in the Electron app
       ui.currentTrigger = null;
     }
   }

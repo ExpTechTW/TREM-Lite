@@ -13,10 +13,7 @@ import type { EewData, RtsData, Station } from "./types";
 import type { RtsTriggerLocation } from "./variable.ui";
 
 export interface TremVariable {
-  last_rotation: number;
-  rts_station_id: number;
   map: MlMap | null;
-  time: number | null;
   data: {
     rts: RtsData | null;
     intensity: unknown[];
@@ -31,7 +28,6 @@ export interface TremVariable {
   station: Record<string, Station> | null;
   /** Decimal-id stations of the older network, still named by lpgm reports. */
   legacyStation: Record<string, Station> | null;
-  tts: boolean;
   cache: {
     rts_alert: boolean;
     unstable: number;
@@ -64,10 +60,7 @@ export interface TremVariable {
 }
 
 export const variable: TremVariable = {
-  last_rotation: 0,
-  rts_station_id: 0,
   map: null,
-  time: null,
   data: {
     rts: null,
     intensity: [],
@@ -79,7 +72,6 @@ export const variable: TremVariable = {
   replay: { start_time: 0, local_time: 0, dev: false },
   station: null,
   legacyStation: null,
-  tts: false, // speechClient enables this when zh-TW system speech is available
   cache: {
     rts_alert: false,
     unstable: 0,

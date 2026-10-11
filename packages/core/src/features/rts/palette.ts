@@ -54,8 +54,3 @@ export function rtsColorIndex(i: number): number {
   const last = RTS_PALETTE.length - 1;
   return index >= last ? last : index;
 }
-
-/** The dot colour for `i`, the entry `rtsColorIndex` selects. */
-export function rtsDotColor(i: number): string {
-  return RTS_PALETTE[rtsColorIndex(i)];
-}

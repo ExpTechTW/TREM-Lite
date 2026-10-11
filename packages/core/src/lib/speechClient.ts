@@ -140,7 +140,6 @@ function announceLpgm(data: { id: number; time: number; list: { id: number; lpgm
 export function initSpeech(): void {
   if (initialized) return;
   initialized = true;
-  variable.tts = enabled();
 
   events.on("EewRelease", ({ data }) => {
     cache.set(data.id, {

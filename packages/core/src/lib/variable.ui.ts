@@ -37,7 +37,7 @@ export interface TremUi {
   maxPgaIntensity: number;
   currentStation: { loc: string; i: number; rawI: number; pga: number } | null;
   rtsInfo: { level: number; trigger: number };
-  /** 30-second rolling peak list shown in the bottom-right RTS panel. */
+  /** Each town's 60-second peak, shown in the bottom-right RTS panel (features/rts/townPeaks.ts). */
   rtsIntensityRows: RtsTriggerLocation[];
   unstable: boolean;
   internetError: boolean;

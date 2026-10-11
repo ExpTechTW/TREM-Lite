@@ -103,18 +103,6 @@ pub fn window_hide(app: tauri::AppHandle, label: String) {
     }
 }
 
-#[tauri::command]
-pub fn window_show(app: tauri::AppHandle, label: String) {
-    log::info!("顯示並聚焦視窗 {label}");
-    if label == "main" {
-        set_dock(&app, true);
-    }
-    if let Some(w) = window(&app, &label) {
-        let _ = w.show();
-        let _ = w.set_focus();
-    }
-}
-
 /// Show the always-on-top picture-in-picture window.
 #[tauri::command]
 pub fn pip_show(app: tauri::AppHandle) {
