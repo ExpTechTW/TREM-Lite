@@ -16,7 +16,8 @@ import { events } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
 import { repaintTowns } from "@/lib/mapSource";
 import { mark } from "@/lib/perf";
-import { variable } from "@/lib/variable";
+import { eventHoldsMap, variable } from "@/lib/variable";
+import { isAutoFocusLocked } from "@/features/focus/focus";
 import { createIntensityIcon, createIntensityIconSquare } from "@/domain/utils";
 
 const log = createLogger("map");
@@ -278,6 +279,11 @@ async function addImages(map: MlMap) {
 
 /** How long a lost WebGL context gets to come back before the page reloads. */
 const RESTORE_MS = 5_000;
+/**
+ * A window drag fires resize on every frame. Fit Taiwan once that stops,
+ * not on each event — fitting every time redraws for the whole drag.
+ */
+const RESIZE_SETTLE_MS = 200;
 /** At most one reload for the map per this long, so a failing GPU cannot loop. */
 const RELOAD_EVERY_MS = 10 * 60_000;
 const RELOADED_AT_KEY = "trem.map.reloadedAt";
@@ -352,9 +358,20 @@ function reloadForMap(): void {
 export async function setupMap(container: HTMLElement): Promise<MlMap> {
   const map = await initMap(container);
   watchContext(map);
-  map.on("resize", () => map.fitBounds(MAP.BOUNDS, MAP.OPTIONS));
+  // The canvas already tracks the window. Fitting all-Taiwan on every resize
+  // event redraws continuously, and it pulls the camera home during an alert
+  // or while the user has locked it. Idle and unlocked, fit once the size settles.
   map.resize();
   map.fitBounds(MAP.BOUNDS, MAP.OPTIONS);
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+  map.on("resize", () => {
+    if (resizeTimer !== null) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resizeTimer = null;
+      if (isAutoFocusLocked() || eventHoldsMap()) return;
+      map.fitBounds(MAP.BOUNDS, MAP.OPTIONS);
+    }, RESIZE_SETTLE_MS);
+  });
   // Images are for markers only — never let them block MapLoad (and the data layer).
   try {
     await addImages(map);
