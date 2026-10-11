@@ -149,6 +149,12 @@ enum WriteOp {
     Touch(String),
     /// A 304 confirmed the stored body: its freshness starts over.
     Validated(String),
+    /// Drop a row. Applied before any `Put` in the same batch, so a body
+    /// queued after the drop is what remains.
+    Forget(String),
+    /// Overwrite the stored body with bytes that are not gzip.
+    #[cfg(test)]
+    Poison(String, SyncSender<()>),
     /// Round-trip probe: acked once the queue ahead of it has been applied.
     Sync(SyncSender<()>),
 }
@@ -375,6 +381,27 @@ impl HttpCache {
         let _ = self.writes.send(WriteOp::Validated(key.to_string()));
     }
 
+    /// Drop a row whose stored body cannot be used. Returns immediately.
+    ///
+    /// The writer applies this before any `put` queued later, including one
+    /// that lands in the same batch, so the replacement body is what remains.
+    pub fn forget(&self, key: &str) {
+        let _ = self.writes.send(WriteOp::Forget(key.to_string()));
+    }
+
+    /// Overwrite a row's body with bytes that are not gzip. Test helper.
+    #[cfg(test)]
+    pub(crate) fn poison_body(&self, key: &str) {
+        let (ack, done) = std::sync::mpsc::sync_channel(0);
+        if self
+            .writes
+            .send(WriteOp::Poison(key.to_string(), ack))
+            .is_ok()
+        {
+            let _ = done.recv();
+        }
+    }
+
     /// Queue an already-compressed row. Returns immediately.
     pub fn put(&self, prepared: PreparedWrite) {
         // A single body larger than the whole budget can never be stored
@@ -446,6 +473,9 @@ fn apply_batch(
     let mut touches: Vec<String> = Vec::new();
     let mut validated: Vec<String> = Vec::new();
     let mut puts: Vec<Box<PreparedWrite>> = Vec::new();
+    let mut forgets: Vec<String> = Vec::new();
+    #[cfg(test)]
+    let mut poisons: Vec<String> = Vec::new();
 
     for op in batch {
         match op {
@@ -460,6 +490,16 @@ fn apply_batch(
                     validated.push(k);
                 }
             }
+            WriteOp::Forget(k) => {
+                if !forgets.contains(&k) {
+                    forgets.push(k);
+                }
+            }
+            #[cfg(test)]
+            WriteOp::Poison(k, ack) => {
+                poisons.push(k);
+                acks.push(ack);
+            }
             WriteOp::Sync(ack) => acks.push(ack),
         }
     }
@@ -470,6 +510,24 @@ fn apply_batch(
     };
 
     let mut delta: i64 = 0;
+    // Before puts: a forget and a replacement queued together must leave the
+    // replacement. The put then sees no previous row and accounts only itself.
+    for key in &forgets {
+        let previous: i64 = tx
+            .prepare_cached("SELECT bytes FROM entries WHERE key = ?1")
+            .and_then(|mut stmt| stmt.query_row(params![key], |r| r.get(0)).optional())
+            .ok()
+            .flatten()
+            .unwrap_or(0);
+        let deleted = tx
+            .prepare_cached("DELETE FROM entries WHERE key = ?1")
+            .and_then(|mut stmt| stmt.execute(params![key]))
+            .unwrap_or(0);
+        if deleted > 0 {
+            delta -= previous;
+        }
+    }
+
     for p in &puts {
         let previous: i64 = tx
             .prepare_cached("SELECT bytes FROM entries WHERE key = ?1")
@@ -521,6 +579,12 @@ fn apply_batch(
         let _ = tx
             .prepare_cached("UPDATE entries SET created_at = ?2, accessed_at = ?2 WHERE key = ?1")
             .and_then(|mut stmt| stmt.execute(params![key, now]));
+    }
+    #[cfg(test)]
+    for key in &poisons {
+        let _ = tx
+            .prepare_cached("UPDATE entries SET body = ?2 WHERE key = ?1")
+            .and_then(|mut stmt| stmt.execute(params![key, [0u8]]));
     }
 
     if tx.commit().is_ok() && delta != 0 {
@@ -742,6 +806,28 @@ mod tests {
             "replacing a key should not double the total ({after_first} -> {after_replace})"
         );
         assert_eq!(cache.stats().entries, 1);
+        cleanup(&path);
+    }
+
+    #[test]
+    fn forget_drops_the_row_and_its_bytes() {
+        let path = temp_db("forget");
+        let cache = HttpCache::open_with_budget(&path, MAX_BYTES).unwrap();
+        cache.put(entry("a", &noise(1, 5_000)).compress());
+        cache.drain();
+        assert!(cache.get("a").is_some());
+        assert!(cache.stats().bytes > 0);
+
+        cache.forget("a");
+        cache.drain();
+        assert!(cache.get("a").is_none());
+        assert_eq!(cache.stats().entries, 0);
+        assert_eq!(cache.stats().bytes, 0);
+
+        // A second drop must not drive the total negative.
+        cache.forget("a");
+        cache.drain();
+        assert_eq!(cache.stats().bytes, 0);
         cleanup(&path);
     }
 }

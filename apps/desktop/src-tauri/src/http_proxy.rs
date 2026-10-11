@@ -273,7 +273,8 @@ async fn cache_get(cache: &Arc<HttpCache>, key: String) -> Option<CacheEntry> {
 }
 
 /// Serve a stored row: bump its LRU position and decompress it. None when the
-/// stored body does not decode.
+/// stored body does not decode — and that row is dropped, so it cannot keep
+/// earning 304s.
 ///
 /// `touch` is a channel send that returns at once; only the gunzip needs the
 /// blocking pool, and it runs in parallel with every other in-flight replay.
@@ -288,10 +289,15 @@ async fn replay(
 ) -> Option<Fetched> {
     cache.touch(key);
     let body_gz = std::mem::take(&mut entry.body_gz);
-    let body = tauri::async_runtime::spawn_blocking(move || gunzip(&body_gz))
+    let decoded = tauri::async_runtime::spawn_blocking(move || gunzip(&body_gz))
         .await
         .ok()
-        .flatten()?;
+        .flatten();
+    let Some(body) = decoded else {
+        log::warn!("本機副本無法解壓，捨棄這筆快取：{key}");
+        cache.forget(key);
+        return None;
+    };
     Some(Fetched {
         status: entry.status,
         url,
@@ -587,8 +593,8 @@ async fn fetch(
         None
     };
 
-    // Still fresh: no request at all. A row that fails to decode is treated
-    // as absent.
+    // Still fresh: no request at all. A body that does not decode is dropped
+    // (see `replay`) and fetched below, rather than left in the table.
     let mut cached = match cached {
         Some(entry) if fresh(&entry, req.max_age_ms, now_ms()) => {
             let via = "本機副本，仍新鮮，沒發請求";
@@ -601,13 +607,15 @@ async fn fetch(
     };
 
     // A host cooling down: its stored copy, or a wait the timeout allows. The
-    // row is copied: the validators still go out with the request below.
+    // row is copied. Should it not decode, `replay` drops it and its
+    // validators are not sent.
     if let Some(wait) = state.cooling(host) {
         if let Some(entry) = cached.clone() {
             let via = "過期副本，上游要求暫停中";
             if let Some(f) = replay(&state.cache, key, entry, req.url.clone(), true, via).await {
                 return Ok(f);
             }
+            cached = None;
         }
         if Instant::now() + wait >= deadline {
             return Err(format!(
@@ -744,7 +752,9 @@ async fn fetch(
     let final_url = response.url().to_string();
 
     // 304: the stored body is still current. Its freshness starts over; bump
-    // its LRU position and replay it.
+    // its LRU position and replay it. A body that does not decode is dropped
+    // and fetched once with no validator — left in place, the same ETag would
+    // 304 forever. A second 304 is not asked again.
     if status == 304 {
         if let Some(entry) = cached.take() {
             state.cache.validated(key);
@@ -752,9 +762,24 @@ async fn fetch(
             if let Some(f) = replay(&state.cache, key, entry, final_url, false, via).await {
                 return Ok(f);
             }
+            let left = deadline.saturating_duration_since(Instant::now());
+            if !left.is_zero() {
+                let url = at(&parsed, target);
+                match send(url, left, None).await {
+                    Ok(again) if again.status().as_u16() != 304 => {
+                        return read_network(&state.cache, req, key, store, again).await;
+                    }
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(if e.is_timeout() {
+                            format!("timed out: {e}")
+                        } else {
+                            format!("network error: {e}")
+                        });
+                    }
+                }
+            }
         }
-        // Server said "unchanged" but our row is gone or corrupt. Nothing to
-        // serve, and re-requesting here would risk a loop.
         return Err("304 without a usable cached body".into());
     }
 
@@ -987,5 +1012,118 @@ mod tests {
         );
         let other = reqwest::Url::parse("https://api-1.exptech.dev/api/v1/trem/station").unwrap();
         assert_eq!(at(&other, endpoints.route("api-1.exptech.dev")), other);
+    }
+
+    async fn until_body(state: &ProxyState, key: &str, want: &[u8]) {
+        for _ in 0..50 {
+            state.cache.drain();
+            if let Some(entry) = state.cache.get(key) {
+                if gunzip(&entry.body_gz).as_deref() == Some(want) {
+                    return;
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        panic!("cache row {key} did not become {want:?}");
+    }
+
+    #[test]
+    fn a_304_replays_a_decodable_body() {
+        let (state, hits) = server("revalidate", |n, req| {
+            if n > 0 && req.to_ascii_lowercase().contains("if-none-match") {
+                http("304 Not Modified", "etag: \"v1\"\r\n", "")
+            } else if n == 0 {
+                http("200 OK", "etag: \"v1\"\r\n", "kept")
+            } else {
+                http("200 OK", "etag: \"v1\"\r\n", "should-not-download")
+            }
+        });
+        tauri::async_runtime::block_on(async {
+            let key = "GET http://test.exptech.dev/kept";
+            let first = get(&state, "/kept").await.unwrap();
+            assert_eq!(first.body.as_slice(), b"kept");
+            until_body(&state, key, b"kept").await;
+            let second = get(&state, "/kept").await.unwrap();
+            assert_eq!(
+                (second.body.as_slice(), second.from_cache, second.stale),
+                (&b"kept"[..], true, false)
+            );
+        });
+        assert_eq!(hits.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn an_undecodable_body_is_dropped_instead_of_304_forever() {
+        let (state, hits) = server("poison304", |n, req| {
+            if req.to_ascii_lowercase().contains("if-none-match") {
+                http("304 Not Modified", "etag: \"v1\"\r\n", "")
+            } else if n == 0 {
+                http("200 OK", "etag: \"v1\"\r\n", "first")
+            } else {
+                http("200 OK", "etag: \"v1\"\r\n", "second")
+            }
+        });
+        tauri::async_runtime::block_on(async {
+            let key = "GET http://test.exptech.dev/poison";
+            let first = get(&state, "/poison").await.unwrap();
+            assert_eq!(first.body.as_slice(), b"first");
+            until_body(&state, key, b"first").await;
+            state.cache.poison_body(key);
+            assert!(
+                gunzip(&state.cache.get(key).unwrap().body_gz).is_none(),
+                "poisoned body still decodes"
+            );
+            let second = get(&state, "/poison").await.unwrap();
+            assert_eq!(
+                (second.body.as_slice(), second.from_cache),
+                (&b"second"[..], false)
+            );
+            until_body(&state, key, b"second").await;
+        });
+        // The 304, then one fetch with no validator. Not a stuck error.
+        assert_eq!(hits.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn a_fresh_undecodable_body_is_dropped_and_fetched() {
+        let (state, hits) = server("poisonfresh", |n, req| {
+            if req.to_ascii_lowercase().contains("if-none-match") {
+                http("304 Not Modified", "etag: \"v1\"\r\n", "")
+            } else if n == 0 {
+                http(
+                    "200 OK",
+                    "etag: \"v1\"\r\ncache-control: max-age=600\r\n",
+                    "stale-bytes",
+                )
+            } else {
+                http(
+                    "200 OK",
+                    "etag: \"v2\"\r\ncache-control: max-age=600\r\n",
+                    "fresh-bytes",
+                )
+            }
+        });
+        tauri::async_runtime::block_on(async {
+            let key = "GET http://test.exptech.dev/fresh-poison";
+            let first = get(&state, "/fresh-poison").await.unwrap();
+            assert_eq!(first.body.as_slice(), b"stale-bytes");
+            until_body(&state, key, b"stale-bytes").await;
+            state.cache.poison_body(key);
+            let second = get(&state, "/fresh-poison").await.unwrap();
+            assert_eq!(
+                (second.body.as_slice(), second.from_cache),
+                (&b"fresh-bytes"[..], false)
+            );
+            // The poison row was dropped before the request, so no validator
+            // and no 304: the first store, then this one refetch.
+            assert_eq!(hits.load(Ordering::SeqCst), 2);
+            until_body(&state, key, b"fresh-bytes").await;
+            let third = get(&state, "/fresh-poison").await.unwrap();
+            assert_eq!(
+                (third.body.as_slice(), third.from_cache),
+                (&b"fresh-bytes"[..], true)
+            );
+            assert_eq!(hits.load(Ordering::SeqCst), 2);
+        });
     }
 }
