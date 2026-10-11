@@ -93,8 +93,10 @@ function loadCachedStations(): Record<string, Station> {
 }
 
 export function SettingsApp({ onClose }: { onClose?: () => void }) {
-  const savedTab = localStorage.getItem("setting-tab");
-  const [tab, setTab] = useState<TabId>(TABS.find((t) => t.id === savedTab)?.id ?? "general");
+  const [tab, setTab] = useState<TabId>(() => {
+    const savedTab = localStorage.getItem("setting-tab");
+    return TABS.find((t) => t.id === savedTab)?.id ?? "general";
+  });
   const [config, setConfig] = useState<TremConfig | null>(null);
   const [version, setVersion] = useState("");
   const [system] = useState(() => {

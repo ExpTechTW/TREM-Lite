@@ -527,32 +527,12 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: rgb(80 80 80);
   line-height: normal;
 }
 
-.legacy-eew-panel.is-pip.is-eew-warn {
-  background: var(--eew-s-warn);
-}
-
-.legacy-eew-panel.is-pip.is-eew-alert {
-  background: var(--eew-s-alert);
-}
-
-.legacy-eew-panel.is-pip.is-eew-cancel {
-  background: var(--eew-s-cancel);
-}
-
-.legacy-eew-panel.is-pip.is-trigger-low {
-  background: var(--rts-trigger-low);
-}
-
-.legacy-eew-panel.is-pip.is-trigger-middle {
-  background: var(--rts-trigger-middle);
-}
-
-.legacy-eew-panel.is-pip.is-trigger-high {
-  background: var(--rts-trigger-high);
+/* Grey only when idle: an alert or a trigger keeps its state's colour above. */
+.legacy-eew-panel.is-pip.is-idle {
+  background: rgb(80 80 80);
 }
 
 .legacy-eew-panel.is-pip .legacy-eew-title {
@@ -787,10 +767,6 @@
     width: auto !important;
     transform: translateX(45px);
   }
-
-  .legacy-report-panel.is-closed ~ .legacy-warning-banners {
-    transform: translateX(315px) !important;
-  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -872,8 +848,7 @@
     font-size: 17px !important;
   }
 
-  .legacy-warning-banners,
-  .legacy-report-panel.is-closed ~ .legacy-warning-banners {
+  .legacy-warning-banners {
     grid-area: map;
     top: auto !important;
     right: 0 !important;
@@ -884,8 +859,7 @@
   }
 
   .legacy-intensity-legend,
-  .legacy-version,
-  .legacy-report-panel.is-closed ~ .legacy-version {
+  .legacy-version {
     display: none !important;
   }
 
@@ -990,8 +964,7 @@
     padding-top: 4px;
   }
 
-  .legacy-rts-list,
-  .legacy-report-panel.is-closed ~ .legacy-rts-list {
+  .legacy-rts-list {
     grid-area: list;
     position: static !important;
     width: auto !important;
@@ -1153,9 +1126,9 @@
 }
 
 /* Status lights right of the clock (overlays/TimeBar.tsx): small, unboxed and
-   dim so they stay out of the way — green and slowly breathing when a realtime
-   stream works; red, and fully lit, when it does not; grey while a replay has
-   the streams closed. The shadow keeps them legible on the map. */
+   dim so they stay out of the way — green when a realtime stream works; red,
+   and fully lit, when it does not; grey while a replay has the streams
+   closed. The shadow keeps them legible on the map. */
 .legacy-status-lights {
   display: inline-flex;
   align-items: center;

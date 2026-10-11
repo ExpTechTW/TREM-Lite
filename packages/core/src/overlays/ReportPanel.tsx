@@ -14,15 +14,6 @@ import type { ReportListItem } from "@/lib/types";
 import { variable } from "@/lib/variable";
 import { cn } from "@/lib/utils";
 
-interface SurveyItem {
-  kind: "survey";
-  id: "survey-item";
-  time: number;
-  int: number;
-}
-
-type PanelItem = { kind: "report"; report: ReportListItem } | SurveyItem;
-
 /** Right-side report list, including the legacy survey and replay-highlight states. */
 export function ReportPanel() {
   // Legacy collapses the 275px panel below 1080px so it does not cover most of
@@ -30,18 +21,9 @@ export function ReportPanel() {
   const [open, setOpen] = useState(() => window.innerWidth >= 1080);
   useRerenderOn("ReportListUpdate", "ReportRelease");
 
-  const survey: SurveyItem | null = variable.cache.intensity.time
-    ? {
-        kind: "survey",
-        id: "survey-item",
-        time: variable.cache.intensity.time,
-        int: variable.cache.intensity.max,
-      }
-    : null;
-  const items: PanelItem[] = [
-    ...(survey ? [survey] : []),
-    ...getReports().map((report) => ({ kind: "report" as const, report })),
-  ];
+  // An intensity survey under way is featured above every report; otherwise
+  // the latest report is.
+  const survey = variable.cache.intensity;
 
   return (
     <div className={cn("legacy-report-panel", !open && "is-closed")}>
@@ -55,41 +37,41 @@ export function ReportPanel() {
       </button>
 
       <div className="legacy-report-list">
-        {items.map((item, index) =>
-          index === 0 ? (
-            <FeaturedItem key={item.kind === "survey" ? item.id : item.report.id} item={item} />
-          ) : item.kind === "report" ? (
-            <CompactReportRow key={item.report.id} item={item.report} />
-          ) : null,
+        {survey.time ? <SurveyCard time={survey.time} int={survey.max} /> : null}
+        {getReports().map((report, index) =>
+          index === 0 && !survey.time ? (
+            <FeaturedReport key={report.id} report={report} />
+          ) : (
+            <CompactReportRow key={report.id} item={report} />
+          ),
         )}
       </div>
     </div>
   );
 }
 
-function FeaturedItem({ item }: { item: PanelItem }) {
-  if (item.kind === "survey") {
-    return (
-      <div className="legacy-report-card legacy-report-featured is-survey">
-        <div className="legacy-report-featured-content">
-          <div className="flex flex-col items-center">
-            <IntensityBadge i={item.int} className="legacy-report-featured-badge h-[80px] w-[80px] rounded-[12px] text-[48px]" />
-            <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
-          </div>
-          <div className="ml-2 flex min-w-0 flex-1 flex-col">
-            <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">震源調查中</div>
-            <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(item.time)}</div>
-          </div>
+function SurveyCard({ time, int }: { time: number; int: number }) {
+  return (
+    <div className="legacy-report-card legacy-report-featured is-survey">
+      <div className="legacy-report-featured-content">
+        <div className="flex flex-col items-center">
+          <IntensityBadge i={int} className="legacy-report-featured-badge h-[80px] w-[80px] rounded-[12px] text-[48px]" />
+          <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
+        </div>
+        <div className="ml-2 flex min-w-0 flex-1 flex-col">
+          <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">震源調查中</div>
+          <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(time)}</div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  const report = item.report;
+function FeaturedReport({ report }: { report: ReportListItem }) {
   return (
     <div
       className={cn(
-        "legacy-report-card legacy-report-featured group",
+        "legacy-report-card legacy-report-featured",
         isReplayActive(report) && "legacy-report-flashing",
       )}
     >
@@ -128,7 +110,7 @@ function CompactReportRow({ item }: { item: ReportListItem }) {
   return (
     <div
       className={cn(
-        "legacy-report-card group flex items-center gap-2",
+        "legacy-report-card flex items-center gap-2",
         isReplayActive(item) && "legacy-report-flashing",
       )}
     >

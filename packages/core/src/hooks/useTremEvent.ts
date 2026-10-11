@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { events, type TremEvents } from "@/lib/events";
 
@@ -58,10 +58,9 @@ export function useRerenderIf<K extends keyof TremEvents>(signature: () => strin
 /** Re-render on an interval — for overlays that genuinely need time (e.g. a clock). */
 export function useTick(ms: number): number {
   const [n, setN] = useState(0);
-  const bump = useCallback(() => setN((x) => x + 1), []);
   useEffect(() => {
-    const id = setInterval(bump, ms);
+    const id = setInterval(() => setN((x) => x + 1), ms);
     return () => clearInterval(id);
-  }, [ms, bump]);
+  }, [ms]);
   return n;
 }

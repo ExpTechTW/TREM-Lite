@@ -2,6 +2,11 @@ import { IntensityBadge } from "@/components/IntensityBadge";
 import { ui } from "@/lib/variable.ui";
 import { useRerenderIf } from "@/hooks/useTremEvent";
 
+// Static styles, made once: this station's readings change on most RTS
+// frames, and each render then reuses these objects.
+const LIGHT = { color: "var(--light)" };
+const CARD = { backgroundColor: "var(--panel-bg)", borderColor: "var(--panel-border)" };
+
 /** "Your station" readout (from ui.currentStation + ui.rtsInfo): matches legacy .station-pga-wrapper. */
 export function StationReadout() {
   useRerenderIf(() => {
@@ -16,15 +21,12 @@ export function StationReadout() {
   return (
     <div
       className="legacy-station-readout pointer-events-none absolute left-[6.9rem] top-[10rem] z-[1000] flex flex-col text-[11px] font-medium"
-      style={{ color: "var(--light)" }}
+      style={LIGHT}
     >
       {/* 所在地震度、加速度 + 大震度徽章 */}
       <div
         className="legacy-current-station mt-[5px] flex w-[224px] flex-row-reverse justify-between rounded-[5px] border p-[2px] text-center font-medium"
-        style={{
-          backgroundColor: "var(--panel-bg)",
-          borderColor: "var(--panel-border)",
-        }}
+        style={CARD}
       >
         <div className="legacy-current-station-info flex w-[160px] flex-col flex-wrap">
           <div className="legacy-current-station-loc text-start text-[17px] font-bold">
@@ -50,10 +52,7 @@ export function StationReadout() {
       {/* level / trigger */}
       <div
         className="legacy-rts-info mt-[3px] flex w-[65px] flex-col rounded-[5px] border text-center text-[11px] font-medium"
-        style={{
-          backgroundColor: "var(--panel-bg)",
-          borderColor: "var(--panel-border)",
-        }}
+        style={CARD}
       >
         <div className="flex items-center justify-between px-1">
           <div>level</div>

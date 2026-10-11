@@ -90,8 +90,9 @@ function waitForRendered(revision: number, timeoutMs = 2500): Promise<void> {
   });
 }
 
+/** Whether currentPayload() would carry something, without building it. */
 export function hasPipContent(): boolean {
-  return !currentPayload().noEew;
+  return !!(ui.currentEew || ui.currentTrigger);
 }
 
 /** Show PiP only after the window controller has approved the timing. */
@@ -106,24 +107,16 @@ export async function showPipForCurrentAlert(
 
     // Content can rotate or end while the hidden window is becoming ready.
     // Republish until the acknowledged DOM matches the current source state.
-    let current: PublishedPipState | null = null;
-    let renderedCurrent = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      current = await publish(true);
+    // `rendered` is that match, made just now with nothing awaited since, so
+    // its `noEew` is also whether there is anything to show at this moment.
+    let rendered: PublishedPipState | null = null;
+    for (let attempt = 0; attempt < 3 && !rendered; attempt++) {
+      const current = await publish(true);
       if (!current) break;
       await waitForRendered(current.revision);
-      if (current.serialized === JSON.stringify(currentPayload())) {
-        renderedCurrent = true;
-        break;
-      }
+      if (current.serialized === JSON.stringify(currentPayload())) rendered = current;
     }
-    if (
-      !current ||
-      !renderedCurrent ||
-      current.noEew ||
-      current.serialized !== JSON.stringify(currentPayload()) ||
-      !hasPipContent()
-    ) {
+    if (!rendered || rendered.noEew) {
       hidePip();
       return false;
     }

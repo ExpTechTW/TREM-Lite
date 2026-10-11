@@ -2,6 +2,11 @@ import { IntensityBadge } from "@/components/IntensityBadge";
 import { ui } from "@/lib/variable.ui";
 import { useRerenderIf } from "@/hooks/useTremEvent";
 
+// Static styles, made once: the max PGA changes on most RTS frames, and each
+// render then reuses these objects.
+const LIGHT = { color: "var(--light)" };
+const CARD = { backgroundColor: "var(--panel-bg)", border: "1px solid var(--panel-border)" };
+
 /** Left-side stacked max observed intensity + max PGA readout (from ui, set by the rts module). */
 export function MaxIntensity() {
   useRerenderIf(
@@ -11,15 +16,12 @@ export function MaxIntensity() {
   return (
     <div
       className="legacy-max-panel pointer-events-none absolute left-1 top-[164px] z-[1000] flex flex-col text-center text-[11px] font-medium"
-      style={{ color: "var(--light)" }}
+      style={LIGHT}
     >
       {/* 最大觀測震度 */}
       <div
         className="legacy-max-intensity flex flex-col items-center rounded-[5px] p-2"
-        style={{
-          backgroundColor: "var(--panel-bg)",
-          border: "1px solid var(--panel-border)",
-        }}
+        style={CARD}
       >
         <span className="text-[14px]">最大觀測震度</span>
         <IntensityBadge
@@ -32,10 +34,7 @@ export function MaxIntensity() {
       {/* 最大加速度 (PGA) */}
       <div
         className="legacy-max-pga mt-[3px] flex flex-col justify-center rounded-[5px] text-center"
-        style={{
-          backgroundColor: "var(--panel-bg)",
-          border: "1px solid var(--panel-border)",
-        }}
+        style={CARD}
       >
         <span className="text-[14px]">最大加速度</span>
         <div

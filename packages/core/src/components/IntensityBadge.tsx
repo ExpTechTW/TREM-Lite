@@ -1,6 +1,12 @@
 import { INTENSITY_LIST } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+/** Each level's colors, made once: a badge re-rendered at the same level keeps the same style object. */
+const LEVEL_STYLE = INTENSITY_LIST.map((_, n) => ({
+  backgroundColor: `var(--intensity-${n})`,
+  color: `var(--intensity-text-${n})`,
+}));
+
 /** A colored square/round intensity badge using the TREM theme tokens. */
 export function IntensityBadge({
   i,
@@ -22,10 +28,7 @@ export function IntensityBadge({
         round ? "rounded-full" : "rounded-[25%]",
         className,
       )}
-      style={{
-        backgroundColor: `var(--intensity-${clamped})`,
-        color: `var(--intensity-text-${clamped})`,
-      }}
+      style={LEVEL_STYLE[clamped]}
     >
       {blankAtZero && clamped === 0 ? null : INTENSITY_LIST[clamped]}
     </div>

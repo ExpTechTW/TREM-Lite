@@ -5,7 +5,6 @@ import { now } from "@/lib/ntp";
 import { ui } from "@/lib/variable.ui";
 import { variable } from "@/lib/variable";
 import { useRerenderOn, useTick } from "@/hooks/useTremEvent";
-import { cn } from "@/lib/utils";
 
 /**
  * Bottom-left clock + connection state (ports the #time element of loop.js).
@@ -17,7 +16,7 @@ import { cn } from "@/lib/utils";
  *
  * Right of the time, small and unboxed so they stay out of the way, a light
  * for each realtime stream: EEW (the CWA EEW stream) and RTS (the station
- * stream). Green and breathing when it works, red when it does not — not connected, silent past its
+ * stream). Green when it works, red when it does not — not connected, silent past its
  * heartbeat, or, for RTS while the map is live, no station data. Grey during
  * a replay, when the streams are closed on purpose. Hovering says which.
  */
@@ -29,6 +28,10 @@ function StatusLight({ label, state, why }: { label: string; state: "ok" | "down
     </span>
   );
 }
+
+/** The clock's pill: static, so the once-a-second render reuses one object. */
+const PILL = { backgroundColor: "var(--panel-bg)", borderColor: "#00000008" };
+
 export function TimeBar() {
   useTick(1000);
   useRerenderOn("UpdateReady");
@@ -52,10 +55,7 @@ export function TimeBar() {
     <>
       <div
         className="relative flex min-w-[145px] items-center justify-around rounded-[5px] border-2 p-[3px]"
-        style={{
-          backgroundColor: "var(--panel-bg)",
-          borderColor: "#00000008",
-        }}
+        style={PILL}
       >
         {ui.updateReady && (
           <button
@@ -68,7 +68,7 @@ export function TimeBar() {
           </button>
         )}
         <span
-          className={cn("text-[15px] font-bold tabular-nums")}
+          className="text-[15px] font-bold tabular-nums"
           style={{ color: timeColor }}
           title={error ? "連線中斷的時間" : undefined}
         >

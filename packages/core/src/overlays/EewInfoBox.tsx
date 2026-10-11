@@ -1,6 +1,6 @@
 import { IntensityBadge } from "@/components/IntensityBadge";
 import { formatTime } from "@/domain/utils";
-import { useRerenderOn } from "@/hooks/useTremEvent";
+import { useRerenderIf } from "@/hooks/useTremEvent";
 import type { EewDisplay, RtsTriggerDisplay } from "@/lib/variable.ui";
 import { ui } from "@/lib/variable.ui";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,16 @@ interface EewPanelProps {
 
 /** Top-left EEW / RTS trigger card, preserving the three legacy visual states. */
 export function EewInfoBox() {
-  useRerenderOn("EewDisplayUpdate");
+  // show_eew() sends this every 5 s and on each RTS frame while towns trigger,
+  // with new objects even when the card would read the same. The signature is
+  // every field the card shows (an EEW's id is not shown); idle is "-", never
+  // the hook's starting "".
+  useRerenderIf(() => {
+    const e = ui.currentEew;
+    if (e) return `${e.statusClass}|${e.unitText}|${e.serial}|${e.final}|${e.max}|${e.loc}|${e.time}|${e.mag}|${e.depth}`;
+    const t = ui.currentTrigger;
+    return t ? `${t.max}|${t.locations.map((l) => l.name).join("|")}` : "-";
+  }, "EewDisplayUpdate");
   return <EewPanel eew={ui.currentEew} trigger={ui.currentTrigger} />;
 }
 
