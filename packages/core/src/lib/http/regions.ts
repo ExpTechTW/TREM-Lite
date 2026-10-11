@@ -114,10 +114,10 @@ function reselect(pool: Pool): void {
   pool.active = other;
 }
 
+/** `url` sent to `host`. Each caller's own parse, so moved in place, not copied. */
 function at(url: URL, host: string): string {
-  const copy = new URL(url);
-  copy.host = host;
-  return copy.toString();
+  url.host = host;
+  return url.toString();
 }
 
 /** A balanced name swapped for its pool's active node; anything else as is. */

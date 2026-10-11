@@ -137,17 +137,21 @@ const MAX_RETRY_AFTER_MS = 60_000;
 
 const retryable = (status: number) => status >= 500 || status === 429;
 
+/**
+ * Wait `ms`, or until `signal` aborts. The abort listener goes when the wait
+ * ends: a long-lived signal otherwise gained one for every retry.
+ */
 const sleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        reject(new HttpError("Aborted", "ABORTED"));
-      },
-      { once: true },
-    );
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new HttpError("Aborted", "ABORTED"));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 
 /**

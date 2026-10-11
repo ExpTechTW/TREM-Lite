@@ -52,6 +52,9 @@ export class HttpError extends Error {
   }
 }
 
+/** One decoder for every body: a call without `stream` starts afresh. */
+const utf8 = new TextDecoder();
+
 /**
  * A `Response`-shaped result. The surface is deliberately the subset of the
  * DOM `Response` that the app actually uses, so call sites read the same as
@@ -88,7 +91,7 @@ export class HttpResponse {
   }
 
   text(): Promise<string> {
-    return Promise.resolve(new TextDecoder().decode(this.bytes));
+    return Promise.resolve(utf8.decode(this.bytes));
   }
 
   async json<T = unknown>(): Promise<T> {

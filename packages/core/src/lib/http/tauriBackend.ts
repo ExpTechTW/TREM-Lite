@@ -12,6 +12,9 @@ import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { HttpError, HttpResponse, type HttpBackend, type HttpMeta } from "./types";
 import { watchBody } from "./watchBody";
 
+/** One decoder for every response: a call without `stream` starts afresh. */
+const utf8 = new TextDecoder();
+
 /**
  * Decode `[u32 LE meta length][meta JSON][body bytes]`.
  *
@@ -23,7 +26,7 @@ function decodeFrame(buffer: ArrayBuffer): HttpResponse {
   const view = new DataView(buffer);
   const metaLength = view.getUint32(0, true);
   const metaBytes = new Uint8Array(buffer, 4, metaLength);
-  const meta = JSON.parse(new TextDecoder().decode(metaBytes)) as HttpMeta;
+  const meta = JSON.parse(utf8.decode(metaBytes)) as HttpMeta;
   const body = new Uint8Array(buffer, 4 + metaLength);
   return new HttpResponse(meta, body);
 }

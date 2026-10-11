@@ -22,6 +22,8 @@ import { createLogger } from "@/lib/logger";
 import { http } from "./index";
 
 const SCHEME = "trem";
+/** The scheme as a request's URL starts with it, compiled once for every tile. */
+const PROXIED = new RegExp(`^${SCHEME}://`);
 const TILE_TIMEOUT = 15_000;
 /** How long a tile, glyph range or terrain tile is served from the cache. */
 const TILE_FRESH_MS = 7 * 24 * 60 * 60 * 1000;
@@ -42,7 +44,7 @@ export function registerMapProtocol(): void {
   registered = true;
 
   maplibregl.addProtocol(SCHEME, async (params, abortController) => {
-    const url = params.url.replace(new RegExp(`^${SCHEME}://`), "https://");
+    const url = params.url.replace(PROXIED, "https://");
     const res = await http.request(url, {
       timeout: TILE_TIMEOUT,
       store: true,
