@@ -422,12 +422,35 @@
   padding: 2px 3px 3px;
   overflow-y: auto;
   background: #464646d9;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-width: none;
 }
 
-.legacy-report-list:hover {
-  scrollbar-color: #aaa #464646;
+.legacy-report-list::-webkit-scrollbar {
+  display: none;
+}
+
+.legacy-report-scrollbar-wrapper {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1001;
+  width: 8px;
+  height: 100%;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
+}
+
+.legacy-report-scrollbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  min-height: 20px;
+  cursor: pointer;
+  background: rgb(255 255 255 / 60%);
+  border: 1px solid #cfcfcf;
+  border-radius: 3px;
+  box-sizing: border-box;
 }
 
 .legacy-report-card {
@@ -451,8 +474,7 @@
 .legacy-report-featured-content {
   display: flex;
   width: 100%;
-  gap: 8px;
-  padding: 10px;
+  padding: 8px;
 }
 
 .legacy-report-actions {
