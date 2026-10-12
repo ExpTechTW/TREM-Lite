@@ -1062,7 +1062,10 @@
   }
 
   .legacy-report-featured-loc {
+    max-width: none !important;
+    overflow: visible !important;
     font-size: 17px !important;
+    white-space: nowrap !important;
   }
 
   .legacy-report-featured-time,
