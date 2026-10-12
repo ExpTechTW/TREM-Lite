@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 
 import { IntensityBadge } from "@/components/IntensityBadge";
@@ -16,6 +16,62 @@ import { cn } from "@/lib/utils";
 
 /** Right-side report list, including the legacy survey and replay-highlight states. */
 export function ReportPanel() {
+  const listRef = useRef<HTMLDivElement>(null);
+  const scrollbarRef = useRef<HTMLDivElement>(null);
+  const scrollbarThumbRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const scrollbarSizeRef = useRef(0);
+  const [scrollbarVisible, setScrollbarVisible] = useState(false);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+
+    const updateScrollbar = () => {
+      const canScroll = list.scrollHeight > list.clientHeight;
+      const height = canScroll
+        ? Math.max(20, (list.clientHeight / list.scrollHeight) * list.clientHeight)
+        : 0;
+      scrollbarSizeRef.current = height;
+      const maxTop = list.clientHeight - height;
+      const top = canScroll && maxTop > 0
+        ? (list.scrollTop / (list.scrollHeight - list.clientHeight)) * maxTop
+        : 0;
+      const thumb = scrollbarThumbRef.current;
+      if (thumb) {
+        thumb.style.height = `${height}px`;
+        thumb.style.transform = `translateY(${top}px)`;
+      }
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const track = scrollbarRef.current;
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      const maxTop = rect.height - scrollbarSizeRef.current;
+      if (maxTop <= 0) return;
+      const nextTop = Math.max(0, Math.min(maxTop, event.clientY - rect.top - scrollbarSizeRef.current / 2));
+      list.scrollTop = (nextTop / maxTop) * (list.scrollHeight - list.clientHeight);
+    };
+    const stopDragging = () => {
+      draggingRef.current = false;
+      document.body.style.userSelect = "";
+    };
+
+    list.addEventListener("scroll", updateScrollbar);
+    window.addEventListener("resize", updateScrollbar);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopDragging);
+    updateScrollbar();
+    return () => {
+      list.removeEventListener("scroll", updateScrollbar);
+      window.removeEventListener("resize", updateScrollbar);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", stopDragging);
+    };
+  }, []);
+
   // Legacy collapses the 275px panel below 1080px so it does not cover most of
   // the map at the 900px minimum window width.
   const [open, setOpen] = useState(() => window.innerWidth >= 1080);
@@ -36,7 +92,14 @@ export function ReportPanel() {
         <ChevronLeft className={cn("h-4 w-4", open && "rotate-180")} />
       </button>
 
-      <div className="legacy-report-list">
+      <div
+        ref={listRef}
+        className="legacy-report-list"
+        onMouseEnter={() => setScrollbarVisible(true)}
+        onMouseLeave={() => {
+          if (!draggingRef.current) setScrollbarVisible(false);
+        }}
+      >
         {survey.time ? <SurveyCard time={survey.time} int={survey.max} /> : null}
         {getReports().map((report, index) =>
           index === 0 && !survey.time ? (
@@ -45,6 +108,24 @@ export function ReportPanel() {
             <CompactReportRow key={report.id} item={report} />
           ),
         )}
+      </div>
+      <div
+        ref={scrollbarRef}
+        className="legacy-report-scrollbar-wrapper"
+        onMouseEnter={() => setScrollbarVisible(true)}
+        onMouseLeave={() => {
+          if (!draggingRef.current) setScrollbarVisible(false);
+        }}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          draggingRef.current = true;
+          document.body.style.userSelect = "none";
+          setScrollbarVisible(true);
+        }}
+        aria-hidden="true"
+        style={{ opacity: scrollbarVisible ? 1 : 0 }}
+      >
+        <div ref={scrollbarThumbRef} className="legacy-report-scrollbar" />
       </div>
     </div>
   );
@@ -59,7 +140,7 @@ function SurveyCard({ time, int }: { time: number; int: number }) {
           <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
         </div>
         <div className="ml-2 flex min-w-0 flex-1 flex-col">
-          <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">震源調查中</div>
+          <div className="legacy-report-featured-loc whitespace-nowrap text-[28px] font-bold leading-tight">震源調查中</div>
           <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(time)}</div>
         </div>
       </div>
@@ -82,7 +163,7 @@ function FeaturedReport({ report }: { report: ReportListItem }) {
         </div>
 
         <div className="ml-2 flex min-w-0 flex-1 flex-col">
-          <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">
+          <div className="legacy-report-featured-loc whitespace-nowrap text-[28px] font-bold leading-tight">
             {extractLocation(report.loc)}
           </div>
           <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(report.time)}</div>
