@@ -140,7 +140,7 @@ function SurveyCard({ time, int }: { time: number; int: number }) {
           <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
         </div>
         <div className="ml-2 flex min-w-0 flex-1 flex-col">
-          <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">震源調查中</div>
+          <div className="legacy-report-featured-loc whitespace-nowrap text-[28px] font-bold leading-tight">震源調查中</div>
           <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(time)}</div>
         </div>
       </div>
@@ -163,7 +163,7 @@ function FeaturedReport({ report }: { report: ReportListItem }) {
         </div>
 
         <div className="ml-2 flex min-w-0 flex-1 flex-col">
-          <div className="legacy-report-featured-loc truncate text-[28px] font-bold leading-tight">
+          <div className="legacy-report-featured-loc whitespace-nowrap text-[28px] font-bold leading-tight">
             {extractLocation(report.loc)}
           </div>
           <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(report.time)}</div>
