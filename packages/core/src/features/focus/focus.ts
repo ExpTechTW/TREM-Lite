@@ -1,7 +1,7 @@
 // Ported from legacy/src/js/index/core/focus.js
 import maplibregl, { type FitBoundsOptions, type LngLatBoundsLike, type Map as MlMap } from "maplibre-gl";
 
-import { getConfig } from "@/lib/config";
+import { getConfig, onConfigUpdated } from "@/lib/config";
 import { MAP } from "@/lib/constants";
 import { events } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
@@ -101,6 +101,19 @@ export function initFocus(): void {
   events.on("EewUpdate", () => focus());
   events.on("EewEnd", () => focus());
   events.on("MapLoad", () => onMapLoad());
+
+  let autoZoomEnabled = !getConfig()["check-box"]["graphics-block-auto-zoom"];
+  void onConfigUpdated((next) => {
+    const enabled = !next["check-box"]["graphics-block-auto-zoom"];
+    if (enabled === autoZoomEnabled) return;
+    autoZoomEnabled = enabled;
+    if (enabled) {
+      focusSoon();
+    } else {
+      // Return to the normal Taiwan view as soon as auto-zoom is disabled.
+      focus_reset(true);
+    }
+  });
 
   // The triggered stations change: follow at once rather than at the next
   // three-second tick, which left a short trigger never followed at all. After
