@@ -3,7 +3,7 @@
 // this module keeps the data fetching, map points, and lifecycle events.
 import { openUrl as openExternal } from "@tauri-apps/plugin-opener";
 
-import { idleMap } from "@/lib/config";
+import { getConfig, idleMap, onConfigUpdated } from "@/lib/config";
 import { REPORT_LIMIT, HTTP_TIMEOUT, SHOW_REPORT } from "@/lib/constants";
 import { HOST } from "@/lib/endpoints";
 import { events } from "@/lib/events";
@@ -191,6 +191,8 @@ function cameraKey(): string {
 
 /** Fit the report, unless the camera is already there or already on its way. */
 function fitReport(): void {
+  if (getConfig()["check-box"]["graphics-block-auto-zoom"]) return;
+
   const map = variable.map;
   if (!map || map.isMoving()) return;
   const key = cameraKey();
@@ -438,6 +440,13 @@ export function initReport(): void {
   });
   events.on("ReportRelease", (ans) => onReportRelease(ans));
   events.on("ReportSpeechEnd", ({ id }) => void endUpdate(id));
+
+  void onConfigUpdated((next) => {
+    if (!next["check-box"]["graphics-block-auto-zoom"] && plottedReport) {
+      fitReport();
+    }
+  });
+
   events.on("ReplayStateChange", ({ active, reportId }) => {
     replayStateEpoch++;
     activeReplayReportId = active ? (reportId ?? null) : null;
