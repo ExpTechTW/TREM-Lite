@@ -235,13 +235,17 @@ export function initEew(): void {
     refresh_cross(false);
   });
 
-  // Periodically drop expired EEW caches.
+  // Periodically drop expired EEW caches. Announced as an end, so that every
+  // module clears what it drew for that EEW — the predicted-intensity towns
+  // included — rather than only the layers this one owns.
   setInterval(() => {
     const nowMs = realNow();
     for (const id of Object.keys(eew_cache)) {
       if (nowMs - eew_cache[id].cacheTime > EEW_CACHE_TTL) {
-        removeEewLayersAndSources(id);
-        delete eew_cache[id];
+        events.emit("EewEnd", {
+          info: { type: variable.play_mode },
+          data: { ...eew_cache[id], EewEnd: true },
+        });
       }
     }
   }, 60000);

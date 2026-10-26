@@ -149,8 +149,12 @@ class DataManager {
     if (variable.play_mode === 3) this.stopSSE();
 
     if (this.sseActive) {
-      // A shake report ends by age, but the stream sends one only when it is
-      // issued, never when it expires: age them here, as every poll does.
+      // An EEW and a shake report both end by age, but the stream sends one
+      // only when it is issued, never when it expires: age them here, as every
+      // poll does. Left unaged, an EEW the server had already stopped listing
+      // stayed in `variable.data.eew` (and kept the towns coloured by its
+      // predicted intensity) until the window was reloaded.
+      this.processEEWData([]);
       this.processIntensityData([]);
       return;
     }
