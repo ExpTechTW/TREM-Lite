@@ -73,6 +73,10 @@ async function updateEewArea(ans: Ans<EewData>): Promise<void> {
 
 /** Repaint the "town" fill-color for the currently active eew intensity areas. */
 export function drawEewArea(end = false): void {
+  // The episode is over whether or not anything is painted below: a city that
+  // was alerted for this EEW has to be able to alert again for the next one.
+  if (end) alertedCities.clear();
+
   if (variable.cache.show_lpgm || variable.cache.show_intensity) {
     return;
   }
@@ -80,6 +84,14 @@ export function drawEewArea(end = false): void {
   const map = variable.map;
   if (!map) {
     return;
+  }
+
+  // Only an EEW still held as active may colour the towns. An area left by one
+  // whose end never reached here would otherwise keep them painted for as long
+  // as the window stayed open, with the box already saying no warning is up.
+  const active = new Set(variable.data.eew.map((item) => String(item.id)));
+  for (const id of Object.keys(variable.cache.eewIntensityArea)) {
+    if (!active.has(id)) delete variable.cache.eewIntensityArea[id];
   }
 
   if (!Object.keys(variable.cache.eewIntensityArea).length) {
@@ -115,12 +127,8 @@ export function drawEewArea(end = false): void {
     newHighIntensityCities.forEach((city) => alertedCities.add(city));
   }
 
-  // The last EEW ending returns the towns to the base colour.
-  paintTowns(map, !variable.data.eew.length && end ? null : townColors(eewArea));
-
-  if (end) {
-    alertedCities.clear();
-  }
+  // What is left (nothing, after the last EEW ended) is what the map shows.
+  paintTowns(map, townColors(eewArea));
 }
 
 function mergeEqArea(
