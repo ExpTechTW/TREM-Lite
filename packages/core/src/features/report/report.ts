@@ -441,10 +441,16 @@ export function initReport(): void {
   events.on("ReportRelease", (ans) => onReportRelease(ans));
   events.on("ReportSpeechEnd", ({ id }) => void endUpdate(id));
 
+  // `config-updated` carries the whole config, so every other setting — the
+  // volume, TTS — arrives here too. Only the toggle itself is worth acting on:
+  // without the comparison, turning the volume down pulled the map back to the
+  // report.
+  let autoZoomEnabled = !getConfig()["check-box"]["graphics-block-auto-zoom"];
   void onConfigUpdated((next) => {
-    if (!next["check-box"]["graphics-block-auto-zoom"] && plottedReport) {
-      fitReport();
-    }
+    const enabled = !next["check-box"]["graphics-block-auto-zoom"];
+    if (enabled === autoZoomEnabled) return;
+    autoZoomEnabled = enabled;
+    if (enabled && plottedReport) fitReport();
   });
 
   events.on("ReplayStateChange", ({ active, reportId }) => {
