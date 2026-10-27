@@ -9,7 +9,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/ExpTechTW/TREM-Lite/ci.yml?branch=main&label=CI)](https://github.com/ExpTechTW/TREM-Lite/actions/workflows/ci.yml)
 [![Discord](https://img.shields.io/discord/926545182407688273?logo=discord&logoColor=white&label=Discord&color=5865F2)](https://discord.gg/5dbHqV8ees)
 
-[官網](https://exptech.dev/trem) • [網頁版](https://exptechtw.github.io/TREM-Lite/) • [更新日誌](https://github.com/ExpTechTW/TREM-Lite/releases) • [Commit 規則](commit.md)
+[官網](https://exptech.dev/trem) • [網頁版](https://exptechtw.github.io/TREM-Lite/) • [更新日誌](https://github.com/ExpTechTW/TREM-Lite/releases) • [擴充功能開發](PLUGINS.md) • [Commit 規則](commit.md)
 
 </div>
 
@@ -31,6 +31,7 @@ TREM（Taiwan Real-time Earthquake Monitoring，臺灣即時地震監測）是�
 | **通知與子母畫面** | 主視窗隱藏時，以系統通知和子母畫面小視窗提醒 |
 | **常駐系統匣** | 關閉視窗後持續監測，也可以隨開機在背景啟動 |
 | **自動更新** | 在背景下載新版本，下次啟動時套用，不會打斷正在使用的視窗 |
+| **擴充功能** | 安裝社群開發的擴充功能，替 TREM-Lite 加上自己的功能（僅桌面版） |
 
 ## 下載
 
@@ -48,7 +49,7 @@ Linux 在下載的資料夾執行 `sudo apt install ./<檔名>.deb`，需要的�
 
 結尾是 `.sig` 或 `.app.tar.gz` 的檔案是自動更新用的，不需要下載。
 
-不想安裝的話，可以直接用 **[網頁版](https://exptechtw.github.io/TREM-Lite/)**。網頁版有地圖、即時震度、強震即時警報、地震報告和語音播報；音效、系統通知、子母畫面、系統匣常駐與自動更新只有桌面版提供。
+不想安裝的話，可以直接用 **[網頁版](https://exptechtw.github.io/TREM-Lite/)**。網頁版有地圖、即時震度、強震即時警報、地震報告和語音播報；音效、系統通知、子母畫面、系統匣常駐、自動更新與擴充功能只有桌面版提供。
 
 ### 版本命名
 
@@ -97,7 +98,7 @@ git config core.hooksPath .githooks   # 啟用 commit 規則檢查
 | `packages/core` | 桌面版與網頁版共用的前端：React、MapLibre、地震資料處理 |
 | `apps/desktop` | Tauri 桌面版。Rust 負責音效、HTTP 代理與快取、自動更新、設定與視窗 |
 | `apps/web` | 網頁版（GitHub Pages） |
-| `tool/` | commit 規則檢查、版本號與發布說明的產生 |
+| `tool/` | commit 規則檢查、版本號與發布說明的產生、擴充功能簽章工具 |
 | `legacy/` | 舊版 Electron 原始碼，僅作為移植參照，不再修改 |
 
 > [!NOTE]

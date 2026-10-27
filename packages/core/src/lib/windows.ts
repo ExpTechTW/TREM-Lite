@@ -30,6 +30,10 @@ export async function openSettings(): Promise<void> {
     resizable: false,
     decorations: false,
     transparent: !isMac,
+    // Tauri handling the OS-level file drop is what stops HTML5 drop events
+    // from firing on Windows, and 設定 → 擴充 installs a `.trem` by having one
+    // dropped on the page.
+    dragDropEnabled: false,
   });
 }
 
