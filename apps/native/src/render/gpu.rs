@@ -1,0 +1,225 @@
+//! Shared GPU device. One `Gpu` can feed several windows and offscreen targets.
+//!
+//! MapLibre 5 asks for the discrete GPU by default, and on a dual-GPU laptop that
+//! keeps the dGPU powered for as long as the surface exists. The integrated GPU
+//! renders this UI the same, so the adapter request is `LowPower`.
+//!
+//! Adapter order, if the previous one cannot open a device: the normal backend,
+//! then GL, then a forced software fallback. A total failure is logged and
+//! returned. Callers must keep running without a window; this function does not
+//! panic.
+
+use std::sync::Arc;
+
+use winit::window::Window;
+
+const FRAME_LATENCY: u32 = 2;
+
+type AdapterTry = fn() -> Option<(wgpu::Instance, wgpu::Adapter)>;
+
+pub struct Gpu {
+    pub instance: wgpu::Instance,
+    pub adapter: wgpu::Adapter,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
+}
+
+pub struct GpuSurface {
+    pub surface: wgpu::Surface<'static>,
+    pub config: wgpu::SurfaceConfiguration,
+    pub format: wgpu::TextureFormat,
+}
+
+impl Gpu {
+    pub fn new() -> Option<Self> {
+        let attempts: [(&str, AdapterTry); 3] = [
+            ("一般", try_normal),
+            ("GL", try_gl),
+            ("軟體 fallback", try_software),
+        ];
+        for (stage, attempt) in attempts {
+            let Some((instance, adapter)) = attempt() else {
+                log::warn!("GPU adapter 取得失敗（{stage}）");
+                continue;
+            };
+            // The UI batch lives in a storage buffer shared by the vertex and
+            // fragment stages. Adapters without that (WebGL2) cannot draw it.
+            if adapter.limits().max_storage_buffers_per_shader_stage == 0 {
+                log::warn!("GPU adapter 沒有 storage buffer（{stage}），略過");
+                continue;
+            }
+            match open_device(&adapter) {
+                Ok((device, queue)) => {
+                    let info = adapter.get_info();
+                    log::info!("GPU adapter：{}（{:?}，{stage}）", info.name, info.backend);
+                    install_loss_handler(&device);
+                    return Some(Self {
+                        instance,
+                        adapter,
+                        device,
+                        queue,
+                    });
+                }
+                Err(err) => {
+                    log::warn!("GPU device 建立失敗（{stage}）：{err}");
+                }
+            }
+        }
+        log::error!(
+            "找不到可用的 GPU adapter（一般、GL、軟體 fallback 都失敗）：畫面停用，其他功能照常"
+        );
+        None
+    }
+
+    /// A window surface on the shared device. `window` is kept alive by the
+    /// surface; the caller can hold its own `Arc` too.
+    pub fn create_surface(
+        &self,
+        window: Arc<Window>,
+        width: u32,
+        height: u32,
+    ) -> Result<GpuSurface, String> {
+        let surface = self
+            .instance
+            .create_surface(window)
+            .map_err(|err| format!("無法建立 surface：{err}"))?;
+        let caps = surface.get_capabilities(&self.adapter);
+        let format =
+            pick_format(&caps.formats).ok_or_else(|| "surface 沒有可用的顏色格式".to_string())?;
+        if !is_gamma_unorm(format) {
+            log::warn!("surface 沒有非 sRGB 格式，改用 {format:?}");
+        }
+        let present_mode = if caps.present_modes.contains(&wgpu::PresentMode::Fifo) {
+            wgpu::PresentMode::Fifo
+        } else {
+            caps.present_modes
+                .first()
+                .copied()
+                .unwrap_or(wgpu::PresentMode::AutoVsync)
+        };
+        let alpha_mode = caps
+            .alpha_modes
+            .first()
+            .copied()
+            .unwrap_or(wgpu::CompositeAlphaMode::Auto);
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format,
+            // Unorm storage is already sRGB-encoded. `Srgb` tells the compositor
+            // that; it does not gamma-encode the write a second time.
+            color_space: wgpu::SurfaceColorSpace::Srgb,
+            width: width.max(1),
+            height: height.max(1),
+            present_mode,
+            desired_maximum_frame_latency: FRAME_LATENCY,
+            alpha_mode,
+            view_formats: vec![],
+        };
+        surface.configure(&self.device, &config);
+        Ok(GpuSurface {
+            surface,
+            config,
+            format,
+        })
+    }
+}
+
+impl GpuSurface {
+    pub fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
+        if width == 0 || height == 0 {
+            return;
+        }
+        if self.config.width == width && self.config.height == height {
+            return;
+        }
+        self.config.width = width;
+        self.config.height = height;
+        self.surface.configure(device, &self.config);
+    }
+
+    pub fn reconfigure(&self, device: &wgpu::Device) {
+        self.surface.configure(device, &self.config);
+    }
+}
+
+fn install_loss_handler(device: &wgpu::Device) {
+    device.set_device_lost_callback(|reason, message| {
+        log::error!("GPU device 遺失（{reason:?}）：{message}。畫面停用，其他功能照常");
+    });
+    device.on_uncaptured_error(Arc::new(|err| {
+        log::error!("GPU 錯誤：{err}");
+    }));
+}
+
+fn try_normal() -> Option<(wgpu::Instance, wgpu::Adapter)> {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let adapter = request(&instance, false)?;
+    Some((instance, adapter))
+}
+
+fn try_gl() -> Option<(wgpu::Instance, wgpu::Adapter)> {
+    let mut desc = wgpu::InstanceDescriptor::new_without_display_handle();
+    desc.backends = wgpu::Backends::GL;
+    let instance = wgpu::Instance::new(desc);
+    let adapter = request(&instance, false)?;
+    Some((instance, adapter))
+}
+
+fn try_software() -> Option<(wgpu::Instance, wgpu::Adapter)> {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let adapter = request(&instance, true)?;
+    Some((instance, adapter))
+}
+
+fn request(instance: &wgpu::Instance, force_fallback: bool) -> Option<wgpu::Adapter> {
+    let options = wgpu::RequestAdapterOptions {
+        power_preference: wgpu::PowerPreference::LowPower,
+        force_fallback_adapter: force_fallback,
+        compatible_surface: None,
+        apply_limit_buckets: false,
+    };
+    match pollster::block_on(instance.request_adapter(&options)) {
+        Ok(adapter) => Some(adapter),
+        Err(err) => {
+            log::debug!("request_adapter 失敗：{err}");
+            None
+        }
+    }
+}
+
+fn open_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue), String> {
+    let supported = adapter.limits();
+    let preferred = wgpu::Limits::default();
+    let limits = if preferred.check_limits(&supported) {
+        preferred
+    } else {
+        supported
+    };
+    let desc = wgpu::DeviceDescriptor {
+        label: Some("trem-lite"),
+        required_features: wgpu::Features::empty(),
+        required_limits: limits,
+        experimental_features: wgpu::ExperimentalFeatures::disabled(),
+        memory_hints: wgpu::MemoryHints::MemoryUsage,
+        trace: wgpu::Trace::Off,
+    };
+    pollster::block_on(adapter.request_device(&desc)).map_err(|err| err.to_string())
+}
+
+fn pick_format(formats: &[wgpu::TextureFormat]) -> Option<wgpu::TextureFormat> {
+    formats
+        .iter()
+        .copied()
+        .find(|format| is_gamma_unorm(*format))
+        .or_else(|| formats.first().copied())
+}
+
+fn is_gamma_unorm(format: wgpu::TextureFormat) -> bool {
+    matches!(
+        format,
+        wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Rgba8Unorm
+    )
+}
+
+/// Offscreen targets are plain RGBA8 so a readback is a PNG without a swizzle.
+pub const OFFSCREEN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;

@@ -1,0 +1,46 @@
+[package]
+name = "trem-lite-native"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "TREM-Lite native (winit + wgpu)"
+
+[[bin]]
+name = "trem-lite-native"
+path = "src/main.rs"
+
+[dependencies]
+bytemuck = { version = "1", default-features = false, features = ["derive"] }
+# `swash` rasterizes glyphs; `std` pulls fontdb's memmap so system fonts can be
+# opened later. `fontconfig` is Linux-only and stays off here (see the target
+# table below). Default features also turn on fontconfig, which we do not want
+# on macOS or Windows.
+cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+log = { version = "0.4", default-features = false, features = ["std"] }
+pollster = { version = "0.4", default-features = false }
+# Script enum for the font fallback list. Already pulled in by cosmic-text.
+unicode-script = { version = "0.5", default-features = false }
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl"] }
+winit = { version = "0.30", default-features = false, features = ["rwh_06"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "metal", "gles"] }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "metal"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "dx12", "gles"] }
+
+[target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
+cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash", "fontconfig"] }
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "vulkan", "gles"] }
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
+# panic = "unwind" is the default. Event handlers catch_unwind, matching lib/events.ts.
