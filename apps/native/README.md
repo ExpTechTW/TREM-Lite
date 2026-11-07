@@ -17,11 +17,13 @@ speech-dispatcher, D-Bus and fontconfig development packages. The manual workflo
 It keeps its own settings, logs and cache under `com.exptech.trem-lite.native`, apart from
 the installed app, and has its own single-instance lock, so both can run side by side.
 
-## The libraries in `crates/`
+## The libraries
 
-The app is built on three libraries beside it, shared with other TREM apps, which know
-nothing of TREM-Lite: what is the app's own (fonts, map sources and layer order, the
-single-instance port, the tray's menu, log settings) it hands to them.
+The app is built on three libraries shared with other TREM apps, which know nothing of
+TREM-Lite: what is the app's own (fonts, map sources and layer order, the single-instance
+port, the tray's menu, log settings) it hands to them. They live in
+[ExpTechTW/trem-native-rust](https://github.com/ExpTechTW/trem-native-rust), and
+`Cargo.toml` takes them from git at one commit.
 
 - `trem-core`: the pure computation, wasm too: towns, travel times, intensity and its
   colours, the intensity model, the SSE wire format.
@@ -31,7 +33,31 @@ single-instance port, the tray's menu, log settings) it hands to them.
   system around them. Its features: `dem` (the map's hillshade), `tray`, `autostart`,
   `notify`, `speech`, `awake`, and `testing` for an app's tests.
 
-`cargo test`, `cargo clippy` and `cargo doc --no-deps` here cover them all.
+`cargo test` and `cargo clippy` here cover the app; the libraries' own tests and lints
+run in their repository.
+
+Every `trem-*` line in `Cargo.toml`, those in `[dev-dependencies]` too, names the same
+`rev`: to Cargo, two revs, or a git and a path source, are different crates. To move to a
+newer commit of the libraries, once it is pushed, set it on every line and let Cargo
+rewrite `Cargo.lock` (`cargo update -p trem-gfx`, or any build).
+
+To change a library and the app together, check the libraries out beside TREM-Lite and
+patch them in with an `apps/native/.cargo/config.toml`, which git ignores:
+
+```toml
+[patch."https://github.com/ExpTechTW/trem-native-rust"]
+trem-core = { path = "../../../trem-native-rust/trem-core" }
+trem-io = { path = "../../../trem-native-rust/trem-io" }
+trem-gfx = { path = "../../../trem-native-rust/trem-gfx" }
+```
+
+`Cargo.lock` then names the local copy: commit the app only after the library is pushed,
+the `rev` moved and the patch removed. And run this app's tests whenever a library
+changes, with the patch or after moving the `rev`: its golden files, pictures and event
+traces, are the final word on what the libraries do.
+
+Cargo fetches them with its own git client. Where git turns GitHub's https into ssh
+(`url.*.insteadOf`), that client cannot sign in: set `CARGO_NET_GIT_FETCH_WITH_CLI=true`.
 
 ## Looking at it without a window
 

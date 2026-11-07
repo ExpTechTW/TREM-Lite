@@ -12,6 +12,7 @@ Downloads (SIL OFL 1.1, the licence beside the output):
     https://github.com/google/fonts/raw/main/ofl/notosansmath/NotoSansMath-Regular.ttf
 """
 
+import json
 import pathlib
 import subprocess
 import sys
@@ -20,14 +21,32 @@ from fontTools.ttLib import TTFont
 
 NATIVE = pathlib.Path(__file__).resolve().parent.parent
 OUT = NATIVE / "assets/fonts/web"
+# The libraries draw text too, and the place names are trem-core's data.
+LIBRARIES = ("trem-core", "trem-io", "trem-gfx")
+
+
+def library_dirs() -> dict:
+    """Where Cargo keeps each library's source: the checkout of the rev Cargo.toml names, or
+    the local copy a .cargo/config.toml [patch] puts in its place."""
+    metadata = subprocess.run(
+        ["cargo", "metadata", "--format-version", "1"], cwd=NATIVE, stdout=subprocess.PIPE,
+        check=True,
+    ).stdout
+    dirs = {p["name"]: pathlib.Path(p["manifest_path"]).parent
+            for p in json.loads(metadata)["packages"] if p["name"] in LIBRARIES}
+    missing = [name for name in LIBRARIES if name not in dirs]
+    if missing:
+        sys.exit(f"cargo metadata lists no {', '.join(missing)}")
+    return dirs
 
 
 def app_text() -> set:
     chars = set()
     files = list((NATIVE / "src").rglob("*.rs")) + [NATIVE / "assets/default.yml"]
-    # The libraries beside the app draw text too, and the place names are trem-core's data.
-    files += list((NATIVE / "crates").glob("*/src/**/*.rs"))
-    files += list((NATIVE / "crates/trem-core/assets/data").glob("*.json"))
+    libraries = library_dirs()
+    for source in libraries.values():
+        files += list(source.glob("src/**/*.rs"))
+    files += list((libraries["trem-core"] / "assets/data").glob("*.json"))
     for path in files:
         chars |= set(path.read_text(encoding="utf-8"))
     chars |= {chr(c) for c in TTFont(NATIVE / "assets/fonts/NotoSansTC.ttf").getBestCmap()}

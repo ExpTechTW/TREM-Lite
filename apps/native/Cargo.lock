@@ -4205,19 +4205,19 @@ dependencies = [
 [[package]]
 name = "trem-core"
 version = "0.1.0"
+source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=feb9bed09cff0e2a22592e5a97eb4a78a91568c6#feb9bed09cff0e2a22592e5a97eb4a78a91568c6"
 dependencies = [
  "base64 0.22.1",
  "flate2",
  "log",
  "rayon",
  "serde",
- "serde_json",
- "sha2",
 ]
 
 [[package]]
 name = "trem-gfx"
 version = "0.1.0"
+source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=feb9bed09cff0e2a22592e5a97eb4a78a91568c6#feb9bed09cff0e2a22592e5a97eb4a78a91568c6"
 dependencies = [
  "auto-launch",
  "bytemuck",
@@ -4250,6 +4250,7 @@ dependencies = [
 [[package]]
 name = "trem-io"
 version = "0.1.0"
+source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=feb9bed09cff0e2a22592e5a97eb4a78a91568c6#feb9bed09cff0e2a22592e5a97eb4a78a91568c6"
 dependencies = [
  "chrono",
  "console_error_panic_hook",

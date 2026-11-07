@@ -7,6 +7,9 @@ node_modules/
 **/src-tauri/gen/
 **/src-tauri/icons/_base1024.png
 
+# A local [patch] of the native app's libraries: see apps/native/README.md
+apps/native/.cargo/config.toml
+
 # Logs
 logs
 *.log

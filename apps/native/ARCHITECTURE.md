@@ -10,13 +10,14 @@
 - 註解用英文，log 訊息用繁體中文。`cargo fmt` 要乾淨，`cargo clippy` 在桌面與
   `--target wasm32-unknown-unknown` 都不能有警告，`cargo test` 要過。
 - 行為由測試釘住：事件軌跡（`testdata/golden/*.txt`）、畫面（`testdata/golden/render/*.png`）、
-  圖磚切割（`map_tiles.txt`）、內嵌資料（`encoded_data`）。`UPDATE_GOLDEN=1` 會重寫金檔；
+  圖磚切割（`map_tiles.txt`）；內嵌資料由 trem-core 自己的測試（`encoded_data`）釘住。`UPDATE_GOLDEN=1` 會重寫金檔；
   只在行為本來就該變時用，並在 commit 說明原因。
-- `crates/` 的 lib 不認得任何 app：名稱、識別碼、port、URL、字型、顏色、圖層順序都由 app 傳入。
+- 共用的 lib（見「共用的 lib」）不認得任何 app：名稱、識別碼、port、URL、字型、顏色、圖層順序都由 app 傳入。
   lib 裡給 app 測試用的東西不能用 `#[cfg(test)]`（app 跑測試時它不成立），要用 `testing` feature，
   app 在 dev-dependencies 打開；`env!` 在 lib 裡讀到的是 lib 自己的值（版本、`CARGO_MANIFEST_DIR`），
   要的是 app 的就由 app 傳。lib 的模組路徑維持 `render::`、`map::`、`ui::` 等，log target 去掉 crate
   名後才跟搬家前一樣；`backend/logging.rs` 的 `OWN_CRATES` 要列出每個 lib，否則它們的 debug log 會消失。
+- 改 lib 時也要跑這個 app 的測試：它的金檔（畫面、事件軌跡）是 lib 行為的最終規格。
 
 ## 效率規則（這個 app 存在的理由，違反就是錯）
 
@@ -39,16 +40,8 @@
 
 ```
 apps/native/
-  Cargo.toml            二進位檔名 trem-lite-native；桌面與 wasm32 的相依分開列；也是 workspace 的根
-  crates/               與其他 TREM app 共用的 lib，app 以 path 相依
-    trem-core/          純計算，瀏覽器也能跑：地區與警戒框、走時表、震度換算與色票、版本標籤、
-                        強度模型的執行器與各鄉鎮預估、SSE 的格式。地區資料（assets/data）跟著它
-    trem-io/            不碰 GPU 的 I/O：async 工作在哪裡跑（exec）、計時器、桌面的 HTTP 快取代理
-                        （http、cache、endpoints）與瀏覽器的 fetch、fixture、檔案日誌、資料目錄
-    trem-gfx/           畫面與它周圍的系統：GPU device、文字（字型由 app 以 FontConfig 傳入）、UI 與
-                        通用元件、向量地圖（相機、圖磚、map pass 的 pipeline 與 draw 基本操作、sprite）、
-                        視窗（window）、平台層（單一實例；系統匣、通知、語音、背景不降速、開機啟動各是
-                        feature）、測試的金檔工具（testing）。它自己的測試用 testdata/fonts 的字型副本
+  Cargo.toml            二進位檔名 trem-lite-native；桌面與 wasm32 的相依分開列；共用的 lib 以 git 相依；
+                        自己是 workspace 的根，Cargo.lock 與 [profile.release] 也管到 lib
   assets/               字型（fonts/web 是瀏覽器版用的）、音效、地圖圖示、強度模型、app 圖示
   web/                  瀏覽器版的頁面、建置腳本、字型切割腳本
   packaging/            macOS .app 打包
@@ -83,6 +76,25 @@ apps/native/
   第一次啟動時若找到 Tauri 版的 `config.yml`，只讀取匯入設定（不寫回去、不動它）。
 - **`other-auto-start` 預設 false，匯入時也不帶過去**：使用者打開開關才登錄開機啟動。
 - **環境變數 `TREM_FIXTURE_DIR`**：設定時 HTTP 層完全不連線，從該目錄讀回應，也不出聲、不發通知。所有開發驗證都用這個。
+
+## 共用的 lib
+
+與其他 TREM app 共用的三個 lib 在 [ExpTechTW/trem-native-rust](https://github.com/ExpTechTW/trem-native-rust)，
+lib 自己的測試與 lint 在那裡跑：
+
+- `trem-core`：純計算，瀏覽器也能跑：地區與警戒框、走時表、震度換算與色票、版本標籤、強度模型的執行器與各鄉鎮預估、
+  SSE 的格式。地區資料（`assets/data`）跟著它。
+- `trem-io`：不碰 GPU 的 I/O：async 工作在哪裡跑（exec）、計時器、桌面的 HTTP 快取代理（http、cache、endpoints）
+  與瀏覽器的 fetch、fixture、檔案日誌、資料目錄。
+- `trem-gfx`：畫面與它周圍的系統：GPU device、文字（字型由 app 以 `FontConfig` 傳入）、UI 與通用元件、向量地圖
+  （相機、圖磚、map pass 的 pipeline 與 draw 基本操作、sprite）、視窗（window）、平台層（單一實例；系統匣、通知、
+  語音、背景不降速、開機啟動各是 feature）、測試的金檔工具（`testing`）。
+
+`Cargo.toml` 的每一條 `trem-*`（含 `[dev-dependencies]` 打開 `testing` 的那兩條）都是同一個 git 來源、同一個 `rev`；
+來源或 rev 不同，Cargo 就當成另一個 crate。lib 的改動 push 之後，每一條改成新的 `rev`，讓 Cargo 重寫 `Cargo.lock`。
+要同時改 lib 與 app，用不進版控的 `apps/native/.cargo/config.toml` 把它們 `[patch]` 到本機的 checkout（寫法見
+`README.md`）；patch 狀態下的 `Cargo.lock` 指向本機，不要提交。`web/make-font.py` 以 `cargo metadata` 找 lib 的
+原始碼，patch 時讀的就是本機那份。
 
 ## 繪圖規格
 
