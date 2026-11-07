@@ -12,9 +12,9 @@ path = "src/main.rs"
 [dependencies]
 # The libraries shared with other TREM apps, from ExpTechTW/trem-native-rust. All of them,
 # here and in [dev-dependencies], name one rev; README.md says how to move it.
-trem-core = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "e315fc5d0382f82267397e6f9228f65a76ae279e", features = ["rayon"] }
-trem-io = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "e315fc5d0382f82267397e6f9228f65a76ae279e" }
-trem-gfx = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "e315fc5d0382f82267397e6f9228f65a76ae279e", features = ["dem", "tray", "autostart", "notify", "speech", "awake"] }
+trem-core = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "6be9ea0dee11816aecefc34ecc6a62fb199a2f46", features = ["rayon"] }
+trem-io = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "6be9ea0dee11816aecefc34ecc6a62fb199a2f46" }
+trem-gfx = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "6be9ea0dee11816aecefc34ecc6a62fb199a2f46", features = ["dem", "tray", "autostart", "notify", "speech", "awake"] }
 bytes = { version = "1", default-features = false, features = ["std"] }
 bytemuck = { version = "1", default-features = false, features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
@@ -71,8 +71,8 @@ winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11
 # The timers' and the map's virtual clocks, for the tests that run the whole app. The same
 # source and rev as in [dependencies], or Cargo takes them for other crates.
 [dev-dependencies]
-trem-io = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "e315fc5d0382f82267397e6f9228f65a76ae279e", features = ["testing"] }
-trem-gfx = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "e315fc5d0382f82267397e6f9228f65a76ae279e", features = ["testing"] }
+trem-io = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "6be9ea0dee11816aecefc34ecc6a62fb199a2f46", features = ["testing"] }
+trem-gfx = { git = "https://github.com/ExpTechTW/trem-native-rust", rev = "6be9ea0dee11816aecefc34ecc6a62fb199a2f46", features = ["testing"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 
 [profile.release]
