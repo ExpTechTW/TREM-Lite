@@ -38,37 +38,50 @@ impl Gpu {
             ("軟體 fallback", try_software),
         ];
         for (stage, attempt) in attempts {
-            let Some((instance, adapter)) = attempt() else {
-                log::warn!("GPU adapter 取得失敗（{stage}）");
-                continue;
-            };
-            // The UI batch lives in a storage buffer shared by the vertex and
-            // fragment stages. Adapters without that (WebGL2) cannot draw it.
-            if adapter.limits().max_storage_buffers_per_shader_stage == 0 {
-                log::warn!("GPU adapter 沒有 storage buffer（{stage}），略過");
-                continue;
-            }
-            match open_device(&adapter) {
-                Ok((device, queue)) => {
-                    let info = adapter.get_info();
-                    log::info!("GPU adapter：{}（{:?}，{stage}）", info.name, info.backend);
-                    install_loss_handler(&device);
-                    return Some(Self {
-                        instance,
-                        adapter,
-                        device,
-                        queue,
-                    });
-                }
-                Err(err) => {
-                    log::warn!("GPU device 建立失敗（{stage}）：{err}");
-                }
+            if let Some(gpu) = Self::open(stage, attempt) {
+                return Some(gpu);
             }
         }
         log::error!(
             "找不到可用的 GPU adapter（一般、GL、軟體 fallback 都失敗）：畫面停用，其他功能照常"
         );
         None
+    }
+
+    /// Only the usual backend (Metal, Vulkan or DX12), so it can come up on another thread
+    /// while the event loop does; the GL and software fallbacks stay on the main thread.
+    pub fn new_usual() -> Option<Self> {
+        Self::open("一般", try_normal)
+    }
+
+    fn open(stage: &str, attempt: AdapterTry) -> Option<Self> {
+        let Some((instance, adapter)) = attempt() else {
+            log::warn!("GPU adapter 取得失敗（{stage}）");
+            return None;
+        };
+        // The UI batch lives in a storage buffer shared by the vertex and
+        // fragment stages. Adapters without that (WebGL2) cannot draw it.
+        if adapter.limits().max_storage_buffers_per_shader_stage == 0 {
+            log::warn!("GPU adapter 沒有 storage buffer（{stage}），略過");
+            return None;
+        }
+        match open_device(&adapter) {
+            Ok((device, queue)) => {
+                let info = adapter.get_info();
+                log::info!("GPU adapter：{}（{:?}，{stage}）", info.name, info.backend);
+                install_loss_handler(&device);
+                Some(Self {
+                    instance,
+                    adapter,
+                    device,
+                    queue,
+                })
+            }
+            Err(err) => {
+                log::warn!("GPU device 建立失敗（{stage}）：{err}");
+                None
+            }
+        }
     }
 
     /// A window surface on the shared device. `window` is kept alive by the

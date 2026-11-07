@@ -186,6 +186,10 @@ pub fn run(
     args: &Args,
     listener: Option<TcpListener>,
 ) -> Result<(), String> {
+    // The device comes up while the event loop does: neither needs the other.
+    let usual_gpu = std::thread::Builder::new()
+        .name("trem-gpu-setup".to_string())
+        .spawn(Gpu::new_usual);
     let event_loop = EventLoop::<Msg>::with_user_event()
         .build()
         .map_err(|err| format!("無法建立事件迴圈：{err}"))?;
@@ -201,7 +205,11 @@ pub fn run(
         lifecycle::serve_instance(listener, post.clone());
     }
 
-    let gpu = Gpu::new().ok_or("沒有可用的 GPU")?;
+    let gpu = usual_gpu
+        .ok()
+        .and_then(|setup| setup.join().ok().flatten())
+        .or_else(Gpu::new)
+        .ok_or("沒有可用的 GPU")?;
     let cache = crate::paths::cache_dir().ok_or("找不到快取目錄")?;
     std::fs::create_dir_all(&cache).map_err(|e| e.to_string())?;
     let net = Arc::new(crate::net::ProxyState::new(&cache)?);
