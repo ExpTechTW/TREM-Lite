@@ -15,6 +15,7 @@ use winit::window::Window;
 
 const FRAME_LATENCY: u32 = 1;
 
+#[cfg(not(target_arch = "wasm32"))]
 type AdapterTry = fn() -> Option<(wgpu::Instance, wgpu::Adapter)>;
 
 pub struct Gpu {
@@ -31,6 +32,7 @@ pub struct GpuSurface {
 }
 
 impl Gpu {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new() -> Option<Self> {
         let attempts: [(&str, AdapterTry); 3] = [
             ("一般", try_normal),
@@ -48,12 +50,50 @@ impl Gpu {
         None
     }
 
+    /// In a browser: WebGPU, asked for without blocking. WebGL2 has no storage buffers and
+    /// cannot draw the UI batch, so it is not tried.
+    #[cfg(target_arch = "wasm32")]
+    pub async fn new_web() -> Option<Self> {
+        let mut desc = wgpu::InstanceDescriptor::new_without_display_handle();
+        desc.backends = wgpu::Backends::BROWSER_WEBGPU;
+        let instance = wgpu::Instance::new(desc);
+        let adapter = match instance.request_adapter(&adapter_options(false)).await {
+            Ok(adapter) => adapter,
+            Err(err) => {
+                log::error!("這個瀏覽器沒有 WebGPU：{err}");
+                return None;
+            }
+        };
+        if adapter.limits().max_storage_buffers_per_shader_stage == 0 {
+            log::error!("WebGPU adapter 沒有 storage buffer，畫不出 UI");
+            return None;
+        }
+        let (device, queue) = match adapter.request_device(&device_descriptor(&adapter)).await {
+            Ok(pair) => pair,
+            Err(err) => {
+                log::error!("WebGPU device 建立失敗：{err}");
+                return None;
+            }
+        };
+        let info = adapter.get_info();
+        log::info!("GPU adapter：{}（{:?}）", info.name, info.backend);
+        install_loss_handler(&device);
+        Some(Self {
+            instance,
+            adapter,
+            device,
+            queue,
+        })
+    }
+
     /// Only the usual backend (Metal, Vulkan or DX12), so it can come up on another thread
     /// while the event loop does; the GL and software fallbacks stay on the main thread.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new_usual() -> Option<Self> {
         Self::open("一般", try_normal)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn open(stage: &str, attempt: AdapterTry) -> Option<Self> {
         let Some((instance, adapter)) = attempt() else {
             log::warn!("GPU adapter 取得失敗（{stage}）");
@@ -92,9 +132,17 @@ impl Gpu {
         width: u32,
         height: u32,
     ) -> Result<GpuSurface, String> {
+        // In a browser, straight from the window's canvas.
+        #[cfg(target_arch = "wasm32")]
+        let target = {
+            use winit::platform::web::WindowExtWebSys;
+            wgpu::SurfaceTarget::Canvas(window.canvas().ok_or("視窗沒有 canvas")?)
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        let target = window;
         let surface = self
             .instance
-            .create_surface(window)
+            .create_surface(target)
             .map_err(|err| format!("無法建立 surface：{err}"))?;
         let caps = surface.get_capabilities(&self.adapter);
         let format =
@@ -215,12 +263,14 @@ fn install_loss_handler(device: &wgpu::Device) {
     }));
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn try_normal() -> Option<(wgpu::Instance, wgpu::Adapter)> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = request(&instance, false)?;
     Some((instance, adapter))
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn try_gl() -> Option<(wgpu::Instance, wgpu::Adapter)> {
     let mut desc = wgpu::InstanceDescriptor::new_without_display_handle();
     desc.backends = wgpu::Backends::GL;
@@ -229,20 +279,25 @@ fn try_gl() -> Option<(wgpu::Instance, wgpu::Adapter)> {
     Some((instance, adapter))
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn try_software() -> Option<(wgpu::Instance, wgpu::Adapter)> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = request(&instance, true)?;
     Some((instance, adapter))
 }
 
-fn request(instance: &wgpu::Instance, force_fallback: bool) -> Option<wgpu::Adapter> {
-    let options = wgpu::RequestAdapterOptions {
+fn adapter_options(force_fallback: bool) -> wgpu::RequestAdapterOptions<'static, 'static> {
+    wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::LowPower,
         force_fallback_adapter: force_fallback,
         compatible_surface: None,
         apply_limit_buckets: false,
-    };
-    match pollster::block_on(instance.request_adapter(&options)) {
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn request(instance: &wgpu::Instance, force_fallback: bool) -> Option<wgpu::Adapter> {
+    match pollster::block_on(instance.request_adapter(&adapter_options(force_fallback))) {
         Ok(adapter) => Some(adapter),
         Err(err) => {
             log::debug!("request_adapter 失敗：{err}");
@@ -251,7 +306,13 @@ fn request(instance: &wgpu::Instance, force_fallback: bool) -> Option<wgpu::Adap
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn open_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue), String> {
+    pollster::block_on(adapter.request_device(&device_descriptor(adapter)))
+        .map_err(|err| err.to_string())
+}
+
+fn device_descriptor(adapter: &wgpu::Adapter) -> wgpu::DeviceDescriptor<'static> {
     let supported = adapter.limits();
     let preferred = wgpu::Limits::default();
     let limits = if preferred.check_limits(&supported) {
@@ -268,15 +329,14 @@ fn open_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue), S
     } else {
         wgpu::Features::empty()
     };
-    let desc = wgpu::DeviceDescriptor {
+    wgpu::DeviceDescriptor {
         label: Some("trem-lite"),
         required_features,
         required_limits: limits,
         experimental_features: wgpu::ExperimentalFeatures::disabled(),
         memory_hints: wgpu::MemoryHints::MemoryUsage,
         trace: wgpu::Trace::Off,
-    };
-    pollster::block_on(adapter.request_device(&desc)).map_err(|err| err.to_string())
+    }
 }
 
 fn pick_format(formats: &[wgpu::TextureFormat]) -> Option<wgpu::TextureFormat> {

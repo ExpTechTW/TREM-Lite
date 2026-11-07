@@ -410,6 +410,17 @@ impl MapPass {
             },
         );
 
+        // A browser cannot wait here: its answer arrives later, and is logged.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let popped = scope.pop();
+            crate::exec::spawn(async move {
+                if let Some(err) = popped.await {
+                    log::error!(target: "map", "地圖 pipeline 建立失敗：{err}");
+                }
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(err) = pollster::block_on(scope.pop()) {
             return Err(format!("地圖 pipeline 建立失敗：{err}"));
         }

@@ -103,21 +103,20 @@ fn gradient(local: vec2f, half_size: vec2f, c0: vec4f, c1: vec4f, angle: f32) ->
     return mix(c0, c1, clamp(t * 0.5 + 0.5, 0.0, 1.0));
 }
 
+// `aa` takes a derivative, which WGSL allows only where every pixel of the quad gets
+// there: both distances are measured first, and `select` keeps what applies.
 fn clip_coverage(px: vec2f, index: u32) -> f32 {
     let clip = instances[index].clip;
-    if clip.z <= 0.0 || clip.w <= 0.0 {
-        return 0.0;
-    }
     let center = clip.xy + clip.zw * 0.5;
     let sd = sd_round_box(px - center, clip.zw * 0.5, vec4f(0.0, 0.0, 0.0, 0.0));
-    var cov = aa(sd);
     let round_box = instances[index].round_box;
-    if round_box.z > 0.0 && round_box.w > 0.0 {
-        let rc = round_box.xy + round_box.zw * 0.5;
-        let rsd = sd_round_box(px - rc, round_box.zw * 0.5, instances[index].round_radii);
-        cov = cov * aa(rsd);
-    }
-    return cov;
+    let rc = round_box.xy + round_box.zw * 0.5;
+    let rsd = sd_round_box(px - rc, round_box.zw * 0.5, instances[index].round_radii);
+    let cov = aa(sd);
+    let round_cov = aa(rsd);
+    let rounded = round_box.z > 0.0 && round_box.w > 0.0;
+    let clipped_out = clip.z <= 0.0 || clip.w <= 0.0;
+    return select(cov * select(1.0, round_cov, rounded), 0.0, clipped_out);
 }
 
 fn over(dst_rgb: vec3f, dst_a: f32, src_rgb: vec3f, src_a: f32) -> vec4f {
@@ -154,23 +153,22 @@ fn fs_rect(in: VsOut) -> @location(0) vec4f {
         params.y,
     );
 
-    var shadow_a = 0.0;
-    if shadow.a > 0.0 {
-        let blur = params.z;
-        let spread = params.w;
-        let off = instances[in.index].shadow_off.xy;
-        let shadow_half = max(half_size + vec2f(spread, spread), vec2f(0.0, 0.0));
-        let shadow_radii = max(radii + vec4f(spread, spread, spread, spread), vec4f(0.0, 0.0, 0.0, 0.0));
-        let sd_shadow = sd_round_box(local - off, shadow_half, shadow_radii);
-        if blur <= 0.001 {
-            shadow_a = aa(sd_shadow);
-        } else {
-            // CSS blur radius ≈ 2σ (Skia). The visible tail is a few σ wide.
-            let sigma = max(blur * 0.5, 0.001);
-            shadow_a = clamp(0.5 * erfc_approx(sd_shadow / (sigma * 1.41421356)), 0.0, 1.0);
-        }
-        shadow_a = shadow_a * shadow.a;
-    }
+    // Measured for every rect, so the derivative in `aa` is taken in uniform control flow.
+    let blur = params.z;
+    let spread = params.w;
+    let off = instances[in.index].shadow_off.xy;
+    let shadow_half = max(half_size + vec2f(spread, spread), vec2f(0.0, 0.0));
+    let shadow_radii = max(radii + vec4f(spread, spread, spread, spread), vec4f(0.0, 0.0, 0.0, 0.0));
+    let sd_shadow = sd_round_box(local - off, shadow_half, shadow_radii);
+    let hard_shadow = aa(sd_shadow);
+    // CSS blur radius ≈ 2σ (Skia). The visible tail is a few σ wide.
+    let sigma = max(blur * 0.5, 0.001);
+    let soft_shadow = clamp(0.5 * erfc_approx(sd_shadow / (sigma * 1.41421356)), 0.0, 1.0);
+    let shadow_a = select(
+        0.0,
+        select(soft_shadow, hard_shadow, blur <= 0.001) * shadow.a,
+        shadow.a > 0.0,
+    );
 
     var acc = over(vec3f(0.0, 0.0, 0.0), 0.0, shadow.rgb, shadow_a);
     acc = over(acc.rgb, acc.a, fill.rgb, fill.a * fill_cov);

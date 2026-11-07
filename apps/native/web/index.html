@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TREM Lite</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #202024; }
+  /* The app's canvas fills the tab; winit follows its size. */
+  canvas { display: block; width: 100vw; height: 100vh; outline: none; }
+  #status {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 24px; color: #c8c8cc; font: 15px/1.6 system-ui, sans-serif; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="status">載入中…</div>
+<script type="module">
+  import init from "./trem.js";
+  init().catch((err) => {
+    document.getElementById("status").textContent = "載入失敗：" + err;
+  });
+</script>
+</body>
+</html>

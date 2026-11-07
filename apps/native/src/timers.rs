@@ -3,7 +3,8 @@
 
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap};
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 /// Everything the features do later.
 #[derive(Clone, Debug, PartialEq)]

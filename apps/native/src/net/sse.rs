@@ -8,7 +8,8 @@
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 use futures_util::StreamExt;
 use tokio::sync::Notify;
@@ -320,7 +321,8 @@ impl ConnLog {
 }
 
 pub type UrlFn = Arc<dyn Fn() -> String + Send + Sync>;
-/// Takes a frame and the connection's label. Runs on a tokio worker.
+/// Takes a frame and the connection's label. Runs on a tokio worker (the page's thread
+/// in a browser).
 pub type FrameFn = Arc<dyn Fn(&Frame, &str) + Send + Sync>;
 /// A heartbeat's server time in unix seconds, with the connection's label.
 pub type PingFn = Arc<dyn Fn(f64, &str) + Send + Sync>;
@@ -341,7 +343,7 @@ struct State {
     /// The connection in use, and one taking over from it.
     active: Option<(u64, Cancel)>,
     pending: Option<(u64, Cancel)>,
-    retry: Option<tokio::task::JoinHandle<()>>,
+    retry: Option<crate::exec::Task>,
     active_label: String,
     next_id: u64,
 }
@@ -420,8 +422,8 @@ fn later(shared: &Arc<Shared>, handover: bool) {
     );
     state.failures += 1;
     let again = shared.clone();
-    state.retry = Some(tokio::spawn(async move {
-        tokio::time::sleep(delay).await;
+    state.retry = Some(crate::exec::spawn(async move {
+        crate::exec::sleep(delay).await;
         connect(&again, handover);
     }));
 }
@@ -454,7 +456,7 @@ fn connect(shared: &Arc<Shared>, handover: bool) {
         id
     };
     let shared = shared.clone();
-    tokio::spawn(async move { run_connection(shared, id, attempt).await });
+    crate::exec::spawn(async move { run_connection(shared, id, attempt).await });
 }
 
 async fn run_connection(shared: Arc<Shared>, id: u64, attempt: Cancel) {
@@ -462,9 +464,14 @@ async fn run_connection(shared: Arc<Shared>, id: u64, attempt: Cancel) {
     let mut conn = ConnLog::new(shared.spec.name, &url, shared.spec.wanted_topics);
     let waited = Instant::now();
 
-    let outcome = tokio::select! {
-        result = read_stream(&shared, id, &url, &mut conn, waited, &attempt) => Some(result),
-        () = attempt.cancelled() => None,
+    let outcome = match crate::exec::race(
+        read_stream(&shared, id, &url, &mut conn, waited, &attempt),
+        attempt.cancelled(),
+    )
+    .await
+    {
+        crate::exec::Either::First(result) => Some(result),
+        crate::exec::Either::Second(()) => None,
     };
 
     if let Some(message) = outcome {
@@ -525,11 +532,8 @@ async fn read_stream(
         .header("Accept", "text/event-stream")
         .header("Cache-Control", "no-cache")
         .send();
-    let res = tokio::select! {
-        res = request => res,
-        () = tokio::time::sleep(READY) => {
-            return format!("{} 內沒有問候，放棄這條連線", fmt_dur(READY));
-        }
+    let Ok(res) = crate::exec::timeout(READY, request).await else {
+        return format!("{} 內沒有問候，放棄這條連線", fmt_dur(READY));
     };
     let res = match res {
         Ok(res) => res,
@@ -557,7 +561,7 @@ async fn read_stream(
         } else {
             READY.saturating_sub(opened.elapsed())
         };
-        let chunk = match tokio::time::timeout(limit, body.next()).await {
+        let chunk = match crate::exec::timeout(limit, body.next()).await {
             Ok(Some(Ok(chunk))) => chunk,
             Ok(Some(Err(e))) => {
                 if !attempt.is_cancelled() {

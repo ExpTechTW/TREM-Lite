@@ -1,7 +1,7 @@
 //! Small pieces shared by the views: the CSS tokens, text placed as a browser places it,
 //! the intensity badge, an easing clock.
 
-use std::time::Instant;
+use web_time::Instant;
 
 use super::{Color, QuadStyle, Rect, Ui};
 use crate::domain::constants::{intensity_color, intensity_text, INTENSITY_LIST};

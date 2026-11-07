@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use std::time::Instant;
+use web_time::Instant;
 
 use crate::app::{App, Msg};
 use crate::backend::logging::fmt_dur;

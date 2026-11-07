@@ -3,7 +3,8 @@
 
 use std::rc::Rc;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 use serde_json::Value;
 
@@ -502,7 +503,7 @@ impl App {
         }
         let offset = self.var.cache.time_offset;
         let real_now = Arc::new(move || chrono::Utc::now().timestamp_millis() as f64 + offset);
-        let _guard = self.host.rt.enter();
+        let _guard = self.host.enter();
         self.data_state.sse = Some(crate::features::streams::open_streams(
             &self.host.post,
             self.host.net.as_ref(),
@@ -521,7 +522,7 @@ impl App {
     /// The machine woke or the network came back.
     pub fn data_network_back(&mut self) {
         if let Some(sse) = &self.data_state.sse {
-            let _guard = self.host.rt.enter();
+            let _guard = self.host.enter();
             sse.renew();
         }
     }
@@ -578,7 +579,7 @@ impl App {
             self.var.cache.last_data_time = self.var.real_now();
         }
         if let Some(sse) = &self.data_state.sse {
-            let _guard = self.host.rt.enter();
+            let _guard = self.host.enter();
             sse.set_background(asleep);
         }
     }

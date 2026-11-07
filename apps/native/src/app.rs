@@ -4,7 +4,8 @@
 use std::collections::HashMap;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 use crate::backend::config::{self, Config};
 use crate::backend::math::EewAreaResult;
@@ -320,7 +321,7 @@ impl App {
         };
         let client = net.client();
         let post = self.host.post.clone();
-        self.host.rt.spawn(async move {
+        self.host.spawn(async move {
             post(Msg::Ntp(crate::net::ntp::ntp_sync(client).await));
         });
     }

@@ -9,7 +9,7 @@ pub mod scene;
 pub mod tessellate;
 pub mod tiles;
 
-use std::time::Instant;
+use web_time::Instant;
 
 use camera::{Bounds, Camera, Padding};
 use scene::Scene;
@@ -323,25 +323,45 @@ impl MapEngine {
     }
 }
 
+const TILE_TIMEOUT_MS: u64 = 15_000;
+const TILE_MAX_AGE_MS: u64 = 7 * 24 * 60 * 60 * 1000;
+
+/// A tile's answer as the tile manager takes it: none for a tile the server does not have.
+async fn fetch_tile(
+    proxy: &crate::net::ProxyState,
+    url: String,
+) -> Result<Option<std::sync::Arc<Vec<u8>>>, String> {
+    let request = crate::net::ProxyRequest::get(url, TILE_TIMEOUT_MS).max_age(TILE_MAX_AGE_MS);
+    match proxy.send(request).await {
+        Ok(fetched) if fetched.status == 404 || fetched.status == 204 => Ok(None),
+        Ok(fetched) if fetched.ok() => Ok(Some(fetched.body)),
+        Ok(fetched) => Err(format!("HTTP {}", fetched.status)),
+        Err(err) => Err(err),
+    }
+}
+
+/// In a browser: fetched by the page and decoded on its one thread.
+#[cfg(target_arch = "wasm32")]
+pub fn tile_fetch(proxy: std::sync::Arc<crate::net::ProxyState>) -> Fetch {
+    std::sync::Arc::new(move |url, reply| {
+        let proxy = std::sync::Arc::clone(&proxy);
+        crate::exec::spawn(async move {
+            reply(fetch_tile(&proxy, url).await);
+        });
+    })
+}
+
 /// The tiles' fetcher: the shared HTTP client and disk cache, on the runtime.
 /// map.ts's transformRequest gives tiles 15 s and keeps them a week.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn tile_fetch(
     handle: tokio::runtime::Handle,
     proxy: std::sync::Arc<crate::net::ProxyState>,
 ) -> Fetch {
-    const TILE_TIMEOUT_MS: u64 = 15_000;
-    const TILE_MAX_AGE_MS: u64 = 7 * 24 * 60 * 60 * 1000;
     std::sync::Arc::new(move |url, reply| {
         let proxy = std::sync::Arc::clone(&proxy);
         handle.spawn(async move {
-            let request =
-                crate::net::ProxyRequest::get(url, TILE_TIMEOUT_MS).max_age(TILE_MAX_AGE_MS);
-            let answer = match proxy.send(request).await {
-                Ok(fetched) if fetched.status == 404 || fetched.status == 204 => Ok(None),
-                Ok(fetched) if fetched.ok() => Ok(Some(fetched.body)),
-                Ok(fetched) => Err(format!("HTTP {}", fetched.status)),
-                Err(err) => Err(err),
-            };
+            let answer = fetch_tile(&proxy, url).await;
             // Decoding is CPU work: on the worker pool, off the async workers.
             rayon::spawn(move || reply(answer));
         });

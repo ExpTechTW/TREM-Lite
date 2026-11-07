@@ -261,6 +261,15 @@ fn write_value(value: &Value) -> Result<(), String> {
 
 /// The settings, or the bundled defaults when the file cannot be read. The app
 /// must still show the map.
+/// A browser keeps no settings file yet: the defaults, every time.
+#[cfg(target_arch = "wasm32")]
+pub fn load() -> Config {
+    let config = Config::from_value(&default_value());
+    log::info!("瀏覽器版用預設設定：{}", config.describe());
+    config
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load() -> Config {
     match load_or_init() {
         Ok(value) => {

@@ -28,6 +28,27 @@ trem-lite-native --screenshot out.png --page settings --settings-tab 音效 --cl
 silently: no sound, no notification, no speech. With it, `--page run --replay <report id>
 --after 50` runs the real app through a recorded earthquake and shoots the 50th second.
 
+## In a browser (trial)
+
+The same code, built for wasm32 and drawn with WebGPU in a canvas:
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.130   # the version in Cargo.lock
+web/build.sh                                       # web/dist: page, wasm, sound clips
+python3 -m http.server -d web/dist 8099
+```
+
+It needs WebGPU: Chrome and Edge 113+, Safari 26+, Firefox 141+ on Windows. A browser
+has one thread, so the work the desktop shares out runs in turn; the network is fetch,
+with the browser's own cache. Not there yet: the settings window and PiP, saved settings
+(the defaults each load), and the clock offset, whose headers ExpTech's `/ntp` does not
+expose to pages. Sound and speech start after the first click, as browsers require.
+
+A browser has no system fonts to fall back on, so the build carries Noto Sans TC cut to
+the app's text, the place names and Big5's common characters (`web/make-font.py`). The
+map's icons are the picture `the_map_sprite` pins, drawn by the desktop.
+
 ## Tests and measuring
 
 ```sh

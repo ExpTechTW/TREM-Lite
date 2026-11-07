@@ -39,8 +39,13 @@ pub enum Output {
 #[cfg(test)]
 pub type FakeNet = Arc<dyn Fn(&ProxyRequest) -> Result<Fetched, String> + Send + Sync>;
 
+/// What `Host::enter` holds in a browser: there is no runtime to be inside.
+#[cfg(target_arch = "wasm32")]
+pub struct NoRuntime;
+
 pub struct Host {
     pub mode: Mode,
+    #[cfg(not(target_arch = "wasm32"))]
     pub rt: tokio::runtime::Handle,
     pub post: Post,
     /// The HTTP client and cache. Not in a test.
@@ -55,6 +60,7 @@ pub struct Host {
 }
 
 impl Host {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn live(rt: tokio::runtime::Handle, post: Post, net: Arc<ProxyState>) -> Self {
         let mode = if crate::net::fixture::active() {
             Mode::Fixture
@@ -73,6 +79,40 @@ impl Host {
             #[cfg(test)]
             outputs: Vec::new(),
         }
+    }
+
+    /// A browser tab: fetch for the network, the page's audio, nothing on disk.
+    #[cfg(target_arch = "wasm32")]
+    pub fn web(post: Post, net: Arc<ProxyState>) -> Self {
+        Self {
+            mode: Mode::Live,
+            post,
+            net: Some(net),
+            data_dir: None,
+            audio: Some(AudioEngine::new()),
+        }
+    }
+
+    /// Inside the runtime, for code that spawns onto it (the streams). Nothing in a browser.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn enter(&self) -> tokio::runtime::EnterGuard<'_> {
+        self.rt.enter()
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn enter(&self) -> NoRuntime {
+        NoRuntime
+    }
+
+    /// Async work that posts its own result.
+    pub fn spawn(
+        &self,
+        work: impl std::future::Future<Output = ()> + crate::exec::MaybeSend + 'static,
+    ) {
+        #[cfg(not(target_arch = "wasm32"))]
+        self.rt.spawn(work);
+        #[cfg(target_arch = "wasm32")]
+        crate::exec::spawn(work);
     }
 
     #[cfg(test)]
@@ -124,6 +164,9 @@ impl Host {
                     Output::ClearQueue(queue) => audio.clear(queue),
                     Output::StopSounds => audio.stop_all(),
                     Output::Preview(sound) => audio.preview(sound),
+                    #[cfg(target_arch = "wasm32")]
+                    Output::Notify { title, body } => crate::platform::notify::send(title, body),
+                    #[cfg(not(target_arch = "wasm32"))]
                     Output::Notify { title, body } => {
                         let (title, body) = (title.clone(), body.clone());
                         // Its own thread: a system that never answers strands only this one.
@@ -155,6 +198,14 @@ impl Host {
             return;
         }
         let post = self.post.clone();
+        // A browser has one thread: the work runs after this turn of the event loop.
+        #[cfg(target_arch = "wasm32")]
+        crate::exec::spawn(async move {
+            if let Some(msg) = work() {
+                post(msg);
+            }
+        });
+        #[cfg(not(target_arch = "wasm32"))]
         self.rt.spawn_blocking(move || {
             if let Some(msg) = work() {
                 post(msg);
@@ -196,6 +247,21 @@ impl Host {
             return;
         };
         let post = self.post.clone();
+        #[cfg(target_arch = "wasm32")]
+        crate::exec::spawn(async move {
+            let all = futures_util::future::join_all(reqs.iter().map(|r| net.send(r.clone())));
+            let answers = match cancel {
+                Some(cancel) => match crate::exec::race(cancel.cancelled(), all).await {
+                    crate::exec::Either::First(()) => return,
+                    crate::exec::Either::Second(answers) => answers,
+                },
+                None => all.await,
+            };
+            if let Some(msg) = then(answers) {
+                post(msg);
+            }
+        });
+        #[cfg(not(target_arch = "wasm32"))]
         self.rt.spawn(async move {
             let all = futures_util::future::join_all(reqs.into_iter().map(|r| net.send(r)));
             let answers = match cancel {

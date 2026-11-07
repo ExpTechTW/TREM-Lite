@@ -7,8 +7,11 @@
 //! way the offset is the NTP one, ((t2 − t1) + (t3 − t4)) / 2, which cancels a
 //! symmetric network delay; the web build computes it the same way.
 
+#[cfg(not(target_arch = "wasm32"))]
 use std::net::UdpSocket;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
+
+use web_time::{SystemTime, UNIX_EPOCH};
 
 /// Seconds between the NTP epoch (1900-01-01) and the Unix epoch (1970-01-01).
 const NTP_UNIX_DELTA: f64 = 2_208_988_800.0;
@@ -40,6 +43,7 @@ fn result(t1: f64, t2: f64, t3: f64, t4: f64, via: &'static str) -> NtpResult {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn sntp() -> Result<NtpResult, String> {
     let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| e.to_string())?;
     socket
@@ -98,6 +102,10 @@ pub async fn ntp_sync(client: reqwest::Client) -> Result<NtpResult, String> {
             via: "fixture",
         });
     }
+    // A browser has no UDP: HTTP only.
+    #[cfg(target_arch = "wasm32")]
+    let udp: Result<NtpResult, String> = Err("瀏覽器沒有 UDP".to_string());
+    #[cfg(not(target_arch = "wasm32"))]
     let udp = tokio::task::spawn_blocking(sntp)
         .await
         .map_err(|e| e.to_string())?;

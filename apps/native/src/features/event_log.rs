@@ -2,7 +2,7 @@
 //! shows what happened before what each module did about it. RTS frames come twice a
 //! second, so only a change of trigger state is logged, and a line a minute.
 
-use std::time::Instant;
+use web_time::Instant;
 
 use crate::app::App;
 use crate::domain::constants::intensity_label;

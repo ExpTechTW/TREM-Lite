@@ -1,10 +1,12 @@
 //! The windows and the event loop. The app sleeps until a timer is due, a message arrives or
 //! input comes; it draws a window only when what that window shows has changed.
 
+#[cfg(not(target_arch = "wasm32"))]
 use std::net::TcpListener;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalPosition, LogicalSize};
@@ -23,6 +25,7 @@ use crate::ui::icons::IconCache;
 use crate::ui::main_view::{Action, MainView};
 use crate::ui::settings::SettingsView;
 use crate::ui::{clear_color, CursorKind, InputState, Ui};
+#[cfg(not(target_arch = "wasm32"))]
 use crate::Args;
 
 /// The report list's replay flash needs only this many frames.
@@ -63,7 +66,24 @@ impl Win {
         }
     }
 
+    /// Pixels per logical point, for drawing.
     fn scale(&self) -> f32 {
+        // In a browser, what the canvas really holds over its CSS size: the logical size is
+        // then the CSS size whatever the browser reports as its pixel ratio.
+        #[cfg(target_arch = "wasm32")]
+        {
+            use winit::platform::web::WindowExtWebSys;
+            let css = self.window.canvas().map_or(0, |c| c.client_width());
+            let physical = self.window.inner_size().width;
+            if css > 0 && physical > 0 {
+                return physical as f32 / css as f32;
+            }
+        }
+        self.input_scale()
+    }
+
+    /// Pixels per logical point in the positions winit reports for input.
+    fn input_scale(&self) -> f32 {
         let scale = self.window.scale_factor() as f32;
         if scale.is_finite() && scale > 0.0 {
             scale
@@ -181,6 +201,70 @@ struct Runner {
     speech_warmed: bool,
 }
 
+impl Runner {
+    fn new(gpu: Gpu, app: App, post: Post, start_hidden: bool) -> Self {
+        Self {
+            gpu,
+            app,
+            ui: None,
+            icons: IconCache::default(),
+            main: None,
+            pip: None,
+            settings: None,
+            main_view: MainView::new(1280.0),
+            settings_view: None,
+            post,
+            tray: None,
+            start_hidden,
+            started: false,
+            trimmed: false,
+            next_clock: Instant::now(),
+            next_slow_frame: None,
+            map_dragging: false,
+            quitting: false,
+            gave_up_on_device: false,
+            first_frame_logged: false,
+            speech_warmed: false,
+        }
+    }
+}
+
+/// The posting end of the event loop: what workers and streams send their results to.
+fn post_to(event_loop: &EventLoop<Msg>) -> Post {
+    let proxy: EventLoopProxy<Msg> = event_loop.create_proxy();
+    let proxy = std::sync::Mutex::new(proxy);
+    Arc::new(move |msg| {
+        if let Ok(proxy) = proxy.lock() {
+            let _ = proxy.send_event(msg);
+        }
+    })
+}
+
+/// In a browser tab: one window, the page's canvas, and the GPU already asked for (that
+/// takes awaiting, which an event loop handler cannot do).
+#[cfg(target_arch = "wasm32")]
+pub fn run_web(event_loop: EventLoop<Msg>, gpu: Gpu) {
+    use winit::platform::web::EventLoopExtWebSys;
+    event_loop.set_control_flow(ControlFlow::Wait);
+    let post = post_to(&event_loop);
+    let net = Arc::new(crate::net::ProxyState::new());
+    crate::exec::spawn(crate::backend::ml_intensity::prepare(
+        std::path::PathBuf::new(),
+        net.client(),
+    ));
+    let wake = post.clone();
+    let map = MapEngine::new(
+        crate::map::tile_fetch(Arc::clone(&net)),
+        Arc::new(move || wake(Msg::Wake)),
+        (1280.0, 815.0),
+    );
+    let speech = Speech::new(post.clone());
+    let host = crate::host::Host::web(post.clone(), net);
+    let app = App::new(host, crate::backend::config::load(), map, speech);
+    event_loop.spawn_app(Runner::new(gpu, app, post, false));
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run(
     rt: &tokio::runtime::Runtime,
     args: &Args,
@@ -194,13 +278,7 @@ pub fn run(
         .build()
         .map_err(|err| format!("無法建立事件迴圈：{err}"))?;
     event_loop.set_control_flow(ControlFlow::Wait);
-    let proxy: EventLoopProxy<Msg> = event_loop.create_proxy();
-    let proxy = std::sync::Mutex::new(proxy);
-    let post: Post = Arc::new(move |msg| {
-        if let Ok(proxy) = proxy.lock() {
-            let _ = proxy.send_event(msg);
-        }
-    });
+    let post = post_to(&event_loop);
     if let Some(listener) = listener {
         lifecycle::serve_instance(listener, post.clone());
     }
@@ -230,29 +308,7 @@ pub fn run(
     let speech = Speech::new(post.clone());
     let host = crate::host::Host::live(rt.handle().clone(), post.clone(), net);
     let app = App::new(host, crate::backend::config::load(), map, speech);
-    let mut runner = Runner {
-        gpu,
-        app,
-        ui: None,
-        icons: IconCache::default(),
-        main: None,
-        pip: None,
-        settings: None,
-        main_view: MainView::new(1280.0),
-        settings_view: None,
-        post,
-        tray: None,
-        start_hidden: args.start_hidden,
-        started: false,
-        trimmed: false,
-        next_clock: Instant::now(),
-        next_slow_frame: None,
-        map_dragging: false,
-        quitting: false,
-        gave_up_on_device: false,
-        first_frame_logged: false,
-        speech_warmed: false,
-    };
+    let mut runner = Runner::new(gpu, app, post, args.start_hidden);
     event_loop
         .run_app(&mut runner)
         .map_err(|err| format!("事件迴圈結束：{err}"))
@@ -263,12 +319,22 @@ impl ApplicationHandler<Msg> for Runner {
         if self.main.is_some() {
             return;
         }
+        // A canvas added to the page, sized by the page's own CSS.
+        #[cfg(target_arch = "wasm32")]
+        let attrs = {
+            use winit::platform::web::WindowAttributesExtWebSys;
+            Window::default_attributes()
+                .with_title("TREM Lite")
+                .with_append(true)
+        };
+        #[cfg(not(target_arch = "wasm32"))]
         let mut attrs = Window::default_attributes()
             .with_title("TREM Lite")
             .with_inner_size(LogicalSize::new(1280.0, 815.0))
             .with_min_inner_size(LogicalSize::new(900.0, 680.0))
-            .with_visible(false);
-        attrs = attrs.with_window_icon(tray::window_icon());
+            .with_visible(false)
+            .with_window_icon(tray::window_icon());
+        #[cfg(not(target_arch = "wasm32"))]
         if let Some(monitor) = event_loop.primary_monitor() {
             let scale = monitor.scale_factor();
             let size = monitor.size().to_logical::<f64>(scale);
@@ -286,6 +352,16 @@ impl ApplicationHandler<Msg> for Runner {
                 return;
             }
         };
+        // A canvas has no size until the page lays it out: the tab's, which it fills.
+        #[cfg(target_arch = "wasm32")]
+        let (w, h) = web_sys::window()
+            .and_then(|tab| {
+                let w = tab.inner_width().ok()?.as_f64()?;
+                let h = tab.inner_height().ok()?.as_f64()?;
+                Some((w, h))
+            })
+            .unwrap_or((1280.0, 815.0));
+        #[cfg(not(target_arch = "wasm32"))]
         let (w, h) = {
             let size = window.inner_size();
             let scale = window.scale_factor();
@@ -307,7 +383,7 @@ impl ApplicationHandler<Msg> for Runner {
             self.post.clone(),
             &crate::backend::version::label(env!("CARGO_PKG_VERSION")),
         );
-        if self.tray.is_none() {
+        if self.tray.is_none() && cfg!(not(target_arch = "wasm32")) {
             log::warn!(target: "tray", "沒有系統匣圖示：關閉主視窗會直接結束程式");
         }
         lifecycle::sync_autostart(self.app.config.checked("other-auto-start"));
@@ -408,7 +484,7 @@ fn common_event(win: &mut Win, event: &WindowEvent) -> bool {
             true
         }
         WindowEvent::CursorMoved { position, .. } => {
-            let scale = win.scale().max(0.001);
+            let scale = win.input_scale().max(0.001);
             win.pointer = (position.x as f32 / scale, position.y as f32 / scale);
             false
         }
@@ -438,7 +514,7 @@ fn common_event(win: &mut Win, event: &WindowEvent) -> bool {
         WindowEvent::MouseWheel { delta, .. } => {
             let dy = match delta {
                 MouseScrollDelta::LineDelta(_, y) => -y * 40.0,
-                MouseScrollDelta::PixelDelta(pos) => -pos.y as f32 / win.scale(),
+                MouseScrollDelta::PixelDelta(pos) => -pos.y as f32 / win.input_scale(),
             };
             if dy.is_finite() {
                 win.wheel += dy;
@@ -457,6 +533,14 @@ impl Runner {
 
     /// The window's state, as the 500 ms check reads it.
     fn sync_main_state(&mut self) {
+        // A tab says whether it is shown; winit's window does not know in a browser.
+        #[cfg(target_arch = "wasm32")]
+        if self.main.is_some() {
+            self.app.window.main_shown = web_sys::window()
+                .and_then(|w| w.document())
+                .is_none_or(|d| !d.hidden());
+            return;
+        }
         if let Some(main) = &self.main {
             let visible = main.window.is_visible().unwrap_or(false);
             let minimized = main.window.is_minimized().unwrap_or(false);
@@ -561,6 +645,13 @@ impl Runner {
             return;
         }
         let gpu = &self.gpu;
+        // A browser has one thread: one after the other.
+        #[cfg(target_arch = "wasm32")]
+        let (ui, pass) = (
+            Ui::new(gpu, format, logical, scale),
+            Ok::<_, ()>(MapPass::new(gpu, format)),
+        );
+        #[cfg(not(target_arch = "wasm32"))]
         let (ui, pass) = std::thread::scope(|scope| {
             let pass = scope.spawn(|| MapPass::new(gpu, format));
             let ui = Ui::new(gpu, format, logical, scale);
@@ -600,6 +691,21 @@ impl Runner {
 
     fn run_commands(&mut self, event_loop: &ActiveEventLoop) {
         for command in std::mem::take(&mut self.app.commands) {
+            // The tab is the only window: no PiP, no second window, nothing to restart.
+            #[cfg(target_arch = "wasm32")]
+            match command {
+                WindowCommand::ShowPip
+                | WindowCommand::HidePip
+                | WindowCommand::HideSettings
+                | WindowCommand::ToggleMain
+                | WindowCommand::Restart { .. }
+                | WindowCommand::Quit => continue,
+                WindowCommand::OpenSettings => {
+                    log::info!(target: "window", "瀏覽器版還沒有設定視窗");
+                    continue;
+                }
+                WindowCommand::FocusMain { .. } => {}
+            }
             match command {
                 WindowCommand::ShowPip => self.show_pip(event_loop),
                 WindowCommand::HidePip => {
@@ -801,7 +907,7 @@ impl Runner {
                 }
             }
             WindowEvent::Touch(touch) => {
-                let scale = win.scale().max(0.001);
+                let scale = win.input_scale().max(0.001);
                 let (x, y) = (
                     f64::from(touch.location.x as f32 / scale),
                     f64::from(touch.location.y as f32 / scale),
@@ -932,7 +1038,7 @@ impl Runner {
         }
         let (value, pixels) = match delta {
             MouseScrollDelta::LineDelta(_, y) => (-f64::from(y) * 100.0, false),
-            MouseScrollDelta::PixelDelta(pos) => (-pos.y / f64::from(win.scale()), true),
+            MouseScrollDelta::PixelDelta(pos) => (-pos.y / f64::from(win.input_scale()), true),
         };
         if value == 0.0 || !value.is_finite() {
             return;

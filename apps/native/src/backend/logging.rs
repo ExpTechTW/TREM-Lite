@@ -12,6 +12,8 @@
 //!
 //! 寫入的等級：本程式（本 crate 的模組與自訂 target）到 DEBUG，相依套件到 INFO。
 
+#![cfg_attr(target_arch = "wasm32", allow(dead_code, unused_imports))]
+
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -179,8 +181,61 @@ pub fn root() -> Result<PathBuf, String> {
         .ok_or_else(|| "找不到資料目錄".to_string())
 }
 
+/// 瀏覽器版：同樣格式的行寫到 console，等級規則相同。網頁沒有檔案，也就沒有歸檔。
+#[cfg(target_arch = "wasm32")]
+struct ConsoleLogger;
+
+#[cfg(target_arch = "wasm32")]
+impl Log for ConsoleLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        let max = if is_ours(metadata.target()) {
+            Level::Debug
+        } else {
+            Level::Info
+        };
+        metadata.level() <= max
+    }
+
+    fn log(&self, record: &Record) {
+        if !self.enabled(record.metadata()) {
+            return;
+        }
+        let mut line = String::new();
+        push_line(
+            &mut line,
+            &Local::now(),
+            record.level(),
+            short_target(record.target()),
+            record.args(),
+        );
+        let text = wasm_bindgen::JsValue::from_str(line.trim_end());
+        match record.level() {
+            Level::Error => web_sys::console::error_1(&text),
+            Level::Warn => web_sys::console::warn_1(&text),
+            _ => web_sys::console::log_1(&text),
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn init() {
+    static LOGGER: ConsoleLogger = ConsoleLogger;
+    if log::set_logger(&LOGGER).is_ok() {
+        log::set_max_level(LevelFilter::Debug);
+    }
+    console_error_panic_hook::set_once();
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn logs_open() -> Result<(), String> {
+    Err("瀏覽器版的日誌在開發者工具的 console".to_string())
+}
+
 /// 掛上檔案日誌與 panic 記錄，並開始定期整理。在 setup 一開始呼叫：
 /// 在它之前的 `log::…!` 不會留下任何東西。
+#[cfg(not(target_arch = "wasm32"))]
 pub fn init() {
     let Ok(root) = root() else {
         return;
@@ -223,6 +278,7 @@ pub fn init() {
 ///
 /// 檔案 I/O 全部丟到 blocking 執行緒——壓縮一整天的日誌可能要掃上百個檔案，
 /// 卡在 async runtime 的工作執行緒上會連帶拖慢 SSE 與 HTTP。
+#[cfg(not(target_arch = "wasm32"))]
 fn spawn_prune(root: PathBuf) {
     tokio::spawn(async move {
         loop {
@@ -359,6 +415,7 @@ fn parse_dir(path: &Path) -> Option<i32> {
 }
 
 /// 用系統檔案總管開啟日誌資料夾。
+#[cfg(not(target_arch = "wasm32"))]
 pub fn logs_open() -> Result<(), String> {
     let dir = root()?;
     fs::create_dir_all(&dir).map_err(|e| format!("建立 {} 失敗：{e}", dir.display()))?;

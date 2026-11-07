@@ -1,7 +1,7 @@
 //! The settings window (features/settings/SettingsApp.tsx, StationPicker.tsx). Every change
 //! is saved at once, and the main window follows it.
 
-use std::time::Instant;
+use web_time::Instant;
 
 use super::icons::{Icon, IconCache};
 use super::widgets::{draw_tooltip, right, style, text_cut, text_in, Transition};

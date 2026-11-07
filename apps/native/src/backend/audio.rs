@@ -17,6 +17,8 @@ use std::time::{Duration, Instant};
 
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 
+use super::sound::{preempts, volume_for, QUEUES};
+
 /// The 11 bundled clips, embedded straight into the binary (~245 KB total).
 fn sound_bytes(name: &str) -> Option<&'static [u8]> {
     let bytes: &'static [u8] = match name {
@@ -35,30 +37,6 @@ fn sound_bytes(name: &str) -> Option<&'static [u8]> {
     };
     Some(bytes)
 }
-
-/// Per-clip volume (mirrors constant.js overrides).
-fn volume_for(name: &str) -> f32 {
-    match name {
-        "SHINDO0" => 0.4,
-        "UPDATE" => 0.2,
-        _ => 1.0,
-    }
-}
-
-/// Which pending clips a newly enqueued clip evicts from its queue.
-/// Mirrors `priorityRules` in audio.js:104-116.
-fn preempts(sound: &str) -> &'static [&'static str] {
-    match sound {
-        "PGA2" => &["PGA1", "PGA0"],
-        "PGA1" => &["PGA0"],
-        "SHINDO2" => &["SHINDO1", "SHINDO0"],
-        "SHINDO1" => &["SHINDO0"],
-        "ALERT" => &["EEW"],
-        _ => &[],
-    }
-}
-
-const QUEUES: [&str; 4] = ["eew", "pga", "shindo", "update"];
 
 /// How often a queue with a clip waiting checks whether the one ahead of it
 /// has finished.

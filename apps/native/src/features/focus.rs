@@ -1,7 +1,7 @@
 //! The auto-focus camera (features/focus/focus.ts). Any touch of the map locks it until
 //! the nav button releases it.
 
-use std::time::Instant;
+use web_time::Instant;
 
 use crate::app::App;
 use crate::domain::constants::{MAP_BOUNDS, MAP_PADDING};

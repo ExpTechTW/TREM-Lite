@@ -81,10 +81,16 @@ pub async fn prepare(dir: PathBuf, client: reqwest::Client) {
             _ => download(&client, &path).await,
         };
         if let Some(bytes) = bytes {
-            // ~420k tree nodes to parse and lay out: off the async workers.
+            // ~420k tree nodes to parse and lay out: off the async workers (a browser has
+            // only its one thread).
+            #[cfg(not(target_arch = "wasm32"))]
             let built =
                 tokio::task::spawn_blocking(move || parse_model(&bytes).and_then(|g| compile(&g)))
-                    .await;
+                    .await
+                    .map_err(|e| e.to_string());
+            #[cfg(target_arch = "wasm32")]
+            let built: Result<Result<Model, String>, String> =
+                Ok(parse_model(&bytes).and_then(|g| compile(&g)));
             match built {
                 Ok(Ok(m)) => {
                     let _ = MODEL.set(m);
@@ -98,7 +104,7 @@ pub async fn prepare(dir: PathBuf, client: reqwest::Client) {
             }
             let _ = std::fs::remove_file(&path);
         }
-        tokio::time::sleep(RETRY).await;
+        crate::exec::sleep(RETRY).await;
     }
 }
 

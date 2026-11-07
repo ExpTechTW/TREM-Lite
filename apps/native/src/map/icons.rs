@@ -8,7 +8,9 @@ use wgpu::util::DeviceExt;
 use crate::domain::constants::{
     intensity_color, intensity_text, lpgm_color, lpgm_text, INTENSITY_LIST,
 };
-use crate::render::{render_rgba, Gpu, HAlign, TextStyle, VAlign, OFFSCREEN_FORMAT};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::render::{render_rgba, OFFSCREEN_FORMAT};
+use crate::render::{Gpu, HAlign, TextStyle, VAlign};
 use crate::ui::{Color, QuadStyle, Rect, Ui};
 
 const CELL: u32 = 96;
@@ -183,9 +185,37 @@ fn with_mips(base: Vec<u8>, width: u32, height: u32) -> (Vec<u8>, u32) {
     (data, levels)
 }
 
-/// Build the sprite texture. The badges draw through the normal UI renderer, on a
-/// transparent target, which leaves them premultiplied, as the map's blend wants.
+/// The sprite's size in pixels.
+#[cfg(test)]
+pub fn sprite_size() -> (u32, u32) {
+    atlas_size()
+}
+
+/// Build the sprite texture.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn build_sprite(gpu: &Gpu) -> Result<wgpu::Texture, String> {
+    Ok(upload(gpu, sprite_pixels(gpu)?))
+}
+
+/// A browser cannot wait for a readback, so it takes the sprite the desktop draws, as
+/// the test that pins it keeps it: the same pixels.
+#[cfg(target_arch = "wasm32")]
+pub fn build_sprite(gpu: &Gpu) -> Result<wgpu::Texture, String> {
+    let png = include_bytes!("../../testdata/golden/render/map-sprite.png");
+    let image = image::load_from_memory_with_format(png, image::ImageFormat::Png)
+        .map_err(|e| format!("地圖圖示解不開：{e}"))?
+        .into_rgba8();
+    if image.dimensions() != atlas_size() {
+        return Err("地圖圖示的大小不對".to_string());
+    }
+    Ok(upload(gpu, image.into_raw()))
+}
+
+/// The sprite's top level, premultiplied RGBA. The badges draw through the normal UI
+/// renderer, on a transparent target, which leaves them premultiplied, as the map's blend
+/// wants.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn sprite_pixels(gpu: &Gpu) -> Result<Vec<u8>, String> {
     let (w, h) = atlas_size();
     let mut ui = Ui::new(gpu, OFFSCREEN_FORMAT, (w as f32, h as f32), 1.0)?;
     let mut atlas = render_rgba(gpu, w, h, |view, encoder| {
@@ -216,8 +246,14 @@ pub fn build_sprite(gpu: &Gpu) -> Result<wgpu::Texture, String> {
     for (id, png) in crosses {
         blit_cross(&mut atlas, w, id, png);
     }
+    Ok(atlas)
+}
+
+/// The sprite with its mipmaps, on the GPU.
+fn upload(gpu: &Gpu, atlas: Vec<u8>) -> wgpu::Texture {
+    let (w, h) = atlas_size();
     let (data, levels) = with_mips(atlas, w, h);
-    Ok(gpu.device.create_texture_with_data(
+    gpu.device.create_texture_with_data(
         &gpu.queue,
         &wgpu::TextureDescriptor {
             label: Some("map-sprite"),
@@ -235,7 +271,7 @@ pub fn build_sprite(gpu: &Gpu) -> Result<wgpu::Texture, String> {
         },
         wgpu::util::TextureDataOrder::MipMajor,
         &data,
-    ))
+    )
 }
 
 #[cfg(test)]

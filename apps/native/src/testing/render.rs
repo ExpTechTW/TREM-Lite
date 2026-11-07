@@ -160,6 +160,17 @@ fn the_sound_settings() {
     check_picture("settings-sound", 970, 590, rgba);
 }
 
+/// Also the browser build's sprite: it embeds this picture rather than drawing its own.
+#[test]
+fn the_map_sprite() {
+    let Some(gpu) = gpu() else {
+        return;
+    };
+    let (w, h) = crate::map::icons::sprite_size();
+    let pixels = crate::map::icons::sprite_pixels(&gpu).expect("the sprite draws");
+    check_picture("map-sprite", w, h, pixels);
+}
+
 #[test]
 fn the_map_on_real_tiles() {
     let Some(gpu) = gpu() else {

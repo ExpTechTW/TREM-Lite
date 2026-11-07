@@ -1,4 +1,8 @@
-//! TREM-Lite, native: winit windows, wgpu drawing, no web view.
+//! TREM-Lite, native: winit windows, wgpu drawing, no web view. The same code runs in a
+//! browser tab, built for wasm32: see `web.rs`.
+
+// The screenshot and command-line parts are the desktop's.
+#![cfg_attr(target_arch = "wasm32", allow(dead_code))]
 
 mod app;
 
@@ -7,6 +11,7 @@ mod backend;
 mod domain;
 
 mod events;
+mod exec;
 
 mod features;
 mod host;
@@ -20,9 +25,12 @@ mod net;
 mod paths;
 
 mod platform;
+#[cfg(not(target_arch = "wasm32"))]
 mod preview;
 mod render;
 mod runner;
+#[cfg(target_arch = "wasm32")]
+mod web;
 
 mod timers;
 
@@ -78,10 +86,17 @@ pub struct Args {
 }
 
 /// When the process began, for the first-frame log line.
-pub static STARTED: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+pub static STARTED: std::sync::OnceLock<web_time::Instant> = std::sync::OnceLock::new();
 
+#[cfg(target_arch = "wasm32")]
 fn main() {
-    STARTED.get_or_init(std::time::Instant::now);
+    STARTED.get_or_init(web_time::Instant::now);
+    web::start();
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn main() {
+    STARTED.get_or_init(web_time::Instant::now);
     let args = match Args::from_env() {
         Ok(args) => args,
         Err(err) => {
@@ -154,6 +169,7 @@ fn main() {
 }
 
 /// A restart waits for the old process to let go of the lock.
+#[cfg(not(target_arch = "wasm32"))]
 fn claim_instance(restarted: bool) -> Option<platform::lifecycle::Instance> {
     if restarted {
         for _ in 0..30 {

@@ -43,6 +43,7 @@ use tokio::sync::{OnceCell, Semaphore};
 use crate::backend::logging::{fmt_bytes, fmt_dur};
 use crate::net::cache::{gunzip, now_ms, CacheEntry, HttpCache, StoredResponse};
 use crate::net::endpoints::{Endpoints, Target};
+pub use crate::net::types::{Fetched, ProxyRequest};
 
 /// Hosts the proxy is willing to talk to: what the app actually requests through
 /// it, the ExpTech APIs and map tiles. (A CWA report page is opened in the
@@ -73,44 +74,6 @@ const BACKOFF_BASE: Duration = Duration::from_millis(300);
 const MAX_COOLDOWN: Duration = Duration::from_secs(60);
 /// Requests in flight to one host at a time.
 const HOST_CONCURRENCY: usize = 8;
-
-#[derive(Clone, Default)]
-pub struct ProxyRequest {
-    pub url: String,
-    pub method: Option<String>,
-    pub headers: HashMap<String, String>,
-    pub timeout_ms: Option<u64>,
-    /// Participate in the SQLite ETag/LRU store. Defaults to true; the 1 Hz
-    /// realtime pollers pass false so their never-repeating payloads don't
-    /// churn the budget.
-    pub store: Option<bool>,
-    /// Serve a stored copy without asking the server while it is younger than
-    /// this — for content known not to change, whatever its headers say. The
-    /// map tiles are the case: sent `no-store`, with a Last-Modified that moves
-    /// forward every minute or so, they would otherwise download afresh on
-    /// every use.
-    pub max_age_ms: Option<u64>,
-}
-
-impl ProxyRequest {
-    pub fn get(url: impl Into<String>, timeout_ms: u64) -> Self {
-        Self {
-            url: url.into(),
-            timeout_ms: Some(timeout_ms),
-            ..Self::default()
-        }
-    }
-
-    pub fn no_store(mut self) -> Self {
-        self.store = Some(false);
-        self
-    }
-
-    pub fn max_age(mut self, ms: u64) -> Self {
-        self.max_age_ms = Some(ms);
-        self
-    }
-}
 
 pub struct ProxyState {
     client: reqwest::Client,
@@ -393,23 +356,6 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 
 /// One cacheable request in flight, and what it came to.
 type Flight = Arc<OnceCell<Result<Fetched, String>>>;
-
-/// A finished exchange, as every caller of a single flight receives it.
-#[derive(Clone)]
-pub struct Fetched {
-    pub status: u16,
-    pub body: Arc<Vec<u8>>,
-    pub from_cache: bool,
-    pub stale: bool,
-    /// Where the answer came from, in the log's words.
-    pub via: &'static str,
-}
-
-impl Fetched {
-    pub fn ok(&self) -> bool {
-        (200..300).contains(&self.status)
-    }
-}
 
 /// `Retry-After` in seconds (the HTTP-date form is not sent by ExpTech).
 fn retry_after(res: &reqwest::Response) -> Option<Duration> {

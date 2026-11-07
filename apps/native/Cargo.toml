@@ -14,21 +14,13 @@ base64 = "0.22"
 bytes = { version = "1", default-features = false, features = ["std"] }
 bytemuck = { version = "1", default-features = false, features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
-dirs = { version = "6", default-features = false }
 earcutr = { version = "0.5", default-features = false }
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
-# Same reqwest the desktop proxy rides on (tauri-plugin-http 2.5.9 → 0.12.28):
-# rustls, http2, charset, cookies, macOS proxy config, gzip, plus stream for SSE.
-reqwest = { version = "=0.12.28", default-features = false, features = ["rustls-tls", "http2", "charset", "cookies", "macos-system-configuration", "gzip", "stream"] }
-# mp3 only: the bundled clips are mp3. Desktop enables flac/vorbis/wav too.
-rodio = { version = "0.20", default-features = false, features = ["mp3"] }
-rusqlite = { version = "0.37", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 sha2 = "0.10"
-tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "time", "sync", "net", "io-util"] }
 # `swash` rasterizes glyphs; `std` pulls fontdb's memmap so system fonts can be
 # opened later. `fontconfig` is Linux-only and stays off here (see the target
 # table below). Default features also turn on fontconfig, which we do not want
@@ -40,14 +32,39 @@ rayon = "1.12"
 # Glyphs rasterized on the workers; the same version and features cosmic-text uses.
 swash = "0.2.10"
 log = { version = "0.4", default-features = false, features = ["std"] }
-pollster = { version = "0.4", default-features = false }
 # Script enum for the font fallback list. Already pulled in by cosmic-text.
 unicode-script = { version = "0.5", default-features = false }
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl"] }
 winit = { version = "0.30", default-features = false, features = ["rwh_06"] }
+# std's Instant and SystemTime panic in a browser; this is std's own off the web.
+web-time = "1"
+
+# The desktop: its own network stack, cache, sound, tray and runtime.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+dirs = { version = "6", default-features = false }
+# Same reqwest the desktop proxy rides on (tauri-plugin-http 2.5.9 → 0.12.28):
+# rustls, http2, charset, cookies, macOS proxy config, gzip, plus stream for SSE.
+reqwest = { version = "=0.12.28", default-features = false, features = ["rustls-tls", "http2", "charset", "cookies", "macos-system-configuration", "gzip", "stream"] }
+# mp3 only: the bundled clips are mp3. Desktop enables flac/vorbis/wav too.
+rodio = { version = "0.20", default-features = false, features = ["mp3"] }
+rusqlite = { version = "0.37", features = ["bundled"] }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "time", "sync", "net", "io-util"] }
+pollster = { version = "0.4", default-features = false }
 notify-rust = "4"
 auto-launch = "0.5"
 os_info = { version = "3", default-features = false }
+
+# The browser: fetch for the network, WebGPU for drawing, one thread.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+reqwest = { version = "=0.12.28", default-features = false, features = ["stream"] }
+tokio = { version = "1", default-features = false, features = ["sync"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "wasmbind"] }
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "webgpu", "fragile-send-sync-non-atomic-wasm"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "HtmlAudioElement", "HtmlMediaElement", "Storage", "Location", "Navigator", "console", "Performance", "Clipboard", "Notification", "NotificationOptions", "NotificationPermission", "SpeechSynthesis", "SpeechSynthesisUtterance"] }
+console_error_panic_hook = "0.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 tts = { version = "0.26", default-features = false }

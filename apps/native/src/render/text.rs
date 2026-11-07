@@ -25,7 +25,19 @@ use unicode_script::Script;
 use super::gpu::Gpu;
 
 const MANROPE: &[u8] = include_bytes!("../../assets/fonts/Manrope.ttf");
+#[cfg(not(target_arch = "wasm32"))]
 const NOTO: &[u8] = include_bytes!("../../assets/fonts/NotoSansTC.ttf");
+/// A browser has no system fonts to fall back on: the same Noto Sans TC, cut to the app's
+/// own text, the place names and Big5's common characters (web/make-font.py).
+#[cfg(target_arch = "wasm32")]
+const NOTO: &[u8] = include_bytes!("../../assets/fonts/web/NotoSansTC-web.ttf");
+/// What the desktop takes from Apple Symbols or Segoe UI: ⁺ and ⁻ (Noto Sans), 𝖬 (Noto
+/// Sans Math).
+#[cfg(target_arch = "wasm32")]
+const WEB_SYMBOLS: [&[u8]; 2] = [
+    include_bytes!("../../assets/fonts/web/NotoSans-web.ttf"),
+    include_bytes!("../../assets/fonts/web/NotoSansMath-web.ttf"),
+];
 
 const ATLAS: u32 = 2048;
 const PAD: u32 = 1;
@@ -329,6 +341,10 @@ impl TextEngine {
         // The embedded bytes themselves, not a copy of them.
         db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(MANROPE)));
         db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(NOTO)));
+        #[cfg(target_arch = "wasm32")]
+        for font in WEB_SYMBOLS {
+            db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(font)));
+        }
         let manrope_ids = face_ids(&db, "Manrope");
         let noto_ids = face_ids(&db, "Noto Sans TC");
         let manrope = leak_str(
