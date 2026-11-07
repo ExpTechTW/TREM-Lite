@@ -17,12 +17,12 @@
 //! * **Regional routing** — a DNS-balanced ExpTech name is sent to its pool's
 //!   healthy regional node instead (see [`crate::net::endpoints`]).
 //! * **Retries** — no answer, a 5xx or a 429 is tried again, up to
-//!   [`MAX_ATTEMPTS`] times within the caller's timeout: at once on another
+//!   `MAX_ATTEMPTS` times within the caller's timeout: at once on another
 //!   healthy node when there is one, else after an exponential backoff.
 //! * **Rate limits** — a 429 or 503 with `Retry-After` cools its host down for
 //!   that long: meanwhile a stored copy is served as it is, and a request
 //!   without one waits the cooldown out if its timeout allows. At most
-//!   [`HOST_CONCURRENCY`] requests go to one host at a time, which smooths a
+//!   `HOST_CONCURRENCY` requests go to one host at a time, which smooths a
 //!   burst of map tiles into a steady stream.
 //! * **Single flight** — identical cacheable requests in flight at once share
 //!   one exchange.

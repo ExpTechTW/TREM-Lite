@@ -9,7 +9,7 @@
 //! balanced name, and [`Endpoints::route`] swaps in the pool's active node.
 //!
 //! The active node moves only when it has to: when it fails a probe, when it
-//! fails [`FAILOVER_AFTER`] requests in a row, or when another node has become
+//! fails `FAILOVER_AFTER` requests in a row, or when another node has become
 //! at least twice as fast. Staying put is the point — every move is a chance of
 //! drift.
 //!
@@ -272,7 +272,7 @@ impl Endpoints {
         }
     }
 
-    /// Probes every node now, then every [`PROBE_EVERY`].
+    /// Probes every node now, then every `PROBE_EVERY`.
     pub fn start(self: &Arc<Self>) {
         let endpoints = self.clone();
         tokio::spawn(async move {
