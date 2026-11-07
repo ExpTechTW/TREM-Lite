@@ -230,3 +230,39 @@ pub fn return_free_memory() {
 
 #[cfg(not(target_os = "macos"))]
 pub fn return_free_memory() {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_second_launch_is_answered_only_by_its_own_hello() {
+        // A port free for this test alone.
+        let port = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
+            .and_then(|l| l.local_addr())
+            .expect("a free port")
+            .port();
+        let ours = InstanceConfig {
+            port,
+            hello: b"trem-gfx-test",
+        };
+        let Some(Instance::First(listener)) = claim_instance(&ours) else {
+            panic!("the first launch takes the lock");
+        };
+        let (knocked, heard) = std::sync::mpsc::channel();
+        serve_instance(&ours, listener, move || {
+            let _ = knocked.send(());
+        });
+        assert!(matches!(claim_instance(&ours), Some(Instance::Second)));
+        heard
+            .recv_timeout(Duration::from_secs(2))
+            .expect("the first launch is told");
+        // Another app on the same port is not taken for this one.
+        let theirs = InstanceConfig {
+            port,
+            hello: b"someone-else!",
+        };
+        assert!(claim_instance(&theirs).is_none());
+        assert!(heard.try_recv().is_err());
+    }
+}
