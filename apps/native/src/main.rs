@@ -4,6 +4,10 @@
 #[allow(dead_code)]
 mod backend;
 #[allow(dead_code)]
+mod domain;
+#[allow(dead_code)]
+mod map;
+#[allow(dead_code)]
 mod net;
 #[allow(dead_code)]
 mod paths;
@@ -35,6 +39,7 @@ trem-lite-native --screenshot out.png --size 1280x815 --scale 1 --page debug
 struct Args {
     help: bool,
     screenshot: Option<PathBuf>,
+    camera: Option<(f64, f64, f64)>,
     width: f32,
     height: f32,
     scale: f32,
@@ -54,7 +59,7 @@ fn main() {
         return;
     }
     init_log();
-    if args.page != "debug" {
+    if args.page != "debug" && args.page != "map" {
         log::error!("尚未移植：{}", args.page);
         std::process::exit(2);
     }
@@ -84,7 +89,64 @@ fn main() {
     }
 }
 
+fn map_screenshot(gpu: &Gpu, args: &Args, path: &std::path::Path) -> Result<(u32, u32), String> {
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .enable_all()
+        .build()
+        .map_err(|err| format!("無法建立 runtime：{err}"))?;
+    let proxy = std::sync::Arc::new(net::ProxyState::new(
+        &std::env::temp_dir().join("trem-native-shot"),
+    )?);
+    let fetch = map::tile_fetch(rt.handle().clone(), proxy);
+    let mut engine = map::MapEngine::new(
+        fetch,
+        std::sync::Arc::new(|| {}),
+        (f64::from(args.width), f64::from(args.height)),
+    );
+    match args.camera {
+        Some((lon, lat, zoom)) => engine.camera.jump(map::camera::Target { lon, lat, zoom }),
+        None => {
+            let [[west, south], [east, north]] = domain::constants::MAP_BOUNDS;
+            engine.fit_bounds(
+                map::camera::Bounds {
+                    west,
+                    south,
+                    east,
+                    north,
+                },
+                map::camera::Padding::all(domain::constants::MAP_PADDING),
+                f64::INFINITY,
+                0.0,
+            );
+        }
+    }
+    let started = std::time::Instant::now();
+    loop {
+        engine.prepare(gpu, OFFSCREEN_FORMAT)?;
+        if engine.settled() || started.elapsed().as_secs() > 30 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    engine.prepare(gpu, OFFSCREEN_FORMAT)?;
+    log::info!("地圖 GPU 用量：{:?}", engine.tiles.gpu_bytes());
+    capture(
+        gpu,
+        args.width,
+        args.height,
+        args.scale,
+        path,
+        |view, encoder| {
+            engine.encode(gpu, view, encoder, f64::from(args.scale));
+        },
+    )
+}
+
 fn screenshot(gpu: &Gpu, args: &Args, path: &std::path::Path) -> Result<(u32, u32), String> {
+    if args.page == "map" {
+        return map_screenshot(gpu, args, path);
+    }
     let mut ui = Ui::new(gpu, OFFSCREEN_FORMAT, (args.width, args.height), args.scale)?;
     let mut page = DebugPage::new();
     capture(
@@ -97,7 +159,7 @@ fn screenshot(gpu: &Gpu, args: &Args, path: &std::path::Path) -> Result<(u32, u3
             ui.begin();
             page.draw(&mut ui, gpu);
             ui.end();
-            ui.render(gpu, view, encoder);
+            ui.render(gpu, view, encoder, Some(ui::clear_color()));
         },
     )
 }
@@ -321,7 +383,7 @@ impl WindowApp {
             ui.add_wheel(self.wheel);
             self.page.draw(ui, &self.gpu);
             ui.end();
-            ui.render(&self.gpu, &view, &mut encoder);
+            ui.render(&self.gpu, &view, &mut encoder, Some(ui::clear_color()));
             let cursor = ui.cursor();
             if cursor != self.cursor {
                 self.cursor = cursor;
@@ -450,6 +512,7 @@ impl Args {
         let mut parsed = Self {
             help: false,
             screenshot: None,
+            camera: None,
             width: 1280.0,
             height: 815.0,
             scale: 1.0,
@@ -471,6 +534,14 @@ impl Args {
                 "--scale" => {
                     let value = args.next().ok_or("--scale 需要數字")?;
                     parsed.scale = parse_scale(&value).ok_or("--scale 要是正數")?;
+                }
+                "--camera" => {
+                    let value = args.next().ok_or("--camera 需要 lon,lat,zoom")?;
+                    let parts: Vec<f64> = value.split(',').filter_map(|v| v.parse().ok()).collect();
+                    let [lon, lat, zoom] = parts[..] else {
+                        return Err("--camera 格式要是 lon,lat,zoom".to_string());
+                    };
+                    parsed.camera = Some((lon, lat, zoom));
                 }
                 "--page" => {
                     parsed.page = args.next().ok_or("--page 需要名稱")?;

@@ -623,11 +623,14 @@ impl Ui {
         *slot
     }
 
+    /// Draw what was recorded. `clear` starts from a colour; None draws over what
+    /// the map already put there.
     pub fn render(
         &mut self,
         gpu: &crate::render::Gpu,
         view: &wgpu::TextureView,
         encoder: &mut wgpu::CommandEncoder,
+        clear: Option<wgpu::Color>,
     ) {
         self.glyphs.clear();
         self.cmds.clear();
@@ -670,7 +673,7 @@ impl Ui {
             }
         }
         self.pass
-            .encode(gpu, view, encoder, clear_color(), screen, bind.as_ref());
+            .encode(gpu, view, encoder, clear, screen, bind.as_ref());
     }
 
     fn snapshot(&self) -> ClipSnapshot {

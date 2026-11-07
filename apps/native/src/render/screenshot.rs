@@ -61,6 +61,22 @@ pub fn capture(
     draw: impl FnOnce(&wgpu::TextureView, &mut wgpu::CommandEncoder),
 ) -> Result<(u32, u32), String> {
     let (width, height) = physical_size(logical_w, logical_h, scale)?;
+    let rgba = render_rgba(gpu, width, height, draw)?;
+    let image = image::RgbaImage::from_raw(width, height, rgba)
+        .ok_or_else(|| "截圖像素長度不對".to_string())?;
+    image
+        .save(path)
+        .map_err(|err| format!("無法寫入截圖：{err}"))?;
+    Ok((width, height))
+}
+
+/// Record `draw` into an offscreen target and read the pixels back.
+pub fn render_rgba(
+    gpu: &Gpu,
+    width: u32,
+    height: u32,
+    draw: impl FnOnce(&wgpu::TextureView, &mut wgpu::CommandEncoder),
+) -> Result<Vec<u8>, String> {
     let target = Offscreen::new(gpu, width, height)?;
     let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
     let unpadded = width.saturating_mul(4);
@@ -132,11 +148,5 @@ pub fn capture(
     }
     drop(mapped);
     buffer.unmap();
-
-    let image = image::RgbaImage::from_raw(width, height, rgba)
-        .ok_or_else(|| "截圖像素長度不對".to_string())?;
-    image
-        .save(path)
-        .map_err(|err| format!("無法寫入截圖：{err}"))?;
-    Ok((width, height))
+    Ok(rgba)
 }

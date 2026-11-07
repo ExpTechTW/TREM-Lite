@@ -338,7 +338,7 @@ impl UiPass {
         gpu: &Gpu,
         view: &wgpu::TextureView,
         encoder: &mut wgpu::CommandEncoder,
-        clear: wgpu::Color,
+        clear: Option<wgpu::Color>,
         screen: [f32; 2],
         text_bind: Option<&wgpu::BindGroup>,
     ) {
@@ -360,7 +360,7 @@ impl UiPass {
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(clear),
+                    load: clear.map_or(wgpu::LoadOp::Load, wgpu::LoadOp::Clear),
                     store: wgpu::StoreOp::Store,
                 },
             })],
