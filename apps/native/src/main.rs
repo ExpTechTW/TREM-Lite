@@ -44,7 +44,18 @@ trem-lite-native [--start]
   --camera L,L,Z      map 頁的相機
   --replay ID         run 頁：重播這則報告
   --after SECS        run 頁：跑這麼久才截圖，預設 10
+  --click X,Y         main、settings 頁：截圖前先點這裡，可重複
+  --hover X,Y         同上，只移過去
+  --wheel X,Y,DY      同上，捲動
 ";
+
+/// What `--click`, `--hover` and `--wheel` replay, for looking at a page after use.
+#[derive(Clone, Copy, Debug)]
+pub enum InputStep {
+    Click(f32, f32),
+    Hover(f32, f32),
+    Wheel(f32, f32, f32),
+}
 
 pub struct Args {
     pub help: bool,
@@ -60,6 +71,7 @@ pub struct Args {
     pub settings_tab: String,
     pub replay: Option<String>,
     pub after: f64,
+    pub input: Vec<InputStep>,
 }
 
 fn main() {
@@ -161,6 +173,7 @@ impl Args {
             settings_tab: "一般".to_string(),
             replay: None,
             after: 10.0,
+            input: Vec::new(),
         };
         while let Some(arg) = args.next() {
             match arg.as_str() {
@@ -190,6 +203,16 @@ impl Args {
                 "--after" => {
                     let value = args.next().ok_or("--after 需要秒數")?;
                     parsed.after = value.parse().map_err(|_| "--after 要是數字")?;
+                }
+                "--click" | "--hover" | "--wheel" => {
+                    let value = args.next().ok_or_else(|| format!("{arg} 需要座標"))?;
+                    let parts: Vec<f32> = value.split(',').filter_map(|v| v.parse().ok()).collect();
+                    parsed.input.push(match (arg.as_str(), &parts[..]) {
+                        ("--click", [x, y]) => InputStep::Click(*x, *y),
+                        ("--hover", [x, y]) => InputStep::Hover(*x, *y),
+                        ("--wheel", [x, y, dy]) => InputStep::Wheel(*x, *y, *dy),
+                        _ => return Err(format!("{arg} 的座標格式不對")),
+                    });
                 }
                 "--camera" => {
                     let value = args.next().ok_or("--camera 需要 lon,lat,zoom")?;

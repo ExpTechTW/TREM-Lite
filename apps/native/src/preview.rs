@@ -66,7 +66,11 @@ pub fn screenshot(
             let mut icons = IconCache::default();
             let mut view = MainView::new(args.width);
             apply_preview(&mut app, &args.preview);
-            // Two passes: the first lays out and registers what the pointer could be over.
+            let mut actions = Vec::new();
+            play_input(&mut ui, args, |ui| {
+                view.draw(ui, &gpu, &mut icons, &mut app, &mut actions);
+            });
+            log_actions(&actions);
             capture(
                 &gpu,
                 args.width,
@@ -76,6 +80,7 @@ pub fn screenshot(
                 |target, encoder| {
                     let mut actions = Vec::new();
                     ui.begin();
+                    hover_last(&mut ui, args);
                     view.draw(&mut ui, &gpu, &mut icons, &mut app, &mut actions);
                     ui.end();
                     ui.render(&gpu, target, encoder, Some(clear_color()));
@@ -104,10 +109,25 @@ pub fn screenshot(
             let (mut app, _rx) = preview_app(rt, args)?;
             let mut ui = Ui::new(&gpu, OFFSCREEN_FORMAT, (970.0, 590.0), args.scale)?;
             let mut icons = IconCache::default();
+            // With fixture data, the station list is there to pick from.
+            if let Some(text) =
+                crate::net::fixture::read("https://static.core.exptech.dev/resource/station")
+                    .ok()
+                    .map(|f| String::from_utf8_lossy(&f.body).into_owned())
+            {
+                let list = crate::domain::types::parse_station_csv(&text);
+                if !list.is_empty() {
+                    app.var.station = Some(Arc::new(list));
+                }
+            }
             let mut view = SettingsView::new(&app);
             view.select_tab_named(&args.settings_tab);
+            play_input(&mut ui, args, |ui| {
+                view.draw(ui, &gpu, &mut icons, &mut app);
+            });
             capture(&gpu, 970.0, 590.0, args.scale, path, |target, encoder| {
                 ui.begin();
+                hover_last(&mut ui, args);
                 view.draw(&mut ui, &gpu, &mut icons, &mut app);
                 ui.end();
                 ui.render(&gpu, target, encoder, Some(clear_color()));
@@ -115,6 +135,65 @@ pub fn screenshot(
         }
         "run" => run_shot(rt, &gpu, args, path),
         other => Err(format!("不認識的頁面：{other}")),
+    }
+}
+
+/// The frames a person's input would make: move over a point, press, release. Each `--click`
+/// and `--wheel` is replayed in order, so a page can be looked at after being used.
+fn play_input(ui: &mut Ui, args: &Args, mut draw: impl FnMut(&mut Ui)) {
+    let mut frame =
+        |ui: &mut Ui, x: f32, y: f32, down: bool, pressed: bool, released: bool, wheel: f32| {
+            ui.begin();
+            ui.set_pointer(x, y);
+            ui.set_buttons(down, pressed, released);
+            ui.add_wheel(wheel);
+            draw(ui);
+            ui.end();
+        };
+    frame(ui, -1.0e6, -1.0e6, false, false, false, 0.0);
+    for step in &args.input {
+        match *step {
+            crate::InputStep::Click(x, y) => {
+                frame(ui, x, y, false, false, false, 0.0);
+                frame(ui, x, y, true, true, false, 0.0);
+                frame(ui, x, y, false, false, true, 0.0);
+                frame(ui, x, y, false, false, false, 0.0);
+            }
+            crate::InputStep::Hover(x, y) => {
+                frame(ui, x, y, false, false, false, 0.0);
+                frame(ui, x, y, false, false, false, 0.0);
+            }
+            crate::InputStep::Wheel(x, y, dy) => {
+                frame(ui, x, y, false, false, false, 0.0);
+                frame(ui, x, y, false, false, false, dy);
+            }
+        }
+    }
+}
+
+/// The last frame keeps the pointer where the input left it.
+fn hover_last(ui: &mut Ui, args: &Args) {
+    if let Some(step) = args.input.last() {
+        let (x, y) = match *step {
+            crate::InputStep::Click(x, y)
+            | crate::InputStep::Hover(x, y)
+            | crate::InputStep::Wheel(x, y, _) => (x, y),
+        };
+        ui.set_pointer(x, y);
+    }
+}
+
+fn log_actions(actions: &[crate::ui::main_view::Action]) {
+    use crate::ui::main_view::Action;
+    for action in actions {
+        let what = match action {
+            Action::OpenSettings => "開設定".to_string(),
+            Action::FocusReset => "定位".to_string(),
+            Action::RestartForUpdate => "重啟更新".to_string(),
+            Action::OpenReport(r) => format!("開報告 {}", r.id),
+            Action::Replay(r) => format!("重播 {}", r.id),
+        };
+        log::info!("點擊結果：{what}");
     }
 }
 
@@ -359,6 +438,12 @@ fn run_shot(
     let mut ui = Ui::new(gpu, OFFSCREEN_FORMAT, (args.width, args.height), args.scale)?;
     let mut icons = IconCache::default();
     let mut view = MainView::new(args.width);
+    // The predicted towns need the model: from disk, never fetched in a test.
+    if let Some(dir) = crate::paths::local_data_dir().map(|d| d.join("models")) {
+        if dir.is_dir() {
+            rt.spawn(crate::backend::ml_intensity::prepare(dir, app.net.client()));
+        }
+    }
     app.start(true);
     app.window.main_shown = true;
     let started = Instant::now();
