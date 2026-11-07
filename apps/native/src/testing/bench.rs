@@ -175,8 +175,14 @@ fn bench_frame_cpu() {
     );
     crate::preview::apply_preview(&mut h.app, "eew");
     let started = Instant::now();
-    let mut ui = crate::ui::Ui::new(&gpu, crate::render::OFFSCREEN_FORMAT, (1280.0, 815.0), 2.0)
-        .expect("a UI");
+    let mut ui = crate::ui::Ui::new(
+        &gpu,
+        crate::render::OFFSCREEN_FORMAT,
+        (1280.0, 815.0),
+        2.0,
+        &crate::render::FONTS,
+    )
+    .expect("a UI");
     println!(
         "{:44} {:9.3} ms",
         "Ui::new",

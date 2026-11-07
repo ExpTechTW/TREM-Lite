@@ -23,6 +23,19 @@ const FACES: &[&[u8]] = &[MANROPE, NOTO];
 #[cfg(target_arch = "wasm32")]
 const FACES: &[&[u8]] = &[MANROPE, NOTO, WEB_SYMBOLS[0], WEB_SYMBOLS[1]];
 
+/// Where Manrope's lines sit.
+pub const METRICS: FontMetrics = FontMetrics {
+    // Manrope's ascent and descent per em. Han characters fall back to Noto but share
+    // Manrope's baseline.
+    ascent: 1.066,
+    descent: 0.3,
+    // The ascent of `line-height: normal` on a line with Han, in em, and the height of
+    // such a line.
+    normal_ascent: 1.16,
+    normal_line: 1.46,
+    line_height: 1.35,
+};
+
 pub static FONTS: FontConfig = FontConfig {
     faces: FACES,
     sans: "Manrope",
@@ -31,16 +44,6 @@ pub static FONTS: FontConfig = FontConfig {
     // Manrope's `wght` axis. Outside it cosmic-text would pick Noto (whose OS/2 weight
     // is 100) for Latin as well.
     weights: 200..=800,
-    metrics: FontMetrics {
-        // Manrope's ascent and descent per em. Han characters fall back to Noto but share
-        // Manrope's baseline.
-        ascent: 1.066,
-        descent: 0.3,
-        // The ascent of `line-height: normal` on a line with Han, in em, and the height
-        // of such a line.
-        normal_ascent: 1.16,
-        normal_line: 1.46,
-        line_height: 1.35,
-    },
+    metrics: METRICS,
     locale: "zh-TW",
 };

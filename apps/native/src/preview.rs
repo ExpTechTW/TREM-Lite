@@ -41,6 +41,7 @@ pub fn screenshot(
                 OFFSCREEN_FORMAT,
                 (args.width, args.height),
                 args.scale,
+                &crate::render::FONTS,
             )?;
             let mut icons = IconCache::default();
             let mut view = MainView::new(args.width);
@@ -68,7 +69,13 @@ pub fn screenshot(
         }
         "pip" => {
             let (mut app, _rx) = preview_app(rt, args)?;
-            let mut ui = Ui::new(&gpu, OFFSCREEN_FORMAT, (276.0, 147.0), args.scale)?;
+            let mut ui = Ui::new(
+                &gpu,
+                OFFSCREEN_FORMAT,
+                (276.0, 147.0),
+                args.scale,
+                &crate::render::FONTS,
+            )?;
             let mut icons = IconCache::default();
             apply_preview(&mut app, &args.preview);
             capture(&gpu, 276.0, 147.0, args.scale, path, |target, encoder| {
@@ -86,7 +93,13 @@ pub fn screenshot(
         }
         "settings" => {
             let (mut app, _rx) = preview_app(rt, args)?;
-            let mut ui = Ui::new(&gpu, OFFSCREEN_FORMAT, (970.0, 590.0), args.scale)?;
+            let mut ui = Ui::new(
+                &gpu,
+                OFFSCREEN_FORMAT,
+                (970.0, 590.0),
+                args.scale,
+                &crate::render::FONTS,
+            )?;
             let mut icons = IconCache::default();
             // With fixture data, the station list is there to pick from.
             if let Some(text) =
@@ -415,7 +428,13 @@ fn run_shot(
     path: &Path,
 ) -> Result<(u32, u32), String> {
     let (mut app, rx) = preview_app(rt, args)?;
-    let mut ui = Ui::new(gpu, OFFSCREEN_FORMAT, (args.width, args.height), args.scale)?;
+    let mut ui = Ui::new(
+        gpu,
+        OFFSCREEN_FORMAT,
+        (args.width, args.height),
+        args.scale,
+        &crate::render::FONTS,
+    )?;
     let mut icons = IconCache::default();
     let mut view = MainView::new(args.width);
     // The predicted towns need the model: from disk, never fetched in a test.

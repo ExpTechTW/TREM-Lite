@@ -1,6 +1,6 @@
 [package]
 name = "trem-gfx"
-description = "What a TREM app draws with: the shared GPU device, shaped text, the UI's batch, offscreen pictures"
+description = "What a TREM app draws with: the shared GPU device, shaped text, an immediate-mode UI, offscreen pictures"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -22,6 +22,8 @@ rayon = "1.12"
 swash = "0.2.10"
 # Script enum for the font fallback list. Already pulled in by cosmic-text.
 unicode-script = { version = "0.5", default-features = false }
+# std's Instant panics in a browser; this is std's own off the web.
+web-time = "1"
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl"] }
 winit = { version = "0.30", default-features = false, features = ["rwh_06"] }
 

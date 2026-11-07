@@ -75,7 +75,14 @@ fn overlays(state: &str, width: f32, height: f32) {
         Harness::default_config(),
     );
     crate::preview::apply_preview(&mut h.app, state);
-    let mut ui = Ui::new(&gpu, OFFSCREEN_FORMAT, (width, height), 1.0).expect("a UI");
+    let mut ui = Ui::new(
+        &gpu,
+        OFFSCREEN_FORMAT,
+        (width, height),
+        1.0,
+        &crate::render::FONTS,
+    )
+    .expect("a UI");
     let mut icons = IconCache::default();
     let mut view = MainView::new(width);
     let rgba = render_rgba(&gpu, width as u32, height as u32, |target, encoder| {
@@ -120,7 +127,14 @@ fn pip_in_a_trigger() {
         Harness::default_config(),
     );
     crate::preview::apply_preview(&mut h.app, "trigger");
-    let mut ui = Ui::new(&gpu, OFFSCREEN_FORMAT, (276.0, 147.0), 1.0).expect("a UI");
+    let mut ui = Ui::new(
+        &gpu,
+        OFFSCREEN_FORMAT,
+        (276.0, 147.0),
+        1.0,
+        &crate::render::FONTS,
+    )
+    .expect("a UI");
     let mut icons = IconCache::default();
     let rgba = render_rgba(&gpu, 276, 147, |target, encoder| {
         ui.begin();
@@ -148,7 +162,14 @@ fn the_sound_settings() {
         super::spec_answers(),
         Harness::default_config(),
     );
-    let mut ui = Ui::new(&gpu, OFFSCREEN_FORMAT, (970.0, 590.0), 1.0).expect("a UI");
+    let mut ui = Ui::new(
+        &gpu,
+        OFFSCREEN_FORMAT,
+        (970.0, 590.0),
+        1.0,
+        &crate::render::FONTS,
+    )
+    .expect("a UI");
     let mut icons = IconCache::default();
     let mut view = SettingsView::new(&h.app);
     view.select_tab_named("音效");

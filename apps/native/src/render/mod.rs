@@ -4,5 +4,5 @@
 mod fonts;
 pub mod map_pass;
 
-pub use fonts::FONTS;
+pub use fonts::{FONTS, METRICS};
 pub use trem_gfx::render::*;

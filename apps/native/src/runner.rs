@@ -653,13 +653,13 @@ impl Runner {
         // A browser has one thread: one after the other.
         #[cfg(target_arch = "wasm32")]
         let (ui, pass) = (
-            Ui::new(gpu, format, logical, scale),
+            Ui::new(gpu, format, logical, scale, &crate::render::FONTS),
             Ok::<_, ()>(MapPass::new(gpu, format)),
         );
         #[cfg(not(target_arch = "wasm32"))]
         let (ui, pass) = std::thread::scope(|scope| {
             let pass = scope.spawn(|| MapPass::new(gpu, format));
-            let ui = Ui::new(gpu, format, logical, scale);
+            let ui = Ui::new(gpu, format, logical, scale, &crate::render::FONTS);
             (ui, pass.join())
         });
         match ui {
@@ -682,7 +682,7 @@ impl Runner {
             }
             return true;
         }
-        match Ui::new(&self.gpu, format, logical, scale) {
+        match Ui::new(&self.gpu, format, logical, scale, &crate::render::FONTS) {
             Ok(ui) => {
                 self.ui = Some(ui);
                 true

@@ -217,7 +217,13 @@ pub fn build_sprite(gpu: &Gpu) -> Result<wgpu::Texture, String> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn sprite_pixels(gpu: &Gpu) -> Result<Vec<u8>, String> {
     let (w, h) = atlas_size();
-    let mut ui = Ui::new(gpu, OFFSCREEN_FORMAT, (w as f32, h as f32), 1.0)?;
+    let mut ui = Ui::new(
+        gpu,
+        OFFSCREEN_FORMAT,
+        (w as f32, h as f32),
+        1.0,
+        &crate::render::FONTS,
+    )?;
     let mut atlas = render_rgba(gpu, w, h, |view, encoder| {
         ui.begin();
         draw_badges(&mut ui);
