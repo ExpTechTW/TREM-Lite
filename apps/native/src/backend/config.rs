@@ -137,7 +137,7 @@ impl Config {
 }
 
 fn config_path() -> Result<PathBuf, String> {
-    let dir = crate::paths::config_dir().ok_or("no config dir")?;
+    let dir = crate::paths::PATHS.config_dir().ok_or("no config dir")?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.join("config.yml"))
 }

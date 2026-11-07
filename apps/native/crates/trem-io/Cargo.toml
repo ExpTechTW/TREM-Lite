@@ -1,0 +1,45 @@
+[package]
+name = "trem-io"
+description = "What a TREM app does beyond its own state, short of drawing: async work, timers, the caching HTTP proxy, logs, where files go"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[features]
+default = ["cache"]
+# The desktop's caching HTTP proxy (net::http): its SQLite store, regional routing,
+# retries. Nothing in a browser, whose fetch keeps its own cache.
+cache = ["dep:rusqlite", "dep:serde_json"]
+# What an app's tests need from here: the timers' virtual clock.
+testing = []
+
+[dependencies]
+trem-core = { path = "../trem-core", default-features = false }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+log = { version = "0.4", default-features = false, features = ["std"] }
+web-time = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+dirs = { version = "6", default-features = false }
+# The client the proxy builds: rustls, http2, charset, cookies, macOS proxy config, gzip,
+# and stream for the apps' SSE, as the desktop app has it.
+reqwest = { version = "=0.12.28", default-features = false, features = ["rustls-tls", "http2", "charset", "cookies", "macos-system-configuration", "gzip", "stream"] }
+rusqlite = { version = "0.37", features = ["bundled"], optional = true }
+serde_json = { version = "1", optional = true }
+tokio = { version = "1", default-features = false, features = ["rt", "time", "sync"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+reqwest = { version = "=0.12.28", default-features = false, features = ["stream"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "wasmbind"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "console"] }
+console_error_panic_hook = "0.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "time", "sync"] }

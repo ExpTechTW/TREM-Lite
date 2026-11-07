@@ -8,6 +8,7 @@ use web_time::Instant;
 
 use serde_json::Value;
 use trem_core::fmt::fmt_dur;
+use trem_io::net::{Fetched, ProxyRequest};
 
 use crate::app::{App, Msg};
 use crate::domain::constants::host::{API_1 as TREM_ARCHIVE_HOST, CORE_API};
@@ -20,7 +21,6 @@ use crate::domain::utils::format_time;
 use crate::events::Event;
 use crate::features::rts::fill_derived;
 use crate::net::sse::{Cancel, Health};
-use crate::net::{Fetched, ProxyRequest};
 use crate::timers::{Task, TimerId};
 use crate::variable::{AudioCache, LastSeen, Replay, RtsTrigger};
 

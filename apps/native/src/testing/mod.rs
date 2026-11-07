@@ -15,13 +15,14 @@ use std::rc::Rc;
 use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+use trem_io::net::{Fetched, ProxyRequest};
+
 use crate::app::{App, Msg, Post};
 use crate::backend::config::{self, Config};
 use crate::events::Event;
 use crate::features::window::WindowCommand;
 use crate::host::{Host, Output};
 use crate::map::MapEngine;
-use crate::net::{Fetched, ProxyRequest};
 use crate::platform::speech::Speech;
 
 /// The recorded earthquake's answers, by URL.

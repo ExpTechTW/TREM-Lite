@@ -71,7 +71,7 @@ pub async fn prepare(dir: PathBuf, client: reqwest::Client) {
             }
             let _ = std::fs::remove_file(&path);
         }
-        crate::exec::sleep(RETRY).await;
+        trem_io::exec::sleep(RETRY).await;
     }
 }
 

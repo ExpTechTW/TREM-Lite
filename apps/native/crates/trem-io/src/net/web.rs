@@ -10,6 +10,12 @@ pub struct ProxyState {
     client: reqwest::Client,
 }
 
+impl Default for ProxyState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProxyState {
     pub fn new() -> Self {
         Self {

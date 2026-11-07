@@ -414,7 +414,7 @@ impl MapPass {
         #[cfg(target_arch = "wasm32")]
         {
             let popped = scope.pop();
-            crate::exec::spawn(async move {
+            trem_io::exec::spawn(async move {
                 if let Some(err) = popped.await {
                     log::error!(target: "map", "地圖 pipeline 建立失敗：{err}");
                 }

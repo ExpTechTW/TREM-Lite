@@ -1,33 +1,16 @@
-//! Everything that talks to the network: the caching proxy, regional routing,
-//! SSE streams and clock calibration. Fixture mode replaces all of it with files.
-//! In a browser, fetch does the requests and the browser keeps the HTTP cache.
+//! The network beyond trem_io's proxy: the SSE streams and clock calibration. Fixture
+//! mode replaces all of it with files.
 
-#[cfg(not(target_arch = "wasm32"))]
-pub mod cache;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod endpoints;
-pub mod fixture;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod http;
 pub mod ntp;
 pub mod sse;
-pub mod types;
-#[cfg(target_arch = "wasm32")]
-pub mod web;
 
+/// The proxy's name, and the hosts it may talk to: what the app actually requests
+/// through it, the ExpTech APIs and map tiles. (A CWA report page is opened in the
+/// browser; it does not come through here.)
 #[cfg(not(target_arch = "wasm32"))]
-pub use http::ProxyState;
-pub use types::{Fetched, ProxyRequest};
-#[cfg(target_arch = "wasm32")]
-pub use web::ProxyState;
-
-/// Tests drive the async proxy without a global runtime.
-#[cfg(test)]
-pub fn test_block_on<F: std::future::Future>(future: F) -> F::Output {
-    tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2)
-        .enable_all()
-        .build()
-        .expect("test runtime")
-        .block_on(future)
+pub fn proxy_config() -> trem_io::net::ProxyConfig {
+    trem_io::net::ProxyConfig {
+        user_agent: concat!("TREM-Lite/", env!("CARGO_PKG_VERSION")).to_string(),
+        allowed_hosts: &["*.exptech.dev", "*.exptech.com.tw", "cdn.jsdelivr.net"],
+    }
 }

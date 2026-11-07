@@ -95,7 +95,7 @@ async fn http(client: &reqwest::Client) -> Result<NtpResult, String> {
 }
 
 pub async fn ntp_sync(client: reqwest::Client) -> Result<NtpResult, String> {
-    if crate::net::fixture::active() {
+    if trem_io::net::fixture::active() {
         return Ok(NtpResult {
             offset_ms: 0.0,
             rtt_ms: 0.0,

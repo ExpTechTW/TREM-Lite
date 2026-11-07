@@ -38,6 +38,8 @@ apps/native/
   crates/               與其他 TREM app 共用的 lib，app 以 path 相依
     trem-core/          純計算，瀏覽器也能跑：地區與警戒框、走時表、震度換算與色票、版本標籤、
                         強度模型的執行器與各鄉鎮預估、SSE 的格式。地區資料（assets/data）跟著它
+    trem-io/            不碰 GPU 的 I/O：async 工作在哪裡跑（exec）、計時器、桌面的 HTTP 快取代理
+                        （http、cache、endpoints）與瀏覽器的 fetch、fixture、檔案日誌、資料目錄
   assets/               字型（fonts/web 是瀏覽器版用的）、音效、地圖圖示、強度模型、app 圖示
   web/                  瀏覽器版的頁面、建置腳本、字型切割腳本
   packaging/            macOS .app 打包
@@ -47,10 +49,9 @@ apps/native/
     runner.rs           winit 事件迴圈與三個視窗（瀏覽器版只有主視窗）
     app.rs              `App`：擁有所有狀態、事件匯流排、計時器
     host.rs             app 對外的一切：網路、背景工作、檔案、音效與通知；測試換成錄好的
-    exec.rs             async 工作在哪裡跑：桌面是 tokio，瀏覽器是頁面的事件迴圈
-    events.rs、timers.rs、variable.rs
-    net/                桌面：http（快取代理）、cache、endpoints；共用：sse、ntp、types、fixture；瀏覽器：web（fetch）
-    backend/            config、logging、audio（瀏覽器是 audio_web）、sound、awake、ml_intensity（模型檔的下載與檢查）
+    events.rs、timers.rs（計時器觸發的 Task）、variable.rs、paths.rs（這個 app 的 identifier）
+    net/                sse、ntp；快取代理在 trem-io，這裡是它的 User-Agent 與允許的主機
+    backend/            config、logging（哪些 crate 算本程式、寫到哪個等級）、audio（瀏覽器是 audio_web）、sound、awake、ml_intensity（模型檔的下載與檢查）
     domain/             types、utils、constants、palette
     features/           data、streams、rts、eew、estimate、focus、alerts、report、overlays、flash、update、window…
     map/                camera、mvt、tessellate、tiles、dem、scene、icons

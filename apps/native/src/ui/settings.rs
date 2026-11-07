@@ -215,7 +215,9 @@ pub struct SettingsView {
 }
 
 fn tab_file() -> Option<std::path::PathBuf> {
-    crate::paths::data_dir().map(|d| d.join("setting-tab"))
+    crate::paths::PATHS
+        .data_dir()
+        .map(|d| d.join("setting-tab"))
 }
 
 impl SettingsView {
@@ -1049,7 +1051,7 @@ impl SettingsView {
             ui.set_cursor(CursorKind::Pointer);
         }
         if hit.clicked && !self.swallow_click {
-            if let Err(err) = crate::paths::open_url(&url) {
+            if let Err(err) = trem_io::paths::open_url(&url) {
                 self.say(format!("打不開連結：{err}"));
             }
         }

@@ -328,10 +328,10 @@ const TILE_MAX_AGE_MS: u64 = 7 * 24 * 60 * 60 * 1000;
 
 /// A tile's answer as the tile manager takes it: none for a tile the server does not have.
 async fn fetch_tile(
-    proxy: &crate::net::ProxyState,
+    proxy: &trem_io::net::ProxyState,
     url: String,
 ) -> Result<Option<std::sync::Arc<Vec<u8>>>, String> {
-    let request = crate::net::ProxyRequest::get(url, TILE_TIMEOUT_MS).max_age(TILE_MAX_AGE_MS);
+    let request = trem_io::net::ProxyRequest::get(url, TILE_TIMEOUT_MS).max_age(TILE_MAX_AGE_MS);
     match proxy.send(request).await {
         Ok(fetched) if fetched.status == 404 || fetched.status == 204 => Ok(None),
         Ok(fetched) if fetched.ok() => Ok(Some(fetched.body)),
@@ -342,10 +342,10 @@ async fn fetch_tile(
 
 /// In a browser: fetched by the page and decoded on its one thread.
 #[cfg(target_arch = "wasm32")]
-pub fn tile_fetch(proxy: std::sync::Arc<crate::net::ProxyState>) -> Fetch {
+pub fn tile_fetch(proxy: std::sync::Arc<trem_io::net::ProxyState>) -> Fetch {
     std::sync::Arc::new(move |url, reply| {
         let proxy = std::sync::Arc::clone(&proxy);
-        crate::exec::spawn(async move {
+        trem_io::exec::spawn(async move {
             reply(fetch_tile(&proxy, url).await);
         });
     })
@@ -356,7 +356,7 @@ pub fn tile_fetch(proxy: std::sync::Arc<crate::net::ProxyState>) -> Fetch {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn tile_fetch(
     handle: tokio::runtime::Handle,
-    proxy: std::sync::Arc<crate::net::ProxyState>,
+    proxy: std::sync::Arc<trem_io::net::ProxyState>,
 ) -> Fetch {
     std::sync::Arc::new(move |url, reply| {
         let proxy = std::sync::Arc::clone(&proxy);

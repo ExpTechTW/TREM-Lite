@@ -31,7 +31,7 @@
 //! an answer, a stored one, or an error that means it.
 //!
 //! Long-lived responses (SSE) deliberately do *not* come through here, since a
-//! cache has nothing to offer an infinite stream: [`crate::net::sse`] asks
+//! cache has nothing to offer an infinite stream: an app's SSE asks
 //! [`ProxyState::resolve`] for the node and tells [`ProxyState::report`] how it went.
 
 use std::collections::HashMap;
@@ -45,10 +45,15 @@ use crate::net::cache::{gunzip, now_ms, CacheEntry, HttpCache, StoredResponse};
 use crate::net::endpoints::{Endpoints, Target};
 pub use crate::net::types::{Fetched, ProxyRequest};
 
-/// Hosts the proxy is willing to talk to: what the app actually requests through
-/// it, the ExpTech APIs and map tiles. (A CWA report page is opened in the
-/// browser; it does not come through here.)
-const ALLOWED_HOSTS: &[&str] = &["*.exptech.dev", "*.exptech.com.tw", "cdn.jsdelivr.net"];
+/// Who the proxy says it is, and whom it talks to: the app's to say.
+#[derive(Clone, Debug)]
+pub struct ProxyConfig {
+    /// Every request's `User-Agent`: the app's name and version, `TREM-Lite/0.1.0`.
+    pub user_agent: String,
+    /// The only hosts it sends to; `*.example.com` covers sub.example.com and
+    /// example.com itself.
+    pub allowed_hosts: &'static [&'static str],
+}
 
 /// Response headers worth carrying back to the caller / storing. Keeping the
 /// set small stops per-connection noise (`set-cookie`, `date`, `server`, …)
@@ -77,6 +82,7 @@ const HOST_CONCURRENCY: usize = 8;
 
 pub struct ProxyState {
     client: reqwest::Client,
+    allowed_hosts: &'static [&'static str],
     /// The cache is internally concurrent (reader pool + writer thread), so it
     /// needs no outer lock — see [`crate::http_cache`]. Reads still run on the
     /// blocking pool because a pooled SQLite query and the gzip round trip are
@@ -114,13 +120,13 @@ impl ProxyState {
         lock(&self.cooldown).insert(host.to_string(), Instant::now() + wait.min(MAX_COOLDOWN));
     }
 
-    pub fn new(cache_dir: &std::path::Path) -> Result<Self, String> {
+    pub fn new(cache_dir: &std::path::Path, config: ProxyConfig) -> Result<Self, String> {
         let cache = HttpCache::open(&cache_dir.join("http-cache.sqlite"))?;
 
         let client = reqwest::Client::builder()
             // Forces `Accept-Encoding: gzip` and transparent decoding.
             .gzip(true)
-            .user_agent(concat!("TREM-Lite/", env!("CARGO_PKG_VERSION")))
+            .user_agent(config.user_agent)
             .build()
             .map_err(|e| e.to_string())?;
 
@@ -132,6 +138,7 @@ impl ProxyState {
 
         Ok(Self {
             client,
+            allowed_hosts: config.allowed_hosts,
             cache: Arc::new(cache),
             endpoints,
             cooldown: Mutex::new(HashMap::new()),
@@ -173,7 +180,7 @@ impl ProxyState {
             return Err(format!("blocked scheme: {}", parsed.scheme()));
         }
         let host = parsed.host_str().unwrap_or_default().to_ascii_lowercase();
-        if !host_allowed(&host) {
+        if !host_allowed(self.allowed_hosts, &host) {
             return Err(format!("host not allowed: {host}"));
         }
         let started = Instant::now();
@@ -184,8 +191,8 @@ impl ProxyState {
     }
 }
 
-fn host_allowed(host: &str) -> bool {
-    ALLOWED_HOSTS.iter().any(|pattern| {
+fn host_allowed(allowed: &[&str], host: &str) -> bool {
+    allowed.iter().any(|pattern| {
         match pattern.strip_prefix("*.") {
             // `*.example.com` covers sub.example.com and example.com itself.
             Some(suffix) => host
@@ -723,6 +730,9 @@ async fn fetch(
 mod tests {
     use super::*;
     use std::io::{Read, Write};
+
+    /// TREM-Lite's list.
+    const ALLOWED_HOSTS: &[&str] = &["*.exptech.dev", "*.exptech.com.tw", "cdn.jsdelivr.net"];
     use std::net::TcpListener;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -762,6 +772,7 @@ mod tests {
         let state = ProxyState {
             endpoints: Arc::new(Endpoints::new(client.clone())),
             client,
+            allowed_hosts: ALLOWED_HOSTS,
             cache: Arc::new(cache),
             cooldown: Mutex::new(HashMap::new()),
             gates: Mutex::new(HashMap::new()),
@@ -903,12 +914,13 @@ mod tests {
 
     #[test]
     fn only_listed_hosts_and_their_subdomains_are_allowed() {
-        assert!(host_allowed("exptech.dev"));
-        assert!(host_allowed("api.core-tnn1.exptech.dev"));
-        assert!(host_allowed("cdn.jsdelivr.net"));
-        assert!(!host_allowed("evilexptech.dev"));
-        assert!(!host_allowed("exptech.dev.example.com"));
-        assert!(!host_allowed("x.cdn.jsdelivr.net"));
+        let allowed = |host| host_allowed(ALLOWED_HOSTS, host);
+        assert!(allowed("exptech.dev"));
+        assert!(allowed("api.core-tnn1.exptech.dev"));
+        assert!(allowed("cdn.jsdelivr.net"));
+        assert!(!allowed("evilexptech.dev"));
+        assert!(!allowed("exptech.dev.example.com"));
+        assert!(!allowed("x.cdn.jsdelivr.net"));
     }
 
     #[test]

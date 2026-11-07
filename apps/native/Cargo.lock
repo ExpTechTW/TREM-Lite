@@ -4216,6 +4216,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "trem-io"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "console_error_panic_hook",
+ "dirs 6.0.0",
+ "flate2",
+ "futures-util",
+ "js-sys",
+ "log",
+ "reqwest",
+ "rusqlite",
+ "serde_json",
+ "tokio",
+ "trem-core",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
+]
+
+[[package]]
 name = "trem-lite-native"
 version = "0.1.0"
 dependencies = [
@@ -4223,14 +4245,11 @@ dependencies = [
  "bytemuck",
  "bytes",
  "chrono",
- "console_error_panic_hook",
  "cosmic-text",
- "dirs 6.0.0",
  "earcutr",
  "flate2",
  "futures-util",
  "image",
- "js-sys",
  "ksni",
  "log",
  "notify-rust",
@@ -4242,7 +4261,6 @@ dependencies = [
  "rayon",
  "reqwest",
  "rodio",
- "rusqlite",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -4251,6 +4269,7 @@ dependencies = [
  "tokio",
  "tray-icon",
  "trem-core",
+ "trem-io",
  "tts",
  "unicode-script",
  "wasm-bindgen",

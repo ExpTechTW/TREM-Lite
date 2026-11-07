@@ -11,7 +11,6 @@ mod backend;
 mod domain;
 
 mod events;
-mod exec;
 
 mod features;
 mod host;

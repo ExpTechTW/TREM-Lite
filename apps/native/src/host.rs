@@ -5,10 +5,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use trem_io::net::{Fetched, ProxyRequest, ProxyState};
+
 use crate::app::{Msg, Post};
 use crate::backend::audio::AudioEngine;
 use crate::net::sse::Cancel;
-use crate::net::{Fetched, ProxyRequest, ProxyState};
 
 /// How the app is running.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -62,7 +63,7 @@ pub struct Host {
 impl Host {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn live(rt: tokio::runtime::Handle, post: Post, net: Arc<ProxyState>) -> Self {
-        let mode = if crate::net::fixture::active() {
+        let mode = if trem_io::net::fixture::active() {
             Mode::Fixture
         } else {
             Mode::Live
@@ -72,7 +73,7 @@ impl Host {
             rt,
             post,
             net: Some(net),
-            data_dir: crate::paths::data_dir(),
+            data_dir: crate::paths::PATHS.data_dir(),
             audio: (mode == Mode::Live).then(AudioEngine::new),
             #[cfg(test)]
             fake_net: None,
@@ -107,12 +108,12 @@ impl Host {
     /// Async work that posts its own result.
     pub fn spawn(
         &self,
-        work: impl std::future::Future<Output = ()> + crate::exec::MaybeSend + 'static,
+        work: impl std::future::Future<Output = ()> + trem_io::exec::MaybeSend + 'static,
     ) {
         #[cfg(not(target_arch = "wasm32"))]
         self.rt.spawn(work);
         #[cfg(target_arch = "wasm32")]
-        crate::exec::spawn(work);
+        trem_io::exec::spawn(work);
     }
 
     #[cfg(test)]
@@ -200,7 +201,7 @@ impl Host {
         let post = self.post.clone();
         // A browser has one thread: the work runs after this turn of the event loop.
         #[cfg(target_arch = "wasm32")]
-        crate::exec::spawn(async move {
+        trem_io::exec::spawn(async move {
             if let Some(msg) = work() {
                 post(msg);
             }
@@ -248,12 +249,12 @@ impl Host {
         };
         let post = self.post.clone();
         #[cfg(target_arch = "wasm32")]
-        crate::exec::spawn(async move {
+        trem_io::exec::spawn(async move {
             let all = futures_util::future::join_all(reqs.iter().map(|r| net.send(r.clone())));
             let answers = match cancel {
-                Some(cancel) => match crate::exec::race(cancel.cancelled(), all).await {
-                    crate::exec::Either::First(()) => return,
-                    crate::exec::Either::Second(answers) => answers,
+                Some(cancel) => match trem_io::exec::race(cancel.cancelled(), all).await {
+                    trem_io::exec::Either::First(()) => return,
+                    trem_io::exec::Either::Second(answers) => answers,
                 },
                 None => all.await,
             };

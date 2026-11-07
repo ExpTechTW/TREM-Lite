@@ -12,6 +12,7 @@ path = "src/main.rs"
 [dependencies]
 # The libraries beside the app, in crates/: shared with other TREM apps.
 trem-core = { path = "crates/trem-core", features = ["rayon"] }
+trem-io = { path = "crates/trem-io" }
 bytes = { version = "1", default-features = false, features = ["std"] }
 bytemuck = { version = "1", default-features = false, features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
@@ -42,13 +43,11 @@ web-time = "1"
 
 # The desktop: its own network stack, cache, sound, tray and runtime.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-dirs = { version = "6", default-features = false }
 # Same reqwest the desktop proxy rides on (tauri-plugin-http 2.5.9 → 0.12.28):
 # rustls, http2, charset, cookies, macOS proxy config, gzip, plus stream for SSE.
 reqwest = { version = "=0.12.28", default-features = false, features = ["rustls-tls", "http2", "charset", "cookies", "macos-system-configuration", "gzip", "stream"] }
 # mp3 only: the bundled clips are mp3. Desktop enables flac/vorbis/wav too.
 rodio = { version = "0.20", default-features = false, features = ["mp3"] }
-rusqlite = { version = "0.37", features = ["bundled"] }
 tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "time", "sync", "net", "io-util"] }
 pollster = { version = "0.4", default-features = false }
 notify-rust = "4"
@@ -63,9 +62,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "webgpu", "fragile-send-sync-non-atomic-wasm"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "HtmlAudioElement", "HtmlMediaElement", "Storage", "Location", "Navigator", "console", "Performance", "Clipboard", "Notification", "NotificationOptions", "NotificationPermission", "SpeechSynthesis", "SpeechSynthesisUtterance"] }
-console_error_panic_hook = "0.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 tts = { version = "0.26", default-features = false }
@@ -105,6 +102,10 @@ edition = "2021"
 license = "AGPL-3.0-only"
 publish = false
 repository = "https://github.com/ExpTechTW/trem-native-rust"
+
+# The timers' virtual clock, for the tests that run the whole app.
+[dev-dependencies]
+trem-io = { path = "crates/trem-io", features = ["testing"] }
 
 [profile.release]
 lto = true

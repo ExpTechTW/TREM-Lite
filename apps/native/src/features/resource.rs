@@ -4,12 +4,13 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use trem_io::net::ProxyRequest;
+
 use crate::app::{App, Msg};
 use crate::domain::constants::timeout;
 use crate::domain::types::{parse_legacy_stations, parse_station_csv, Station, StationId};
 use crate::domain::utils::distance;
 use crate::domain::utils::text_hash;
-use crate::net::ProxyRequest;
 use crate::timers::Task;
 
 const STATIONS_URL: &str = "https://static.core.exptech.dev/resource/station";

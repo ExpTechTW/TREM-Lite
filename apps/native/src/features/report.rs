@@ -3,6 +3,8 @@
 
 use std::rc::Rc;
 
+use trem_io::net::ProxyRequest;
+
 use crate::app::{App, Msg};
 use crate::backend::config::IdleMap;
 use crate::domain::constants::host::CORE_API;
@@ -12,7 +14,6 @@ use crate::domain::utils::text_hash;
 use crate::events::Event;
 use crate::map::icons::IconId;
 use crate::map::scene::Symbol;
-use crate::net::ProxyRequest;
 use crate::timers::{Task, TimerId};
 use crate::variable::{Coord, Replay};
 
@@ -407,7 +408,7 @@ impl App {
         } else {
             format!("https://www.cwa.gov.tw/V8/C/E/EQ/EQ{report_id}.html")
         };
-        if let Err(err) = crate::paths::open_url(&url) {
+        if let Err(err) = trem_io::paths::open_url(&url) {
             log::warn!(target: "report", "打不開 {url}：{err}");
         }
     }

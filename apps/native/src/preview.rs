@@ -7,10 +7,11 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use trem_io::net::ProxyState;
+
 use crate::app::{App, Msg, Post};
 use crate::domain::types::ReportListItem;
 use crate::map::MapEngine;
-use crate::net::ProxyState;
 use crate::platform::speech::Speech;
 use crate::render::{capture, Gpu, OFFSCREEN_FORMAT};
 use crate::ui::icons::IconCache;
@@ -89,7 +90,7 @@ pub fn screenshot(
             let mut icons = IconCache::default();
             // With fixture data, the station list is there to pick from.
             if let Some(text) =
-                crate::net::fixture::read("https://static.core.exptech.dev/resource/station")
+                trem_io::net::fixture::read("https://static.core.exptech.dev/resource/station")
                     .ok()
                     .map(|f| String::from_utf8_lossy(&f.body).into_owned())
             {
@@ -178,7 +179,7 @@ fn log_actions(actions: &[crate::ui::main_view::Action]) {
 fn new_proxy() -> Result<Arc<ProxyState>, String> {
     let dir = std::env::temp_dir().join("trem-native-shot");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    Ok(Arc::new(ProxyState::new(&dir)?))
+    Ok(Arc::new(ProxyState::new(&dir, crate::net::proxy_config())?))
 }
 
 /// The app with its state, its timers not started.
@@ -418,7 +419,10 @@ fn run_shot(
     let mut icons = IconCache::default();
     let mut view = MainView::new(args.width);
     // The predicted towns need the model: from disk, never fetched in a test.
-    if let Some(dir) = crate::paths::local_data_dir().map(|d| d.join("models")) {
+    if let Some(dir) = crate::paths::PATHS
+        .local_data_dir()
+        .map(|d| d.join("models"))
+    {
         if dir.is_dir() {
             if let Some(net) = &app.host.net {
                 rt.spawn(crate::backend::ml_intensity::prepare(dir, net.client()));

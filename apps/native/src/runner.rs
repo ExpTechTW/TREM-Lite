@@ -247,8 +247,8 @@ pub fn run_web(event_loop: EventLoop<Msg>, gpu: Gpu) {
     use winit::platform::web::EventLoopExtWebSys;
     event_loop.set_control_flow(ControlFlow::Wait);
     let post = post_to(&event_loop);
-    let net = Arc::new(crate::net::ProxyState::new());
-    crate::exec::spawn(crate::backend::ml_intensity::prepare(
+    let net = Arc::new(trem_io::net::ProxyState::new());
+    trem_io::exec::spawn(crate::backend::ml_intensity::prepare(
         std::path::PathBuf::new(),
         net.client(),
     ));
@@ -288,11 +288,14 @@ pub fn run(
         .and_then(|setup| setup.join().ok().flatten())
         .or_else(Gpu::new)
         .ok_or("沒有可用的 GPU")?;
-    let cache = crate::paths::cache_dir().ok_or("找不到快取目錄")?;
+    let cache = crate::paths::PATHS.cache_dir().ok_or("找不到快取目錄")?;
     std::fs::create_dir_all(&cache).map_err(|e| e.to_string())?;
-    let net = Arc::new(crate::net::ProxyState::new(&cache)?);
-    if !crate::net::fixture::active() {
-        if let Some(dir) = crate::paths::local_data_dir() {
+    let net = Arc::new(trem_io::net::ProxyState::new(
+        &cache,
+        crate::net::proxy_config(),
+    )?);
+    if !trem_io::net::fixture::active() {
+        if let Some(dir) = crate::paths::PATHS.local_data_dir() {
             rt.spawn(crate::backend::ml_intensity::prepare(
                 dir.join("models"),
                 net.client(),
@@ -555,7 +558,9 @@ impl Runner {
         if !crate::render::device_lost() || self.gave_up_on_device {
             return;
         }
-        let marker = crate::paths::cache_dir().map(|d| d.join("gpu-restart-at"));
+        let marker = crate::paths::PATHS
+            .cache_dir()
+            .map(|d| d.join("gpu-restart-at"));
         let recent = marker
             .as_ref()
             .and_then(|path| {

@@ -15,8 +15,7 @@ use futures_util::StreamExt;
 use tokio::sync::Notify;
 use trem_core::fmt::{fmt_bytes, fmt_dur};
 use trem_core::sse::{Frame, FrameReader};
-
-use crate::net::ProxyState;
+use trem_io::net::ProxyState;
 
 /// The server comments `: ping` into every stream each 60 s. Silence for one
 /// and a half of those means the connection is dead even if it looks open.
@@ -279,7 +278,7 @@ struct State {
     /// The connection in use, and one taking over from it.
     active: Option<(u64, Cancel)>,
     pending: Option<(u64, Cancel)>,
-    retry: Option<crate::exec::Task>,
+    retry: Option<trem_io::exec::Task>,
     active_label: String,
     next_id: u64,
 }
@@ -358,8 +357,8 @@ fn later(shared: &Arc<Shared>, handover: bool) {
     );
     state.failures += 1;
     let again = shared.clone();
-    state.retry = Some(crate::exec::spawn(async move {
-        crate::exec::sleep(delay).await;
+    state.retry = Some(trem_io::exec::spawn(async move {
+        trem_io::exec::sleep(delay).await;
         connect(&again, handover);
     }));
 }
@@ -392,7 +391,7 @@ fn connect(shared: &Arc<Shared>, handover: bool) {
         id
     };
     let shared = shared.clone();
-    crate::exec::spawn(async move { run_connection(shared, id, attempt).await });
+    trem_io::exec::spawn(async move { run_connection(shared, id, attempt).await });
 }
 
 async fn run_connection(shared: Arc<Shared>, id: u64, attempt: Cancel) {
@@ -400,14 +399,14 @@ async fn run_connection(shared: Arc<Shared>, id: u64, attempt: Cancel) {
     let mut conn = ConnLog::new(shared.spec.name, &url, shared.spec.wanted_topics);
     let waited = Instant::now();
 
-    let outcome = match crate::exec::race(
+    let outcome = match trem_io::exec::race(
         read_stream(&shared, id, &url, &mut conn, waited, &attempt),
         attempt.cancelled(),
     )
     .await
     {
-        crate::exec::Either::First(result) => Some(result),
-        crate::exec::Either::Second(()) => None,
+        trem_io::exec::Either::First(result) => Some(result),
+        trem_io::exec::Either::Second(()) => None,
     };
 
     if let Some(message) = outcome {
@@ -468,7 +467,7 @@ async fn read_stream(
         .header("Accept", "text/event-stream")
         .header("Cache-Control", "no-cache")
         .send();
-    let Ok(res) = crate::exec::timeout(READY, request).await else {
+    let Ok(res) = trem_io::exec::timeout(READY, request).await else {
         return format!("{} 內沒有問候，放棄這條連線", fmt_dur(READY));
     };
     let res = match res {
@@ -497,7 +496,7 @@ async fn read_stream(
         } else {
             READY.saturating_sub(opened.elapsed())
         };
-        let chunk = match crate::exec::timeout(limit, body.next()).await {
+        let chunk = match trem_io::exec::timeout(limit, body.next()).await {
             Ok(Some(Ok(chunk))) => chunk,
             Ok(Some(Err(e))) => {
                 if !attempt.is_cancelled() {
