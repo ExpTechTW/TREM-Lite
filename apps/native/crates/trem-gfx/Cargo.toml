@@ -20,7 +20,7 @@ notify = ["dep:notify-rust", "web-sys/Notification", "web-sys/NotificationOption
 speech = ["dep:tts", "web-sys/SpeechSynthesis", "web-sys/SpeechSynthesisUtterance"]
 # Full speed while the windows are hidden: no App Nap on macOS, no EcoQoS on Windows.
 awake = ["dep:objc2-foundation", "dep:windows"]
-# What an app's tests need from here: the map's virtual clock.
+# What an app's tests need from here: the map's virtual clock, golden files and pictures.
 testing = []
 
 [dependencies]

@@ -5,6 +5,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use trem_gfx::testing::gpu;
+
 use super::{Harness, QUAKE_ORIGIN_MS};
 use crate::map::camera::Target;
 use crate::map::MapEngine;
@@ -20,49 +22,7 @@ fn check_picture(name: &str, width: u32, height: u32, rgba: Vec<u8>) {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("testdata/golden/render")
         .join(format!("{name}.png"));
-    let actual = image::RgbaImage::from_raw(width, height, rgba).expect("pixels for the size");
-    if std::env::var_os("UPDATE_GOLDEN").is_some() {
-        std::fs::create_dir_all(path.parent().expect("a parent")).expect("the golden directory");
-        actual.save(&path).expect("the golden picture");
-        return;
-    }
-    let expected = image::open(&path)
-        .unwrap_or_else(|_| {
-            panic!(
-                "no golden picture {}: run with UPDATE_GOLDEN=1",
-                path.display()
-            )
-        })
-        .into_rgba8();
-    assert_eq!(expected.dimensions(), actual.dimensions(), "{name}: size");
-    let differ = expected
-        .pixels()
-        .zip(actual.pixels())
-        .filter(|(a, b)| a.0.iter().zip(b.0.iter()).any(|(x, y)| x.abs_diff(*y) > 16))
-        .count();
-    let share = differ as f64 / f64::from(width * height);
-    if share > 0.001 {
-        let out = std::env::temp_dir().join(format!("{name}-actual.png"));
-        let _ = actual.save(&out);
-        panic!(
-            "{name}: {:.3}% of pixels differ from the golden picture; this frame is at {}",
-            share * 100.0,
-            out.display()
-        );
-    }
-}
-
-/// The pictures are checked on a Mac like the one they were drawn on; elsewhere, and where
-/// `TREM_SKIP_PICTURES` is set (CI's runners), they are not.
-fn gpu() -> Option<Gpu> {
-    if !cfg!(target_os = "macos") || std::env::var_os("TREM_SKIP_PICTURES").is_some() {
-        return None;
-    }
-    let gpu = Gpu::new();
-    if gpu.is_none() {
-        eprintln!("no GPU: the pictures are not checked");
-    }
-    gpu
+    trem_gfx::testing::check_picture(&path, width, height, rgba);
 }
 
 fn overlays(state: &str, width: f32, height: f32) {

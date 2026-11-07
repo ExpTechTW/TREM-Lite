@@ -361,38 +361,7 @@ pub fn check_golden(name: &str, actual: &str) {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("testdata/golden")
         .join(format!("{name}.txt"));
-    if std::env::var_os("UPDATE_GOLDEN").is_some() {
-        std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new(".")))
-            .expect("the golden directory");
-        std::fs::write(&path, actual).expect("the golden file");
-        return;
-    }
-    let expected = std::fs::read_to_string(&path).unwrap_or_else(|_| {
-        panic!(
-            "no golden file {}: run with UPDATE_GOLDEN=1",
-            path.display()
-        )
-    });
-    if expected != actual {
-        let first = expected
-            .lines()
-            .zip(actual.lines())
-            .position(|(a, b)| a != b)
-            .unwrap_or_else(|| expected.lines().count().min(actual.lines().count()));
-        let near = |text: &str| {
-            text.lines()
-                .skip(first.saturating_sub(2))
-                .take(6)
-                .collect::<Vec<_>>()
-                .join("\n")
-        };
-        panic!(
-            "{name} differs from its golden file at line {}:\n--- expected\n{}\n--- actual\n{}",
-            first + 1,
-            near(&expected),
-            near(actual)
-        );
-    }
+    trem_gfx::testing::check_golden(&path, actual);
 }
 
 /// The report the recorded earthquake's replay starts from.

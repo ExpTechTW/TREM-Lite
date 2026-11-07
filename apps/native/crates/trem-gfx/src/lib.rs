@@ -12,6 +12,8 @@
 pub mod map;
 pub mod platform;
 pub mod render;
+#[cfg(all(feature = "testing", not(target_arch = "wasm32")))]
+pub mod testing;
 pub mod ui;
 pub mod window;
 
