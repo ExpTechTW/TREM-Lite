@@ -9,25 +9,34 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{SpeechSynthesis, SpeechSynthesisUtterance};
 
-use crate::app::{Msg, Post};
-use crate::features::alerts::SpeechEnd;
+/// Called with an utterance's token once it has ended, spoken or cut off.
+pub type Ended<T> = std::sync::Arc<dyn Fn(T) + Send + Sync>;
 
-#[derive(Default)]
-struct Queue {
-    waiting: VecDeque<(String, SpeechEnd)>,
+struct Queue<T> {
+    waiting: VecDeque<(String, T)>,
     /// The utterance being said, by number: a cancelled one ends later, and must not
     /// take the next one's place.
-    speaking: Option<(u64, SpeechEnd)>,
+    speaking: Option<(u64, T)>,
     next: u64,
 }
 
-pub struct Speech {
-    synth: Option<SpeechSynthesis>,
-    queue: Rc<RefCell<Queue>>,
-    post: Post,
+impl<T> Default for Queue<T> {
+    fn default() -> Self {
+        Self {
+            waiting: VecDeque::new(),
+            speaking: None,
+            next: 0,
+        }
+    }
 }
 
-fn say_next(synth: &SpeechSynthesis, queue: &Rc<RefCell<Queue>>, post: &Post) {
+pub struct Speech<T> {
+    synth: Option<SpeechSynthesis>,
+    queue: Rc<RefCell<Queue<T>>>,
+    post: Ended<T>,
+}
+
+fn say_next<T: 'static>(synth: &SpeechSynthesis, queue: &Rc<RefCell<Queue<T>>>, post: &Ended<T>) {
     let (id, text) = {
         let mut q = queue.borrow_mut();
         if q.speaking.is_some() {
@@ -44,7 +53,7 @@ fn say_next(synth: &SpeechSynthesis, queue: &Rc<RefCell<Queue>>, post: &Post) {
     let Ok(utterance) = SpeechSynthesisUtterance::new_with_text(&text) else {
         log::warn!(target: "speech", "語音失敗");
         if let Some((_, end)) = queue.borrow_mut().speaking.take() {
-            post(Msg::SpeechEnded(end));
+            post(end);
         }
         return;
     };
@@ -59,7 +68,7 @@ fn say_next(synth: &SpeechSynthesis, queue: &Rc<RefCell<Queue>>, post: &Post) {
             }
         };
         if let Some(end) = ended {
-            post_end(Msg::SpeechEnded(end));
+            post_end(end);
             say_next(&synth_end, &queue_end, &post_end);
         }
     });
@@ -70,8 +79,8 @@ fn say_next(synth: &SpeechSynthesis, queue: &Rc<RefCell<Queue>>, post: &Post) {
     synth.speak(&utterance);
 }
 
-impl Speech {
-    pub fn disabled(post: Post) -> Self {
+impl<T: 'static> Speech<T> {
+    pub fn disabled(post: Ended<T>) -> Self {
         Self {
             synth: None,
             queue: Rc::default(),
@@ -79,7 +88,7 @@ impl Speech {
         }
     }
 
-    pub fn new(post: Post) -> Self {
+    pub fn new(post: Ended<T>) -> Self {
         let synth = web_sys::window().and_then(|w| w.speech_synthesis().ok());
         if synth.is_none() {
             log::warn!(target: "speech", "這個瀏覽器沒有語音合成");
@@ -97,7 +106,7 @@ impl Speech {
         self.synth.is_some()
     }
 
-    pub fn speak(&mut self, text: &str, queue: bool, end: SpeechEnd) {
+    pub fn speak(&mut self, text: &str, queue: bool, end: T) {
         if !queue {
             self.stop();
         }
@@ -115,7 +124,7 @@ impl Speech {
         let Some(synth) = &self.synth else {
             return;
         };
-        let ended: Vec<SpeechEnd> = {
+        let ended: Vec<T> = {
             let mut q = self.queue.borrow_mut();
             q.speaking
                 .take()
@@ -126,7 +135,7 @@ impl Speech {
         };
         synth.cancel();
         for end in ended {
-            (self.post)(Msg::SpeechEnded(end));
+            (self.post)(end);
         }
     }
 }

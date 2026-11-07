@@ -15,166 +15,22 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy}
 use winit::keyboard::{Key, NamedKey};
 use winit::window::{CursorIcon, UserAttentionType, Window, WindowId, WindowLevel};
 
+use trem_gfx::window::{acquire, common_event, cursor_icon, Acquire, Win};
+
 use crate::app::{App, Msg, Post};
 use crate::features::window::WindowCommand;
 use crate::map::{MapEngine, MapEvent};
-use crate::platform::{lifecycle, speech::Speech, tray};
-use crate::render::{Gpu, GpuSurface};
+use crate::platform::{lifecycle, tray};
+use crate::render::Gpu;
 use crate::ui::icons::IconCache;
 use crate::ui::main_view::{Action, MainView};
 use crate::ui::settings::SettingsView;
-use crate::ui::{clear_color, CursorKind, InputState, Ui};
+use crate::ui::{clear_color, Ui};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::Args;
 
 /// The report list's replay flash needs only this many frames.
 const SLOW_ANIMATION: Duration = Duration::from_millis(33);
-
-/// One window and what it takes to draw it.
-struct Win {
-    window: Arc<Window>,
-    surface: Option<GpuSurface>,
-    input: InputState,
-    occluded: bool,
-    pointer: (f32, f32),
-    mouse_down: bool,
-    pressed_edge: bool,
-    released_edge: bool,
-    wheel: f32,
-    cursor: CursorIcon,
-    retried_outdated: bool,
-    /// Something it shows has changed.
-    dirty: bool,
-}
-
-impl Win {
-    fn new(window: Window) -> Self {
-        Self {
-            window: Arc::new(window),
-            surface: None,
-            input: InputState::default(),
-            occluded: false,
-            pointer: (-1.0e6, -1.0e6),
-            mouse_down: false,
-            pressed_edge: false,
-            released_edge: false,
-            wheel: 0.0,
-            cursor: CursorIcon::Default,
-            retried_outdated: false,
-            dirty: true,
-        }
-    }
-
-    /// Pixels per logical point, for drawing.
-    fn scale(&self) -> f32 {
-        // In a browser, what the canvas really holds over its CSS size: the logical size is
-        // then the CSS size whatever the browser reports as its pixel ratio.
-        #[cfg(target_arch = "wasm32")]
-        {
-            use winit::platform::web::WindowExtWebSys;
-            let css = self.window.canvas().map_or(0, |c| c.client_width());
-            let physical = self.window.inner_size().width;
-            if css > 0 && physical > 0 {
-                return physical as f32 / css as f32;
-            }
-        }
-        self.input_scale()
-    }
-
-    /// Pixels per logical point in the positions winit reports for input.
-    fn input_scale(&self) -> f32 {
-        let scale = self.window.scale_factor() as f32;
-        if scale.is_finite() && scale > 0.0 {
-            scale
-        } else {
-            1.0
-        }
-    }
-
-    fn logical(&self) -> (f32, f32) {
-        let size = self.window.inner_size();
-        let scale = self.scale();
-        (size.width as f32 / scale, size.height as f32 / scale)
-    }
-
-    fn take_edges(&mut self) -> (bool, bool, bool, f32) {
-        let edges = (
-            self.mouse_down,
-            self.pressed_edge,
-            self.released_edge,
-            self.wheel,
-        );
-        self.pressed_edge = false;
-        self.released_edge = false;
-        self.wheel = 0.0;
-        edges
-    }
-}
-
-enum Acquire {
-    Frame(wgpu::SurfaceTexture, bool),
-    Skip,
-}
-
-fn acquire(gpu: &Gpu, win: &mut Win) -> Acquire {
-    let size = win.window.inner_size();
-    if size.width == 0 || size.height == 0 {
-        return Acquire::Skip;
-    }
-    if win.surface.is_none() {
-        match gpu.create_surface(Arc::clone(&win.window), size.width, size.height) {
-            Ok(surface) => win.surface = Some(surface),
-            Err(err) => {
-                log::error!(target: "window", "無法建立 surface：{err}");
-                return Acquire::Skip;
-            }
-        }
-    }
-    let Some(surface) = win.surface.as_mut() else {
-        return Acquire::Skip;
-    };
-    surface.resize(&gpu.device, size.width, size.height);
-    match surface.surface.get_current_texture() {
-        wgpu::CurrentSurfaceTexture::Success(frame) => {
-            win.retried_outdated = false;
-            Acquire::Frame(frame, false)
-        }
-        wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
-            win.retried_outdated = false;
-            Acquire::Frame(frame, true)
-        }
-        wgpu::CurrentSurfaceTexture::Outdated => {
-            surface.reconfigure(&gpu.device);
-            if !win.retried_outdated {
-                win.retried_outdated = true;
-                win.window.request_redraw();
-            }
-            Acquire::Skip
-        }
-        wgpu::CurrentSurfaceTexture::Lost => {
-            log::error!(target: "window", "畫面的 GPU surface 遺失：重建，其他功能照常");
-            win.surface = None;
-            win.window.request_redraw();
-            Acquire::Skip
-        }
-        wgpu::CurrentSurfaceTexture::Occluded => {
-            win.occluded = true;
-            Acquire::Skip
-        }
-        wgpu::CurrentSurfaceTexture::Timeout => Acquire::Skip,
-        wgpu::CurrentSurfaceTexture::Validation => {
-            log::warn!(target: "window", "這一幀沒有拿到 surface（驗證失敗）");
-            Acquire::Skip
-        }
-    }
-}
-
-fn cursor_icon(kind: CursorKind) -> CursorIcon {
-    match kind {
-        CursorKind::Default => CursorIcon::Default,
-        CursorKind::Pointer => CursorIcon::Pointer,
-    }
-}
 
 struct Runner {
     gpu: Gpu,
@@ -257,7 +113,7 @@ pub fn run_web(event_loop: EventLoop<Msg>, gpu: Gpu) {
         Arc::new(move || wake(Msg::Wake)),
         (1280.0, 815.0),
     );
-    let speech = Speech::new(post.clone());
+    let speech = crate::platform::speech::new(post.clone());
     let host = crate::host::Host::web(post.clone(), net);
     let app = App::new(host, crate::backend::config::load(), map, speech);
     event_loop.spawn_app(Runner::new(gpu, app, post, false));
@@ -307,7 +163,7 @@ pub fn run(
         Arc::new(move || wake(Msg::Wake)),
         (1280.0, 815.0),
     );
-    let speech = Speech::new(post.clone());
+    let speech = crate::platform::speech::new(post.clone());
     let host = crate::host::Host::live(rt.handle().clone(), post.clone(), net);
     let app = App::new(host, crate::backend::config::load(), map, speech);
     let mut runner = Runner::new(gpu, app, post, args.start_hidden);
@@ -462,69 +318,6 @@ impl ApplicationHandler<Msg> for Runner {
         } else if self.settings.as_ref().is_some_and(|w| w.window.id() == id) {
             self.settings_event(event);
         }
-    }
-}
-
-/// What every window handles alike. True when the event is consumed.
-fn common_event(win: &mut Win, event: &WindowEvent) -> bool {
-    match event {
-        WindowEvent::Resized(size) => {
-            if size.width > 0 && size.height > 0 {
-                win.dirty = true;
-            }
-            true
-        }
-        WindowEvent::ScaleFactorChanged { .. } => {
-            win.dirty = true;
-            true
-        }
-        WindowEvent::Occluded(occluded) => {
-            win.occluded = *occluded;
-            if !occluded {
-                win.dirty = true;
-            }
-            true
-        }
-        WindowEvent::CursorMoved { position, .. } => {
-            let scale = win.input_scale().max(0.001);
-            win.pointer = (position.x as f32 / scale, position.y as f32 / scale);
-            false
-        }
-        WindowEvent::CursorLeft { .. } => {
-            win.pointer = (-1.0e6, -1.0e6);
-            win.dirty = true;
-            true
-        }
-        WindowEvent::MouseInput {
-            state,
-            button: MouseButton::Left,
-            ..
-        } => {
-            match state {
-                ElementState::Pressed => {
-                    win.mouse_down = true;
-                    win.pressed_edge = true;
-                }
-                ElementState::Released => {
-                    win.mouse_down = false;
-                    win.released_edge = true;
-                }
-            }
-            win.dirty = true;
-            false
-        }
-        WindowEvent::MouseWheel { delta, .. } => {
-            let dy = match delta {
-                MouseScrollDelta::LineDelta(_, y) => -y * 40.0,
-                MouseScrollDelta::PixelDelta(pos) => -pos.y as f32 / win.input_scale(),
-            };
-            if dy.is_finite() {
-                win.wheel += dy;
-            }
-            win.dirty = true;
-            false
-        }
-        _ => false,
     }
 }
 

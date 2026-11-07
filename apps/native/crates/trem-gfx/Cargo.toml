@@ -1,6 +1,6 @@
 [package]
 name = "trem-gfx"
-description = "What a TREM app draws with: the shared GPU device, shaped text, an immediate-mode UI, the vector map, offscreen pictures"
+description = "What a TREM app draws with and runs in: the GPU, shaped text, an immediate-mode UI, the vector map, windows, and the desktop's tray, notifications and speech"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,6 +10,16 @@ repository.workspace = true
 [features]
 # The map's hillshade: terrain tiles baked on the CPU pool.
 dem = []
+# The tray icon and its menu.
+tray = ["dep:tray-icon", "dep:ksni"]
+# The login item.
+autostart = ["dep:auto-launch"]
+# System notifications.
+notify = ["dep:notify-rust", "web-sys/Notification", "web-sys/NotificationOptions", "web-sys/NotificationPermission"]
+# The system's speech.
+speech = ["dep:tts", "web-sys/SpeechSynthesis", "web-sys/SpeechSynthesisUtterance"]
+# Full speed while the windows are hidden: no App Nap on macOS, no EcoQoS on Windows.
+awake = ["dep:objc2-foundation", "dep:windows"]
 # What an app's tests need from here: the map's virtual clock.
 testing = []
 
@@ -36,6 +46,9 @@ wgpu = { version = "30", default-features = false, features = ["std", "wgsl"] }
 winit = { version = "0.30", default-features = false, features = ["rwh_06"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+auto-launch = { version = "0.5", optional = true }
+notify-rust = { version = "4", optional = true }
+os_info = { version = "3", default-features = false }
 pollster = { version = "0.4", default-features = false }
 # The tiles' fetches run on the app's runtime.
 tokio = { version = "1", default-features = false, features = ["rt"] }
@@ -43,17 +56,29 @@ tokio = { version = "1", default-features = false, features = ["rt"] }
 # The browser: WebGPU, one thread.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "webgpu", "fragile-send-sync-non-atomic-wasm"] }
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = ["Window", "Navigator", "Clipboard"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSApplication", "NSResponder", "NSRunningApplication", "NSView", "NSWindow", "objc2-core-foundation"] }
+objc2-foundation = { version = "0.3", features = ["NSProcessInfo", "NSString"], optional = true }
+tray-icon = { version = "0.24", default-features = false, optional = true }
+tts = { version = "0.26", default-features = false, optional = true }
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "metal", "gles"] }
 
 [target.'cfg(target_os = "ios")'.dependencies]
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "metal"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
+tray-icon = { version = "0.24", default-features = false, optional = true }
+tts = { version = "0.26", default-features = false, optional = true }
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "dx12", "gles"] }
+windows = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading"], optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
+ksni = { version = "0.3", default-features = false, features = ["blocking", "tokio"], optional = true }
+tts = { version = "0.26", optional = true }
 cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash", "fontconfig"] }
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "vulkan", "gles"] }
 winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland"] }

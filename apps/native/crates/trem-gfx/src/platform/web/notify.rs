@@ -2,7 +2,7 @@
 
 use web_sys::{Notification, NotificationOptions, NotificationPermission};
 
-pub fn send(title: &str, body: &str) {
+pub fn send(_bundle_id: &str, title: &str, body: &str) {
     match Notification::permission() {
         NotificationPermission::Granted => {
             let options = NotificationOptions::new();

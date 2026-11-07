@@ -11,7 +11,6 @@ use trem_io::net::ProxyState;
 
 use crate::app::{App, Msg, Post};
 use crate::domain::types::ReportListItem;
-use crate::platform::speech::Speech;
 use crate::render::{capture, Gpu, OFFSCREEN_FORMAT};
 use crate::ui::icons::IconCache;
 use crate::ui::main_view::MainView;
@@ -213,7 +212,7 @@ fn preview_app(
         Arc::new(move || wake_post(Msg::Wake)),
         (f64::from(args.width), f64::from(args.height)),
     );
-    let speech = Speech::disabled(post.clone());
+    let speech = crate::platform::speech::disabled(post.clone());
     let host = crate::host::Host::live(rt.handle().clone(), post, net);
     let app = App::new(host, crate::backend::config::load(), map, speech);
     Ok((app, rx))

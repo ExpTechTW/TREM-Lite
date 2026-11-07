@@ -22,7 +22,6 @@ use crate::backend::config::{self, Config};
 use crate::events::Event;
 use crate::features::window::WindowCommand;
 use crate::host::{Host, Output};
-use crate::platform::speech::Speech;
 
 /// The recorded earthquake's answers, by URL.
 pub fn quake_answers() -> &'static HashMap<String, String> {
@@ -121,7 +120,7 @@ impl Harness {
         });
         let host = Host::test(rt.handle().clone(), post.clone(), fake);
         let map = crate::map::engine(Arc::new(|_, _| {}), Arc::new(|| {}), (1280.0, 815.0));
-        let speech = Speech::disabled(post);
+        let speech = crate::platform::speech::disabled(post);
         let mut app = App::new(host, config, map, speech);
         let start = Instant::now();
         app.var.wall_override = Some(wall_ms);

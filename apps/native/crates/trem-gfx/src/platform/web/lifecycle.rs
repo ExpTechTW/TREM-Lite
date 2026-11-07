@@ -1,11 +1,21 @@
 //! A browser tab has no login item, dock or memory to hand back: what is left is the
 //! clipboard and the user agent.
 
-pub fn set_autostart(_on: bool) -> Result<(), String> {
+/// The login item: under what name, and what it passes the app.
+#[cfg(feature = "autostart")]
+#[derive(Clone, Copy, Debug)]
+pub struct AutostartConfig {
+    pub name: &'static str,
+    pub args: &'static [&'static str],
+}
+
+#[cfg(feature = "autostart")]
+pub fn set_autostart(_config: &AutostartConfig, _on: bool) -> Result<(), String> {
     Err("瀏覽器版沒有開機自動啟動".to_string())
 }
 
-pub fn sync_autostart(_on: bool) {}
+#[cfg(feature = "autostart")]
+pub fn sync_autostart(_config: &AutostartConfig, _on: bool) {}
 
 pub fn system_description() -> String {
     web_sys::window()
