@@ -90,6 +90,18 @@ cosmic-text = { version = "0.19", default-features = false, features = ["std", "
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "vulkan", "gles"] }
 winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland"] }
 
+# The app, and beside it in crates/ the libraries it shares with other TREM apps.
+[workspace]
+
+# What every library says of itself. The app's version is the one in [package], which
+# packaging/bundle-macos.sh reads.
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+publish = false
+repository = "https://github.com/ExpTechTW/trem-native-rust"
+
 [profile.release]
 lto = true
 codegen-units = 1

@@ -8,7 +8,8 @@ cargo build --release
 
 app="target/release/TREM-Lite Native.app"
 icon="assets/icons/icon.icns"
-version="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)"
+# The [package] table's: the file also has [workspace.package], with the libraries' version.
+version="$(sed -n '/^\[package\]/,/^\[/ s/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)"
 
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
