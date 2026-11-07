@@ -1399,7 +1399,7 @@ dependencies = [
  "log",
  "presser",
  "thiserror 2.0.21",
- "windows 0.54.0",
+ "windows 0.62.2",
 ]
 
 [[package]]
@@ -4205,7 +4205,7 @@ dependencies = [
 [[package]]
 name = "trem-core"
 version = "0.1.0"
-source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=6be9ea0dee11816aecefc34ecc6a62fb199a2f46#6be9ea0dee11816aecefc34ecc6a62fb199a2f46"
+source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=3b48b2958e2031ec3d90ac857db141d51fcbbb74#3b48b2958e2031ec3d90ac857db141d51fcbbb74"
 dependencies = [
  "base64 0.22.1",
  "flate2",
@@ -4217,7 +4217,7 @@ dependencies = [
 [[package]]
 name = "trem-gfx"
 version = "0.1.0"
-source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=6be9ea0dee11816aecefc34ecc6a62fb199a2f46#6be9ea0dee11816aecefc34ecc6a62fb199a2f46"
+source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=3b48b2958e2031ec3d90ac857db141d51fcbbb74#3b48b2958e2031ec3d90ac857db141d51fcbbb74"
 dependencies = [
  "auto-launch",
  "bytemuck",
@@ -4250,7 +4250,7 @@ dependencies = [
 [[package]]
 name = "trem-io"
 version = "0.1.0"
-source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=6be9ea0dee11816aecefc34ecc6a62fb199a2f46#6be9ea0dee11816aecefc34ecc6a62fb199a2f46"
+source = "git+https://github.com/ExpTechTW/trem-native-rust?rev=3b48b2958e2031ec3d90ac857db141d51fcbbb74#3b48b2958e2031ec3d90ac857db141d51fcbbb74"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
