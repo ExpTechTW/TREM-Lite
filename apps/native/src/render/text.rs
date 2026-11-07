@@ -16,9 +16,10 @@ use std::sync::Arc;
 
 use cosmic_text::{
     Attrs, Buffer, CacheKey, CacheKeyFlags, Family, FontFeatures, FontSystem, Metrics, Shaping,
-    SwashCache, SwashContent, Weight, Wrap,
+    SwashContent, Weight, Wrap,
 };
 use cosmic_text::{Fallback, SwashImage};
+use swash::scale::ScaleContext;
 use unicode_script::Script;
 
 use super::gpu::Gpu;
@@ -254,7 +255,7 @@ struct Shaped {
 
 pub struct TextEngine {
     fonts: FontSystem,
-    swash: SwashCache,
+    scale: ScaleContext,
     buffer: Option<Buffer>,
     manrope: &'static str,
     manrope_ids: Vec<cosmic_text::fontdb::ID>,
@@ -295,7 +296,7 @@ impl TextEngine {
         };
         let engine = Self {
             fonts,
-            swash: SwashCache::new(),
+            scale: ScaleContext::new(),
             buffer,
             manrope,
             manrope_ids,
@@ -383,12 +384,15 @@ impl TextEngine {
                 missing.push(glyph.key);
             }
         }
+        // Rasterized on the workers, then placed in order: the atlas is laid out as if
+        // they had come one by one.
+        let mut images = self.rasterize(&missing);
         let mut rebuilt = false;
         for key in missing {
             if self.atlas.touch(key, frame) {
                 continue;
             }
-            let Some(image) = self.swash.get_image_uncached(&mut self.fonts, key) else {
+            let Some(image) = images.remove(&key) else {
                 continue;
             };
             match self.atlas.insert(key, &image, frame) {
@@ -651,17 +655,98 @@ impl TextEngine {
 
     fn rebuild_atlas(&mut self, keys: &[CacheKey], frame: u64) {
         self.atlas.reset();
+        let mut unique: Vec<CacheKey> = Vec::with_capacity(keys.len());
+        let mut seen = std::collections::HashSet::with_capacity(keys.len());
+        for &key in keys {
+            if seen.insert(key) {
+                unique.push(key);
+            }
+        }
+        let mut images = self.rasterize(&unique);
         for &key in keys {
             if self.atlas.contains(key) {
                 self.atlas.touch(key, frame);
                 continue;
             }
-            let Some(image) = self.swash.get_image_uncached(&mut self.fonts, key) else {
+            let Some(image) = images.remove(&key) else {
                 continue;
             };
             let _ = self.atlas.insert_no_evict(key, &image, frame);
         }
     }
+
+    /// Glyph images for `keys`, on the CPU pool when there are enough to share out.
+    fn rasterize(&mut self, keys: &[CacheKey]) -> HashMap<CacheKey, SwashImage> {
+        use rayon::prelude::*;
+        const WORTH_SHARING: usize = 8;
+        let jobs: Vec<(CacheKey, Arc<cosmic_text::Font>)> = keys
+            .iter()
+            .filter_map(|key| {
+                let font = self.fonts.get_font(key.font_id, key.font_weight);
+                if font.is_none() {
+                    log::warn!("找不到字型 {:?}", key.font_id);
+                }
+                font.map(|font| (*key, font))
+            })
+            .collect();
+        let images: Vec<(CacheKey, Option<SwashImage>)> = if jobs.len() < WORTH_SHARING {
+            jobs.into_iter()
+                .map(|(key, font)| (key, rasterize_glyph(&font, &mut self.scale, key)))
+                .collect()
+        } else {
+            jobs.into_par_iter()
+                .map_init(ScaleContext::new, |context, (key, font)| {
+                    (key, rasterize_glyph(&font, context, key))
+                })
+                .collect()
+        };
+        images
+            .into_iter()
+            .filter_map(|(key, image)| image.map(|image| (key, image)))
+            .collect()
+    }
+}
+
+/// cosmic-text's own rasterizer (swash.rs `swash_image`), with the font already looked up,
+/// so it can run on any thread: the same pixels either way.
+fn rasterize_glyph(
+    font: &cosmic_text::Font,
+    context: &mut ScaleContext,
+    key: CacheKey,
+) -> Option<SwashImage> {
+    use swash::scale::{Render, Source, StrikeWith};
+    use swash::zeno::{Angle, Format, Transform, Vector};
+    let wght = swash::Tag::from_be_bytes(*b"wght");
+    let variable_width = font.as_swash().variations().find_by_tag(wght);
+    let mut scaler = context
+        .builder(font.as_swash())
+        .size(f32::from_bits(key.font_size_bits))
+        .hint(!key.flags.contains(CacheKeyFlags::DISABLE_HINTING));
+    if let Some(variation) = variable_width {
+        scaler = scaler.normalized_coords(font.as_swash().variations().normalized_coords([(
+            wght,
+            f32::from(key.font_weight.0).clamp(variation.min_value(), variation.max_value()),
+        )]));
+    }
+    let mut scaler = scaler.build();
+    let offset = if key.flags.contains(CacheKeyFlags::PIXEL_FONT) {
+        Vector::new(key.x_bin.as_float().round(), key.y_bin.as_float().round())
+    } else {
+        Vector::new(key.x_bin.as_float(), key.y_bin.as_float())
+    };
+    Render::new(&[
+        Source::ColorOutline(0),
+        Source::ColorBitmap(StrikeWith::BestFit),
+        Source::Outline,
+    ])
+    .format(Format::Alpha)
+    .offset(offset)
+    .transform(
+        key.flags
+            .contains(CacheKeyFlags::FAKE_ITALIC)
+            .then(|| Transform::skew(Angle::from_degrees(14.0), Angle::from_degrees(0.0))),
+    )
+    .render(&mut scaler, key.glyph_id)
 }
 
 fn convert_glyph(glyph: &cosmic_text::LayoutGlyph) -> Glyph {
