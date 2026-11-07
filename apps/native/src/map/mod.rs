@@ -164,11 +164,21 @@ impl MapEngine {
     }
 
     /// Bring tiles and geometry up to date for a frame about to be drawn.
+    /// Whether `prepare` would first have to make the pipelines for `format`.
+    pub fn needs_pass(&self, format: wgpu::TextureFormat) -> bool {
+        self.pass.as_ref().is_none_or(|p| p.format() != format)
+    }
+
+    /// Pipelines made elsewhere, ahead of the first frame, as `prepare` would have made them.
+    pub fn install_pass(&mut self, pass: MapPass) {
+        self.pass = Some(pass);
+        self.scene.mark_all_dirty();
+    }
+
     pub fn prepare(&mut self, gpu: &Gpu, format: wgpu::TextureFormat) -> Result<(), String> {
         self.trimmed = false;
-        if self.pass.as_ref().is_none_or(|p| p.format() != format) {
-            self.pass = Some(MapPass::new(gpu, format)?);
-            self.scene.mark_all_dirty();
+        if self.needs_pass(format) {
+            self.install_pass(MapPass::new(gpu, format)?);
         }
         let now = self.now_ms();
         self.camera.tick(now);

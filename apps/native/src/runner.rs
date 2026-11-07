@@ -17,6 +17,7 @@ use crate::app::{App, Msg, Post};
 use crate::features::window::WindowCommand;
 use crate::map::{MapEngine, MapEvent};
 use crate::platform::{lifecycle, speech::Speech, tray};
+use crate::render::map_pass::MapPass;
 use crate::render::{Gpu, GpuSurface};
 use crate::ui::icons::IconCache;
 use crate::ui::main_view::{Action, MainView};
@@ -545,6 +546,30 @@ impl Runner {
         }
     }
 
+    /// The UI renderer and the map's pipelines, the first time, made side by side: each takes
+    /// ~15 ms, mostly the driver building pipelines.
+    fn prepare_renderers(&mut self, format: wgpu::TextureFormat, logical: (f32, f32), scale: f32) {
+        if self.ui.is_some() || !self.app.map.needs_pass(format) {
+            return;
+        }
+        let gpu = &self.gpu;
+        let (ui, pass) = std::thread::scope(|scope| {
+            let pass = scope.spawn(|| MapPass::new(gpu, format));
+            let ui = Ui::new(gpu, format, logical, scale);
+            (ui, pass.join())
+        });
+        match ui {
+            Ok(ui) => self.ui = Some(ui),
+            Err(err) => log::error!(target: "window", "無法建立繪圖器：{err}"),
+        }
+        match pass {
+            Ok(Ok(pass)) => self.app.map.install_pass(pass),
+            // `prepare` tries again, and says why.
+            Ok(Err(_)) => {}
+            Err(_) => log::error!(target: "map", "建立地圖繪圖器時出錯"),
+        }
+    }
+
     fn ensure_ui(&mut self, format: wgpu::TextureFormat, logical: (f32, f32), scale: f32) -> bool {
         if let Some(ui) = &mut self.ui {
             if let Err(err) = ui.recreate_pipelines(&self.gpu, format) {
@@ -920,14 +945,20 @@ impl Runner {
         if !self.app.window.main_shown || win.occluded {
             return;
         }
-        let Acquire::Frame(frame, suboptimal) = acquire(&self.gpu, win) else {
-            return;
-        };
-        let Some(format) = win.surface.as_ref().map(|s| s.format) else {
-            return;
-        };
+        let acquired = acquire(&self.gpu, win);
+        let format = win.surface.as_ref().map(|s| s.format);
         let scale = win.scale();
         let logical = win.logical();
+        // Also when the window is not on screen yet: it is the wait before the first frame.
+        if let Some(format) = format {
+            self.prepare_renderers(format, logical, scale);
+        }
+        let Acquire::Frame(frame, suboptimal) = acquired else {
+            return;
+        };
+        let (Some(format), Some(win)) = (format, &mut self.main) else {
+            return;
+        };
         win.dirty = false;
         if !self.ensure_ui(format, logical, scale) {
             return;

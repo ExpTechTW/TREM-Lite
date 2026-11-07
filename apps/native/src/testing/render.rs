@@ -165,6 +165,19 @@ fn the_map_on_real_tiles() {
     let Some(gpu) = gpu() else {
         return;
     };
+    check_picture("map-z6", 480, 480, map_on_real_tiles(&gpu, false));
+}
+
+/// The runner makes the map's pipelines on another thread ahead of the first frame.
+#[test]
+fn a_map_pass_made_on_another_thread_draws_the_same() {
+    let Some(gpu) = gpu() else {
+        return;
+    };
+    check_picture("map-z6", 480, 480, map_on_real_tiles(&gpu, true));
+}
+
+fn map_on_real_tiles(gpu: &Gpu, prebuilt: bool) -> Vec<u8> {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata");
     let fetch: crate::map::tiles::Fetch = Arc::new(move |url: String, reply| {
         // `.../tiles/6/53/27.pbf` or `.../terrain/6/53/27.png`, from testdata.
@@ -181,24 +194,32 @@ fn the_map_on_real_tiles() {
         reply(Ok(body));
     });
     let mut map = MapEngine::new(fetch, Arc::new(|| {}), (480.0, 480.0));
+    if prebuilt {
+        let pass = std::thread::scope(|scope| {
+            scope
+                .spawn(|| crate::render::map_pass::MapPass::new(gpu, OFFSCREEN_FORMAT))
+                .join()
+        });
+        map.install_pass(pass.expect("no panic").expect("the pass is made"));
+        assert!(!map.needs_pass(OFFSCREEN_FORMAT));
+    }
     map.camera.jump(Target {
         lon: 121.0,
         lat: 23.6,
         zoom: 6.4,
     });
     for _ in 0..50 {
-        map.prepare(&gpu, OFFSCREEN_FORMAT)
+        map.prepare(gpu, OFFSCREEN_FORMAT)
             .expect("the map prepares");
         if map.settled() {
             break;
         }
         std::thread::sleep(Duration::from_millis(10));
     }
-    map.prepare(&gpu, OFFSCREEN_FORMAT)
+    map.prepare(gpu, OFFSCREEN_FORMAT)
         .expect("the map prepares");
-    let rgba = render_rgba(&gpu, 480, 480, |target, encoder| {
-        map.encode(&gpu, target, encoder, 1.0);
+    render_rgba(gpu, 480, 480, |target, encoder| {
+        map.encode(gpu, target, encoder, 1.0);
     })
-    .expect("a frame");
-    check_picture("map-z6", 480, 480, rgba);
+    .expect("a frame")
 }
