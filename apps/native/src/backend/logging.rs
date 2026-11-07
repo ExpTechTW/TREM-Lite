@@ -6,12 +6,11 @@
 //! 刪掉；啟動時做一次，之後每小時再做——這個 app 會連續跑好幾天不重啟，只在啟動
 //! 時整理等於沒整理。
 //!
-//! 用標準的 `log` 門面（`log::info!` 等），writer 自己寫：tauri-plugin-log 能滾轉，
-//! 但檔名是平的，做不出按日期分層的目錄。前端的日誌經 [`log_write`] 寫進同一個
-//! 檔案，target 是前端模組名（`sse`、`eew`…）；網頁版沒有檔案系統，同樣的格式與
-//! 規則改存 localStorage（packages/core/src/lib/logStore.ts）。
+//! 用標準的 `log` 門面（`log::info!` 等），writer 自己寫，格式與 Tauri 版相同；
+//! 自訂 target 沿用它前端的模組名（`sse`、`eew`…）。網頁版沒有檔案系統，同樣的
+//! 格式與規則改存 localStorage（packages/core/src/lib/logStore.ts）。
 //!
-//! 寫入的等級：本程式（Rust 模組與前端）到 DEBUG，相依套件到 INFO。
+//! 寫入的等級：本程式（本 crate 的模組與自訂 target）到 DEBUG，相依套件到 INFO。
 
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
@@ -28,8 +27,8 @@ use log::{Level, LevelFilter, Log, Metadata, Record};
 const KEEP_DAYS: i64 = 7;
 /// 清理與壓縮的間隔。掃的是幾個目錄名，成本極低。
 const PRUNE_INTERVAL: Duration = Duration::from_secs(3600);
-/// 本程式 Rust 模組的 target 前綴：`trem_lite_lib::audio` 寫成 `audio`。
-const CRATE: &str = "trem_lite_lib";
+/// 本程式 Rust 模組的 target 前綴：`trem_lite_native::render::text` 寫成 `render::text`。
+const CRATE: &str = env!("CARGO_CRATE_NAME");
 
 struct Sink {
     /// 目前開著的檔案與它對應的小時鍵（YYYYMMDDHH）
@@ -68,9 +67,8 @@ pub struct FileLogger {
 }
 
 impl FileLogger {
-    /// 寫下已經排好的一或多行（[`push_line`]）：一次上鎖、一次寫入。行首的時間
-    /// 是事情發生的時間（前端的行帶著自己的時間過來）；寫進哪個檔看的是現在，
-    /// 跨小時邊界時晚到幾毫秒的行不會把上一小時的檔再開回來。
+    /// 寫下已經排好的一或多行（[`push_line`]）：一次上鎖、一次寫入。寫進哪個檔看的
+    /// 是現在，跨小時邊界時晚到幾毫秒的行不會把上一小時的檔再開回來。
     fn append(&self, lines: &str) {
         if cfg!(debug_assertions) {
             eprint!("{lines}");
@@ -417,11 +415,13 @@ mod tests {
 
     #[test]
     fn targets_drop_the_crate_name_and_keep_custom_ones() {
-        assert_eq!(short_target("trem_lite_lib::http_proxy"), "http_proxy");
-        assert_eq!(short_target("trem_lite_lib"), "app");
+        // This very module, as `log` names it.
+        assert_eq!(module_path!(), "trem_lite_native::backend::logging::tests");
+        assert_eq!(short_target(module_path!()), "backend::logging::tests");
+        assert_eq!(short_target("trem_lite_native"), "app");
         assert_eq!(short_target("panic"), "panic");
         assert_eq!(short_target("reqwest::connect"), "reqwest::connect");
-        assert!(is_ours("trem_lite_lib::audio") && is_ours("sse"));
+        assert!(is_ours(module_path!()) && is_ours("sse"));
         assert!(!is_ours("reqwest::connect"));
     }
 
@@ -434,10 +434,10 @@ mod tests {
             }),
         };
         let meta = |level, target| Metadata::builder().level(level).target(target).build();
-        assert!(logger.enabled(&meta(Level::Debug, "trem_lite_lib::audio")));
-        assert!(!logger.enabled(&meta(Level::Trace, "trem_lite_lib::audio")));
-        assert!(logger.enabled(&meta(Level::Info, "tauri::manager")));
-        assert!(!logger.enabled(&meta(Level::Debug, "tauri::manager")));
+        assert!(logger.enabled(&meta(Level::Debug, module_path!())));
+        assert!(!logger.enabled(&meta(Level::Trace, module_path!())));
+        assert!(logger.enabled(&meta(Level::Info, "wgpu_core::device")));
+        assert!(!logger.enabled(&meta(Level::Debug, "wgpu_core::device")));
     }
 
     #[test]
