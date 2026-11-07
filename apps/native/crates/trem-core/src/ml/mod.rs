@@ -37,6 +37,10 @@ const D2R: f64 = std::f64::consts::PI / 180.0;
 const PGA_BOUNDS: [f64; 9] = [0.8, 2.5, 8.0, 25.0, 80.0, 140.0, 250.0, 440.0, 800.0];
 const PGV_BOUNDS: [f64; 9] = [0.2, 0.7, 1.9, 5.7, 15.0, 30.0, 50.0, 80.0, 140.0];
 
+/// Where levels 1–9 start on the float intensity, as `intensity_float_to_int` reads it
+/// (level 5, 5弱, from 4.5).
+const LEVEL_FLOOR: [f64; 9] = [0.5, 1.5, 2.5, 3.5, 4.5, 5.0, 5.5, 6.0, 6.5];
+
 /// Rows per worker below which splitting the batch costs more than it saves.
 #[cfg(feature = "rayon")]
 const MIN_ROWS_PER_WORKER: usize = 32;
@@ -73,6 +77,25 @@ pub fn level(pga: f32, pgv: f32) -> u8 {
     let classify =
         |v: f32, bounds: &[f64; 9]| bounds.iter().filter(|&&b| f64::from(v) >= b).count();
     classify(pga, &PGA_BOUNDS).max(classify(pgv, &PGV_BOUNDS)) as u8
+}
+
+/// A predicted PGA and PGV as a float intensity (trem-monitor's): each interpolated
+/// logarithmically between CWA's bounds, the higher taken.
+///
+/// A value on a bound is that level's lower end, so
+/// [`crate::intensity::intensity_float_to_int`] gives back [`level`]'s level. It is for
+/// a chart that draws the prediction on the same axis as a measured float intensity,
+/// where whole levels would come out as steps. Below the first bound and above the last,
+/// the nearest segment's slope carries on.
+pub fn intensity_float(pga: f32, pgv: f32) -> f64 {
+    let to_float = |v: f32, bounds: &[f64; 9]| {
+        let v = f64::from(v).max(f64::MIN_POSITIVE);
+        let hi = bounds.iter().position(|&b| v < b).unwrap_or(9).clamp(1, 8);
+        let lo = hi - 1;
+        let t = (v / bounds[lo]).log10() / (bounds[hi] / bounds[lo]).log10();
+        LEVEL_FLOOR[lo] + t * (LEVEL_FLOOR[hi] - LEVEL_FLOOR[lo])
+    };
+    to_float(pga, &PGA_BOUNDS).max(to_float(pgv, &PGV_BOUNDS))
 }
 
 // ─── Minimal protobuf reader ────────────────────────────────────────────────
@@ -889,5 +912,25 @@ mod tests {
         ] {
             assert_eq!(level(pga, pgv), want, "level({pga}, {pgv})");
         }
+    }
+
+    /// The float intensity read back as a level is the model's level: a chart drawn from
+    /// the one and a map painted from the other must not disagree.
+    #[test]
+    fn intensity_float_agrees_with_level() {
+        let g = golden();
+        for (i, c) in g.cases.iter().enumerate() {
+            let (pga, pgv) = (c.pga as f32, c.pgv as f32);
+            let f = intensity_float(pga, pgv);
+            assert_eq!(
+                crate::intensity::intensity_float_to_int(f),
+                i32::from(level(pga, pgv)),
+                "case {i}: PGA {pga} PGV {pgv} → {f}"
+            );
+        }
+        // Right on a bound is that level's lower end.
+        assert!((intensity_float(80.0, 0.0) - 4.5).abs() < 1e-9);
+        assert!((intensity_float(0.0, 30.0) - 5.0).abs() < 1e-9);
+        assert!(intensity_float(0.0, 0.0) < 0.5);
     }
 }
