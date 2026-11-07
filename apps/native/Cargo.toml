@@ -13,11 +13,10 @@ path = "src/main.rs"
 # The libraries beside the app, in crates/: shared with other TREM apps.
 trem-core = { path = "crates/trem-core", features = ["rayon"] }
 trem-io = { path = "crates/trem-io" }
-trem-gfx = { path = "crates/trem-gfx" }
+trem-gfx = { path = "crates/trem-gfx", features = ["dem"] }
 bytes = { version = "1", default-features = false, features = ["std"] }
 bytemuck = { version = "1", default-features = false, features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
-earcutr = { version = "0.5", default-features = false }
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 serde = { version = "1", features = ["derive"] }
@@ -94,9 +93,10 @@ license = "AGPL-3.0-only"
 publish = false
 repository = "https://github.com/ExpTechTW/trem-native-rust"
 
-# The timers' virtual clock, for the tests that run the whole app.
+# The timers' and the map's virtual clocks, for the tests that run the whole app.
 [dev-dependencies]
 trem-io = { path = "crates/trem-io", features = ["testing"] }
+trem-gfx = { path = "crates/trem-gfx", features = ["testing"] }
 
 [profile.release]
 lto = true

@@ -227,11 +227,11 @@ fn map_on_real_tiles(gpu: &Gpu, prebuilt: bool) -> Vec<u8> {
             .map(Arc::new);
         reply(Ok(body));
     });
-    let mut map = MapEngine::new(fetch, Arc::new(|| {}), (480.0, 480.0));
+    let mut map = crate::map::engine(fetch, Arc::new(|| {}), (480.0, 480.0));
     if prebuilt {
         let pass = std::thread::scope(|scope| {
             scope
-                .spawn(|| crate::render::map_pass::MapPass::new(gpu, OFFSCREEN_FORMAT))
+                .spawn(|| MapEngine::new_pass(gpu, OFFSCREEN_FORMAT))
                 .join()
         });
         map.install_pass(pass.expect("no panic").expect("the pass is made"));

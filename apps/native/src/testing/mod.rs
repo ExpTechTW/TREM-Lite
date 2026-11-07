@@ -22,7 +22,6 @@ use crate::backend::config::{self, Config};
 use crate::events::Event;
 use crate::features::window::WindowCommand;
 use crate::host::{Host, Output};
-use crate::map::MapEngine;
 use crate::platform::speech::Speech;
 
 /// The recorded earthquake's answers, by URL.
@@ -121,7 +120,7 @@ impl Harness {
             })
         });
         let host = Host::test(rt.handle().clone(), post.clone(), fake);
-        let map = MapEngine::new(Arc::new(|_, _| {}), Arc::new(|| {}), (1280.0, 815.0));
+        let map = crate::map::engine(Arc::new(|_, _| {}), Arc::new(|| {}), (1280.0, 815.0));
         let speech = Speech::disabled(post);
         let mut app = App::new(host, config, map, speech);
         let start = Instant::now();

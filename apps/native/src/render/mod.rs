@@ -1,8 +1,6 @@
-//! Drawing: trem_gfx's GPU device, text and UI batch, with this app's fonts; the map's
-//! pass is the app's own.
+//! Drawing: trem_gfx's GPU device, text, UI batch and map pass, with this app's fonts.
 
 mod fonts;
-pub mod map_pass;
 
 pub use fonts::{FONTS, METRICS};
 pub use trem_gfx::render::*;

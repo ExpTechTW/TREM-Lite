@@ -1,7 +1,8 @@
 //! The GPU device and what draws with it: the UI's batch, shaped text and its glyph
-//! atlas, offscreen pictures.
+//! atlas, the map's pipelines, offscreen pictures.
 
 mod gpu;
+pub mod map_pass;
 // A browser cannot wait for a readback.
 #[cfg(not(target_arch = "wasm32"))]
 mod screenshot;

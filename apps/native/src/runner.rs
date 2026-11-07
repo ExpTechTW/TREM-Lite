@@ -19,7 +19,6 @@ use crate::app::{App, Msg, Post};
 use crate::features::window::WindowCommand;
 use crate::map::{MapEngine, MapEvent};
 use crate::platform::{lifecycle, speech::Speech, tray};
-use crate::render::map_pass::MapPass;
 use crate::render::{Gpu, GpuSurface};
 use crate::ui::icons::IconCache;
 use crate::ui::main_view::{Action, MainView};
@@ -253,7 +252,7 @@ pub fn run_web(event_loop: EventLoop<Msg>, gpu: Gpu) {
         net.client(),
     ));
     let wake = post.clone();
-    let map = MapEngine::new(
+    let map = crate::map::engine(
         crate::map::tile_fetch(Arc::clone(&net)),
         Arc::new(move || wake(Msg::Wake)),
         (1280.0, 815.0),
@@ -303,7 +302,7 @@ pub fn run(
         }
     }
     let wake = post.clone();
-    let map = MapEngine::new(
+    let map = crate::map::engine(
         crate::map::tile_fetch(rt.handle().clone(), Arc::clone(&net)),
         Arc::new(move || wake(Msg::Wake)),
         (1280.0, 815.0),
@@ -654,11 +653,11 @@ impl Runner {
         #[cfg(target_arch = "wasm32")]
         let (ui, pass) = (
             Ui::new(gpu, format, logical, scale, &crate::render::FONTS),
-            Ok::<_, ()>(MapPass::new(gpu, format)),
+            Ok::<_, ()>(MapEngine::new_pass(gpu, format)),
         );
         #[cfg(not(target_arch = "wasm32"))]
         let (ui, pass) = std::thread::scope(|scope| {
-            let pass = scope.spawn(|| MapPass::new(gpu, format));
+            let pass = scope.spawn(|| MapEngine::new_pass(gpu, format));
             let ui = Ui::new(gpu, format, logical, scale, &crate::render::FONTS);
             (ui, pass.join())
         });

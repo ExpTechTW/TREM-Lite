@@ -11,7 +11,6 @@ use trem_io::net::ProxyState;
 
 use crate::app::{App, Msg, Post};
 use crate::domain::types::ReportListItem;
-use crate::map::MapEngine;
 use crate::platform::speech::Speech;
 use crate::render::{capture, Gpu, OFFSCREEN_FORMAT};
 use crate::ui::icons::IconCache;
@@ -209,7 +208,7 @@ fn preview_app(
     });
     let net = new_proxy()?;
     let wake_post = post.clone();
-    let map = MapEngine::new(
+    let map = crate::map::engine(
         crate::map::tile_fetch(rt.handle().clone(), Arc::clone(&net)),
         Arc::new(move || wake_post(Msg::Wake)),
         (f64::from(args.width), f64::from(args.height)),
@@ -373,7 +372,7 @@ fn map_shot(
     path: &Path,
 ) -> Result<(u32, u32), String> {
     let net = new_proxy()?;
-    let mut engine = MapEngine::new(
+    let mut engine = crate::map::engine(
         crate::map::tile_fetch(rt.handle().clone(), net),
         Arc::new(|| {}),
         (f64::from(args.width), f64::from(args.height)),

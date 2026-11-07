@@ -232,7 +232,7 @@ fn bench_frame_cpu() {
         }
     });
     let started = Instant::now();
-    let pass = crate::render::map_pass::MapPass::new(&gpu, crate::render::OFFSCREEN_FORMAT);
+    let pass = crate::map::MapEngine::new_pass(&gpu, crate::render::OFFSCREEN_FORMAT);
     println!(
         "{:44} {:9.3} ms",
         "MapPass::new (pipelines + sprite)",

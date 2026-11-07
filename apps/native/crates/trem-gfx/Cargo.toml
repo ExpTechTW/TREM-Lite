@@ -1,22 +1,30 @@
 [package]
 name = "trem-gfx"
-description = "What a TREM app draws with: the shared GPU device, shaped text, an immediate-mode UI, offscreen pictures"
+description = "What a TREM app draws with: the shared GPU device, shaped text, an immediate-mode UI, the vector map, offscreen pictures"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 repository.workspace = true
 
+[features]
+# The map's hillshade: terrain tiles baked on the CPU pool.
+dem = []
+# What an app's tests need from here: the map's virtual clock.
+testing = []
+
 [dependencies]
 trem-io = { path = "../trem-io" }
 bytemuck = { version = "1", default-features = false, features = ["derive"] }
+# The map's polygons, cut into triangles once per tile.
+earcutr = { version = "0.5", default-features = false }
 # `swash` rasterizes glyphs; `std` pulls fontdb's memmap so system fonts can be opened
 # later. `fontconfig` is Linux-only and stays off here (see the target table below).
 # Default features also turn on fontconfig, which we do not want on macOS or Windows.
 cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 log = { version = "0.4", default-features = false, features = ["std"] }
-# Glyphs rasterized on the CPU pool.
+# Glyphs rasterized and tiles cut on the CPU pool.
 rayon = "1.12"
 # Glyphs rasterized on the workers; the same version and features cosmic-text uses.
 swash = "0.2.10"
@@ -29,6 +37,8 @@ winit = { version = "0.30", default-features = false, features = ["rwh_06"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 pollster = { version = "0.4", default-features = false }
+# The tiles' fetches run on the app's runtime.
+tokio = { version = "1", default-features = false, features = ["rt"] }
 
 # The browser: WebGPU, one thread.
 [target.'cfg(target_arch = "wasm32")'.dependencies]

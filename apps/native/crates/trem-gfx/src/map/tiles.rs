@@ -12,6 +12,7 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 
 use super::camera::Camera;
+#[cfg(feature = "dem")]
 use super::dem;
 use super::tessellate::{self, Span, TileMesh};
 use crate::render::Gpu;
@@ -100,6 +101,15 @@ fn dem_in_bounds(id: TileId) -> bool {
         && south < TERRAIN_BOUNDS[3]
 }
 
+/// Where the tiles come from: `{z}`, `{x}` and `{y}` stand for the tile's.
+#[derive(Clone, Copy, Debug)]
+pub struct TileConfig {
+    /// ExpTech's vector basemap (MVT: `global`, `city`, `town`).
+    pub vector_url: &'static str,
+    /// Mapbox Terrain-RGB, for the hillshade; none, no hillshade. Needs the `dem` feature.
+    pub terrain_url: Option<&'static str>,
+}
+
 /// Called with a URL; answers with the body, None for an empty tile, Err on failure.
 pub type Reply = Box<dyn FnOnce(Result<Option<Arc<Vec<u8>>>, String>) + Send>;
 pub type Fetch = Arc<dyn Fn(String, Reply) + Send + Sync>;
@@ -134,6 +144,7 @@ enum Slot<T> {
 
 enum Loaded {
     Vector(TileId, Result<Option<TileMesh>, String>),
+    #[cfg(feature = "dem")]
     Dem(TileId, Result<Option<dem::Baked>, String>),
 }
 
@@ -148,7 +159,7 @@ pub struct TileManager {
     dem_bytes: u64,
     tick: u64,
     vector_url: String,
-    terrain_url: String,
+    terrain_url: Option<String>,
 }
 
 fn tile_url(template: &str, id: TileId) -> String {
@@ -201,13 +212,11 @@ fn upload_vector(gpu: &Gpu, mesh: &TileMesh) -> VectorGpu {
 }
 
 impl TileManager {
-    pub fn new(
-        fetch: Fetch,
-        wake: Arc<dyn Fn() + Send + Sync>,
-        vector_url: &str,
-        terrain_url: &str,
-    ) -> Self {
+    pub fn new(fetch: Fetch, wake: Arc<dyn Fn() + Send + Sync>, config: TileConfig) -> Self {
         let (tx, rx) = channel();
+        if cfg!(not(feature = "dem")) && config.terrain_url.is_some() {
+            log::warn!(target: "map", "沒有 dem 功能：不載入地形圖磚");
+        }
         Self {
             fetch,
             wake,
@@ -218,8 +227,11 @@ impl TileManager {
             vector_bytes: 0,
             dem_bytes: 0,
             tick: 0,
-            vector_url: vector_url.to_string(),
-            terrain_url: terrain_url.to_string(),
+            vector_url: config.vector_url.to_string(),
+            terrain_url: config
+                .terrain_url
+                .filter(|_| cfg!(feature = "dem"))
+                .map(str::to_string),
         }
     }
 
@@ -241,12 +253,30 @@ impl TileManager {
         );
     }
 
+    /// The terrain tiles the camera needs: none without a terrain source.
+    fn wanted_dem(&self, camera: &Camera) -> Vec<TileId> {
+        if self.terrain_url.is_none() {
+            return Vec::new();
+        }
+        covering(camera, dem_zoom(camera.zoom))
+            .into_iter()
+            .filter(|id| dem_in_bounds(*id))
+            .collect()
+    }
+
+    #[cfg(not(feature = "dem"))]
+    fn request_dem(&mut self, _id: TileId) {}
+
+    #[cfg(feature = "dem")]
     fn request_dem(&mut self, id: TileId) {
+        let Some(url) = self.terrain_url.as_deref().map(|t| tile_url(t, id)) else {
+            return;
+        };
         self.dem.insert(id, Slot::Loading);
         let tx = self.tx.clone();
         let wake = self.wake.clone();
         (self.fetch)(
-            tile_url(&self.terrain_url, id),
+            url,
             Box::new(move |result| {
                 let loaded = result.map(|body| {
                     body.and_then(|b| {
@@ -264,6 +294,7 @@ impl TileManager {
     }
 
     /// Take what the workers finished onto the GPU. True when anything arrived.
+    #[cfg_attr(not(feature = "dem"), allow(unused_variables))]
     pub fn poll(&mut self, gpu: &Gpu, shade_layout: &wgpu::BindGroupLayout, now_ms: f64) -> bool {
         let mut any = false;
         while let Ok(loaded) = self.rx.try_recv() {
@@ -281,14 +312,17 @@ impl TileManager {
                     log::debug!(target: "map", "圖磚 {}/{}/{} 取得失敗：{e}", id.z, id.x, id.y);
                     self.vector.insert(id, Slot::Failed(now_ms));
                 }
+                #[cfg(feature = "dem")]
                 Loaded::Dem(id, Ok(Some(baked))) => {
                     let tile = upload_dem(gpu, shade_layout, &baked);
                     self.dem_bytes += tile.bytes;
                     self.dem.insert(id, Slot::Ready(tile, self.tick));
                 }
+                #[cfg(feature = "dem")]
                 Loaded::Dem(id, Ok(None)) => {
                     self.dem.insert(id, Slot::Empty);
                 }
+                #[cfg(feature = "dem")]
                 Loaded::Dem(id, Err(e)) => {
                     log::debug!(target: "map", "地形圖磚 {}/{}/{} 取得失敗：{e}", id.z, id.x, id.y);
                     self.dem.insert(id, Slot::Failed(now_ms));
@@ -317,10 +351,7 @@ impl TileManager {
         }
         let vector_draw = choose(&wanted, tick, &mut self.vector);
 
-        let wanted_dem: Vec<TileId> = covering(camera, dem_zoom(camera.zoom))
-            .into_iter()
-            .filter(|id| dem_in_bounds(*id))
-            .collect();
+        let wanted_dem = self.wanted_dem(camera);
         for &id in &wanted_dem {
             let ask = match self.dem.get(&id) {
                 None => true,
@@ -351,9 +382,9 @@ impl TileManager {
         let done_v = covering(camera, vector_zoom(camera.zoom))
             .into_iter()
             .all(|id| !matches!(self.vector.get(&id), None | Some(Slot::Loading)));
-        let done_d = covering(camera, dem_zoom(camera.zoom))
+        let done_d = self
+            .wanted_dem(camera)
             .into_iter()
-            .filter(|id| dem_in_bounds(*id))
             .all(|id| !matches!(self.dem.get(&id), None | Some(Slot::Loading)));
         done_v && done_d
     }
@@ -384,6 +415,7 @@ impl TileManager {
     }
 }
 
+#[cfg(feature = "dem")]
 fn upload_dem(gpu: &Gpu, layout: &wgpu::BindGroupLayout, baked: &dem::Baked) -> DemGpu {
     let texture = gpu.device.create_texture_with_data(
         &gpu.queue,
