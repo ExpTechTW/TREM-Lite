@@ -172,7 +172,9 @@ fn fs_rect(in: VsOut) -> @location(0) vec4f {
 @fragment
 fn fs_text(in: VsOut) -> @location(0) vec4f {
     let inst = instances[in.index];
-    let cov = textureSample(tex, tex_sampler, in.uv).r;
+    // Blending happens in gamma space, which thins text. Browsers and CoreText counter it
+    // with a contrast curve on coverage; this is the same idea, in one exponent.
+    let cov = pow(textureSample(tex, tex_sampler, in.uv).r, 0.72);
     let clip_cov = clip_coverage(in.pos.xy, inst);
     let a = cov * inst.tint.a * clip_cov;
     return vec4f(inst.tint.rgb * a, a);

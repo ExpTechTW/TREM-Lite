@@ -97,7 +97,6 @@ pub struct Scene {
     /// `${id}-p-wave-outline` and its S layers.
     pub waves: Vec<WaveLayer>,
     pub towns: TownColors,
-    pub towns_painted: Option<String>,
 
     pub dots_dirty: bool,
     pub lines_dirty: bool,

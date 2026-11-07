@@ -280,6 +280,17 @@ impl MapEngine {
         vec![MapEvent::Wheel, MapEvent::UserMove]
     }
 
+    /// A key's pan or zoom, about the middle of the map.
+    pub fn key_move(&mut self, dx: f64, dy: f64, dz: f64) {
+        if dz != 0.0 {
+            self.camera
+                .zoom_at(dz, self.camera.width / 2.0, self.camera.height / 2.0);
+        } else {
+            self.camera.pan_by(dx, dy);
+        }
+        self.scene.dirty = true;
+    }
+
     pub fn pinch(&mut self, delta: f64, x: f64, y: f64) -> Vec<MapEvent> {
         self.camera.zoom_at((1.0 + delta).max(0.1).log2(), x, y);
         self.scene.dirty = true;
@@ -310,9 +321,4 @@ pub fn tile_fetch(
             let _ = tokio::task::spawn_blocking(move || reply(answer)).await;
         });
     })
-}
-
-/// Which icon a station's level shows: `intensity-N`.
-pub fn intensity_icon(level: i32) -> icons::IconId {
-    icons::IconId::Intensity(level.clamp(0, 9) as u8)
 }

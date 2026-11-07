@@ -404,7 +404,9 @@ type Flight = Arc<OnceCell<Result<Fetched, String>>>;
 #[derive(Clone)]
 pub struct Fetched {
     pub status: u16,
+    #[allow(dead_code)]
     pub url: String,
+    #[allow(dead_code)]
     pub headers: HashMap<String, String>,
     pub body: Arc<Vec<u8>>,
     pub from_cache: bool,

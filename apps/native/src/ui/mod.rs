@@ -1,6 +1,11 @@
 //! Immediate-mode UI in CSS logical pixels. The renderer multiplies by the DPI scale.
 
 mod debug;
+pub mod icons;
+pub mod main_view;
+pub mod pip;
+pub mod settings;
+pub mod widgets;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -330,6 +335,12 @@ pub struct Ui {
     clips: ClipStack,
     glyphs: Vec<GlyphQuad>,
     cmds: Vec<Cmd>,
+    input: InputState,
+}
+
+/// One window's interaction. There is one [`Ui`] for all the windows, so they share the
+/// glyph atlas, the images and the pipelines; each window keeps this and swaps it in.
+pub struct InputState {
     pointer_x: f32,
     pointer_y: f32,
     mouse_down: bool,
@@ -342,6 +353,25 @@ pub struct Ui {
     scrolls: HashMap<WidgetId, f32>,
     cursor: CursorKind,
     tooltip: Option<String>,
+}
+
+impl Default for InputState {
+    fn default() -> Self {
+        Self {
+            pointer_x: -1.0e6,
+            pointer_y: -1.0e6,
+            mouse_down: false,
+            mouse_pressed: false,
+            mouse_released: false,
+            wheel_y: 0.0,
+            hover: None,
+            pressed: None,
+            nodes: Vec::new(),
+            scrolls: HashMap::new(),
+            cursor: CursorKind::Default,
+            tooltip: None,
+        }
+    }
 }
 
 impl Ui {
@@ -365,27 +395,36 @@ impl Ui {
             clips: ClipStack::default(),
             glyphs: Vec::new(),
             cmds: Vec::new(),
-            pointer_x: -1.0e6,
-            pointer_y: -1.0e6,
-            mouse_down: false,
-            mouse_pressed: false,
-            mouse_released: false,
-            wheel_y: 0.0,
-            hover: None,
-            pressed: None,
-            nodes: Vec::new(),
-            scrolls: HashMap::new(),
-            cursor: CursorKind::Default,
-            tooltip: None,
+            input: InputState::default(),
         })
+    }
+
+    /// Put a window's interaction in, and get the previous one back.
+    pub fn swap_input(&mut self, other: &mut InputState) {
+        std::mem::swap(&mut self.input, other);
+    }
+
+    pub fn current_hover(&self) -> Option<WidgetId> {
+        self.input.hover
+    }
+
+    /// What the pointer would be over at this point, by the last frame's widgets.
+    pub fn hover_at(&self, x: f32, y: f32) -> Option<WidgetId> {
+        self.input
+            .nodes
+            .iter()
+            .rev()
+            .find(|node| node.rect.contains(x, y))
+            .map(|node| node.id)
     }
 
     pub fn resize(&mut self, logical: (f32, f32), scale: f32) {
         self.width = logical.0;
         self.height = logical.1;
-        if scale.is_finite() && scale > 0.0 && (self.scale - scale).abs() > f32::EPSILON {
+        // The atlas stays: glyphs of the old scale age out, and two windows on screens of
+        // different scale would otherwise throw it away every frame.
+        if scale.is_finite() && scale > 0.0 {
             self.scale = scale;
-            self.text.release_atlas();
         }
     }
 
@@ -405,6 +444,10 @@ impl Ui {
         self.text.release_atlas();
     }
 
+    pub fn scale(&self) -> f32 {
+        self.scale
+    }
+
     pub fn width(&self) -> f32 {
         self.width
     }
@@ -420,64 +463,77 @@ impl Ui {
     pub fn begin(&mut self) {
         self.ops.clear();
         self.clips.stack.clear();
-        self.nodes.clear();
-        self.cursor = CursorKind::Default;
-        self.tooltip = None;
+        self.input.nodes.clear();
+        self.input.cursor = CursorKind::Default;
+        self.input.tooltip = None;
     }
 
     pub fn end(&mut self) {
-        self.hover = self
+        self.input.hover = self
+            .input
             .nodes
             .iter()
             .rev()
-            .find(|node| node.rect.contains(self.pointer_x, self.pointer_y))
+            .find(|node| {
+                node.rect
+                    .contains(self.input.pointer_x, self.input.pointer_y)
+            })
             .map(|node| node.id);
-        if self.mouse_pressed {
-            self.pressed = self.hover;
+        if self.input.mouse_pressed {
+            self.input.pressed = self.input.hover;
         }
-        if !self.mouse_down {
-            self.pressed = None;
+        if !self.input.mouse_down {
+            self.input.pressed = None;
         }
-        self.mouse_pressed = false;
-        self.mouse_released = false;
-        self.wheel_y = 0.0;
+        self.input.mouse_pressed = false;
+        self.input.mouse_released = false;
+        self.input.wheel_y = 0.0;
     }
 
     pub fn set_pointer(&mut self, x: f32, y: f32) {
-        self.pointer_x = x;
-        self.pointer_y = y;
+        self.input.pointer_x = x;
+        self.input.pointer_y = y;
     }
 
     pub fn set_buttons(&mut self, down: bool, pressed: bool, released: bool) {
-        self.mouse_down = down;
-        self.mouse_pressed = pressed;
-        self.mouse_released = released;
+        self.input.mouse_down = down;
+        self.input.mouse_pressed = pressed;
+        self.input.mouse_released = released;
     }
 
     pub fn add_wheel(&mut self, dy: f32) {
         if dy.is_finite() {
-            self.wheel_y += dy;
+            self.input.wheel_y += dy;
         }
     }
 
+    /// The press of this frame, whatever is under it.
+    pub fn mouse_just_pressed(&self) -> bool {
+        self.input.mouse_pressed
+    }
+
+    pub fn mouse_just_released(&self) -> bool {
+        self.input.mouse_released
+    }
+
     pub fn pointer(&self) -> (f32, f32) {
-        (self.pointer_x, self.pointer_y)
+        (self.input.pointer_x, self.input.pointer_y)
     }
 
     pub fn cursor(&self) -> CursorKind {
-        self.cursor
+        self.input.cursor
     }
 
     pub fn set_cursor(&mut self, cursor: CursorKind) {
-        self.cursor = cursor;
+        self.input.cursor = cursor;
     }
 
     pub fn set_tooltip(&mut self, text: &str) {
-        self.tooltip = Some(text.to_string());
+        self.input.tooltip = Some(text.to_string());
     }
 
     pub fn tooltip(&self) -> Option<&str> {
-        self.tooltip.as_deref()
+        self.input.tooltip.as_deref()
     }
 
     pub fn quad(&mut self, rect: Rect, style: &QuadStyle) {
@@ -597,13 +653,13 @@ impl Ui {
             None => rect,
             Some(clip) => rect.intersect(clip).unwrap_or(Rect::ZERO),
         };
-        self.nodes.push(HitNode { id, rect });
+        self.input.nodes.push(HitNode { id, rect });
         Interaction {
-            hovered: self.hover == Some(id),
-            pressed: self.pressed == Some(id) && self.mouse_down,
-            clicked: self.pressed == Some(id)
-                && self.mouse_released
-                && rect.contains(self.pointer_x, self.pointer_y),
+            hovered: self.input.hover == Some(id),
+            pressed: self.input.pressed == Some(id) && self.input.mouse_down,
+            clicked: self.input.pressed == Some(id)
+                && self.input.mouse_released
+                && rect.contains(self.input.pointer_x, self.input.pointer_y),
         }
     }
 
@@ -613,9 +669,9 @@ impl Ui {
         } else {
             0.0
         };
-        let hovered = self.hover == Some(id);
-        let wheel = self.wheel_y;
-        let slot = self.scrolls.entry(id).or_insert(0.0);
+        let hovered = self.input.hover == Some(id);
+        let wheel = self.input.wheel_y;
+        let slot = self.input.scrolls.entry(id).or_insert(0.0);
         if hovered {
             *slot += wheel;
         }
