@@ -4,11 +4,12 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use web_time::Instant;
 
+use trem_core::fmt::fmt_dur;
+use trem_core::ml::area::EewAreaResult;
+use trem_core::region;
+
 use crate::app::{App, Msg};
-use crate::backend::logging::fmt_dur;
-use crate::backend::math::EewAreaResult;
 use crate::domain::constants::intensity_label;
-use crate::domain::region;
 use crate::domain::types::EewData;
 use crate::domain::utils::town_colors;
 use crate::events::Event;
@@ -48,7 +49,13 @@ impl App {
         // The model takes tens of milliseconds: off the main thread.
         self.host.background(move || {
             let started = Instant::now();
-            let result = crate::backend::math::eew_area_intensity(lat, lon, depth, mag);
+            let result = trem_core::ml::area::eew_area_intensity(
+                crate::backend::ml_intensity::model,
+                lat,
+                lon,
+                depth,
+                mag,
+            );
             Some(Msg::EewArea {
                 id,
                 serial,
@@ -189,7 +196,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::backend::math::AreaEntry;
+    use trem_core::ml::area::AreaEntry;
 
     #[test]
     fn what_was_reported_lifts_but_never_lowers_a_town() {

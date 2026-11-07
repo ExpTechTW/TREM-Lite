@@ -4,8 +4,9 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use trem_core::region;
+
 use crate::app::App;
-use crate::domain::region;
 use crate::domain::types::{area_by_code, IntensityReport, LpgmData, StationId};
 use crate::domain::utils::town_colors;
 use crate::events::Event;

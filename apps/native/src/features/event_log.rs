@@ -4,9 +4,10 @@
 
 use web_time::Instant;
 
+use trem_core::region;
+
 use crate::app::App;
 use crate::domain::constants::intensity_label;
-use crate::domain::region;
 use crate::domain::types::{Area, EewData, ReportListItem, RtsData};
 use crate::domain::utils::when;
 use crate::events::Event;

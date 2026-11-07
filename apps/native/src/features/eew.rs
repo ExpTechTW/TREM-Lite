@@ -3,10 +3,12 @@
 
 use std::rc::Rc;
 
+use trem_core::travel_time::ps_wave_dist;
+
 use crate::app::App;
 use crate::domain::constants::{EEW_S_ALERT, EEW_S_WARN};
 use crate::domain::types::EewData;
-use crate::domain::utils::{circle_ring, ps_wave_dist, ring_step_km};
+use crate::domain::utils::{circle_ring, ring_step_km};
 use crate::events::Event;
 use crate::timers::{Task, TimerId};
 use crate::variable::{EewDisplay, EewStatus, TriggerDisplay};

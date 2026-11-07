@@ -1,6 +1,8 @@
-//! The data the app embeds (assets/data/*.bin), encoded from the JSON beside it. This
-//! test is the encoder, and fails when a .bin and its .json disagree; `UPDATE_GOLDEN=1`
-//! writes the .bin files instead. The formats, all little-endian, varint = unsigned LEB128:
+//! The encoders of the data this crate embeds (assets/data/*.bin), from the JSON beside
+//! it. The test `encoded_data` fails when a .bin and its .json disagree; `UPDATE_GOLDEN=1`
+//! writes the .bin files instead. An encoder panics on JSON its format cannot hold: it is
+//! a build step, not something to run on live data. The formats, all little-endian,
+//! varint = unsigned LEB128:
 //!
 //! - time.bin: version | scale (1000) | depths; per depth: key | rows | the P, S, R and D
 //!   columns, each rows delta-varints of round(v * scale) (monotonic, so never negative).
@@ -8,8 +10,6 @@
 //!   | lat (f64) | lon (f64). The site and area fields are left out: nothing reads them.
 //! - box.bin: version | scale (100) | features; per feature: ID | points | lon, lat
 //!   varints of round(coord * scale) (Taiwan's coordinates are positive, two decimals).
-
-use std::path::PathBuf;
 
 use serde::de::{Deserialize, Deserializer, MapAccess, Visitor};
 use serde_json::Value;
@@ -79,7 +79,7 @@ fn num(value: &Value, what: &str) -> f64 {
         .unwrap_or_else(|| panic!("{what}: not a number"))
 }
 
-fn encode_time(json: &[u8]) -> Vec<u8> {
+pub fn encode_time(json: &[u8]) -> Vec<u8> {
     const SCALE: f64 = 1000.0;
     let depths: Members<Vec<Value>> = serde_json::from_slice(json).expect("time.json");
     let depths = depths.0;
@@ -104,7 +104,7 @@ fn encode_time(json: &[u8]) -> Vec<u8> {
     out
 }
 
-fn encode_region(json: &[u8]) -> Vec<u8> {
+pub fn encode_region(json: &[u8]) -> Vec<u8> {
     let cities: Members<Members<Value>> = serde_json::from_slice(json).expect("region.json");
     let cities = cities.0;
     let mut out = Vec::new();
@@ -123,7 +123,7 @@ fn encode_region(json: &[u8]) -> Vec<u8> {
     out
 }
 
-fn encode_box(json: &[u8]) -> Vec<u8> {
+pub fn encode_box(json: &[u8]) -> Vec<u8> {
     const SCALE: f64 = 100.0;
     let json: Value = serde_json::from_slice(json).expect("box.json");
     let features = json["features"].as_array().expect("features");
@@ -155,29 +155,36 @@ fn encode_box(json: &[u8]) -> Vec<u8> {
     out
 }
 
-/// A file's JSON in, its .bin out.
-type Encoder = fn(&[u8]) -> Vec<u8>;
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
 
-#[test]
-fn encoded_data() {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/data");
-    let encoders: [(&str, Encoder); 3] = [
-        ("time", encode_time),
-        ("region", encode_region),
-        ("box", encode_box),
-    ];
-    for (name, encode) in encoders {
-        let json = std::fs::read(dir.join(format!("{name}.json"))).expect("the JSON");
-        let encoded = encode(&json);
-        let bin = dir.join(format!("{name}.bin"));
-        if std::env::var_os("UPDATE_GOLDEN").is_some() {
-            std::fs::write(&bin, &encoded).expect("the .bin");
-            continue;
+    use super::*;
+
+    /// A file's JSON in, its .bin out.
+    type Encoder = fn(&[u8]) -> Vec<u8>;
+
+    #[test]
+    fn encoded_data() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/data");
+        let encoders: [(&str, Encoder); 3] = [
+            ("time", encode_time),
+            ("region", encode_region),
+            ("box", encode_box),
+        ];
+        for (name, encode) in encoders {
+            let json = std::fs::read(dir.join(format!("{name}.json"))).expect("the JSON");
+            let encoded = encode(&json);
+            let bin = dir.join(format!("{name}.bin"));
+            if std::env::var_os("UPDATE_GOLDEN").is_some() {
+                std::fs::write(&bin, &encoded).expect("the .bin");
+                continue;
+            }
+            let stored = std::fs::read(&bin).expect("the .bin");
+            assert!(
+                stored == encoded,
+                "{name}.bin is not {name}.json encoded: run with UPDATE_GOLDEN=1"
+            );
         }
-        let stored = std::fs::read(&bin).expect("the .bin");
-        assert!(
-            stored == encoded,
-            "{name}.bin is not {name}.json encoded: run with UPDATE_GOLDEN=1"
-        );
     }
 }

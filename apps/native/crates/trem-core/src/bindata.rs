@@ -1,6 +1,9 @@
 //! Decoders for the compact binary data files of scripts/encode-data.mjs
 //! (lib/bindata.ts): varints, little-endian f64s, length-prefixed UTF-8.
 
+#[cfg(any(test, feature = "encode"))]
+pub mod encode;
+
 struct Reader<'a> {
     buf: &'a [u8],
     pos: usize,
@@ -77,7 +80,10 @@ pub fn decode_time_table(buf: &[u8]) -> Option<TimeTable> {
     Some(table)
 }
 
+/// A town of region.bin. More fields are to come (the table's next version adds the
+/// area and the county's short name), so it is built only here.
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub struct Town {
     pub city: &'static str,
     pub town: &'static str,

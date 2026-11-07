@@ -10,7 +10,5 @@ pub mod audio;
 pub mod awake;
 pub mod config;
 pub mod logging;
-pub mod math;
 pub mod ml_intensity;
 pub mod sound;
-pub mod version;

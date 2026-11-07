@@ -1,8 +1,9 @@
 //! A downloaded update, restarted for once nothing is going on (features/update/update.ts):
 //! no EEW, no station alert, no overlay, no replay, and no event for five minutes.
 
+use trem_core::version;
+
 use crate::app::App;
-use crate::backend::version;
 use crate::events::Event;
 use crate::features::window::WindowCommand;
 use crate::timers::{Task, TimerId};

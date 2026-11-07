@@ -39,8 +39,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use tokio::sync::{OnceCell, Semaphore};
+use trem_core::fmt::{fmt_bytes, fmt_dur};
 
-use crate::backend::logging::{fmt_bytes, fmt_dur};
 use crate::net::cache::{gunzip, now_ms, CacheEntry, HttpCache, StoredResponse};
 use crate::net::endpoints::{Endpoints, Target};
 pub use crate::net::types::{Fetched, ProxyRequest};

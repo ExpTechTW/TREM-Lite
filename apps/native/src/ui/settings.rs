@@ -1,6 +1,7 @@
 //! The settings window (features/settings/SettingsApp.tsx, StationPicker.tsx). Every change
 //! is saved at once, and the main window follows it.
 
+use trem_core::region;
 use web_time::Instant;
 
 use super::icons::{Icon, IconCache};
@@ -8,7 +9,6 @@ use super::widgets::{draw_tooltip, right, style, text_cut, text_in, Transition};
 use super::{Color, CursorKind, Interaction, QuadStyle, Rect, Ui, WidgetId};
 use crate::app::App;
 use crate::backend::config::{Config, IdleMap};
-use crate::domain::region;
 use crate::domain::types::StationId;
 use crate::render::Gpu;
 
@@ -865,7 +865,7 @@ impl SettingsView {
         y: f32,
         w: f32,
     ) {
-        let version = crate::backend::version::label(env!("CARGO_PKG_VERSION"));
+        let version = trem_core::version::label(env!("CARGO_PKG_VERSION"));
         let label = |ui: &mut Ui, row: Rect, text: &str| {
             text_in(
                 ui,

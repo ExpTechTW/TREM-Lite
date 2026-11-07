@@ -979,7 +979,7 @@ fn draw_nav(
 
 /// overlays/VersionBadge.tsx.
 fn draw_version(ui: &mut Ui, narrow: bool, closed: f32) {
-    let label = crate::backend::version::label(env!("CARGO_PKG_VERSION"));
+    let label = trem_core::version::label(env!("CARGO_PKG_VERSION"));
     let rest = if narrow { 50.0 } else { 0.0 };
     let shift = rest + (320.0 - rest) * closed;
     let s = right(style(15.0, 400));

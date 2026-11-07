@@ -7,8 +7,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use web_time::Instant;
 
+use trem_core::ml::area::EewAreaResult;
+
 use crate::backend::config::{self, Config};
-use crate::backend::math::EewAreaResult;
 use crate::domain::types::{Area, IntensityReport, RtsData, Station, StationId};
 use crate::events::Event;
 use crate::features::alerts::{SpeechEnd, SpeechState};

@@ -10,7 +10,8 @@ name = "trem-lite-native"
 path = "src/main.rs"
 
 [dependencies]
-base64 = "0.22"
+# The libraries beside the app, in crates/: shared with other TREM apps.
+trem-core = { path = "crates/trem-core", features = ["rayon"] }
 bytes = { version = "1", default-features = false, features = ["std"] }
 bytemuck = { version = "1", default-features = false, features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
@@ -92,6 +93,9 @@ winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11
 
 # The app, and beside it in crates/ the libraries it shares with other TREM apps.
 [workspace]
+members = ["crates/*"]
+# A bare `cargo test`, `cargo clippy` or `cargo build` here covers the libraries too.
+default-members = [".", "crates/*"]
 
 # What every library says of itself. The app's version is the one in [package], which
 # packaging/bundle-macos.sh reads.

@@ -53,11 +53,17 @@ fn bench_cpu_work() {
     time("eew_area_intensity (368 towns)", 20, || {
         // A new solution each run: the last one is cached.
         n += 0.001;
-        crate::backend::math::eew_area_intensity(22.8 + n, 121.3, 20.0, 5.9)
+        trem_core::ml::area::eew_area_intensity(
+            crate::backend::ml_intensity::model,
+            22.8 + n,
+            121.3,
+            20.0,
+            5.9,
+        )
     });
     let onnx: &[u8] = include_bytes!("../../assets/models/intensity_ml_v1.onnx");
     time("ML model parse + compile", 3, || {
-        crate::backend::ml_intensity::build_for_bench(onnx)
+        trem_core::ml::Model::from_onnx(onnx)
     });
 
     let answers = quake_answers();
@@ -73,9 +79,9 @@ fn bench_cpu_work() {
     });
     time("region + boxes + time table", 1, || {
         (
-            crate::domain::region::towns().len(),
-            crate::domain::region::boxes().len(),
-            crate::domain::utils::ps_wave_dist(10.0, 0.0, 10_000.0),
+            trem_core::region::towns().len(),
+            trem_core::region::boxes().len(),
+            trem_core::travel_time::ps_wave_dist(10.0, 0.0, 10_000.0),
         )
     });
 }
@@ -94,7 +100,7 @@ fn bench_main_thread_frame() {
     let mut frame = Vec::new();
     for n in 0..1000u32 {
         let id = crate::domain::types::StationId::new(&format!("1{n:06X}")).expect("an id");
-        let town = &crate::domain::region::towns()[(n as usize * 7) % 368];
+        let town = &trem_core::region::towns()[(n as usize * 7) % 368];
         stations.insert(
             id,
             crate::domain::types::Station {

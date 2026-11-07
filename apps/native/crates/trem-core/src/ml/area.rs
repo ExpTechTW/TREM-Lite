@@ -1,6 +1,6 @@
 //! EEW predicted intensity per town — the hot path that runs over every Taiwan
 //! town (368) on each EEW update. The level comes from the ML model v1
-//! (ml_intensity.rs); this file owns the town table and the hypocentral
+//! ([`super`]); this file owns the town table and the hypocentral
 //! distance the frontend also receives.
 //!
 //! It replaced the TREM-Lite formula (Katsumata PGA, and a PGV estimate once
@@ -12,15 +12,9 @@ use std::sync::{Mutex, OnceLock};
 
 use serde::Serialize;
 
-use crate::backend::ml_intensity;
+use super::{features, level, Model, Row};
 
-// Compact binary encoded from assets/data/region.json; the test `encoded_data` keeps the
-// two in step (UPDATE_GOLDEN=1 re-encodes). Format per region.bin:
-//   varint version | varint numCities
-//   per city: varint nameLen + utf8 | varint numTowns
-//   per town: varint nameLen + utf8 | varint code | f64 lat | f64 lon
-const REGION_BIN: &[u8] = include_bytes!("../../assets/data/region.bin");
-
+/// A town of region.bin ([`crate::region`] decodes it), with what the distance needs.
 struct Town {
     code: i64,
     /// Degrees, as in region.json: the model's feature inputs.
@@ -34,67 +28,23 @@ struct Town {
     lon_rad: f64,
 }
 
-/// Minimal sequential reader for region.bin (LEB128 varints, LE f64, utf8 strs).
-struct BinReader<'a> {
-    buf: &'a [u8],
-    pos: usize,
-}
-impl BinReader<'_> {
-    fn varint(&mut self) -> u64 {
-        let mut result = 0u64;
-        let mut shift = 0u32;
-        loop {
-            let b = self.buf[self.pos];
-            self.pos += 1;
-            result |= u64::from(b & 0x7f) << shift;
-            if b & 0x80 == 0 {
-                return result;
-            }
-            shift += 7;
-        }
-    }
-    fn f64(&mut self) -> f64 {
-        let mut b = [0u8; 8];
-        b.copy_from_slice(&self.buf[self.pos..self.pos + 8]);
-        self.pos += 8;
-        f64::from_le_bytes(b)
-    }
-    fn skip_str(&mut self) {
-        let len = self.varint() as usize;
-        self.pos += len;
-    }
-}
-
 fn towns() -> &'static Vec<Town> {
     static TOWNS: OnceLock<Vec<Town>> = OnceLock::new();
     TOWNS.get_or_init(|| {
-        let mut r = BinReader {
-            buf: REGION_BIN,
-            pos: 0,
-        };
-        r.varint(); // version
-        let num_cities = r.varint();
-        let mut v = Vec::with_capacity(400);
-        for _ in 0..num_cities {
-            r.skip_str(); // city name (unused by the math)
-            let num_towns = r.varint();
-            for _ in 0..num_towns {
-                r.skip_str(); // town name
-                let code = r.varint() as i64;
-                let lat_deg = r.f64();
-                let lon = r.f64();
-                let lat = lat_deg * PI / 180.0;
-                v.push(Town {
-                    code,
-                    lat_deg,
-                    lon_deg: lon,
+        crate::region::towns()
+            .iter()
+            .map(|t| {
+                let lat = t.lat * PI / 180.0;
+                Town {
+                    code: i64::from(t.code),
+                    lat_deg: t.lat,
+                    lon_deg: t.lon,
                     sin_lat: lat.sin(),
                     cos_lat: lat.cos(),
-                    lon_rad: lon * PI / 180.0,
-                });
-            }
-        }
-        v
+                    lon_rad: t.lon * PI / 180.0,
+                }
+            })
+            .collect()
     })
 }
 
@@ -121,19 +71,28 @@ pub struct EewAreaResult {
     pub area: HashMap<i64, AreaEntry>,
 }
 
-/// Predicted level per town for an EEW at (lat, lon, depth, mag).
+/// Predicted level per town for an EEW at (lat, lon, depth, mag). `model` is asked for
+/// the model only once the input is known to be usable and new: a garbled report fails
+/// as such, and a repeated solution is answered, before the model is ready too.
 ///
 /// Runs off the main thread: the model takes a few milliseconds.
-pub fn eew_area_intensity(
+pub fn eew_area_intensity<'m>(
+    model: impl FnOnce() -> Result<&'m Model, String>,
     lat: f64,
     lon: f64,
     depth: f64,
     mag: f64,
 ) -> Result<EewAreaResult, String> {
-    area_intensity(lat, lon, depth, mag)
+    area_intensity(model, lat, lon, depth, mag)
 }
 
-fn area_intensity(lat: f64, lon: f64, depth: f64, mag: f64) -> Result<EewAreaResult, String> {
+fn area_intensity<'m>(
+    model: impl FnOnce() -> Result<&'m Model, String>,
+    lat: f64,
+    lon: f64,
+    depth: f64,
+    mag: f64,
+) -> Result<EewAreaResult, String> {
     // The trees need finite features; a garbled report must fail, not paint a
     // plausible-looking map.
     if ![lat, lon, depth, mag].iter().all(|v| v.is_finite()) {
@@ -149,11 +108,11 @@ fn area_intensity(lat: f64, lon: f64, depth: f64, mag: f64) -> Result<EewAreaRes
         }
     }
 
-    let model = ml_intensity::model()?;
+    let model = model()?;
     let towns = towns();
-    let rows: Vec<ml_intensity::Row> = towns
+    let rows: Vec<Row> = towns
         .iter()
-        .map(|t| ml_intensity::features(mag, depth, lat, lon, t.lat_deg, t.lon_deg))
+        .map(|t| features(mag, depth, lat, lon, t.lat_deg, t.lon_deg))
         .collect();
     let (pga, pgv) = model.predict(&rows);
 
@@ -168,7 +127,7 @@ fn area_intensity(lat: f64, lon: f64, depth: f64, mag: f64) -> Result<EewAreaRes
             t.code,
             AreaEntry {
                 dist,
-                level: ml_intensity::level(pga[i], pgv[i]),
+                level: level(pga[i], pgv[i]),
             },
         );
     }
@@ -179,6 +138,7 @@ fn area_intensity(lat: f64, lon: f64, depth: f64, mag: f64) -> Result<EewAreaRes
 
 #[cfg(test)]
 mod tests {
+    use super::super::test_model;
     use super::*;
 
     #[test]
@@ -214,8 +174,7 @@ mod tests {
 
     #[test]
     fn area_result_is_populated_and_bounded() {
-        ml_intensity::load_for_tests();
-        let r = area_intensity(23.5, 121.5, 10.0, 6.0).unwrap();
+        let r = area_intensity(test_model, 23.5, 121.5, 10.0, 6.0).unwrap();
         // Keyed by town code, one entry per town. Exact rather than a floor: a
         // stale region.bin once gave two towns the same code, which a floor let
         // through while one of them silently lost its estimate.
@@ -226,7 +185,7 @@ mod tests {
 
     #[test]
     fn rejects_non_finite_input() {
-        assert!(area_intensity(f64::NAN, 121.5, 10.0, 6.0).is_err());
+        assert!(area_intensity(test_model, f64::NAN, 121.5, 10.0, 6.0).is_err());
     }
 
     /// The whole town table against onnxruntime's levels for the same events,
@@ -248,9 +207,8 @@ mod tests {
         let g: Golden =
             serde_json::from_str(include_str!("../../testdata/ml_intensity_golden.json")).unwrap();
         assert!(!g.fields.is_empty());
-        ml_intensity::load_for_tests();
         for f in g.fields {
-            let r = area_intensity(f.lat, f.lon, f.depth, f.mag).unwrap();
+            let r = area_intensity(test_model, f.lat, f.lon, f.depth, f.mag).unwrap();
             assert_eq!(r.area.len(), f.levels.len());
             for (code, want) in f.levels {
                 let got = r.area[&code.parse::<i64>().unwrap()].level;

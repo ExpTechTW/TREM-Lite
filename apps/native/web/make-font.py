@@ -25,7 +25,9 @@ OUT = NATIVE / "assets/fonts/web"
 def app_text() -> set:
     chars = set()
     files = list((NATIVE / "src").rglob("*.rs")) + [NATIVE / "assets/default.yml"]
-    files += list((NATIVE / "assets/data").glob("*.json"))
+    # The libraries beside the app draw text too, and the place names are trem-core's data.
+    files += list((NATIVE / "crates").glob("*/src/**/*.rs"))
+    files += list((NATIVE / "crates/trem-core/assets/data").glob("*.json"))
     for path in files:
         chars |= set(path.read_text(encoding="utf-8"))
     chars |= {chr(c) for c in TTFont(NATIVE / "assets/fonts/NotoSansTC.ttf").getBestCmap()}

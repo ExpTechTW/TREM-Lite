@@ -13,8 +13,9 @@ use web_time::Instant;
 
 use futures_util::StreamExt;
 use tokio::sync::Notify;
+use trem_core::fmt::{fmt_bytes, fmt_dur};
+use trem_core::sse::{Frame, FrameReader};
 
-use crate::backend::logging::{fmt_bytes, fmt_dur};
 use crate::net::ProxyState;
 
 /// The server comments `: ping` into every stream each 60 s. Silence for one
@@ -33,71 +34,6 @@ const BACKOFF_MAX: Duration = Duration::from_secs(15);
 const SUMMARY_EVERY: Duration = Duration::from_secs(300);
 /// 心跳間隔超過這個才記警告（伺服器固定 60 秒送一次）。
 const PING_GAP_WARN: Duration = Duration::from_secs(75);
-
-#[derive(Debug, Default, PartialEq)]
-pub struct Frame {
-    pub event: Option<String>,
-    pub data: String,
-    /// A `:` comment line — the server's `: ping <unix s>` heartbeat.
-    pub comment: Option<String>,
-}
-
-/// One SSE block. `:` comments (the server's `: ping`) carry no data.
-pub fn parse_frame(block: &str) -> Frame {
-    let mut frame = Frame::default();
-    let mut first = true;
-    for line in block.split('\n') {
-        if line.is_empty() {
-            continue;
-        }
-        if let Some(comment) = line.strip_prefix(':') {
-            frame.comment = Some(comment.trim().to_string());
-            continue;
-        }
-        let (field, value) = match line.split_once(':') {
-            Some((field, value)) => (field, value.strip_prefix(' ').unwrap_or(value)),
-            None => (line, ""),
-        };
-        match field {
-            "event" => frame.event = Some(value.to_string()),
-            "data" => {
-                if !first {
-                    frame.data.push('\n');
-                }
-                frame.data.push_str(value);
-                first = false;
-            }
-            _ => {}
-        }
-    }
-    frame
-}
-
-/// Splits a byte stream into SSE frames, holding a partial one for the next chunk.
-#[derive(Default)]
-pub struct FrameReader {
-    buffer: Vec<u8>,
-}
-
-impl FrameReader {
-    pub fn push(&mut self, chunk: &[u8], out: &mut Vec<Frame>) {
-        self.buffer.extend(chunk.iter().filter(|b| **b != b'\r'));
-        let mut start = 0;
-        while let Some(end) = self.buffer[start..]
-            .windows(2)
-            .position(|w| w == b"\n\n")
-            .map(|p| p + start)
-        {
-            out.push(parse_frame(&String::from_utf8_lossy(
-                &self.buffer[start..end],
-            )));
-            start = end + 2;
-        }
-        if start > 0 {
-            self.buffer.drain(..start);
-        }
-    }
-}
 
 /// An abort signal that async code can wait on.
 #[derive(Clone, Default)]
@@ -638,38 +574,5 @@ async fn read_stream(
             }
             (shared.spec.on_frame)(&frame, &conn.label);
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_block_gives_event_data_and_comment() {
-        let frame = parse_frame("event: trem.rts.v1\ndata: abc\ndata: def");
-        assert_eq!(frame.event.as_deref(), Some("trem.rts.v1"));
-        assert_eq!(frame.data, "abc\ndef");
-        let ping = parse_frame(": ping 1790000000");
-        assert_eq!(ping.comment.as_deref(), Some("ping 1790000000"));
-        assert!(ping.data.is_empty());
-    }
-
-    #[test]
-    fn the_reader_holds_a_partial_frame_and_drops_carriage_returns() {
-        let mut reader = FrameReader::default();
-        let mut out = Vec::new();
-        reader.push(b"data: a\r\n\r\nda", &mut out);
-        assert_eq!(out.len(), 1);
-        assert_eq!(out[0].data, "a");
-        out.clear();
-        reader.push(b"ta: b\n\n", &mut out);
-        assert_eq!(out.len(), 1);
-        assert_eq!(out[0].data, "b");
-    }
-
-    #[test]
-    fn a_field_with_no_space_after_the_colon_is_read_too() {
-        assert_eq!(parse_frame("data:x").data, "x");
     }
 }

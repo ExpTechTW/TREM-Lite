@@ -2,11 +2,14 @@
 //! boxes or their stand-in wavefronts (features/box/box.ts), and the 500 ms beat and
 //! the disconnection check that drive them (features/loop/loop.ts).
 
+use trem_core::intensity::intensity_float_to_int;
+use trem_core::region;
+use trem_core::travel_time::ps_wave_dist;
+
 use crate::app::App;
 use crate::domain::constants::{level_color, LAST_DATA_TIMEOUT_ERROR};
-use crate::domain::region;
 use crate::domain::types::{EewData, RtsData, RtsEq};
-use crate::domain::utils::{circle_ring, distance, intensity_float_to_int, ps_wave_dist};
+use crate::domain::utils::{circle_ring, distance};
 use crate::events::Event;
 use crate::map::icons::IconId;
 use crate::map::scene::{rel, DotInstance, Stroke, Symbol};

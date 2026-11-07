@@ -1,7 +1,8 @@
 //! The realtime station dots' colours, identical to rts-image-go's station layer
 //! (features/rts/palette.ts). The table is color.json, one entry per 0.1 from -3 to 7.
 
-use super::constants::hex;
+use trem_core::color::hex;
+use trem_core::intensity::js_round;
 
 pub const RTS_PALETTE: [[u8; 4]; 101] = [
     hex(0x0000cd),
@@ -114,11 +115,6 @@ fn round_half_away(n: f64) -> f64 {
     } else {
         js_round(n)
     }
-}
-
-/// `Math.round`: halves go up.
-pub fn js_round(n: f64) -> f64 {
-    (n + 0.5).floor()
 }
 
 /// Index into the palette for a measured intensity. Every quiet station lands on

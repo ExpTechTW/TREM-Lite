@@ -3,13 +3,15 @@
 
 use std::rc::Rc;
 
+use trem_core::color::COLOR_INTENSITY;
+use trem_core::intensity::{intensity_float_to_int, shake_level};
+use trem_core::region;
+
 use crate::app::App;
 use crate::backend::config::IdleMap;
-use crate::domain::constants::COLOR_INTENSITY;
 use crate::domain::palette::{rts_color_index, RTS_PALETTE};
-use crate::domain::region;
 use crate::domain::types::RtsData;
-use crate::domain::utils::{int_to_string, intensity_float_to_int, shake_level, TownPeaks};
+use crate::domain::utils::{int_to_string, TownPeaks};
 use crate::events::Event;
 use crate::map::icons::IconId;
 use crate::map::scene::{rel, DotInstance, Symbol};

@@ -381,7 +381,7 @@ impl ApplicationHandler<Msg> for Runner {
         self.main = Some(Win::new(window));
         self.tray = tray::create(
             self.post.clone(),
-            &crate::backend::version::label(env!("CARGO_PKG_VERSION")),
+            &trem_core::version::label(env!("CARGO_PKG_VERSION")),
         );
         if self.tray.is_none() && cfg!(not(target_arch = "wasm32")) {
             log::warn!(target: "tray", "沒有系統匣圖示：關閉主視窗會直接結束程式");

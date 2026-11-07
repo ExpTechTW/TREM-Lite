@@ -4203,11 +4203,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "trem-core"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "flate2",
+ "log",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "trem-lite-native"
 version = "0.1.0"
 dependencies = [
  "auto-launch",
- "base64 0.22.1",
  "bytemuck",
  "bytes",
  "chrono",
@@ -4238,6 +4250,7 @@ dependencies = [
  "swash",
  "tokio",
  "tray-icon",
+ "trem-core",
  "tts",
  "unicode-script",
  "wasm-bindgen",

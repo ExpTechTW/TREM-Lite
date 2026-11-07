@@ -7,9 +7,9 @@ use std::time::Duration;
 use web_time::Instant;
 
 use serde_json::Value;
+use trem_core::fmt::fmt_dur;
 
 use crate::app::{App, Msg};
-use crate::backend::logging::fmt_dur;
 use crate::domain::constants::host::{API_1 as TREM_ARCHIVE_HOST, CORE_API};
 use crate::domain::constants::{timeout, EEW_AUTHOR, LAST_DATA_TIMEOUT_ERROR};
 use crate::domain::types::{

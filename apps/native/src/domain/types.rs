@@ -190,7 +190,7 @@ pub struct EewData {
     #[serde(skip)]
     pub status3_time: f64,
     #[serde(skip)]
-    pub dist: Option<crate::domain::utils::PsWaveDist>,
+    pub dist: Option<trem_core::travel_time::PsWaveDist>,
 }
 
 /// A frame's list. Not an array (a lone object) reads as nothing, as `Array.from` did.
@@ -615,25 +615,6 @@ pub struct LpgmData {
     pub list: Vec<LpgmItem>,
 }
 
-/// An SSE data field of the trem stream: base64 of gzip of the payload. A field that
-/// is not comes back as is.
-pub fn decode_payload(data: &str) -> String {
-    use base64::Engine;
-    use std::io::Read;
-    let compact: String = data.chars().filter(|c| !c.is_whitespace()).collect();
-    let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(compact) else {
-        return data.to_string();
-    };
-    if bytes.len() < 2 || bytes[0] != 0x1f || bytes[1] != 0x8b {
-        return data.to_string();
-    }
-    let mut out = String::new();
-    match flate2::read::GzDecoder::new(&bytes[..]).read_to_string(&mut out) {
-        Ok(_) => out,
-        Err(_) => data.to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -695,12 +676,6 @@ mod tests {
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].id, 1_790_494_393_000.0);
         assert_eq!(list[0].max, 2);
-    }
-
-    #[test]
-    fn payloads_that_are_not_compressed_come_back_as_is() {
-        assert_eq!(decode_payload("{\"a\":1}"), "{\"a\":1}");
-        assert_eq!(decode_payload("aGVsbG8="), "aGVsbG8=");
     }
 
     #[test]

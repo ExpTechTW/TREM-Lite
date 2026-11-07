@@ -1,14 +1,11 @@
-//! Pure helpers (domain/utils.ts, domain/eewCalculator.ts, features/eew/waves.ts,
-//! features/rts/shakeLevel.ts, features/rts/townPeaks.ts).
+//! Pure helpers (domain/utils.ts, features/eew/waves.ts, features/rts/townPeaks.ts).
+//! The intensity levels, the shake level and the travel times are trem_core's.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use chrono::{DateTime, Datelike, Local, TimeZone, Timelike};
-
-use super::bindata::{self, TimeTable};
-use super::palette::js_round;
-use super::region::town_of;
+use trem_core::region::town_of;
 
 /// Great-circle distance in km, by the spherical law of cosines. The cosine is capped
 /// at 1: for two points in the same place it can round above, and acos of that is NaN.
@@ -56,20 +53,6 @@ pub fn chinese_time(ms: f64) -> String {
     })
 }
 
-/// CWA level for a measured intensity: rounded below 4.5, then one level per half
-/// step, and 7 from 6.5. NaN gives 9, as the chain of comparisons this replaced did.
-pub fn intensity_float_to_int(float: f64) -> i32 {
-    if float < 0.0 {
-        0
-    } else if float < 4.5 {
-        js_round(float) as i32
-    } else if float < 6.5 {
-        (float * 2.0).floor() as i32 - 4
-    } else {
-        9
-    }
-}
-
 pub fn int_to_string(max: i32) -> String {
     match max {
         5 => "5弱".to_string(),
@@ -102,7 +85,8 @@ pub fn extract_location(loc: &str) -> String {
 
 /// Each town's colour for its level, intensity's or long-period's palette, 0 unlit.
 pub fn town_colors(area: &HashMap<i32, i32>, lpgm: bool) -> HashMap<u32, [u8; 4]> {
-    use super::constants::{intensity_rgba, lpgm_rgba, TW_COUNTY_FILL};
+    use super::constants::TW_COUNTY_FILL;
+    use trem_core::color::{intensity_rgba, lpgm_rgba};
     area.iter()
         .filter(|(code, _)| **code >= 0)
         .map(|(code, level)| {
@@ -124,71 +108,6 @@ pub fn text_hash(text: &str) -> u64 {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     text.hash(&mut hasher);
     hasher.finish()
-}
-
-// ---- Travel times -------------------------------------------------------------
-
-static TIME_BIN: &[u8] = include_bytes!("../../assets/data/time.bin");
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct PsWaveDist {
-    pub p_dist: f64,
-    pub s_dist: f64,
-    pub s_t: f64,
-}
-
-fn time_table() -> &'static TimeTable {
-    static TABLE: OnceLock<TimeTable> = OnceLock::new();
-    TABLE.get_or_init(|| {
-        bindata::decode_time_table(TIME_BIN).unwrap_or_else(|| {
-            log::error!(target: "init", "time.bin 解不開");
-            Vec::new()
-        })
-    })
-}
-
-/// The P/S wavefront radii (km) reached `now - time` after origin.
-pub fn ps_wave_dist(depth: f64, time: f64, now: f64) -> PsWaveDist {
-    let table = time_table();
-    let Some(first) = table.first() else {
-        return PsWaveDist::default();
-    };
-    let t = (now - time) / 1000.0;
-    // Strictly closer, so a tie keeps the earlier depth.
-    let mut best = first;
-    for row in table {
-        if (row.0 - depth).abs() < (best.0 - depth).abs() {
-            best = row;
-        }
-    }
-    let (mut p_dist, mut s_dist, mut s_t) = (None, None, 0.0);
-    let mut prev: Option<&bindata::TimeTableRow> = None;
-    for row in &best.1 {
-        if p_dist.is_none() && row.p > t {
-            p_dist = Some(match prev {
-                Some(prev) => prev.r + ((t - prev.p) / (row.p - prev.p)) * (row.r - prev.r),
-                None => row.r,
-            });
-        }
-        if s_dist.is_none() && row.s > t {
-            s_dist = Some(match prev {
-                Some(prev) => prev.r + ((t - prev.s) / (row.s - prev.s)) * (row.r - prev.r),
-                None => {
-                    s_t = row.s;
-                    row.r
-                }
-            });
-        }
-        if p_dist.is_some() && s_dist.is_some() {
-            break;
-        }
-        prev = Some(row);
-    }
-    PsWaveDist {
-        p_dist: p_dist.filter(|d: &f64| *d >= 0.0).unwrap_or(0.0),
-        s_dist: s_dist.filter(|d: &f64| *d >= 0.0).unwrap_or(0.0),
-        s_t,
-    }
 }
 
 // ---- Wavefront rings ----------------------------------------------------------
@@ -253,31 +172,6 @@ pub fn circle_ring(lon: f64, lat: f64, radius: f64, zoom: f64) -> Vec<[f64; 2]> 
     ring
 }
 
-// ---- Shake level --------------------------------------------------------------
-
-/// rts-image-go's ShakeLevel: stations binned into a 0.05° grid, each cell's strongest
-/// intensity above 0 adding (I)^1.5, the sum scaled by 1.4.
-pub fn shake_level(points: impl Iterator<Item = (f64, f64, f64)>) -> i32 {
-    const CELL: f64 = 0.05;
-    let mut grid: HashMap<i64, f64> = HashMap::new();
-    for (lon, lat, i) in points {
-        if i.is_nan() {
-            continue;
-        }
-        let key = (lon / CELL).floor() as i64 * 100_000 + (lat / CELL).floor() as i64;
-        let cell = grid.entry(key).or_insert(i);
-        if i > *cell {
-            *cell = i;
-        }
-    }
-    let sum: f64 = grid
-        .values()
-        .filter(|i| **i > 0.0)
-        .map(|i| i.powf(1.5))
-        .sum();
-    js_round(1.4 * sum) as i32
-}
-
 // ---- Town peaks ---------------------------------------------------------------
 
 const PEAK_WINDOW_MS: f64 = 60_000.0;
@@ -334,20 +228,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn levels_split_on_their_bounds() {
-        assert_eq!(intensity_float_to_int(-0.3), 0);
-        assert_eq!(intensity_float_to_int(0.49), 0);
-        assert_eq!(intensity_float_to_int(0.5), 1);
-        assert_eq!(intensity_float_to_int(4.49), 4);
-        assert_eq!(intensity_float_to_int(4.5), 5);
-        assert_eq!(intensity_float_to_int(5.0), 6);
-        assert_eq!(intensity_float_to_int(5.5), 7);
-        assert_eq!(intensity_float_to_int(6.0), 8);
-        assert_eq!(intensity_float_to_int(6.5), 9);
-        assert_eq!(intensity_float_to_int(f64::NAN), 9);
-    }
-
-    #[test]
     fn same_point_is_zero_km_not_nan() {
         assert_eq!(distance(23.5, 121.6, 23.5, 121.6), 0.0);
         let km = distance(25.0, 121.5, 22.6, 120.3);
@@ -361,16 +241,6 @@ mod tests {
             "花蓮縣秀林鄉"
         );
         assert_eq!(extract_location("臺灣東部海域 外海"), "臺灣東部海域");
-    }
-
-    #[test]
-    fn wavefronts_grow_with_time_and_s_trails_p() {
-        let early = ps_wave_dist(10.0, 0.0, 10_000.0);
-        let late = ps_wave_dist(10.0, 0.0, 30_000.0);
-        assert!(late.p_dist > early.p_dist);
-        assert!(late.s_dist > early.s_dist);
-        assert!(late.s_dist < late.p_dist);
-        assert_eq!(ps_wave_dist(10.0, 0.0, -1000.0).s_dist.min(0.0), 0.0);
     }
 
     #[test]
@@ -389,12 +259,5 @@ mod tests {
         assert_eq!(peaks.update(&[(1, 1)], 30_000.0), vec![(1, 3)]);
         assert_eq!(peaks.update(&[], 61_000.0), vec![(1, 1)]);
         assert_eq!(peaks.update(&[], 100_000.0), vec![]);
-    }
-
-    #[test]
-    fn shake_scores_each_cell_once() {
-        let two_in_one_cell = shake_level([(121.01, 23.01, 4.0), (121.02, 23.02, 3.0)].into_iter());
-        assert_eq!(two_in_one_cell, 11);
-        assert_eq!(shake_level([(121.0, 23.0, -1.0)].into_iter()), 0);
     }
 }

@@ -1,0 +1,30 @@
+[package]
+name = "trem-core"
+description = "What every TREM app computes the same way: towns, travel times, intensity, the intensity model, the SSE wire format"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[features]
+default = ["ml"]
+# The intensity model's executor (`ml`), and the per-town estimate built on it.
+ml = ["dep:serde"]
+# A large batch of model rows is split across rayon's pool.
+rayon = ["dep:rayon"]
+# The encoders that make assets/data/*.bin from the JSON beside them.
+encode = ["dep:serde", "dep:serde_json"]
+
+[dependencies]
+base64 = "0.22"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+log = { version = "0.4", default-features = false, features = ["std"] }
+rayon = { version = "1.12", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"

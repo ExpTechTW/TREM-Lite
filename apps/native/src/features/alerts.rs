@@ -3,9 +3,10 @@
 
 use std::collections::HashMap;
 
+use trem_core::region;
+
 use crate::app::App;
 use crate::domain::constants::intensity_label;
-use crate::domain::region;
 use crate::domain::types::{EewData, LpgmData, ReportListItem, StationId};
 use crate::domain::utils::{chinese_time, extract_location, format_timestamp, int_to_string};
 use crate::events::Event;

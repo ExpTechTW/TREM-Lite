@@ -4,10 +4,10 @@
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
-use super::bindata::{self, BoxFeature, Town};
+use crate::bindata::{self, BoxFeature, Town};
 
-static REGION_BIN: &[u8] = include_bytes!("../../assets/data/region.bin");
-static BOX_BIN: &[u8] = include_bytes!("../../assets/data/box.bin");
+static REGION_BIN: &[u8] = include_bytes!("../assets/data/region.bin");
+static BOX_BIN: &[u8] = include_bytes!("../assets/data/box.bin");
 
 struct Region {
     towns: Vec<Town>,

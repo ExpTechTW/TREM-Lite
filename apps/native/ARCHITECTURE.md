@@ -34,8 +34,11 @@
 
 ```
 apps/native/
-  Cargo.toml            二進位檔名 trem-lite-native；桌面與 wasm32 的相依分開列
-  assets/               字型（fonts/web 是瀏覽器版用的）、音效、地區資料、地圖圖示、強度模型、app 圖示
+  Cargo.toml            二進位檔名 trem-lite-native；桌面與 wasm32 的相依分開列；也是 workspace 的根
+  crates/               與其他 TREM app 共用的 lib，app 以 path 相依
+    trem-core/          純計算，瀏覽器也能跑：地區與警戒框、走時表、震度換算與色票、版本標籤、
+                        強度模型的執行器與各鄉鎮預估、SSE 的格式。地區資料（assets/data）跟著它
+  assets/               字型（fonts/web 是瀏覽器版用的）、音效、地圖圖示、強度模型、app 圖示
   web/                  瀏覽器版的頁面、建置腳本、字型切割腳本
   packaging/            macOS .app 打包
   testdata/             錄好的地震、圖磚與金檔
@@ -47,14 +50,14 @@ apps/native/
     exec.rs             async 工作在哪裡跑：桌面是 tokio，瀏覽器是頁面的事件迴圈
     events.rs、timers.rs、variable.rs
     net/                桌面：http（快取代理）、cache、endpoints；共用：sse、ntp、types、fixture；瀏覽器：web（fetch）
-    backend/            config、logging、version、audio（瀏覽器是 audio_web）、sound、awake、math、ml_intensity
-    domain/             types、utils、region、constants、bindata、palette
+    backend/            config、logging、audio（瀏覽器是 audio_web）、sound、awake、ml_intensity（模型檔的下載與檢查）
+    domain/             types、utils、constants、palette
     features/           data、streams、rts、eew、estimate、focus、alerts、report、overlays、flash、update、window…
     map/                camera、mvt、tessellate、tiles、dem、scene、icons
     render/             gpu、map_pass、ui_pass、text、screenshot、shaders/*.wgsl
     ui/                 widgets、main_view、settings、pip、icons
     platform/           tray、notify、speech、lifecycle；platform/web 是瀏覽器版
-    testing/            測試工具與規格、畫面、資料、bench
+    testing/            測試工具與規格、畫面、bench
 ```
 
 - **執行緒**：主執行緒跑 winit、所有狀態、所有渲染。tokio（2 個 worker）跑網路。CPU 工作走 rayon 執行緒池。
