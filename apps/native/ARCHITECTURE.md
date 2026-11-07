@@ -12,6 +12,11 @@
 - 行為由測試釘住：事件軌跡（`testdata/golden/*.txt`）、畫面（`testdata/golden/render/*.png`）、
   圖磚切割（`map_tiles.txt`）、內嵌資料（`encoded_data`）。`UPDATE_GOLDEN=1` 會重寫金檔；
   只在行為本來就該變時用，並在 commit 說明原因。
+- `crates/` 的 lib 不認得任何 app：名稱、識別碼、port、URL、字型、顏色、圖層順序都由 app 傳入。
+  lib 裡給 app 測試用的東西不能用 `#[cfg(test)]`（app 跑測試時它不成立），要用 `testing` feature，
+  app 在 dev-dependencies 打開；`env!` 在 lib 裡讀到的是 lib 自己的值（版本、`CARGO_MANIFEST_DIR`），
+  要的是 app 的就由 app 傳。lib 的模組路徑維持 `render::`、`map::`、`ui::` 等，log target 去掉 crate
+  名後才跟搬家前一樣；`backend/logging.rs` 的 `OWN_CRATES` 要列出每個 lib，否則它們的 debug log 會消失。
 
 ## 效率規則（這個 app 存在的理由，違反就是錯）
 
@@ -40,24 +45,31 @@ apps/native/
                         強度模型的執行器與各鄉鎮預估、SSE 的格式。地區資料（assets/data）跟著它
     trem-io/            不碰 GPU 的 I/O：async 工作在哪裡跑（exec）、計時器、桌面的 HTTP 快取代理
                         （http、cache、endpoints）與瀏覽器的 fetch、fixture、檔案日誌、資料目錄
+    trem-gfx/           畫面與它周圍的系統：GPU device、文字（字型由 app 以 FontConfig 傳入）、UI 與
+                        通用元件、向量地圖（相機、圖磚、map pass 的 pipeline 與 draw 基本操作、sprite）、
+                        視窗（window）、平台層（單一實例；系統匣、通知、語音、背景不降速、開機啟動各是
+                        feature）、測試的金檔工具（testing）。它自己的測試用 testdata/fonts 的字型副本
   assets/               字型（fonts/web 是瀏覽器版用的）、音效、地圖圖示、強度模型、app 圖示
   web/                  瀏覽器版的頁面、建置腳本、字型切割腳本
   packaging/            macOS .app 打包
   testdata/             錄好的地震、圖磚與金檔
   src/
     main.rs             CLI、單一實例、logger、tokio runtime、rayon 執行緒池；瀏覽器版的入口在 web.rs
-    runner.rs           winit 事件迴圈與三個視窗（瀏覽器版只有主視窗）
+    runner.rs           winit 事件迴圈與三個視窗（瀏覽器版只有主視窗）；視窗本身是 trem_gfx::window::Win
     app.rs              `App`：擁有所有狀態、事件匯流排、計時器
     host.rs             app 對外的一切：網路、背景工作、檔案、音效與通知；測試換成錄好的
     events.rs、timers.rs（計時器觸發的 Task）、variable.rs、paths.rs（這個 app 的 identifier）
     net/                sse、ntp；快取代理在 trem-io，這裡是它的 User-Agent 與允許的主機
-    backend/            config、logging（哪些 crate 算本程式、寫到哪個等級）、audio（瀏覽器是 audio_web）、sound、awake、ml_intensity（模型檔的下載與檢查）
+    backend/            config、logging（哪些 crate 算本程式、寫到哪個等級）、audio（瀏覽器是 audio_web）、sound、awake（背景不降速的 log）、ml_intensity（模型檔的下載與檢查）
     domain/             types、utils、constants、palette
     features/           data、streams、rts、eew、estimate、focus、alerts、report、overlays、flash、update、window…
-    map/                camera、mvt、tessellate、tiles、dem、scene、icons
-    render/             gpu、map_pass、ui_pass、text、screenshot、shaders/*.wgsl
-    ui/                 widgets、main_view、settings、pip、icons
-    platform/           tray、notify、speech、lifecycle；platform/web 是瀏覽器版
+    map/                trem_gfx 的地圖加上這個 app 的：圖磚來源與初始視角（mod）、scene（各圖層的資料）、
+                        layers（疊加層的 GPU buffer、底圖顏色、圖層順序）、icons（徽章與十字的 sprite）
+    render/             fonts（Manrope、Noto 與它們的 metrics）；其餘是 trem_gfx 的
+    ui/                 main_view、settings、pip、icons（lucide 圖示）、widgets（CSS token、徽章、tooltip）；
+                        Ui 與通用元件是 trem_gfx 的
+    platform/           trem_gfx 的平台層加上這個 app 的：單一實例的 port 與 hello、系統匣選單、通知的
+                        bundle id、開機啟動的名稱與參數、語音結束時送回的 SpeechEnd
     testing/            測試工具與規格、畫面、bench
 ```
 
@@ -92,7 +104,7 @@ town 的 feature id 來自屬性 `CODE`），DEM `.../terrain/{z}/{x}/{y}.png`�
   `fit_bounds(bounds, padding, duration)` 的語意跟 MapLibre 一致，含 `padding`、`maxZoom`、ease 動畫。
 - 互動：拖曳平移、滾輪/觸控板縮放（以游標為中心）、雙擊放大、pinch。手動操作會觸發 focus 鎖定。
 - 圖層順序（底到頂）：background、global fill、county fill、town fill（lookup texture 上色）、hillshade、town-outline、county-outline，
-  接著是疊加層。
+  接著是疊加層。順序在 `map/layers.rs`，pipeline 與 draw 基本操作在 trem-gfx 的 `render::map_pass`。
 - Hillshade：DEM 在執行緒池預算成每張圖磚一張 RG8 texture（陰影、高光強度），公式照 MapLibre 的 hillshade shader，
   illumination-direction 335、exaggeration 0.3。DEM 只用來算這張圖，算完就丟。
 - 向量圖磚的 tile 邊界：多邊形被切開的邊不要畫外框線。

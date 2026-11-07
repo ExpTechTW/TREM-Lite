@@ -17,6 +17,22 @@ speech-dispatcher, D-Bus and fontconfig development packages. The manual workflo
 It keeps its own settings, logs and cache under `com.exptech.trem-lite.native`, apart from
 the installed app, and has its own single-instance lock, so both can run side by side.
 
+## The libraries in `crates/`
+
+The app is built on three libraries beside it, shared with other TREM apps, which know
+nothing of TREM-Lite: what is the app's own (fonts, map sources and layer order, the
+single-instance port, the tray's menu, log settings) it hands to them.
+
+- `trem-core`: the pure computation, wasm too: towns, travel times, intensity and its
+  colours, the intensity model, the SSE wire format.
+- `trem-io`: what is not drawing: where async work runs, timers, the caching HTTP proxy
+  and fixture mode, logs, data directories.
+- `trem-gfx`: the GPU, text, the immediate-mode UI, the vector map, windows, and the
+  system around them. Its features: `dem` (the map's hillshade), `tray`, `autostart`,
+  `notify`, `speech`, `awake`, and `testing` for an app's tests.
+
+`cargo test`, `cargo clippy` and `cargo doc --no-deps` here cover them all.
+
 ## Looking at it without a window
 
 ```sh
