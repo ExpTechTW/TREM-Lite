@@ -4216,6 +4216,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "trem-gfx"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cosmic-text",
+ "image",
+ "log",
+ "pollster",
+ "rayon",
+ "swash",
+ "trem-io",
+ "unicode-script",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "trem-io"
 version = "0.1.0"
 dependencies = [
@@ -4245,7 +4262,6 @@ dependencies = [
  "bytemuck",
  "bytes",
  "chrono",
- "cosmic-text",
  "earcutr",
  "flate2",
  "futures-util",
@@ -4265,13 +4281,12 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sha2",
- "swash",
  "tokio",
  "tray-icon",
  "trem-core",
+ "trem-gfx",
  "trem-io",
  "tts",
- "unicode-script",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

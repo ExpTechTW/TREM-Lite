@@ -1,17 +1,20 @@
 //! Shaping (cosmic-text) and an 8-bit glyph atlas.
 //!
-//! Embedded fonts are Manrope then Noto Sans TC, matching the CSS stack. Their
-//! name tables use the default instance ("Manrope ExtraLight", "Noto Sans TC
-//! Thin"), so that is what fontdb queries. System fonts are opened only after a
-//! shaped run still has a missing glyph.
+//! The fonts are the app's own ([`FontConfig`]): a sans family, then a fallback family,
+//! matching a CSS stack. TREM-Lite's are Manrope then Noto Sans TC. Their name tables
+//! use the default instance ("Manrope ExtraLight", "Noto Sans TC Thin"), so that is
+//! what fontdb queries. System fonts are opened only after a shaped run still has a
+//! missing glyph.
 //!
-//! Requested weights are clamped to 200..=800 before shaping. Outside that range
-//! Manrope's `wght` axis does not match, and cosmic-text would pick Noto (whose
-//! OS/2 weight is 100) for Latin as well. Swash still clamps each face to its
-//! own axis, so CJK follows the same weight as Latin inside 200..=800.
+//! Requested weights are clamped to [`FontConfig::weights`] before shaping: for
+//! TREM-Lite 200..=800. Outside that range Manrope's `wght` axis does not match, and
+//! cosmic-text would pick Noto (whose OS/2 weight is 100) for Latin as well. Swash still
+//! clamps each face to its own axis, so CJK follows the same weight as Latin inside
+//! 200..=800.
 
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 use cosmic_text::{
@@ -24,26 +27,9 @@ use unicode_script::Script;
 
 use super::gpu::Gpu;
 
-const MANROPE: &[u8] = include_bytes!("../../assets/fonts/Manrope.ttf");
-#[cfg(not(target_arch = "wasm32"))]
-const NOTO: &[u8] = include_bytes!("../../assets/fonts/NotoSansTC.ttf");
-/// A browser has no system fonts to fall back on: the same Noto Sans TC, cut to the app's
-/// own text, the place names and Big5's common characters (web/make-font.py).
-#[cfg(target_arch = "wasm32")]
-const NOTO: &[u8] = include_bytes!("../../assets/fonts/web/NotoSansTC-web.ttf");
-/// What the desktop takes from Apple Symbols or Segoe UI: ⁺ and ⁻ (Noto Sans), 𝖬 (Noto
-/// Sans Math).
-#[cfg(target_arch = "wasm32")]
-const WEB_SYMBOLS: [&[u8]; 2] = [
-    include_bytes!("../../assets/fonts/web/NotoSans-web.ttf"),
-    include_bytes!("../../assets/fonts/web/NotoSansMath-web.ttf"),
-];
-
 const ATLAS: u32 = 2048;
 const PAD: u32 = 1;
 const MAX_CACHE: usize = 512;
-const WEIGHT_MIN: u16 = 200;
-const WEIGHT_MAX: u16 = 800;
 
 const KIND_SINGLE: u8 = 0;
 const KIND_TRUNCATE: u8 = 1;
@@ -117,6 +103,63 @@ fn system_faces() -> &'static [cosmic_text::fontdb::FaceInfo] {
     SYSTEM_FACES.get_or_init(scan_system_fonts)
 }
 
+/// The fonts a [`TextEngine`] shapes with, and what depends on them. The files are the
+/// app's own: it embeds them and hands their bytes over.
+#[derive(Clone, Debug)]
+pub struct FontConfig {
+    /// The font files, loaded in this order. The bytes themselves are used, not a copy.
+    pub faces: &'static [&'static [u8]],
+    /// The family text is shaped with: part of its name as the font's name table spells
+    /// it ("Manrope" finds "Manrope ExtraLight"). Its faces must be among `faces`, or
+    /// there is no text at all.
+    pub sans: &'static str,
+    /// The family tried first for what `sans` lacks (Han, symbols), before the system's.
+    pub fallback: &'static str,
+    /// The family [`FontFamily::Mono`] asks for, found as `sans` is; with none, mono
+    /// text is shaped as sans.
+    pub mono: Option<&'static str>,
+    /// Requested weights are clamped to these before shaping: the range the sans
+    /// family's `wght` axis covers.
+    pub weights: RangeInclusive<u16>,
+    /// The sans family's vertical metrics.
+    pub metrics: FontMetrics,
+    /// The locale cosmic-text chooses fallback fonts by.
+    pub locale: &'static str,
+}
+
+/// The sans family's vertical metrics, per em: where a browser would put a line of it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FontMetrics {
+    /// The ascent and descent a line box uses, rounded by the browser at each size.
+    pub ascent: f32,
+    pub descent: f32,
+    /// The ascent of `line-height: normal` on a line with fallback glyphs (Han) in it.
+    pub normal_ascent: f32,
+    /// And the height of such a line.
+    pub normal_line: f32,
+    /// The line height of a [`TextStyle`] that sets none.
+    pub line_height: f32,
+}
+
+impl FontMetrics {
+    /// Where a line box starting at `top`, `line` high, puts its baseline: Blink rounds
+    /// the font's ascent and descent, and shares what is left of the line above and
+    /// below them.
+    pub fn baseline(&self, top: f32, line: f32, size: f32) -> f32 {
+        let ascent = (self.ascent * size).round();
+        let descent = (self.descent * size).round();
+        top + (line - ascent - descent) / 2.0 + ascent
+    }
+}
+
+/// Which of the [`FontConfig`]'s families a run of text is shaped with.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum FontFamily {
+    #[default]
+    Sans,
+    Mono,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HAlign {
     Left,
@@ -133,6 +176,7 @@ pub enum VAlign {
 
 #[derive(Clone, Debug)]
 pub struct TextStyle {
+    pub family: FontFamily,
     pub size: f32,
     pub weight: u16,
     pub h_align: HAlign,
@@ -146,6 +190,7 @@ pub struct TextStyle {
 impl Default for TextStyle {
     fn default() -> Self {
         Self {
+            family: FontFamily::Sans,
             size: 15.0,
             weight: 400,
             h_align: HAlign::Left,
@@ -222,10 +267,10 @@ struct StackFallback {
 }
 
 impl StackFallback {
-    fn new(noto: &'static str) -> Self {
+    fn new(fallback: &'static str) -> Self {
         Self {
             common: vec![
-                noto,
+                fallback,
                 "Apple Symbols",
                 ".SF NS",
                 "Arial Unicode MS",
@@ -234,7 +279,7 @@ impl StackFallback {
                 "DejaVu Sans",
             ],
             han: vec![
-                noto,
+                fallback,
                 "PingFang TC",
                 "PingFang HK",
                 "PingFang SC",
@@ -275,6 +320,7 @@ impl Fallback for StackFallback {
 
 struct CacheSlot {
     text: String,
+    family: FontFamily,
     weight: u16,
     size_bits: u32,
     spacing_bits: u32,
@@ -288,6 +334,7 @@ struct CacheSlot {
 
 struct SlotKey<'a> {
     text: &'a str,
+    family: FontFamily,
     weight: u16,
     size_bits: u32,
     spacing_bits: u32,
@@ -300,6 +347,7 @@ struct SlotKey<'a> {
 impl CacheSlot {
     fn matches(&self, key: &SlotKey<'_>) -> bool {
         self.text == key.text
+            && self.family == key.family
             && self.weight == key.weight
             && self.size_bits == key.size_bits
             && self.spacing_bits == key.spacing_bits
@@ -319,9 +367,13 @@ pub struct TextEngine {
     fonts: FontSystem,
     scale: ScaleContext,
     buffer: Option<Buffer>,
-    manrope: &'static str,
-    manrope_ids: Vec<cosmic_text::fontdb::ID>,
-    noto_ids: Vec<cosmic_text::fontdb::ID>,
+    /// The sans and mono families as fontdb names them.
+    sans: &'static str,
+    mono: &'static str,
+    sans_ids: Vec<cosmic_text::fontdb::ID>,
+    fallback_ids: Vec<cosmic_text::fontdb::ID>,
+    weights: RangeInclusive<u16>,
+    metrics: FontMetrics,
     cache: HashMap<u64, Vec<CacheSlot>>,
     cache_len: usize,
     tick: u64,
@@ -335,30 +387,28 @@ pub struct TextEngine {
 }
 
 impl TextEngine {
-    pub fn new() -> Self {
+    pub fn new(config: &FontConfig) -> Self {
         prefetch_system_fonts();
         let mut db = cosmic_text::fontdb::Database::new();
         // The embedded bytes themselves, not a copy of them.
-        db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(MANROPE)));
-        db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(NOTO)));
-        #[cfg(target_arch = "wasm32")]
-        for font in WEB_SYMBOLS {
-            db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(font)));
+        for font in config.faces {
+            db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(*font)));
         }
-        let manrope_ids = face_ids(&db, "Manrope");
-        let noto_ids = face_ids(&db, "Noto Sans TC");
-        let manrope = leak_str(
-            find_family(&db, "Manrope").unwrap_or_else(|| "Manrope ExtraLight".to_string()),
+        let sans_ids = face_ids(&db, config.sans);
+        let fallback_ids = face_ids(&db, config.fallback);
+        let named =
+            |needle: &str| leak_str(find_family(&db, needle).unwrap_or_else(|| needle.to_string()));
+        let sans = named(config.sans);
+        let fallback = named(config.fallback);
+        let mono = config.mono.map_or(sans, named);
+        log::info!("嵌入字型：{sans}、{fallback}");
+        db.set_sans_serif_family(sans);
+        let mut fonts = FontSystem::new_with_locale_and_db_and_fallback(
+            config.locale.to_string(),
+            db,
+            StackFallback::new(fallback),
         );
-        let noto = leak_str(
-            find_family(&db, "Noto Sans TC").unwrap_or_else(|| "Noto Sans TC Thin".to_string()),
-        );
-        log::info!("嵌入字型：{manrope}、{noto}");
-        db.set_sans_serif_family(manrope);
-        let fallback = StackFallback::new(noto);
-        let mut fonts =
-            FontSystem::new_with_locale_and_db_and_fallback("zh-TW".to_string(), db, fallback);
-        let buffer = if manrope_ids.is_empty() {
+        let buffer = if sans_ids.is_empty() {
             log::error!("嵌入字型無法載入，文字停用");
             None
         } else {
@@ -368,9 +418,12 @@ impl TextEngine {
             fonts,
             scale: ScaleContext::new(),
             buffer,
-            manrope,
-            manrope_ids,
-            noto_ids,
+            sans,
+            mono,
+            sans_ids,
+            fallback_ids,
+            weights: config.weights.clone(),
+            metrics: config.metrics,
             cache: HashMap::new(),
             cache_len: 0,
             tick: 0,
@@ -381,11 +434,16 @@ impl TextEngine {
             warned_missing: false,
         };
         log::debug!(
-            "Manrope faces {}，Noto faces {}",
-            engine.manrope_ids.len(),
-            engine.noto_ids.len()
+            "{sans} faces {}，{fallback} faces {}",
+            engine.sans_ids.len(),
+            engine.fallback_ids.len()
         );
         engine
+    }
+
+    /// The sans family's vertical metrics, as the [`FontConfig`] gave them.
+    pub fn metrics(&self) -> &FontMetrics {
+        &self.metrics
     }
 
     pub fn measure(&mut self, text: &str, style: &TextStyle) -> f32 {
@@ -420,7 +478,7 @@ impl TextEngine {
         style: &TextStyle,
     ) -> Arc<TextLayout> {
         let width = finite_width(max_width);
-        let key = style_hash(text, style, KIND_TRUNCATE, width.to_bits());
+        let key = self.style_hash(text, style, KIND_TRUNCATE, width.to_bits());
         if let Some(hit) = self.lookup(key, text, style, KIND_TRUNCATE, width.to_bits()) {
             return hit;
         }
@@ -520,7 +578,7 @@ impl TextEngine {
         wrap: Wrap,
         width: Option<f32>,
     ) -> Arc<TextLayout> {
-        let key = style_hash(text, style, kind, width_bits);
+        let key = self.style_hash(text, style, kind, width_bits);
         if let Some(hit) = self.lookup(key, text, style, kind, width_bits) {
             return hit;
         }
@@ -536,14 +594,15 @@ impl TextEngine {
         kind: u8,
         width_bits: u32,
     ) -> Option<Arc<TextLayout>> {
-        let weight = clamp_weight(style.weight);
+        let weight = self.clamp_weight(style.weight);
         let size_bits = style.size.to_bits();
         let spacing_bits = style.letter_spacing.to_bits();
-        let line_bits = line_height_of(style).to_bits();
+        let line_bits = self.line_height_of(style).to_bits();
         let tick = self.tick.wrapping_add(1);
         self.tick = tick;
         let query = SlotKey {
             text,
+            family: style.family,
             weight,
             size_bits,
             spacing_bits,
@@ -571,18 +630,20 @@ impl TextEngine {
         layout: TextLayout,
     ) -> Arc<TextLayout> {
         let layout = Arc::new(layout);
-        self.cache.entry(key).or_default().push(CacheSlot {
+        let slot = CacheSlot {
             text: text.to_string(),
-            weight: clamp_weight(style.weight),
+            family: style.family,
+            weight: self.clamp_weight(style.weight),
             size_bits: style.size.to_bits(),
             spacing_bits: style.letter_spacing.to_bits(),
-            line_bits: line_height_of(style).to_bits(),
+            line_bits: self.line_height_of(style).to_bits(),
             tabular: style.tabular,
             kind,
             width_bits,
             layout: Arc::clone(&layout),
             tick: self.tick,
-        });
+        };
+        self.cache.entry(key).or_default().push(slot);
         self.cache_len += 1;
         self.evict();
         layout
@@ -652,15 +713,18 @@ impl TextEngine {
                 missing: false,
             };
         }
-        let manrope = self.manrope;
+        let family = match style.family {
+            FontFamily::Sans => self.sans,
+            FontFamily::Mono => self.mono,
+        };
         let tabular = style.tabular;
-        let weight = Weight(clamp_weight(style.weight));
+        let weight = Weight(self.clamp_weight(style.weight));
         let spacing = if style.size > 0.0 {
             style.letter_spacing / style.size
         } else {
             0.0
         };
-        let metrics = Metrics::new(style.size, line_height_of(style).max(0.01));
+        let metrics = Metrics::new(style.size, self.line_height_of(style).max(0.01));
         let TextEngine { fonts, buffer, .. } = self;
         let Some(buffer) = buffer.as_mut() else {
             return Shaped {
@@ -673,7 +737,7 @@ impl TextEngine {
             features.enable(cosmic_text::FeatureTag::new(b"tnum"));
         }
         let attrs = Attrs::new()
-            .family(Family::Name(manrope))
+            .family(Family::Name(family))
             .weight(weight)
             .letter_spacing(spacing)
             .font_features(features);
@@ -792,6 +856,34 @@ impl TextEngine {
             .into_iter()
             .filter_map(|(key, image)| image.map(|image| (key, image)))
             .collect()
+    }
+}
+
+impl TextEngine {
+    fn clamp_weight(&self, weight: u16) -> u16 {
+        weight.clamp(*self.weights.start(), *self.weights.end())
+    }
+
+    fn line_height_of(&self, style: &TextStyle) -> f32 {
+        if style.line_height > 0.0 {
+            style.line_height
+        } else {
+            style.size * self.metrics.line_height
+        }
+    }
+
+    fn style_hash(&self, text: &str, style: &TextStyle, kind: u8, width_bits: u32) -> u64 {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        text.hash(&mut hasher);
+        style.family.hash(&mut hasher);
+        style.size.to_bits().hash(&mut hasher);
+        self.clamp_weight(style.weight).hash(&mut hasher);
+        style.tabular.hash(&mut hasher);
+        style.letter_spacing.to_bits().hash(&mut hasher);
+        self.line_height_of(style).to_bits().hash(&mut hasher);
+        kind.hash(&mut hasher);
+        width_bits.hash(&mut hasher);
+        hasher.finish()
     }
 }
 
@@ -1037,37 +1129,12 @@ fn glyph_key(
     )
 }
 
-fn clamp_weight(weight: u16) -> u16 {
-    weight.clamp(WEIGHT_MIN, WEIGHT_MAX)
-}
-
-fn line_height_of(style: &TextStyle) -> f32 {
-    if style.line_height > 0.0 {
-        style.line_height
-    } else {
-        style.size * 1.35
-    }
-}
-
 fn finite_width(width: f32) -> f32 {
     if width.is_finite() {
         width.max(0.0)
     } else {
         0.0
     }
-}
-
-fn style_hash(text: &str, style: &TextStyle, kind: u8, width_bits: u32) -> u64 {
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    text.hash(&mut hasher);
-    style.size.to_bits().hash(&mut hasher);
-    clamp_weight(style.weight).hash(&mut hasher);
-    style.tabular.hash(&mut hasher);
-    style.letter_spacing.to_bits().hash(&mut hasher);
-    line_height_of(style).to_bits().hash(&mut hasher);
-    kind.hash(&mut hasher);
-    width_bits.hash(&mut hasher);
-    hasher.finish()
 }
 
 fn leak_str(text: String) -> &'static str {
@@ -1458,6 +1525,26 @@ fn text_bind_group(
 mod tests {
     use super::*;
 
+    /// TREM-Lite's desktop fonts, as its app hands them over.
+    const FONTS: FontConfig = FontConfig {
+        faces: &[
+            include_bytes!("../../testdata/fonts/Manrope.ttf"),
+            include_bytes!("../../testdata/fonts/NotoSansTC.ttf"),
+        ],
+        sans: "Manrope",
+        fallback: "Noto Sans TC",
+        mono: None,
+        weights: 200..=800,
+        metrics: FontMetrics {
+            ascent: 1.066,
+            descent: 0.3,
+            normal_ascent: 1.16,
+            normal_line: 1.46,
+            line_height: 1.35,
+        },
+        locale: "zh-TW",
+    };
+
     const MIXED: [&str; 7] = [
         "最大加速度",
         "設定",
@@ -1497,7 +1584,7 @@ mod tests {
 
     #[test]
     fn a_frame_rasterizes_each_glyph_once_spaces_too() {
-        let mut engine = TextEngine::new();
+        let mut engine = TextEngine::new(&FONTS);
         let layout = engine.layout_single("a b  c", &style(400));
         let mut quads = Vec::new();
         append_glyph_quads(
@@ -1529,7 +1616,7 @@ mod tests {
 
     #[test]
     fn the_pool_rasterizes_like_cosmic_text() {
-        let mut engine = TextEngine::new();
+        let mut engine = TextEngine::new(&FONTS);
         let mut keys = Vec::new();
         for weight in [400, 700] {
             for text in MIXED {
@@ -1573,12 +1660,12 @@ mod tests {
     /// place would: the same faces, in the same order, picked for the same glyphs.
     #[test]
     fn prefetched_system_fonts_shape_like_loading_them_in_place() {
-        let mut prefetched = TextEngine::new();
+        let mut prefetched = TextEngine::new(&FONTS);
         let db = prefetched.fonts.db_mut();
         for face in system_faces() {
             db.push_face_info(face.clone());
         }
-        let mut in_place = TextEngine::new();
+        let mut in_place = TextEngine::new(&FONTS);
         in_place.fonts.db_mut().load_system_fonts();
         for engine in [&mut prefetched, &mut in_place] {
             engine.font_cursor = SYSTEM_FONTS.len();
@@ -1625,7 +1712,7 @@ mod tests {
 
     #[test]
     fn embedded_fonts_shape_weight_tabular_and_cache() {
-        let mut engine = TextEngine::new();
+        let mut engine = TextEngine::new(&FONTS);
         let style = TextStyle {
             size: 16.0,
             weight: 400,
@@ -1648,11 +1735,11 @@ mod tests {
             glyphs.len()
         );
         assert!(
-            engine.manrope_ids.contains(&glyphs[0].font_id),
+            engine.sans_ids.contains(&glyphs[0].font_id),
             "Latin should come from Manrope"
         );
         assert!(
-            engine.noto_ids.contains(&glyphs[1].font_id),
+            engine.fallback_ids.contains(&glyphs[1].font_id),
             "花 should come from Noto Sans TC"
         );
 

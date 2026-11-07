@@ -161,7 +161,7 @@ fn bench_frame_cpu() {
         return;
     };
     let started = Instant::now();
-    let text = crate::render::TextEngine::new();
+    let text = crate::render::TextEngine::new(&crate::render::FONTS);
     println!(
         "{:44} {:9.3} ms",
         "TextEngine::new",

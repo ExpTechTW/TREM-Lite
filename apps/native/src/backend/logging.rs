@@ -8,7 +8,7 @@ use log::LevelFilter;
 use trem_io::logging::LogConfig;
 
 /// The program, as the log counts it: this crate and the libraries it is made of.
-const OWN_CRATES: &[&str] = &[env!("CARGO_CRATE_NAME"), "trem_core", "trem_io"];
+const OWN_CRATES: &[&str] = &[env!("CARGO_CRATE_NAME"), "trem_core", "trem_io", "trem_gfx"];
 
 fn root() -> Result<PathBuf, String> {
     crate::paths::PATHS
@@ -67,8 +67,13 @@ mod tests {
         // The libraries' modules are the app's, written as they were before they moved.
         assert_eq!(config.short_target("trem_io::net::http"), "net::http");
         assert_eq!(config.short_target("trem_core::region"), "region");
+        assert_eq!(
+            config.short_target("trem_gfx::render::text"),
+            "render::text"
+        );
         assert!(config.is_ours(module_path!()) && config.is_ours("sse"));
         assert!(config.is_ours("trem_io::net::endpoints"));
+        assert!(config.is_ours("trem_gfx::render::gpu"));
         assert!(!config.is_ours("reqwest::connect"));
     }
 
@@ -79,6 +84,7 @@ mod tests {
         assert!(config.enabled(&meta(Level::Debug, module_path!())));
         assert!(!config.enabled(&meta(Level::Trace, module_path!())));
         assert!(config.enabled(&meta(Level::Debug, "trem_io::net::http")));
+        assert!(config.enabled(&meta(Level::Debug, "trem_gfx::render::text")));
         assert!(config.enabled(&meta(Level::Info, "wgpu_core::device")));
         assert!(!config.enabled(&meta(Level::Debug, "wgpu_core::device")));
     }

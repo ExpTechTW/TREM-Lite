@@ -355,4 +355,5 @@ fn is_gamma_unorm(format: wgpu::TextureFormat) -> bool {
 }
 
 /// Offscreen targets are plain RGBA8 so a readback is a PNG without a swizzle.
+#[cfg(not(target_arch = "wasm32"))]
 pub const OFFSCREEN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;

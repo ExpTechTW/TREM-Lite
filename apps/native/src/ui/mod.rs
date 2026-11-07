@@ -364,7 +364,7 @@ impl Ui {
     ) -> Result<Self, String> {
         Ok(Self {
             pass: UiPass::new(gpu, format)?,
-            text: TextEngine::new(),
+            text: TextEngine::new(&crate::render::FONTS),
             width: logical.0,
             height: logical.1,
             scale: if scale.is_finite() && scale > 0.0 {

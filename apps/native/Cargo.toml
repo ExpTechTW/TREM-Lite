@@ -13,6 +13,7 @@ path = "src/main.rs"
 # The libraries beside the app, in crates/: shared with other TREM apps.
 trem-core = { path = "crates/trem-core", features = ["rayon"] }
 trem-io = { path = "crates/trem-io" }
+trem-gfx = { path = "crates/trem-gfx" }
 bytes = { version = "1", default-features = false, features = ["std"] }
 bytemuck = { version = "1", default-features = false, features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
@@ -23,19 +24,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 sha2 = "0.10"
-# `swash` rasterizes glyphs; `std` pulls fontdb's memmap so system fonts can be
-# opened later. `fontconfig` is Linux-only and stays off here (see the target
-# table below). Default features also turn on fontconfig, which we do not want
-# on macOS or Windows.
-cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 # One pool of worker threads, as many as cores, for the CPU work: tiles, glyphs, the model.
 rayon = "1.12"
-# Glyphs rasterized on the workers; the same version and features cosmic-text uses.
-swash = "0.2.10"
 log = { version = "0.4", default-features = false, features = ["std"] }
-# Script enum for the font fallback list. Already pulled in by cosmic-text.
-unicode-script = { version = "0.5", default-features = false }
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl"] }
 winit = { version = "0.30", default-features = false, features = ["rwh_06"] }
 # std's Instant and SystemTime panic in a browser; this is std's own off the web.
@@ -84,7 +76,6 @@ windows = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Thre
 [target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
 tts = "0.26"
 ksni = { version = "0.3", default-features = false, features = ["blocking", "tokio"] }
-cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash", "fontconfig"] }
 wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "vulkan", "gles"] }
 winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland"] }
 

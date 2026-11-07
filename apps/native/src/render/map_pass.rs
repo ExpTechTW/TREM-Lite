@@ -3,12 +3,12 @@
 
 use bytemuck::{Pod, Zeroable};
 
-use super::gpu::Gpu;
 use crate::map::camera::Camera;
 use crate::map::icons;
 use crate::map::scene::{self, DotInstance, OverlayLineVertex, Scene, Symbol, ORIGIN};
 use crate::map::tessellate::{FillVertex, LineVertex, Span};
 use crate::map::tiles::{TileId, TileManager};
+use crate::render::Gpu;
 
 const WORLD: f64 = 512.0;
 /// One uniform per draw. A frame uses about six per visible tile.
