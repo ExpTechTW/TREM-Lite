@@ -1,15 +1,9 @@
-//! Bringing the main window forward and PiP (features/window/window.ts, lib/pipBridge.ts),
-//! and a downloaded update's restart (features/update/update.ts). The windows themselves
-//! belong to the event loop, which carries out what these ask for.
+//! Bringing the main window forward and PiP (features/window/window.ts, lib/pipBridge.ts).
+//! The windows themselves belong to the event loop, which carries out what these ask for.
 
 use crate::app::{App, Micro};
-use crate::backend::version;
 use crate::events::Event;
-use crate::timers::{Task, TimerId};
-
-/// How long after the last event the app must stay quiet before it restarts.
-const QUIET_MS: f64 = 5.0 * 60.0 * 1000.0;
-const CHECK_MS: f64 = 10_000.0;
+use crate::timers::Task;
 
 /// What the features ask of the windows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -32,8 +26,6 @@ pub struct WindowState {
     pub main_shown: bool,
     /// The PiP window was shown and not hidden since.
     pub pip_shown: bool,
-    last_event: f64,
-    waiting: Option<TimerId>,
     last_wall_ms: i64,
 }
 
@@ -178,58 +170,6 @@ impl App {
     pub fn pip_on(&mut self, ev: &Event) {
         if matches!(ev, Event::EewDisplayUpdate) && !self.has_pip_content() {
             self.hide_pip();
-        }
-    }
-
-    // ---- The update's restart ---------------------------------------------
-
-    fn quiet(&self) -> bool {
-        self.var.play_mode == 0
-            && self.var.data.eew.is_empty()
-            && !self.var.cache.rts_alert
-            && !self.var.cache.show_intensity
-            && !self.var.cache.show_lpgm
-            && self.var.real_now() - self.window.last_event > QUIET_MS
-    }
-
-    pub fn restart_for_update(&mut self) {
-        self.commands.push(WindowCommand::Restart {
-            hidden: self.window.main_unavailable,
-        });
-    }
-
-    /// An update is downloaded and waits for a restart.
-    pub fn update_staged(&mut self, version_text: &str) {
-        self.ui.update_ready = version::label(version_text);
-        let label = self.ui.update_ready.clone();
-        self.emit(Event::UpdateReady(label.clone()));
-        if self.config.checked("update-auto-restart") {
-            log::info!(target: "update", "更新 {label} 等待重新啟動：沒有預警、測站警報、震度速報、重播，且 5m 沒有新事件時自動重啟");
-        } else {
-            log::info!(target: "update", "更新 {label} 等待重新啟動：自動重啟已關閉，等使用者按");
-        }
-        if self.window.waiting.is_none() {
-            self.window.waiting = Some(self.timers.interval(CHECK_MS, Task::UpdateWait));
-        }
-    }
-
-    pub fn update_wait(&mut self) {
-        if self.config.checked("update-auto-restart") && self.quiet() {
-            log::info!(target: "update", "已安靜，自動重新啟動以完成更新 {}", self.ui.update_ready);
-            self.restart_for_update();
-        }
-    }
-
-    pub fn update_on(&mut self, ev: &Event) {
-        if matches!(
-            ev,
-            Event::EewRelease(_)
-                | Event::EewUpdate(_)
-                | Event::RtsShindo0
-                | Event::IntensityRelease(_)
-                | Event::ReportRelease { .. }
-        ) {
-            self.window.last_event = self.var.real_now();
         }
     }
 }

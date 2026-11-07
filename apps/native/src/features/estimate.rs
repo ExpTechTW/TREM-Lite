@@ -7,7 +7,7 @@ use std::time::Instant;
 use crate::app::{App, Msg};
 use crate::backend::logging::fmt_dur;
 use crate::backend::math::EewAreaResult;
-use crate::domain::constants::INTENSITY_LIST;
+use crate::domain::constants::intensity_label;
 use crate::domain::region;
 use crate::domain::types::EewData;
 use crate::domain::utils::town_colors;
@@ -18,13 +18,6 @@ use crate::variable::MergedArea;
 pub struct EstimateState {
     /// Cities already alerted this episode.
     alerted_cities: HashSet<String>,
-}
-
-fn label(level: i32) -> String {
-    usize::try_from(level)
-        .ok()
-        .and_then(|l| INTENSITY_LIST.get(l))
-        .map_or_else(|| level.to_string(), |s| (*s).to_string())
 }
 
 fn merge_area(area: &EewAreaResult, reported: &crate::domain::types::Area) -> MergedArea {
@@ -112,14 +105,14 @@ impl App {
                 } else {
                     name
                 };
-                format!("{name} {}", label(i32::from(*level)))
+                format!("{name} {}", intensity_label(i32::from(*level)))
             })
             .collect();
         log::info!(
             target: "estimate",
             "{which} 預估震度：{} 個鄉鎮有感，最大 {}｜{}｜計算 {}",
             felt.len(),
-            label(merged.max_i),
+            intensity_label(merged.max_i),
             if top.is_empty() { "無".to_string() } else { top.join("、") },
             fmt_dur(elapsed),
         );

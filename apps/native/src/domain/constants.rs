@@ -111,3 +111,19 @@ pub const MAP_PADDING: f64 = 20.0;
 
 /// CWA intensity labels 0..9.
 pub const INTENSITY_LIST: [&str; 10] = ["0", "1", "2", "3", "4", "5⁻", "5⁺", "6⁻", "6⁺", "7"];
+
+/// A level's label, or the number itself outside 0..9 (`INTENSITY_LIST[i] ?? String(i)`).
+pub fn intensity_label(level: i32) -> String {
+    usize::try_from(level)
+        .ok()
+        .and_then(|l| INTENSITY_LIST.get(l))
+        .map_or_else(|| level.to_string(), |s| (*s).to_string())
+}
+
+/// The ExpTech hosts, by their balanced names (lib/endpoints.ts `HOST`).
+pub mod host {
+    pub const LB_API: &str = "api.lb.exptech.dev";
+    pub const CORE_API: &str = "api.core.exptech.dev";
+    /// The lpgm archive and the older station list are served only by api-1.
+    pub const API_1: &str = "api-1.exptech.dev";
+}

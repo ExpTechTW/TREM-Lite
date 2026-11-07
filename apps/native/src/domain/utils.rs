@@ -118,6 +118,14 @@ pub fn town_colors(area: &HashMap<i32, i32>, lpgm: bool) -> HashMap<u32, [u8; 4]
         .collect()
 }
 
+/// A body's fingerprint, to tell an unchanged answer without keeping it.
+pub fn text_hash(text: &str) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    text.hash(&mut hasher);
+    hasher.finish()
+}
+
 // ---- Travel times -------------------------------------------------------------
 
 static TIME_BIN: &[u8] = include_bytes!("../../../../packages/core/src/data/time.bin");

@@ -153,7 +153,6 @@ fn cursor_icon(kind: CursorKind) -> CursorIcon {
     match kind {
         CursorKind::Default => CursorIcon::Default,
         CursorKind::Pointer => CursorIcon::Pointer,
-        CursorKind::Text => CursorIcon::Text,
     }
 }
 
@@ -708,7 +707,7 @@ impl Runner {
         let Some(win) = &mut self.main else {
             return;
         };
-        let consumed = common_event(win, &event);
+        common_event(win, &event);
         match &event {
             WindowEvent::CloseRequested => {
                 if self.tray.is_none() {
@@ -780,7 +779,6 @@ impl Runner {
             }
             _ => {}
         }
-        let _ = consumed;
     }
 
     /// MapLibre's keyboard handler: arrows pan by 100 px, plus and minus zoom by one.

@@ -12,4 +12,6 @@ pub mod overlays;
 pub mod report;
 pub mod resource;
 pub mod rts;
+pub mod streams;
+pub mod update;
 pub mod window;

@@ -217,10 +217,6 @@ impl UiPass {
         &self.sampler
     }
 
-    pub fn image_count(&self) -> usize {
-        self.images.len()
-    }
-
     pub fn begin_frame(&mut self) {
         self.instances.clear();
         self.batches.clear();

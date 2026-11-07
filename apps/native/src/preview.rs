@@ -16,7 +16,7 @@ use crate::render::{capture, Gpu, OFFSCREEN_FORMAT};
 use crate::ui::icons::IconCache;
 use crate::ui::main_view::MainView;
 use crate::ui::settings::SettingsView;
-use crate::ui::{clear_color, DebugPage, Ui};
+use crate::ui::{clear_color, Ui};
 use crate::variable::{CurrentStation, EewDisplay, EewStatus, TriggerDisplay, TriggerLocation};
 use crate::Args;
 
@@ -32,28 +32,6 @@ pub fn screenshot(
 ) -> Result<(u32, u32), String> {
     let gpu = Gpu::new().ok_or("沒有可用的 GPU")?;
     match args.page.as_str() {
-        "debug" => {
-            let mut ui = Ui::new(
-                &gpu,
-                OFFSCREEN_FORMAT,
-                (args.width, args.height),
-                args.scale,
-            )?;
-            let mut page = DebugPage::new();
-            capture(
-                &gpu,
-                args.width,
-                args.height,
-                args.scale,
-                path,
-                |view, encoder| {
-                    ui.begin();
-                    page.draw(&mut ui, &gpu);
-                    ui.end();
-                    ui.render(&gpu, view, encoder, Some(clear_color()));
-                },
-            )
-        }
         "map" => map_shot(rt, &gpu, args, path),
         "main" => {
             let (mut app, _rx) = preview_app(rt, args)?;

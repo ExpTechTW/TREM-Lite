@@ -253,7 +253,6 @@ fn mag_text(item: &ReportListItem) -> String {
 /// The featured card's left column: the badge and its label.
 fn featured_badge(ui: &mut Ui, x: f32, y: f32, i: i32, narrow: bool) -> f32 {
     let (size, font) = if narrow { (78.0, 40.0) } else { (80.0, 48.0) };
-    let content = Rect::new(x, y, size, size);
     // The label is wider than the badge, which centres over it.
     let label = "觀測最大震度";
     let s = centered(style(13.0, 700));
@@ -266,7 +265,6 @@ fn featured_badge(ui: &mut Ui, x: f32, y: f32, i: i32, narrow: bool) -> f32 {
         font,
         false,
     );
-    let _ = content;
     text_in(ui, label, x + width / 2.0, y + size + 3.9, 19.5, LIGHT, &s);
     width
 }

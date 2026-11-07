@@ -41,7 +41,7 @@ trem-lite-native [--start]
   --screenshot PATH   離屏畫完就結束，不開視窗
   --size WxH          邏輯像素，預設 1280x815
   --scale N           DPI scale，預設 1
-  --page NAME         debug、map、main、pip、settings、run
+  --page NAME         map、main、pip、settings、run
   --preview STATE     idle、trigger、eew、cancel、rts、warnings、survey
   --settings-tab ID   一般、警報、音效、關於
   --camera L,L,Z      map 頁的相機

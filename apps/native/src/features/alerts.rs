@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use crate::app::App;
-use crate::domain::constants::INTENSITY_LIST;
+use crate::domain::constants::intensity_label;
 use crate::domain::region;
 use crate::domain::types::{EewData, LpgmData, ReportListItem, StationId};
 use crate::domain::utils::{chinese_time, extract_location, format_timestamp, int_to_string};
@@ -34,13 +34,6 @@ fn pronunciation(text: &str) -> String {
         .replace("三地門", "三弟門")
         .replace('.', "點")
         .replace('為', "圍")
-}
-
-fn label(level: i32) -> String {
-    usize::try_from(level)
-        .ok()
-        .and_then(|l| INTENSITY_LIST.get(l))
-        .map_or_else(|| level.to_string(), |s| (*s).to_string())
 }
 
 fn add_place(places: &mut Vec<String>, name: &str) {
@@ -451,7 +444,7 @@ impl App {
             format!("，{}", cities.join("、"))
         };
         self.speak(
-            &format!("震度速報，震度{}{places}", label(top)),
+            &format!("震度速報，震度{}{places}", intensity_label(top)),
             true,
             SpeechEnd::None,
         );
@@ -537,7 +530,9 @@ impl App {
             let intensity = if state.intensity == 0 {
                 "不明".to_string()
             } else {
-                label(state.intensity).replace('⁻', "弱").replace('⁺', "強")
+                intensity_label(state.intensity)
+                    .replace('⁻', "弱")
+                    .replace('⁺', "強")
             };
             lines.push(format!("預估最大震度{intensity}"));
         }

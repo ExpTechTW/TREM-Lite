@@ -109,6 +109,7 @@ pub struct App {
     pub event_log: EventLogState,
     pub speech_state: SpeechState,
     pub window: WindowState,
+    pub update: crate::features::update::UpdateState,
     pub clock_calibrated: Option<Instant>,
 
     /// Every event, for a test to read.
@@ -168,6 +169,7 @@ impl App {
             event_log: EventLogState::default(),
             speech_state: SpeechState::default(),
             window: WindowState::default(),
+            update: Default::default(),
             clock_calibrated: None,
             #[cfg(test)]
             trace: Vec::new(),

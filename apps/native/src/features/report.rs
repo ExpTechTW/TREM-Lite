@@ -5,8 +5,10 @@ use std::rc::Rc;
 
 use crate::app::{App, Msg};
 use crate::backend::config::IdleMap;
+use crate::domain::constants::host::CORE_API;
 use crate::domain::constants::{timeout, REPORT_LIMIT};
 use crate::domain::types::ReportListItem;
+use crate::domain::utils::text_hash;
 use crate::events::Event;
 use crate::map::icons::IconId;
 use crate::map::scene::Symbol;
@@ -14,7 +16,6 @@ use crate::net::ProxyRequest;
 use crate::timers::{Task, TimerId};
 use crate::variable::{Coord, Replay};
 
-const CORE_API: &str = "api.core.exptech.dev";
 /// Each report is remembered by id, with a key of what makes it that earthquake. An id
 /// not seen before is new; a seen id whose key changed is an update. Only an earthquake
 /// under 48 h old is released either way.
@@ -53,13 +54,6 @@ pub struct ReportState {
     update_on_show: Option<String>,
     auto_zoom: bool,
     time_limit: Option<TimerId>,
-}
-
-fn text_hash(text: &str) -> u64 {
-    use std::hash::{Hash, Hasher};
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    text.hash(&mut hasher);
-    hasher.finish()
 }
 
 fn report_key(r: &ReportListItem) -> String {

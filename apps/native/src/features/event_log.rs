@@ -5,7 +5,7 @@
 use std::time::Instant;
 
 use crate::app::App;
-use crate::domain::constants::INTENSITY_LIST;
+use crate::domain::constants::intensity_label;
 use crate::domain::region;
 use crate::domain::types::{Area, EewData, ReportListItem, RtsData};
 use crate::domain::utils::when;
@@ -30,13 +30,6 @@ impl Default for EventLogState {
     }
 }
 
-fn shindo(i: i32) -> String {
-    usize::try_from(i)
-        .ok()
-        .and_then(|i| INTENSITY_LIST.get(i))
-        .map_or_else(|| i.to_string(), |s| (*s).to_string())
-}
-
 fn eew_text(mode: &str, kind: &str, e: &EewData) -> String {
     let status = match e.status {
         0 => "預警".to_string(),
@@ -53,7 +46,7 @@ fn eew_text(mode: &str, kind: &str, e: &EewData) -> String {
         ),
         format!("{} ({}, {})", e.eq.loc, e.eq.lat, e.eq.lon),
         format!("M{} 深 {} km", e.eq.mag, e.eq.depth),
-        format!("預估最大 {}", shindo(e.eq.max)),
+        format!("預估最大 {}", intensity_label(e.eq.max)),
         format!("發震 {}", when(e.eq.time)),
     ]
     .join("｜")
@@ -68,7 +61,7 @@ fn areas(area: &Area) -> String {
     };
     let counts: Vec<String> = levels
         .iter()
-        .map(|(i, codes)| format!("{}×{}", shindo(*i), codes.len()))
+        .map(|(i, codes)| format!("{}×{}", intensity_label(*i), codes.len()))
         .collect();
     let names: Vec<String> = top
         .1
@@ -91,7 +84,7 @@ fn areas(area: &Area) -> String {
     format!(
         "{}｜{}：{}{more}",
         counts.join(" "),
-        shindo(top.0),
+        intensity_label(top.0),
         names.join("、")
     )
 }
@@ -101,7 +94,7 @@ fn report_text(r: &ReportListItem, update: bool) -> String {
         format!("地震報告{} {}", if update { "（修正）" } else { "" }, r.id),
         format!("{} ({}, {})", r.loc, r.lat, r.lon),
         format!("M{} 深 {} km", r.mag, r.depth),
-        format!("最大 {}", shindo(r.int)),
+        format!("最大 {}", intensity_label(r.int)),
         format!("發震 {}", when(r.time)),
     ]
     .join("｜")
@@ -247,14 +240,14 @@ impl App {
                 target: "event",
                 "{mode}震度速報 發布 {}｜最大 {}｜{}",
                 d.id,
-                shindo(d.max),
+                intensity_label(d.max),
                 areas(&d.area)
             ),
             Event::IntensityUpdate(d) => log::info!(
                 target: "event",
                 "{mode}震度速報 更新 {}｜最大 {}｜{}",
                 d.id,
-                shindo(d.max),
+                intensity_label(d.max),
                 areas(&d.area)
             ),
             Event::IntensityEnd(d) => log::info!(target: "event", "{mode}震度速報 結束 {}", d.id),

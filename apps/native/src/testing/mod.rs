@@ -1,6 +1,8 @@
 //! Running the whole app in a test: virtual time, a recorded network, effects recorded.
 //! The features run unchanged; only what crosses the app's edge is swapped (crate::host).
 
+#[cfg(test)]
+mod bench;
 mod pins;
 mod render;
 mod scenarios;

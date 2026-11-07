@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use super::icons::{Icon, IconCache};
 use super::widgets::{draw_tooltip, right, style, text_cut, text_in, Transition};
-use super::{Color, CursorKind, QuadStyle, Rect, Ui, WidgetId};
+use super::{Color, CursorKind, Interaction, QuadStyle, Rect, Ui, WidgetId};
 use crate::app::App;
 use crate::backend::config::{Config, IdleMap};
 use crate::domain::region;
@@ -172,6 +172,14 @@ fn stations_by_place(app: &App) -> Vec<CityStations> {
         }
     }
     out
+}
+
+/// A toggle row's words and state.
+struct ToggleSpec<'a> {
+    key: &'a str,
+    label: &'a str,
+    hint: Option<&'a str>,
+    checked: bool,
 }
 
 /// What the view asks of the window it lives in.
@@ -521,34 +529,21 @@ impl SettingsView {
         );
     }
 
-    /// `Toggle`. Returns the new value when it changed.
-    #[allow(clippy::too_many_arguments)]
-    fn toggle(
-        &mut self,
-        ui: &mut Ui,
-        gpu: &Gpu,
-        icons: &mut IconCache,
-        rect: Rect,
-        key: &str,
-        label: &str,
-        hint: Option<&str>,
-        checked: bool,
-        preview: Option<&str>,
-        app: &mut App,
-    ) -> Option<bool> {
+    /// A `Toggle` row: its label and hint, and the switch at the right, easing over 150 ms.
+    /// Returns the row's interaction and where the switch starts, for a button beside it.
+    fn toggle_row(&mut self, ui: &mut Ui, rect: Rect, row: &ToggleSpec<'_>) -> (Interaction, f32) {
         let id = self.id();
-        let row = ui.hit(id, Rect::new(rect.x, rect.y, rect.w, rect.h));
-        let mut changed = None;
+        let hit = ui.hit(id, rect);
         let mid = rect.y + rect.h / 2.0;
         let lx = rect.x + 16.0;
-        if let Some(hint) = hint {
+        if let Some(hint) = row.hint {
             let top = mid - (21.0 + 2.0 + 18.75) / 2.0;
-            text_in(ui, label, lx, top, 21.0, FOREGROUND, &style(14.0, 600));
+            text_in(ui, row.label, lx, top, 21.0, FOREGROUND, &style(14.0, 600));
             text_in(ui, hint, lx, top + 23.0, 18.75, HINT, &style(12.5, 500));
         } else {
             text_in(
                 ui,
-                label,
+                row.label,
                 lx,
                 mid - 10.5,
                 21.0,
@@ -557,13 +552,12 @@ impl SettingsView {
             );
         }
         let switch = Rect::new(rect.x + rect.w - 16.0 - 42.0, mid - 12.0, 42.0, 24.0);
-        // The knob, easing over 150 ms.
-        let target = if checked { 1.0 } else { 0.0 };
-        let slot = match self.knobs.iter().position(|(k, _)| k == key) {
+        let target = if row.checked { 1.0 } else { 0.0 };
+        let slot = match self.knobs.iter().position(|(k, _)| k == row.key) {
             Some(slot) => slot,
             None => {
                 self.knobs.push((
-                    key.to_string(),
+                    row.key.to_string(),
                     Transition::new(target, 0.15, (0.25, 0.1, 0.25, 1.0)),
                 ));
                 self.knobs.len() - 1
@@ -584,59 +578,83 @@ impl SettingsView {
             Rect::new(switch.x + 3.0 + 18.0 * t, switch.y + 3.0, 18.0, 18.0),
             &QuadStyle::solid(FOREGROUND).radius(9.0),
         );
-        // The label toggles too; the preview does not.
-        let mut preview_hit = false;
-        if let Some(clip) = preview {
-            // `.settings-row > button` outranks `.settings-preview` where they differ.
-            let s = style(12.5, 600);
-            let label_w = ui.measure("試聽", &s);
-            let bw = 26.0 + 11.0 + 6.0 + label_w;
-            let button = Rect::new(switch.x - 16.0 - bw, mid - 17.375, bw, 34.75);
-            let bid = self.id();
-            let hit = ui.hit(bid, button);
-            preview_hit = hit.hovered;
-            let bg = if hit.hovered { 0x1a } else { 0x0f };
-            ui.quad(
-                button,
-                &QuadStyle::solid(Color::rgba_u8(255, 255, 255, bg))
-                    .radius(8.0)
-                    .border(1.0, FIELD_BORDER),
-            );
-            let color = if hit.hovered {
-                Color::rgba_u8(255, 255, 255, 255)
-            } else {
-                Color::rgba_u8(0xd4, 0xd4, 0xd8, 0xff)
-            };
-            icons.draw(
-                ui,
-                gpu,
-                Icon::Play,
-                Rect::new(button.x + 13.0, mid - 5.5, 11.0, 11.0),
-                color,
-            );
-            text_in(
-                ui,
-                "試聽",
-                button.x + 30.0,
-                button.y + 8.0,
-                18.75,
-                color,
-                &s,
-            );
-            if hit.hovered {
-                ui.set_cursor(CursorKind::Pointer);
-            }
-            if hit.clicked {
-                app.audio_preview(clip);
-            }
-        }
-        if row.hovered && !preview_hit {
+        (hit, switch.x)
+    }
+
+    /// The new value when the row was clicked. A click on a button beside it is the button's.
+    fn toggled(
+        &self,
+        ui: &mut Ui,
+        hit: Interaction,
+        beside_hovered: bool,
+        checked: bool,
+    ) -> Option<bool> {
+        if hit.hovered && !beside_hovered {
             ui.set_cursor(CursorKind::Pointer);
         }
-        if row.clicked && !preview_hit && !self.swallow_click {
-            changed = Some(!checked);
+        (hit.clicked && !beside_hovered && !self.swallow_click).then_some(!checked)
+    }
+
+    /// A plain `Toggle`.
+    fn toggle(&mut self, ui: &mut Ui, rect: Rect, row: &ToggleSpec<'_>) -> Option<bool> {
+        let (hit, _) = self.toggle_row(ui, rect, row);
+        self.toggled(ui, hit, false, row.checked)
+    }
+
+    /// 試聽, left of a sound's switch: plays the clip once. True while hovered.
+    #[allow(clippy::too_many_arguments)]
+    fn preview_button(
+        &mut self,
+        ui: &mut Ui,
+        gpu: &Gpu,
+        icons: &mut IconCache,
+        switch_x: f32,
+        mid: f32,
+        clip: &str,
+        app: &mut App,
+    ) -> bool {
+        // `.settings-row > button` outranks `.settings-preview` where they differ.
+        let s = style(12.5, 600);
+        let label_w = ui.measure("試聽", &s);
+        let bw = 26.0 + 11.0 + 6.0 + label_w;
+        let button = Rect::new(switch_x - 16.0 - bw, mid - 17.375, bw, 34.75);
+        let id = self.id();
+        let hit = ui.hit(id, button);
+        let bg = if hit.hovered { 0x1a } else { 0x0f };
+        ui.quad(
+            button,
+            &QuadStyle::solid(Color::rgba_u8(255, 255, 255, bg))
+                .radius(8.0)
+                .border(1.0, FIELD_BORDER),
+        );
+        let color = if hit.hovered {
+            Color::rgba_u8(255, 255, 255, 255)
+        } else {
+            Color::rgba_u8(0xd4, 0xd4, 0xd8, 0xff)
+        };
+        icons.draw(
+            ui,
+            gpu,
+            Icon::Play,
+            Rect::new(button.x + 13.0, mid - 5.5, 11.0, 11.0),
+            color,
+        );
+        text_in(
+            ui,
+            "試聽",
+            button.x + 30.0,
+            button.y + 8.0,
+            18.75,
+            color,
+            &s,
+        );
+        if hit.hovered {
+            ui.set_cursor(CursorKind::Pointer);
         }
-        changed
+        if hit.clicked {
+            app.audio_preview(clip);
+        }
+        hit.hovered
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -675,18 +693,13 @@ impl SettingsView {
         Self::row_divider(ui, card, row.y + row.h);
         let row = Rect::new(row.x, row.y + row.h + 1.0, row.w, 57.75);
         let checked = !app.config.checked("graphics-block-auto-zoom");
-        if let Some(on) = self.toggle(
-            ui,
-            gpu,
-            icons,
-            row,
-            "graphics-block-auto-zoom",
-            "自動縮放到事件",
-            Some("有地震預警、檢知或報告時，地圖自動移到相關區域"),
+        let spec = ToggleSpec {
+            key: "graphics-block-auto-zoom",
+            label: "自動縮放到事件",
+            hint: Some("有地震預警、檢知或報告時，地圖自動移到相關區域"),
             checked,
-            None,
-            app,
-        ) {
+        };
+        if let Some(on) = self.toggle(ui, row, &spec) {
             set_check(app, "graphics-block-auto-zoom", !on);
         }
 
@@ -695,18 +708,13 @@ impl SettingsView {
         let (card, _) = self.group(ui, "系統", None, x, y, w, 57.75);
         let row = Rect::new(card.x + 1.0, card.y + 1.0, card.w - 2.0, 57.75);
         let checked = app.config.checked("other-auto-start");
-        if let Some(on) = self.toggle(
-            ui,
-            gpu,
-            icons,
-            row,
-            "other-auto-start",
-            "開機時自動啟動",
-            Some("登入後在背景啟動，縮在系統匣"),
+        let spec = ToggleSpec {
+            key: "other-auto-start",
+            label: "開機時自動啟動",
+            hint: Some("登入後在背景啟動，縮在系統匣"),
             checked,
-            None,
-            app,
-        ) {
+        };
+        if let Some(on) = self.toggle(ui, row, &spec) {
             match crate::platform::lifecycle::set_autostart(on) {
                 Ok(()) => set_check(app, "other-auto-start", on),
                 Err(err) => self.say(format!("開機啟動設定失敗：{err}")),
@@ -733,8 +741,13 @@ impl SettingsView {
             }
             let row = Rect::new(card.x + 1.0, ry, card.w - 2.0, 48.0);
             let checked = app.config.checked(key);
-            let mut none = IconCache::default();
-            if let Some(on) = self.toggle_plain(ui, &mut none, row, key, label, None, checked) {
+            let spec = ToggleSpec {
+                key,
+                label,
+                hint: None,
+                checked,
+            };
+            if let Some(on) = self.toggle(ui, row, &spec) {
                 set_check(app, key, on);
             }
             ry += 48.0;
@@ -743,82 +756,15 @@ impl SettingsView {
         let (card, _) = self.group(ui, "語音", None, x, y, w, 57.75);
         let row = Rect::new(card.x + 1.0, card.y + 1.0, card.w - 2.0, 57.75);
         let checked = app.config.checked("other-tts");
-        let mut none = IconCache::default();
-        if let Some(on) = self.toggle_plain(
-            ui,
-            &mut none,
-            row,
-            "other-tts",
-            "語音播報",
-            Some("朗讀地震預警、震度速報與地震報告的內容"),
+        let spec = ToggleSpec {
+            key: "other-tts",
+            label: "語音播報",
+            hint: Some("朗讀地震預警、震度速報與地震報告的內容"),
             checked,
-        ) {
+        };
+        if let Some(on) = self.toggle(ui, row, &spec) {
             set_check(app, "other-tts", on);
         }
-    }
-
-    /// A toggle without a preview: nothing to draw from the icon cache.
-    #[allow(clippy::too_many_arguments)]
-    fn toggle_plain(
-        &mut self,
-        ui: &mut Ui,
-        _none: &mut IconCache,
-        rect: Rect,
-        key: &str,
-        label: &str,
-        hint: Option<&str>,
-        checked: bool,
-    ) -> Option<bool> {
-        let id = self.id();
-        let row = ui.hit(id, rect);
-        let mid = rect.y + rect.h / 2.0;
-        let lx = rect.x + 16.0;
-        if let Some(hint) = hint {
-            let top = mid - (21.0 + 2.0 + 18.75) / 2.0;
-            text_in(ui, label, lx, top, 21.0, FOREGROUND, &style(14.0, 600));
-            text_in(ui, hint, lx, top + 23.0, 18.75, HINT, &style(12.5, 500));
-        } else {
-            text_in(
-                ui,
-                label,
-                lx,
-                mid - 10.5,
-                21.0,
-                FOREGROUND,
-                &style(14.0, 600),
-            );
-        }
-        let switch = Rect::new(rect.x + rect.w - 16.0 - 42.0, mid - 12.0, 42.0, 24.0);
-        let target = if checked { 1.0 } else { 0.0 };
-        let slot = match self.knobs.iter().position(|(k, _)| k == key) {
-            Some(slot) => slot,
-            None => {
-                self.knobs.push((
-                    key.to_string(),
-                    Transition::new(target, 0.15, (0.25, 0.1, 0.25, 1.0)),
-                ));
-                self.knobs.len() - 1
-            }
-        };
-        self.knobs[slot].1.set(target);
-        let t = self.knobs[slot].1.value();
-        let off = Color::rgba_u8(0x3f, 0x3f, 0x46, 0xff);
-        let on = Color::rgba_u8(0x34, 0xc7, 0x59, 0xff);
-        let fill = Color {
-            r: off.r + (on.r - off.r) * t,
-            g: off.g + (on.g - off.g) * t,
-            b: off.b + (on.b - off.b) * t,
-            a: 1.0,
-        };
-        ui.quad(switch, &QuadStyle::solid(fill).radius(12.0));
-        ui.quad(
-            Rect::new(switch.x + 3.0 + 18.0 * t, switch.y + 3.0, 18.0, 18.0),
-            &QuadStyle::solid(FOREGROUND).radius(9.0),
-        );
-        if row.hovered {
-            ui.set_cursor(CursorKind::Pointer);
-        }
-        (row.clicked && !self.swallow_click).then_some(!checked)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -844,18 +790,16 @@ impl SettingsView {
                 }
                 let row = Rect::new(card.x + 1.0, ry, card.w - 2.0, 57.75);
                 let checked = app.config.checked(key);
-                if let Some(on) = self.toggle(
-                    ui,
-                    gpu,
-                    icons,
-                    row,
+                let spec = ToggleSpec {
                     key,
                     label,
-                    Some(hint),
+                    hint: Some(hint),
                     checked,
-                    Some(clip),
-                    app,
-                ) {
+                };
+                let (hit, switch_x) = self.toggle_row(ui, row, &spec);
+                let mid = row.y + row.h / 2.0;
+                let beside = self.preview_button(ui, gpu, icons, switch_x, mid, clip, app);
+                if let Some(on) = self.toggled(ui, hit, beside, checked) {
                     set_check(app, key, on);
                 }
                 ry += 57.75;
@@ -983,16 +927,13 @@ impl SettingsView {
         ry += 1.0;
         let row = next(&mut ry, heights[1]);
         let checked = app.config.checked("update-auto-restart");
-        let mut none = IconCache::default();
-        if let Some(on) = self.toggle_plain(
-            ui,
-            &mut none,
-            row,
-            "update-auto-restart",
-            "自動重新啟動以完成更新",
-            Some("新版本下載後，在沒有地震事件時自動重新啟動並套用；關閉則等下次開啟時套用"),
+        let spec = ToggleSpec {
+            key: "update-auto-restart",
+            label: "自動重新啟動以完成更新",
+            hint: Some("新版本下載後，在沒有地震事件時自動重新啟動並套用；關閉則等下次開啟時套用"),
             checked,
-        ) {
+        };
+        if let Some(on) = self.toggle(ui, row, &spec) {
             set_check(app, "update-auto-restart", on);
         }
         Self::row_divider(ui, card, ry);
@@ -1388,8 +1329,7 @@ impl SettingsView {
             MENU_COLUMN * columns as f32 + 2.0,
             place.h,
         );
-        let block = ui.hit(WidgetId(93), rect);
-        let _ = block;
+        ui.hit(WidgetId(93), rect);
         ui.quad(
             rect,
             &QuadStyle::solid(CARD_BG)

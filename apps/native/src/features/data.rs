@@ -2,38 +2,30 @@
 //! replay's polling, a file replay's frames, and everything's lifecycle events.
 
 use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use serde_json::Value;
 
-use crate::app::{App, Msg, Post};
-use crate::backend::logging::{fmt_bytes, fmt_dur};
-use crate::domain::constants::{timeout, EEW_AUTHOR, INTENSITY_LIST, LAST_DATA_TIMEOUT_ERROR};
+use crate::app::{App, Msg};
+use crate::backend::logging::fmt_dur;
+use crate::domain::constants::host::{API_1 as TREM_ARCHIVE_HOST, CORE_API};
+use crate::domain::constants::{timeout, EEW_AUTHOR, LAST_DATA_TIMEOUT_ERROR};
 use crate::domain::types::{
-    decode_payload, parse_eew_list, read_eq, read_intensity_file, read_intensity_v1,
-    read_intensity_xml, Area, EewData, IntensityReport, LpgmData, RawStations, RtsData, RtsStation,
-    RtsV1, StationId,
+    parse_eew_list, read_eq, read_intensity_file, read_intensity_v1, Area, EewData,
+    IntensityReport, LpgmData, RawStations, RtsData, RtsStation, RtsV1, StationId,
 };
 use crate::domain::utils::format_time;
 use crate::events::Event;
 use crate::features::rts::fill_derived;
-use crate::net::fixture;
-use crate::net::sse::{Cancel, Frame, Health, Stream, StreamSpec};
-use crate::net::{Fetched, ProxyRequest, ProxyState};
+use crate::net::sse::{Cancel, Health};
+use crate::net::{Fetched, ProxyRequest};
 use crate::timers::{Task, TimerId};
 use crate::variable::{AudioCache, LastSeen, Replay, RtsTrigger};
 
-const TOPICS: &str = "trem.intensity.v1,trem.rts.v1";
-const LB_API: &str = "api.lb.exptech.dev";
-const CORE_API: &str = "api.core.exptech.dev";
-/// The lpgm archive is served only by api-1; the core nodes answer 401.
-const TREM_ARCHIVE_HOST: &str = "api-1.exptech.dev";
 /// How long the main window stays hidden before the RTS stream sleeps. Waking is
 /// immediate: a window brought back by an earthquake needs its data now.
 const SLEEP_AFTER_MS: f64 = 3000.0;
-const RECONNECT_DELAY: Duration = Duration::from_secs(3);
 
 fn mode_name(mode: u8) -> String {
     match mode {
@@ -42,13 +34,6 @@ fn mode_name(mode: u8) -> String {
         3 => "檔案重播".to_string(),
         other => other.to_string(),
     }
-}
-
-fn shindo(i: i32) -> String {
-    usize::try_from(i)
-        .ok()
-        .and_then(|i| INTENSITY_LIST.get(i))
-        .map_or_else(|| i.to_string(), |s| (*s).to_string())
 }
 
 /// The data loop's pace: 1 s, slowed while the replay archive answers nothing and eased
@@ -91,55 +76,10 @@ impl LoopPace {
     }
 }
 
-/// The two live streams.
-struct SseManager {
-    trem: Option<Stream>,
-    eew: Option<Stream>,
-    background: Arc<AtomicBool>,
-}
-
-impl SseManager {
-    fn abort(&self) {
-        log::info!(target: "sse", "停止即時連線（進入重播或重設）");
-        if let Some(stream) = &self.trem {
-            stream.stop();
-        }
-        if let Some(stream) = &self.eew {
-            stream.stop();
-        }
-    }
-
-    fn set_background(&self, value: bool) {
-        if self.background.swap(value, Ordering::SeqCst) == value {
-            return;
-        }
-        log::info!(
-            target: "sse",
-            "切成{}模式，trem 建立新連線，舊的留到交接完成",
-            if value { "休眠" } else { " live " }
-        );
-        if let Some(stream) = &self.trem {
-            stream.handover();
-        }
-    }
-
-    /// A network that comes back can leave a connection that looks open and is dead:
-    /// each takes a fresh connection at once, keeping the old until it is up.
-    fn renew(&self) {
-        log::info!(target: "sse", "網路恢復：trem 與 eew 各建立新連線，舊的留到交接完成");
-        if let Some(stream) = &self.trem {
-            stream.handover();
-        }
-        if let Some(stream) = &self.eew {
-            stream.handover();
-        }
-    }
-}
-
 pub struct DataState {
     map_initialized: bool,
     sse_active: bool,
-    sse: Option<SseManager>,
+    sse: Option<crate::features::streams::SseManager>,
     fetch_timer: Option<TimerId>,
     /// The main window is hidden, so RTS may sleep.
     background: bool,
@@ -239,7 +179,7 @@ fn read_file_rts(value: &Value) -> Option<RtsData> {
 
 /// A worker's read of an rts.v1 payload: `box` and `int` are added on the main thread,
 /// which holds the station list.
-fn rts_from_v1(payload: RtsV1) -> Option<RtsData> {
+pub(crate) fn rts_from_v1(payload: RtsV1) -> Option<RtsData> {
     let stations: Vec<(StationId, RtsStation)> = payload.stations?.0;
     Some(RtsData {
         station: stations,
@@ -248,198 +188,6 @@ fn rts_from_v1(payload: RtsV1) -> Option<RtsData> {
         time: payload.ts.unwrap_or(0.0),
         eq: payload.eq.as_ref().map(read_eq).unwrap_or_default(),
     })
-}
-
-/// A frame of the EEW stream, one clause per EEW: serial, unit, kind, size and place.
-fn eew_summary(parsed: &Value, real_now: f64) -> String {
-    let single = [parsed.clone()];
-    let list: &[Value] = parsed.as_array().map_or(&single, Vec::as_slice);
-    if list.is_empty() {
-        return "空的（目前沒有生效中的預警）".to_string();
-    }
-    let text = |v: Option<&Value>| match v {
-        Some(Value::String(s)) => s.clone(),
-        Some(Value::Number(n)) => n.to_string(),
-        _ => "?".to_string(),
-    };
-    list.iter()
-        .map(|e| {
-            let eq = e.get("eq");
-            let kind = match e.get("status").and_then(Value::as_i64) {
-                Some(1) => "警報",
-                Some(3) => "取消",
-                _ => "預警",
-            };
-            let lag = e
-                .get("time")
-                .and_then(Value::as_f64)
-                .filter(|t| *t > 1e12)
-                .map_or_else(String::new, |t| {
-                    format!(
-                        "，發布後 {} 收到",
-                        fmt_dur(Duration::from_secs_f64((real_now - t).max(0.0) / 1000.0))
-                    )
-                });
-            format!(
-                "{} {} 第 {} 報 {kind} M{} {} 最大 {}{lag}",
-                text(e.get("author")),
-                text(e.get("id")),
-                text(e.get("serial")),
-                text(eq.and_then(|q| q.get("mag"))),
-                text(eq.and_then(|q| q.get("loc"))),
-                shindo(
-                    eq.and_then(|q| q.get("max"))
-                        .and_then(Value::as_i64)
-                        .map_or(-1, |m| m as i32)
-                ),
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("；")
-}
-
-/// Open the live streams. A frame is decoded on the stream's worker; only the result
-/// reaches the main thread.
-fn open_streams(
-    post: &Post,
-    proxy: Option<&Arc<ProxyState>>,
-    data: &DataState,
-    real_now: Arc<dyn Fn() -> f64 + Send + Sync>,
-) -> SseManager {
-    let background = Arc::new(AtomicBool::new(data.asleep));
-    log::info!(
-        target: "sse",
-        "啟動即時連線：節點 {LB_API}，trem topic {TOPICS}（{}），eew 為 CWA 預警",
-        if data.asleep { "休眠：rts 只收有測站觸發的資料" } else { "live" }
-    );
-    // Fixture mode and tests never touch the network: the streams stay closed.
-    let Some(proxy) = proxy.filter(|_| !fixture::active()) else {
-        return SseManager {
-            trem: None,
-            eew: None,
-            background,
-        };
-    };
-    let trem_url = {
-        let background = Arc::clone(&background);
-        Arc::new(move || {
-            format!(
-                "https://{LB_API}/api/v1/trem/sse?topics={TOPICS}{}",
-                if background.load(Ordering::SeqCst) {
-                    ""
-                } else {
-                    "&mode=live"
-                }
-            )
-        })
-    };
-    let ping = |post: &Post| -> crate::net::sse::PingFn {
-        let post = post.clone();
-        Arc::new(move |ts, label| {
-            post(Msg::StreamPing {
-                ts,
-                label: label.to_string(),
-            });
-        })
-    };
-    let trem_post = post.clone();
-    let trem = Stream::open(
-        StreamSpec {
-            name: "trem",
-            url: trem_url,
-            wanted_topics: TOPICS.split(',').count(),
-            on_frame: Arc::new(move |frame: &Frame, label: &str| {
-                on_trem_frame(frame, label, &trem_post);
-            }),
-            on_ping: ping(post),
-            reconnect_delay: RECONNECT_DELAY,
-        },
-        Arc::clone(proxy),
-        Arc::clone(&data.trem_health),
-    );
-    let eew_post = post.clone();
-    let eew = Stream::open(
-        StreamSpec {
-            name: "eew",
-            url: Arc::new(|| format!("https://{LB_API}/api/v2/eq/eew?sse=1")),
-            wanted_topics: 0,
-            on_frame: Arc::new(move |frame: &Frame, label: &str| {
-                // The `info` greeting names the node (logged by the connection); EEWs
-                // come unnamed.
-                if frame.event.is_some() {
-                    return;
-                }
-                match serde_json::from_str::<Value>(&frame.data) {
-                    Ok(parsed) if !parsed.is_null() => {
-                        log::info!(
-                            target: "sse",
-                            "{label} 收到 EEW：{}（{}）",
-                            eew_summary(&parsed, real_now()),
-                            fmt_bytes(frame.data.len() as u64)
-                        );
-                        eew_post(Msg::EewFrame(parsed));
-                    }
-                    Ok(_) => {}
-                    Err(_) => {
-                        let start: String = frame.data.chars().take(200).collect();
-                        log::warn!(target: "sse", "{label} EEW 不是合法的 JSON，略過：{start}");
-                    }
-                }
-            }),
-            on_ping: ping(post),
-            reconnect_delay: RECONNECT_DELAY,
-        },
-        Arc::clone(proxy),
-        Arc::clone(&data.eew_health),
-    );
-    SseManager {
-        trem: Some(trem),
-        eew: Some(eew),
-        background,
-    }
-}
-
-fn on_trem_frame(frame: &Frame, label: &str, post: &Post) {
-    match frame.event.as_deref() {
-        // The greeting: logged by the connection.
-        Some("info") => {}
-        Some("trem.rts.v1") => {
-            let text = decode_payload(&frame.data);
-            // Not a frame this client understands.
-            let Ok(payload) = serde_json::from_str::<RtsV1>(&text) else {
-                return;
-            };
-            if let Some(rts) = rts_from_v1(payload) {
-                post(Msg::RtsFrame(rts));
-            }
-        }
-        Some("trem.intensity.v1") => {
-            let bytes = fmt_bytes(frame.data.len() as u64);
-            match read_intensity_xml(&decode_payload(&frame.data)) {
-                Some(report) => {
-                    log::info!(
-                        target: "sse",
-                        "{label} 收到 trem.intensity.v1：EventID={} 第 {} 報 {} 最大震度 {}（{bytes}）",
-                        report.id,
-                        report.serial,
-                        report.status,
-                        shindo(report.max)
-                    );
-                    post(Msg::IntensityFrame(report));
-                }
-                None => {
-                    log::warn!(target: "sse", "{label} trem.intensity.v1 解不開，略過（{bytes}）");
-                }
-            }
-        }
-        Some("unsubscribed") => {
-            log::warn!(target: "sse", "{label} topic 被伺服器停掉：{}。其他 topic 照收，等下次重連再要", frame.data);
-        }
-        Some("close") => log::warn!(target: "sse", "{label} 伺服器主動關閉：{}", frame.data),
-        other => {
-            log::info!(target: "sse", "{label} 略過 app 不認得的 event {}", other.unwrap_or("message"));
-        }
-    }
 }
 
 fn is_area_different(a: &Area, b: Option<&Area>) -> bool {
@@ -755,7 +503,7 @@ impl App {
         let offset = self.var.cache.time_offset;
         let real_now = Arc::new(move || chrono::Utc::now().timestamp_millis() as f64 + offset);
         let _guard = self.host.rt.enter();
-        self.data_state.sse = Some(open_streams(
+        self.data_state.sse = Some(crate::features::streams::open_streams(
             &self.host.post,
             self.host.net.as_ref(),
             &self.data_state,

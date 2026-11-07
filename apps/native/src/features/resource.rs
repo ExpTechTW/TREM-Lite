@@ -8,11 +8,12 @@ use crate::app::{App, Msg};
 use crate::domain::constants::timeout;
 use crate::domain::types::{parse_legacy_stations, parse_station_csv, Station, StationId};
 use crate::domain::utils::distance;
+use crate::domain::utils::text_hash;
 use crate::net::ProxyRequest;
 use crate::timers::Task;
 
-/// Only api-1 serves the older list; the others answer 404.
 const STATIONS_URL: &str = "https://static.core.exptech.dev/resource/station";
+/// Only api-1 serves the older list; the others answer 404.
 const LEGACY_STATIONS_URL: &str = "https://api-1.exptech.dev/api/v1/trem/station";
 /// How often each list is fetched; at start too.
 const REFRESH_MS: f64 = 300_000.0;
@@ -58,13 +59,6 @@ impl StationKind {
 pub struct ResourceState {
     last_current: Arc<Mutex<Option<u64>>>,
     last_legacy: Arc<Mutex<Option<u64>>>,
-}
-
-fn text_hash(text: &str) -> u64 {
-    use std::hash::{Hash, Hasher};
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    text.hash(&mut hasher);
-    hasher.finish()
 }
 
 impl App {

@@ -1,6 +1,5 @@
 //! Immediate-mode UI in CSS logical pixels. The renderer multiplies by the DPI scale.
 
-mod debug;
 pub mod icons;
 pub mod main_view;
 pub mod pip;
@@ -14,8 +13,6 @@ use crate::render::{
     append_glyph_quads, ClipPx, GlyphDraw, GlyphQuad, HAlign, QuadDesc, TextEngine, TextStyle,
     UiPass, VAlign,
 };
-
-pub use debug::DebugPage;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color {
@@ -50,21 +47,6 @@ impl Color {
 
     pub fn to_array(self) -> [f32; 4] {
         [self.r, self.g, self.b, self.a]
-    }
-
-    pub fn parse(input: &str) -> Option<Self> {
-        let text = input.trim();
-        if let Some(hex) = text.strip_prefix('#') {
-            return parse_hex(hex);
-        }
-        let lower = text.to_ascii_lowercase();
-        if let Some(rest) = lower.strip_prefix("rgba") {
-            return parse_css_fn(rest);
-        }
-        if let Some(rest) = lower.strip_prefix("rgb") {
-            return parse_css_fn(rest);
-        }
-        None
     }
 }
 
@@ -206,7 +188,6 @@ pub struct Interaction {
 pub enum CursorKind {
     Default,
     Pointer,
-    Text,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -456,10 +437,6 @@ impl Ui {
         self.height
     }
 
-    pub fn image_count(&self) -> usize {
-        self.pass.image_count()
-    }
-
     pub fn begin(&mut self) {
         self.ops.clear();
         self.clips.stack.clear();
@@ -638,10 +615,6 @@ impl Ui {
 
     pub fn push_clip(&mut self, rect: Rect) {
         self.clips.push(rect, [0.0; 4]);
-    }
-
-    pub fn push_rounded_clip(&mut self, rect: Rect, radii: [f32; 4]) {
-        self.clips.push(rect, radii);
     }
 
     pub fn pop_clip(&mut self) {
@@ -925,168 +898,9 @@ pub fn fit_radii(w: f32, h: f32, radii: [f32; 4]) -> [f32; 4] {
     radii.map(|radius| radius * scale)
 }
 
-fn parse_hex(text: &str) -> Option<Color> {
-    let bytes = text.as_bytes();
-    match bytes.len() {
-        3 | 4 => {
-            let r = hex_nibble(bytes[0])?;
-            let g = hex_nibble(bytes[1])?;
-            let b = hex_nibble(bytes[2])?;
-            let a = if bytes.len() == 4 {
-                hex_nibble(bytes[3])?
-            } else {
-                15
-            };
-            Some(Color::rgba_u8(r * 17, g * 17, b * 17, a * 17))
-        }
-        6 | 8 => {
-            let r = u8::from_str_radix(text.get(0..2)?, 16).ok()?;
-            let g = u8::from_str_radix(text.get(2..4)?, 16).ok()?;
-            let b = u8::from_str_radix(text.get(4..6)?, 16).ok()?;
-            let a = if bytes.len() == 8 {
-                u8::from_str_radix(text.get(6..8)?, 16).ok()?
-            } else {
-                255
-            };
-            Some(Color::rgba_u8(r, g, b, a))
-        }
-        _ => None,
-    }
-}
-
-fn hex_nibble(byte: u8) -> Option<u8> {
-    match byte {
-        b'0'..=b'9' => Some(byte - b'0'),
-        b'a'..=b'f' => Some(byte - b'a' + 10),
-        b'A'..=b'F' => Some(byte - b'A' + 10),
-        _ => None,
-    }
-}
-
-fn parse_css_fn(input: &str) -> Option<Color> {
-    let body = input.trim().strip_prefix('(')?.strip_suffix(')')?.trim();
-    let (colors, alpha) = if let Some((colors, alpha)) = body.split_once('/') {
-        (colors.trim(), Some(alpha.trim()))
-    } else {
-        (body, None)
-    };
-    let mut parts = Vec::new();
-    if colors.contains(',') {
-        for part in colors.split(',') {
-            let part = part.trim();
-            if !part.is_empty() {
-                parts.push(part);
-            }
-        }
-    } else {
-        parts.extend(colors.split_whitespace());
-    }
-    let (r, g, b, a) = match (parts.len(), alpha) {
-        (3, None) => (parts[0], parts[1], parts[2], None),
-        (3, Some(alpha)) => (parts[0], parts[1], parts[2], Some(alpha)),
-        (4, None) => (parts[0], parts[1], parts[2], Some(parts[3])),
-        _ => return None,
-    };
-    Some(Color {
-        r: parse_channel(r, false)?,
-        g: parse_channel(g, false)?,
-        b: parse_channel(b, false)?,
-        a: match a {
-            Some(value) => parse_channel(value, true)?,
-            None => 1.0,
-        },
-    })
-}
-
-fn parse_channel(token: &str, alpha: bool) -> Option<f32> {
-    let token = token.trim();
-    if let Some(percent) = token.strip_suffix('%') {
-        let value: f32 = percent.trim().parse().ok()?;
-        if !value.is_finite() {
-            return None;
-        }
-        return Some((value / 100.0).clamp(0.0, 1.0));
-    }
-    let value: f32 = token.parse().ok()?;
-    if !value.is_finite() {
-        return None;
-    }
-    if alpha && value <= 1.0 {
-        Some(value.clamp(0.0, 1.0))
-    } else {
-        Some((value / 255.0).clamp(0.0, 1.0))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn near(color: Color, expected: Color) {
-        for (got, want) in [color.r, color.g, color.b, color.a]
-            .into_iter()
-            .zip([expected.r, expected.g, expected.b, expected.a])
-        {
-            assert!((got - want).abs() < 0.002, "{got} != {want}");
-        }
-    }
-
-    #[test]
-    fn color_parse() {
-        near(
-            Color::parse("#1f2025").unwrap(),
-            Color::rgba_u8(0x1f, 0x20, 0x25, 255),
-        );
-        near(
-            Color::parse("#1F202580").unwrap(),
-            Color::rgba_u8(0x1f, 0x20, 0x25, 0x80),
-        );
-        near(
-            Color::parse("#abc").unwrap(),
-            Color::rgba_u8(0xaa, 0xbb, 0xcc, 255),
-        );
-        near(
-            Color::parse("#abcd").unwrap(),
-            Color::rgba_u8(0xaa, 0xbb, 0xcc, 0xdd),
-        );
-        near(
-            Color::parse("rgb(255, 128, 0)").unwrap(),
-            Color::rgba_u8(255, 128, 0, 255),
-        );
-        near(
-            Color::parse("rgba(255, 0, 0, 0.5)").unwrap(),
-            Color::rgba_u8(255, 0, 0, 128),
-        );
-        near(
-            Color::parse("rgba(255, 0, 0, 50%)").unwrap(),
-            Color {
-                r: 1.0,
-                g: 0.0,
-                b: 0.0,
-                a: 0.5,
-            },
-        );
-        near(
-            Color::parse("rgb(255 0 0 / 0.25)").unwrap(),
-            Color {
-                r: 1.0,
-                g: 0.0,
-                b: 0.0,
-                a: 0.25,
-            },
-        );
-        near(
-            Color::parse("rgb(100%, 0%, 0%)").unwrap(),
-            Color::rgba_u8(255, 0, 0, 255),
-        );
-        near(
-            Color::parse("rgba(255, 0, 0, 128)").unwrap(),
-            Color::rgba_u8(255, 0, 0, 128),
-        );
-        assert!(Color::parse("nope").is_none());
-        assert!(Color::parse("#gg0000").is_none());
-        assert!(Color::parse("  #1f2025  ").is_some());
-    }
 
     #[test]
     fn rect_contains_and_intersect() {

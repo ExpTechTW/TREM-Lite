@@ -827,6 +827,12 @@ fn mlas_exp(x: f32) -> f32 {
     p * f32::from_bits(normal as u32)
 }
 
+/// The whole load, for a measurement.
+#[cfg(test)]
+pub fn build_for_bench(onnx: &[u8]) -> Result<Model, String> {
+    parse_model(onnx).and_then(|g| compile(&g))
+}
+
 /// Tests read the repository's copy instead of downloading it.
 #[cfg(test)]
 pub fn load_for_tests() -> &'static Model {
