@@ -97,6 +97,7 @@ git config core.hooksPath .githooks   # 啟用 commit 規則檢查
 | `packages/core` | 桌面版與網頁版共用的前端：React、MapLibre、地震資料處理 |
 | `apps/desktop` | Tauri 桌面版。Rust 負責音效、HTTP 代理與快取、自動更新、設定與視窗 |
 | `apps/web` | 網頁版（GitHub Pages） |
+| `apps/native` | 試驗中的原生版：Rust + winit + wgpu，不用 WebView；同一份程式也能編成 WebAssembly 在瀏覽器跑。見其 README |
 | `tool/` | commit 規則檢查、版本號與發布說明的產生 |
 | `legacy/` | 舊版 Electron 原始碼，僅作為移植參照，不再修改 |
 
