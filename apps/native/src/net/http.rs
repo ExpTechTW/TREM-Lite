@@ -299,7 +299,6 @@ async fn replay(
     cache: &HttpCache,
     key: &str,
     mut entry: CacheEntry,
-    url: String,
     stale: bool,
     via: &'static str,
 ) -> Option<Fetched> {
@@ -316,8 +315,6 @@ async fn replay(
     };
     Some(Fetched {
         status: entry.status,
-        url,
-        headers: entry.headers,
         body: Arc::new(body),
         from_cache: true,
         stale,
@@ -334,7 +331,6 @@ async fn read_network(
     response: reqwest::Response,
 ) -> Result<Fetched, String> {
     let status = response.status().as_u16();
-    let final_url = response.url().to_string();
     let mut headers: HashMap<String, String> = HashMap::new();
     for name in KEPT_HEADERS {
         if let Some(value) = response.headers().get(*name) {
@@ -363,7 +359,7 @@ async fn read_network(
                 status,
                 etag,
                 last_modified,
-                headers: headers.clone(),
+                headers,
                 body: Arc::clone(&body),
             },
         );
@@ -371,8 +367,6 @@ async fn read_network(
 
     Ok(Fetched {
         status,
-        url: final_url,
-        headers,
         body,
         from_cache: false,
         stale: false,
@@ -404,10 +398,6 @@ type Flight = Arc<OnceCell<Result<Fetched, String>>>;
 #[derive(Clone)]
 pub struct Fetched {
     pub status: u16,
-    #[allow(dead_code)]
-    pub url: String,
-    #[allow(dead_code)]
-    pub headers: HashMap<String, String>,
     pub body: Arc<Vec<u8>>,
     pub from_cache: bool,
     pub stale: bool,
@@ -590,7 +580,7 @@ async fn fetch(
     let mut cached = match cached {
         Some(entry) if fresh(&entry, req.max_age_ms, now_ms()) => {
             let via = "本機副本，仍新鮮，沒發請求";
-            if let Some(f) = replay(&state.cache, key, entry, req.url.clone(), false, via).await {
+            if let Some(f) = replay(&state.cache, key, entry, false, via).await {
                 return Ok(f);
             }
             None
@@ -604,7 +594,7 @@ async fn fetch(
     if let Some(wait) = state.cooling(host) {
         if let Some(entry) = cached.clone() {
             let via = "過期副本，上游要求暫停中";
-            if let Some(f) = replay(&state.cache, key, entry, req.url.clone(), true, via).await {
+            if let Some(f) = replay(&state.cache, key, entry, true, via).await {
                 return Ok(f);
             }
             cached = None;
@@ -739,7 +729,7 @@ async fn fetch(
     if !usable {
         if let Some(entry) = cached.take() {
             let via = "過期副本，上游沒有可用的回應";
-            if let Some(f) = replay(&state.cache, key, entry, req.url.clone(), true, via).await {
+            if let Some(f) = replay(&state.cache, key, entry, true, via).await {
                 return Ok(f);
             }
         }
@@ -747,7 +737,6 @@ async fn fetch(
     let response = result?;
 
     let status = response.status().as_u16();
-    let final_url = response.url().to_string();
 
     // 304: the stored body is still current. Its freshness starts over; bump
     // its LRU position and replay it. A body that does not decode is dropped
@@ -757,7 +746,7 @@ async fn fetch(
         if let Some(entry) = cached.take() {
             state.cache.validated(key);
             let via = "304 沒變，用本機副本";
-            if let Some(f) = replay(&state.cache, key, entry, final_url, false, via).await {
+            if let Some(f) = replay(&state.cache, key, entry, false, via).await {
                 return Ok(f);
             }
             let left = deadline.saturating_duration_since(Instant::now());

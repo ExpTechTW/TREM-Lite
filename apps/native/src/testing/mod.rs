@@ -47,11 +47,9 @@ pub fn spec_answers() -> &'static HashMap<String, String> {
 pub const QUAKE_ORIGIN_MS: f64 = 1_787_641_211_000.0;
 pub const QUAKE_REPORT: &str = "115057-2026-0825-150011";
 
-fn answer(status: u16, url: &str, body: &str) -> Fetched {
+fn answer(status: u16, body: &str) -> Fetched {
     Fetched {
         status,
-        url: url.to_string(),
-        headers: HashMap::new(),
         body: Arc::new(body.as_bytes().to_vec()),
         from_cache: false,
         stale: false,
@@ -117,8 +115,8 @@ impl Harness {
                 seen.push(req.url.clone());
             }
             Ok(match lookup(answers, &req.url) {
-                Some(body) => answer(200, &req.url, &body),
-                None => answer(404, &req.url, ""),
+                Some(body) => answer(200, &body),
+                None => answer(404, ""),
             })
         });
         let host = Host::test(rt.handle().clone(), post.clone(), fake);

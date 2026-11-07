@@ -7,7 +7,6 @@
 //!
 //! A missing file is a 404, which is what the sparse tile pyramid answers too.
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
@@ -51,10 +50,10 @@ fn relative(url: &str) -> Option<PathBuf> {
 pub fn read(url: &str) -> Result<Fetched, String> {
     let root = dir().ok_or("fixture mode is off")?;
     let rel = relative(url).ok_or_else(|| format!("bad url: {url}"))?;
-    Ok(read_from(root, &rel, url))
+    Ok(read_from(root, &rel))
 }
 
-fn read_from(root: &Path, rel: &Path, url: &str) -> Fetched {
+fn read_from(root: &Path, rel: &Path) -> Fetched {
     let path = root.join(rel);
     let path = if path.is_dir() {
         path.join("__index")
@@ -67,8 +66,6 @@ fn read_from(root: &Path, rel: &Path, url: &str) -> Fetched {
     };
     Fetched {
         status,
-        url: url.to_string(),
-        headers: HashMap::new(),
         body: Arc::new(body),
         from_cache: false,
         stale: false,
@@ -102,15 +99,9 @@ mod tests {
         std::fs::create_dir_all(root.join("a/b")).unwrap();
         std::fs::write(root.join("a/b/__index"), b"index").unwrap();
         std::fs::write(root.join("a/c"), b"file").unwrap();
-        assert_eq!(
-            read_from(&root, Path::new("a/b"), "u").body.as_slice(),
-            b"index"
-        );
-        assert_eq!(
-            read_from(&root, Path::new("a/c"), "u").body.as_slice(),
-            b"file"
-        );
-        assert_eq!(read_from(&root, Path::new("a/none"), "u").status, 404);
+        assert_eq!(read_from(&root, Path::new("a/b")).body.as_slice(), b"index");
+        assert_eq!(read_from(&root, Path::new("a/c")).body.as_slice(), b"file");
+        assert_eq!(read_from(&root, Path::new("a/none")).status, 404);
         std::fs::remove_dir_all(&root).unwrap();
     }
 }

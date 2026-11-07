@@ -8,7 +8,6 @@ pub mod http;
 pub mod ntp;
 pub mod sse;
 
-#[allow(unused_imports)]
 pub use http::{Fetched, ProxyRequest, ProxyState};
 
 /// Tests drive the async proxy without a global runtime.
