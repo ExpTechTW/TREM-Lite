@@ -21,8 +21,6 @@ jobs:
     # Naming any permission sets every one not listed to none.
     permissions:
       contents: read
-    outputs:
-      snapshot: ${{ steps.snapshot.outputs.publishes }}
     steps:
       # Full history: these gates walk the range this push or pull request
       # adds, and a shallow clone has no base to compare against.
@@ -101,147 +99,68 @@ jobs:
           bash <(curl -sSf https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null
           ./actionlint -shellcheck= .github/workflows/*.yml
 
-      # Whether release.yml compiles this push, for `build` below. It publishes
-      # a snapshot only when a commit since the last tag carries a changelog
-      # entry; asked here of the push's own commits, which are always within
-      # that range. So "yes" here is always "yes" there, and a push this
-      # answers "no" for is compiled by `build` — at worst by both, never by
-      # neither.
-      - name: Does release.yml build this push
-        id: snapshot
-        if: github.event_name == 'push'
-        env:
-          BEFORE: ${{ github.event.before }}
-        run: |
-          if bash tool/release/notes.sh --any "$BEFORE..$GITHUB_SHA"; then
-            echo "publishes=true" >>"$GITHUB_OUTPUT"
-            echo "this push brings a changelog entry: release.yml builds it"
-          else
-            echo "publishes=false" >>"$GITHUB_OUTPUT"
-            echo "no changelog entry in this push: no snapshot, so it is built here"
-          fi
-
-  # Fast, platform-independent checks — run once before spending the build matrix.
+  # Formatting, lints and the browser build: once, on Linux, before the test matrix.
   check:
-    # Behind the gates: a rejected commit message or an unrebased branch is
-    # going to be force-pushed anyway, so compiling seven desktop targets first
-    # spends runner time on a tree that is about to be rewritten.
+    # Behind the gates: a rejected commit message or an unrebased branch is going to be
+    # force-pushed anyway, so compiling first spends runner time on a tree about to go.
     needs: gates
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/native
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Install Linux packages
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libspeechd-dev libdbus-1-dev libfontconfig1-dev clang
+
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          bun-version: latest
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Typecheck (core)
-        run: bun run --filter @trem/core typecheck
-
-      # The .bin files are generated from the .json beside them, and both the
-      # app and the Rust side read only the .bin. Edit a .json without
-      # re-encoding and the change never reaches anyone — which is how a
-      # region-code fix shipped in two snapshots without taking effect.
-      - name: Encoded data is up to date
-        run: |
-          bun scripts/encode-data.mjs
-          git diff --exit-code -- 'packages/core/src/data/*.bin' || {
-            echo "::error::a .bin is stale — run: bun scripts/encode-data.mjs, and commit the result"
-            exit 1
-          }
-
-      - name: Build web shell
-        run: bun run --filter @trem/web build
-
-  # Compile the desktop app on every target/arch we ship (see release.yml).
-  # --no-bundle: no installer/updater bundling, so no signing key is needed
-  # (works on fork PRs) and it's fast. Public repo → GitHub-hosted runners
-  # (incl. Linux/Windows arm64) are free with unlimited minutes.
-  #
-  # Every pull request, and only the pushes to main that publish no snapshot.
-  # A push that does starts release.yml, which compiles the same seven targets
-  # — bundled and signed — and fails that push just as this would; running both
-  # spent seven more runners, two of them macOS, on a build nobody installs.
-  # The gates and `check` above still run on every push.
-  build:
-    if: github.event_name == 'pull_request' || needs.gates.outputs.snapshot != 'true'
-    needs: [gates, check]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-latest
-            target: aarch64-apple-darwin
-            args: "--target aarch64-apple-darwin"
-          - platform: macos-latest
-            target: x86_64-apple-darwin
-            args: "--target x86_64-apple-darwin"
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            args: ""
-          - platform: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-            args: ""
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: "--target x86_64-pc-windows-msvc"
-          - platform: windows-latest
-            target: aarch64-pc-windows-msvc
-            args: "--target aarch64-pc-windows-msvc"
-          - platform: windows-latest
-            target: i686-pc-windows-msvc
-            args: "--target i686-pc-windows-msvc"
-
-    runs-on: ${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v5
-
-      # The ayatana indicator, as release.yml installs: see there for why.
-      - name: Install Linux dependencies
-        if: startsWith(matrix.platform, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./apps/desktop/src-tauri -> target"
-          key: ${{ matrix.target }}
+          workspaces: "./apps/native -> target"
 
-      - name: Cache Bun dependencies
-        uses: actions/cache@v5
+      - name: Format
+        run: cargo fmt --check
+
+      - name: Lints (desktop)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Lints (browser)
+        run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
+
+  # The tests on each desktop system. The pictures are compared only on a Mac like the one
+  # they were drawn on: a runner's GPU and fonts differ, so it renders them unchecked.
+  test:
+    needs: gates
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: apps/native
+    env:
+      TREM_SKIP_PICTURES: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libspeechd-dev libdbus-1-dev libfontconfig1-dev clang
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
         with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          workspaces: "./apps/native -> target"
+          key: ${{ matrix.os }}
 
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build desktop (compile check)
-        working-directory: apps/desktop
-        run: bun run tauri build --no-bundle ${{ matrix.args }}
+      - name: Test
+        run: cargo test

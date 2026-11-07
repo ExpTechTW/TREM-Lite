@@ -52,8 +52,10 @@ fn check_picture(name: &str, width: u32, height: u32, rgba: Vec<u8>) {
     }
 }
 
+/// The pictures are checked on a Mac like the one they were drawn on; elsewhere, and where
+/// `TREM_SKIP_PICTURES` is set (CI's runners), they are not.
 fn gpu() -> Option<Gpu> {
-    if !cfg!(target_os = "macos") {
+    if !cfg!(target_os = "macos") || std::env::var_os("TREM_SKIP_PICTURES").is_some() {
         return None;
     }
     let gpu = Gpu::new();
