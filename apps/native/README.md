@@ -28,6 +28,23 @@ trem-lite-native --screenshot out.png --page settings --settings-tab 音效 --cl
 silently: no sound, no notification, no speech. With it, `--page run --replay <report id>
 --after 50` runs the real app through a recorded earthquake and shoots the 50th second.
 
+## Tests and measuring
+
+```sh
+cargo test                       # behaviour, event traces and pictures
+UPDATE_GOLDEN=1 cargo test       # after a change meant to alter them
+cargo test --release bench -- --ignored --nocapture --test-threads=1
+```
+
+Pictures are compared with a small tolerance. Characters the embedded Noto subset lacks are
+drawn with the system fonts, as in the Tauri app, so the pictures hold on a Mac like the one
+they were made on.
+
+The log says how long the first frame took (`第一幀：啟動後 … ms`). Two things skew it: with
+the display asleep the window counts as occluded and nothing is drawn at all, and the first
+launch of a new build compiles its GPU pipelines (~300 ms on an M4 Max), which later
+launches find cached.
+
 ## Where it differs from the Tauri app
 
 - No update channel: 檢查更新 says so, and nothing is downloaded or installed.
