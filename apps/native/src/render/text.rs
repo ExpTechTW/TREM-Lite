@@ -314,6 +314,9 @@ pub struct TextEngine {
     cache_len: usize,
     tick: u64,
     atlas: Atlas,
+    /// Glyphs with nothing to draw (spaces) or no image at all: the atlas keeps no slot
+    /// for them, and without this they were rasterized again every frame.
+    blank: std::collections::HashSet<CacheKey>,
     font_cursor: usize,
     scanned_system: bool,
     warned_missing: bool,
@@ -356,6 +359,7 @@ impl TextEngine {
             cache_len: 0,
             tick: 0,
             atlas: Atlas::new(),
+            blank: std::collections::HashSet::new(),
             font_cursor: 0,
             scanned_system: false,
             warned_missing: false,
@@ -424,17 +428,25 @@ impl TextEngine {
         if glyphs.is_empty() {
             return self.atlas.bind.clone();
         }
+        self.place_glyphs(glyphs);
+        self.atlas.flush(gpu, layout, sampler)
+    }
+
+    /// The CPU half of `prepare_glyphs`: rasterize what the atlas lacks and point each quad
+    /// at its glyph. Returns how many glyphs it rasterized.
+    fn place_glyphs(&mut self, glyphs: &mut [GlyphQuad]) -> usize {
         self.atlas.ensure_pixels();
         let frame = self.atlas.next_frame();
         let mut missing = Vec::new();
         for glyph in glyphs.iter() {
-            if self.atlas.touch(glyph.key, frame) {
+            if self.atlas.touch(glyph.key, frame) || self.blank.contains(&glyph.key) {
                 continue;
             }
             if !missing.contains(&glyph.key) {
                 missing.push(glyph.key);
             }
         }
+        let rasterized = missing.len();
         // Rasterized on the workers, then placed in order: the atlas is laid out as if
         // they had come one by one.
         let mut images = self.rasterize(&missing);
@@ -444,8 +456,13 @@ impl TextEngine {
                 continue;
             }
             let Some(image) = images.remove(&key) else {
+                self.blank.insert(key);
                 continue;
             };
+            if image.placement.width == 0 || image.placement.height == 0 {
+                self.blank.insert(key);
+                continue;
+            }
             match self.atlas.insert(key, &image, frame) {
                 Insert::Placed => {}
                 Insert::Skip => {}
@@ -475,7 +492,7 @@ impl TextEngine {
                 glyph.visible = place.w > 0 && place.h > 0;
             }
         }
-        self.atlas.flush(gpu, layout, sampler)
+        rasterized
     }
 
     fn cached(
@@ -713,7 +730,7 @@ impl TextEngine {
         let mut unique: Vec<CacheKey> = Vec::with_capacity(keys.len());
         let mut seen = std::collections::HashSet::with_capacity(keys.len());
         for &key in keys {
-            if seen.insert(key) {
+            if !self.blank.contains(&key) && seen.insert(key) {
                 unique.push(key);
             }
         }
@@ -1460,6 +1477,38 @@ mod tests {
                 )
             })
             .collect()
+    }
+
+    #[test]
+    fn a_frame_rasterizes_each_glyph_once_spaces_too() {
+        let mut engine = TextEngine::new();
+        let layout = engine.layout_single("a b  c", &style(400));
+        let mut quads = Vec::new();
+        append_glyph_quads(
+            &GlyphDraw {
+                layout: &layout,
+                x: 0.0,
+                y: 20.0,
+                scale: 2.0,
+                color: [1.0; 4],
+                h_align: HAlign::Left,
+                v_align: VAlign::Baseline,
+                subpixel: false,
+                box_width: None,
+            },
+            &mut quads,
+        );
+        assert_eq!(quads.len(), 6);
+        assert_eq!(engine.place_glyphs(&mut quads), 4, "a, b, c and the space");
+        let drawn = |quads: &[GlyphQuad]| quads.iter().map(|q| q.visible).collect::<Vec<_>>();
+        let first = drawn(&quads);
+        assert_eq!(first, [true, false, true, false, false, true]);
+        assert_eq!(
+            engine.place_glyphs(&mut quads),
+            0,
+            "the next frame rasterizes nothing"
+        );
+        assert_eq!(drawn(&quads), first);
     }
 
     #[test]
