@@ -271,8 +271,9 @@ pub struct TextEngine {
 impl TextEngine {
     pub fn new() -> Self {
         let mut db = cosmic_text::fontdb::Database::new();
-        db.load_font_data(MANROPE.to_vec());
-        db.load_font_data(NOTO.to_vec());
+        // The embedded bytes themselves, not a copy of them.
+        db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(MANROPE)));
+        db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(NOTO)));
         let manrope_ids = face_ids(&db, "Manrope");
         let noto_ids = face_ids(&db, "Noto Sans TC");
         let manrope = leak_str(

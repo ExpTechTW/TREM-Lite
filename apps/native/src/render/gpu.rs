@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use winit::window::Window;
 
-const FRAME_LATENCY: u32 = 2;
+const FRAME_LATENCY: u32 = 1;
 
 type AdapterTry = fn() -> Option<(wgpu::Instance, wgpu::Adapter)>;
 
@@ -142,9 +142,21 @@ impl GpuSurface {
     }
 }
 
+static DEVICE_LOST: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The device is gone, and every GPU call from here on does nothing.
+pub fn device_lost() -> bool {
+    DEVICE_LOST.load(std::sync::atomic::Ordering::SeqCst)
+}
+
 fn install_loss_handler(device: &wgpu::Device) {
     device.set_device_lost_callback(|reason, message| {
+        // Dropping the device at exit reports here too.
+        if reason == wgpu::DeviceLostReason::Destroyed {
+            return;
+        }
         log::error!("GPU device 遺失（{reason:?}）：{message}。畫面停用，其他功能照常");
+        DEVICE_LOST.store(true, std::sync::atomic::Ordering::SeqCst);
     });
     device.on_uncaptured_error(Arc::new(|err| {
         log::error!("GPU 錯誤：{err}");

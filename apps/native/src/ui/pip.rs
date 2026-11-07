@@ -32,14 +32,13 @@ const PIP_DETAILS: DetailSizes = DetailSizes {
 
 const ID_BACK: WidgetId = WidgetId(1);
 const ID_CLOSE: WidgetId = WidgetId(2);
-const ID_SHELL: WidgetId = WidgetId(3);
+/// A press on the card moves the window.
+pub const ID_SHELL: WidgetId = WidgetId(3);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PipOutcome {
     pub back_to_main: bool,
     pub close: bool,
-    /// A press on the card itself: the window follows the pointer.
-    pub drag: bool,
 }
 
 pub fn draw(
@@ -51,8 +50,7 @@ pub fn draw(
 ) -> PipOutcome {
     let (w, h) = (ui.width(), ui.height());
     let mut outcome = PipOutcome::default();
-    let shell = ui.hit(ID_SHELL, Rect::new(0.0, 0.0, w, h));
-    outcome.drag = shell.pressed;
+    ui.hit(ID_SHELL, Rect::new(0.0, 0.0, w, h));
 
     let fill = state_color(eew, trigger).unwrap_or(Color::rgba_u8(80, 80, 80, 255));
     ui.quad(Rect::new(0.0, 0.0, w, h), &QuadStyle::solid(fill));

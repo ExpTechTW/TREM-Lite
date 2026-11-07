@@ -136,7 +136,11 @@ impl DebugPage {
         let row_h = 22.0;
         let max_scroll = (rows.len() as f32 * row_h - 110.0).max(0.0);
         let _ = ui.hit(WidgetId(2), scroll_view);
-        let scroll = ui.scroll_offset(WidgetId(2), max_scroll);
+        let scroll = ui.scroll_offset(
+            WidgetId(2),
+            Rect::new(0.0, 0.0, ui.width(), ui.height()),
+            max_scroll,
+        );
         ui.push_clip(Rect::new(844.0, 252.0, 404.0, 116.0));
         let row_style = style(13.0, 500);
         for (index, row) in rows.iter().enumerate() {

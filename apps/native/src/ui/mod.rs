@@ -663,13 +663,15 @@ impl Ui {
         }
     }
 
-    pub fn scroll_offset(&mut self, id: WidgetId, max_offset: f32) -> f32 {
+    /// A scrolled area's offset. The wheel counts anywhere in `area`, on the rows inside
+    /// it as well.
+    pub fn scroll_offset(&mut self, id: WidgetId, area: Rect, max_offset: f32) -> f32 {
         let max_offset = if max_offset.is_finite() {
             max_offset.max(0.0)
         } else {
             0.0
         };
-        let hovered = self.input.hover == Some(id);
+        let hovered = area.contains(self.input.pointer_x, self.input.pointer_y);
         let wheel = self.input.wheel_y;
         let slot = self.input.scrolls.entry(id).or_insert(0.0);
         if hovered {

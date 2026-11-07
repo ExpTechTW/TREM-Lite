@@ -20,6 +20,12 @@ fn icon_rgba() -> Option<(Vec<u8>, u32, u32)> {
     Some((rgba.into_raw(), w, h))
 }
 
+/// The same picture on the window, where the system takes it from the window.
+pub fn window_icon() -> Option<winit::window::Icon> {
+    let (rgba, w, h) = icon_rgba()?;
+    winit::window::Icon::from_rgba(rgba, w, h).ok()
+}
+
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 pub struct Tray {
     _icon: tray_icon::TrayIcon,

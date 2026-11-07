@@ -179,9 +179,11 @@ fn stations_by_place(app: &App) -> Vec<CityStations> {
 pub struct SettingsOutcome {
     pub minimize: bool,
     pub close: bool,
-    /// A press on the sidebar or the header: the window follows the pointer.
-    pub drag: bool,
 }
+
+/// A press on these moves the window: the sidebar and the header.
+pub const DRAG_SIDEBAR: WidgetId = WidgetId(90);
+pub const DRAG_HEADER: WidgetId = WidgetId(91);
 
 struct Menu {
     place: Rect,
@@ -290,9 +292,8 @@ impl SettingsView {
         ui.quad(Rect::new(0.0, 0.0, w, h), &QuadStyle::solid(SHELL_BG));
 
         // The whole window drags, under everything that takes a click.
-        let drag = ui.hit(WidgetId(90), Rect::new(0.0, 0.0, SIDEBAR_W, h));
-        let header_drag = ui.hit(WidgetId(91), Rect::new(SIDEBAR_W, 0.0, w - SIDEBAR_W, 50.0));
-        outcome.drag = drag.pressed || header_drag.pressed;
+        ui.hit(DRAG_SIDEBAR, Rect::new(0.0, 0.0, SIDEBAR_W, h));
+        ui.hit(DRAG_HEADER, Rect::new(SIDEBAR_W, 0.0, w - SIDEBAR_W, 50.0));
 
         // The sidebar.
         ui.quad(
@@ -406,7 +407,14 @@ impl SettingsView {
         let content_w = view.w - 64.0;
         let total = self.page_height(ui, content_w);
         let max_scroll = (total + 8.0 + 32.0 - view.h).max(0.0);
-        let scroll = ui.scroll_offset(scroll_id, max_scroll);
+        // Over a popup, the wheel is the popup's.
+        let (px, py) = ui.pointer();
+        let area = if self.menu_rect().is_some_and(|m| m.contains(px, py)) {
+            Rect::ZERO
+        } else {
+            view
+        };
+        let scroll = ui.scroll_offset(scroll_id, area, max_scroll);
         ui.push_clip(view);
         let x = view.x + 32.0;
         let top = view.y + 8.0 - scroll;
@@ -446,6 +454,18 @@ impl SettingsView {
         self.draw_menu(ui, gpu, icons, app);
         draw_tooltip(ui);
         outcome
+    }
+
+    fn menu_rect(&self) -> Option<Rect> {
+        self.menu.as_ref().map(|menu| {
+            let columns = 1 + usize::from(menu.city.is_some()) + usize::from(menu.town.is_some());
+            Rect::new(
+                menu.place.x,
+                menu.place.y,
+                MENU_COLUMN * columns as f32 + 2.0,
+                menu.place.h,
+            )
+        })
     }
 
     fn page_height(&self, _ui: &mut Ui, _width: f32) -> f32 {
@@ -1565,7 +1585,7 @@ fn menu_column(
     const ROW: f32 = 35.0;
     let list = Rect::new(rect.x, rect.y + HEADER, rect.w, rect.h - HEADER);
     ui.hit(id, list);
-    let scroll = ui.scroll_offset(id, (count as f32 * ROW - list.h).max(0.0));
+    let scroll = ui.scroll_offset(id, list, (count as f32 * ROW - list.h).max(0.0));
     ui.push_clip(rect);
     text_in(
         ui,

@@ -176,6 +176,7 @@ struct Runner {
     next_slow_frame: Option<Instant>,
     map_dragging: bool,
     quitting: bool,
+    gave_up_on_device: bool,
 }
 
 pub fn run(
@@ -237,6 +238,7 @@ pub fn run(
         next_slow_frame: None,
         map_dragging: false,
         quitting: false,
+        gave_up_on_device: false,
     };
     event_loop
         .run_app(&mut runner)
@@ -253,6 +255,7 @@ impl ApplicationHandler<Msg> for Runner {
             .with_inner_size(LogicalSize::new(1280.0, 815.0))
             .with_min_inner_size(LogicalSize::new(900.0, 680.0))
             .with_visible(false);
+        attrs = attrs.with_window_icon(tray::window_icon());
         if let Some(monitor) = event_loop.primary_monitor() {
             let scale = monitor.scale_factor();
             let size = monitor.size().to_logical::<f64>(scale);
@@ -318,6 +321,7 @@ impl ApplicationHandler<Msg> for Runner {
                 log::error!(target: "app", "計時工作出錯，其他功能照常");
             }
         }
+        self.recover_lost_device();
         self.run_commands(event_loop);
         self.trim_if_hidden();
 
@@ -331,10 +335,7 @@ impl ApplicationHandler<Msg> for Runner {
         }
         if self.app.dirty {
             self.app.dirty = false;
-            for win in [&mut self.main, &mut self.pip, &mut self.settings]
-                .into_iter()
-                .flatten()
-            {
+            for win in [&mut self.main, &mut self.pip].into_iter().flatten() {
                 win.dirty = true;
             }
         }
@@ -449,6 +450,39 @@ impl Runner {
         }
     }
 
+    /// A lost GPU device does not come back: a new process gets a new one, at most once in
+    /// ten minutes, so a failing GPU cannot loop. Without it alerts still sound.
+    fn recover_lost_device(&mut self) {
+        const RESTART_EVERY: Duration = Duration::from_secs(600);
+        if !crate::render::device_lost() || self.gave_up_on_device {
+            return;
+        }
+        let marker = crate::paths::cache_dir().map(|d| d.join("gpu-restart-at"));
+        let recent = marker
+            .as_ref()
+            .and_then(|path| {
+                std::fs::metadata(path)
+                    .ok()?
+                    .modified()
+                    .ok()?
+                    .elapsed()
+                    .ok()
+            })
+            .is_some_and(|age| age < RESTART_EVERY);
+        self.gave_up_on_device = true;
+        if recent {
+            log::error!(target: "window", "GPU device 遺失，而 10 分鐘內已經為此重新啟動過：畫面維持停用，其他功能照常");
+            return;
+        }
+        if let Some(path) = marker {
+            let _ = std::fs::write(path, "");
+        }
+        log::warn!(target: "window", "GPU device 遺失：重新啟動以取得新的 device");
+        self.app.commands.push(WindowCommand::Restart {
+            hidden: self.app.window.main_unavailable,
+        });
+    }
+
     /// While nothing can be seen, the GPU's memory goes back.
     fn trim_if_hidden(&mut self) {
         let hidden = !self.app.window.main_shown;
@@ -463,6 +497,7 @@ impl Runner {
                     ui.release_atlas();
                 }
             }
+            lifecycle::return_free_memory();
         } else if !hidden {
             self.trimmed = false;
         }
@@ -983,7 +1018,29 @@ impl Runner {
             WindowEvent::CursorMoved { .. } | WindowEvent::CursorEntered { .. } => {
                 win.dirty = true;
             }
+            WindowEvent::MouseInput {
+                state: ElementState::Pressed,
+                button: MouseButton::Left,
+                ..
+            } => Self::drag_if_over(win, self.ui.as_mut(), &[crate::ui::pip::ID_SHELL]),
             _ => {}
+        }
+    }
+
+    /// A press on a window's own surface moves it. Asked for during the press: the system
+    /// reads the event being handled. It keeps the release, so the press ends here.
+    fn drag_if_over(win: &mut Win, ui: Option<&mut Ui>, ids: &[crate::ui::WidgetId]) {
+        let Some(ui) = ui else {
+            return;
+        };
+        ui.swap_input(&mut win.input);
+        let over = ui.hover_at(win.pointer.0, win.pointer.1);
+        ui.swap_input(&mut win.input);
+        if over.is_some_and(|id| ids.contains(&id)) {
+            let _ = win.window.drag_window();
+            win.mouse_down = false;
+            win.pressed_edge = false;
+            win.released_edge = false;
         }
     }
 
@@ -1035,9 +1092,6 @@ impl Runner {
         self.gpu.queue.submit([encoder.finish()]);
         self.gpu.queue.present(frame);
         Self::set_cursor(win, cursor_icon(cursor));
-        if outcome.drag {
-            let _ = win.window.drag_window();
-        }
         if outcome.back_to_main {
             self.pip = None;
             self.app.window.pip_shown = false;
@@ -1059,6 +1113,18 @@ impl Runner {
             WindowEvent::CloseRequested => self.close_settings(),
             WindowEvent::RedrawRequested => self.paint_settings(),
             WindowEvent::CursorMoved { .. } => win.dirty = true,
+            WindowEvent::MouseInput {
+                state: ElementState::Pressed,
+                button: MouseButton::Left,
+                ..
+            } => Self::drag_if_over(
+                win,
+                self.ui.as_mut(),
+                &[
+                    crate::ui::settings::DRAG_SIDEBAR,
+                    crate::ui::settings::DRAG_HEADER,
+                ],
+            ),
             WindowEvent::KeyboardInput { event: key, .. }
                 if key.state == ElementState::Pressed
                     && key.logical_key == Key::Named(NamedKey::Escape) =>
@@ -1116,10 +1182,6 @@ impl Runner {
         self.gpu.queue.submit([encoder.finish()]);
         self.gpu.queue.present(frame);
         Self::set_cursor(win, cursor_icon(cursor));
-        if outcome.drag {
-            let _ = win.window.drag_window();
-            win.mouse_down = false;
-        }
         if outcome.minimize {
             win.window.set_minimized(true);
         }

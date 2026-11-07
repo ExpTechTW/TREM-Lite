@@ -1,0 +1,44 @@
+name: Native trial build
+
+# By hand only: the native port is a trial, and nothing here is released.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: apps/native/target/release/trem-lite-native.exe
+          - os: macos-latest
+            artifact: apps/native/target/release/TREM-Lite Native.app
+          - os: ubuntu-latest
+            artifact: apps/native/target/release/trem-lite-native
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libspeechd-dev libdbus-1-dev libfontconfig1-dev clang
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test
+        working-directory: apps/native
+        run: cargo test
+      - name: Build
+        if: runner.os != 'macOS'
+        working-directory: apps/native
+        run: cargo build --release
+      - name: Bundle
+        if: runner.os == 'macOS'
+        working-directory: apps/native
+        run: packaging/bundle-macos.sh
+      - uses: actions/upload-artifact@v5
+        with:
+          name: trem-lite-native-${{ runner.os }}
+          path: ${{ matrix.artifact }}

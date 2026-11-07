@@ -89,6 +89,8 @@ pub async fn prepare(dir: PathBuf, client: reqwest::Client) {
                 Ok(Ok(m)) => {
                     let _ = MODEL.set(m);
                     log::info!("ML 震度模型就緒");
+                    // Parsing takes several times what the model keeps.
+                    crate::platform::lifecycle::return_free_memory();
                     return;
                 }
                 Ok(Err(e)) => log::error!("ML 震度模型無法使用，刪掉重下載：{e}"),

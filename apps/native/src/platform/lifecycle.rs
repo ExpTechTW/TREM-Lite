@@ -195,3 +195,19 @@ pub fn pin_to_all_spaces(window: &winit::window::Window) {
 
 #[cfg(not(target_os = "macos"))]
 pub fn pin_to_all_spaces(_window: &winit::window::Window) {}
+
+/// Give freed pages back to the system. macOS's allocator keeps them for reuse, and they
+/// count against the process until memory is short.
+#[cfg(target_os = "macos")]
+pub fn return_free_memory() {
+    extern "C" {
+        fn malloc_zone_pressure_relief(zone: *mut std::ffi::c_void, goal: usize) -> usize;
+    }
+    // SAFETY: a null zone means every zone, and a goal of 0 means as much as possible.
+    unsafe {
+        malloc_zone_pressure_relief(std::ptr::null_mut(), 0);
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn return_free_memory() {}

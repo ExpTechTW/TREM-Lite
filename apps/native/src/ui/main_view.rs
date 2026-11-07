@@ -141,7 +141,7 @@ impl MainView {
                 .sum::<f32>();
         let list_hit = ui.hit(ID_REPORT_LIST, list);
         let max_scroll = (total - inner.h).max(0.0);
-        let scroll = ui.scroll_offset(ID_REPORT_LIST, max_scroll);
+        let scroll = ui.scroll_offset(ID_REPORT_LIST, list, max_scroll);
         ui.push_clip(list);
         let mut y = inner.y - scroll;
         if let Some((time, max)) = survey {
