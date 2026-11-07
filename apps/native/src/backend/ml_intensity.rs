@@ -519,22 +519,18 @@ impl Model {
     pub fn predict(&self, rows: &[Row]) -> (Vec<f32>, Vec<f32>) {
         let mut pga = vec![0.0; rows.len()];
         let mut pgv = vec![0.0; rows.len()];
-        let threads = std::thread::available_parallelism().map_or(1, usize::from);
+        use rayon::prelude::*;
+        let threads = rayon::current_num_threads();
         let workers = threads.min(rows.len() / MIN_ROWS_PER_WORKER).max(1);
         if workers == 1 {
             self.run(rows, &mut pga, &mut pgv);
             return (pga, pgv);
         }
         let chunk = rows.len().div_ceil(workers);
-        std::thread::scope(|s| {
-            for ((r, a), v) in rows
-                .chunks(chunk)
-                .zip(pga.chunks_mut(chunk))
-                .zip(pgv.chunks_mut(chunk))
-            {
-                s.spawn(move || self.run(r, a, v));
-            }
-        });
+        rows.par_chunks(chunk)
+            .zip(pga.par_chunks_mut(chunk))
+            .zip(pgv.par_chunks_mut(chunk))
+            .for_each(|((r, a), v)| self.run(r, a, v));
         (pga, pgv)
     }
 

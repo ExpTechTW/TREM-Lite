@@ -104,11 +104,56 @@ fn fill_polygon(rings: &[&Vec<(i16, i16)>], code: u16, mesh: &mut TileMesh) {
     }
 }
 
+/// Append `part`, cut on its own from index 0, as if it had been cut onto `mesh`'s end.
+fn append(mesh: &mut TileMesh, part: TileMesh) {
+    let fill_base = mesh.fill_vertices.len() as u32;
+    mesh.fill_vertices.extend(part.fill_vertices);
+    mesh.fill_indices
+        .extend(part.fill_indices.into_iter().map(|i| i + fill_base));
+    let line_base = mesh.line_vertices.len() as u32;
+    mesh.line_vertices.extend(part.line_vertices);
+    mesh.line_indices
+        .extend(part.line_indices.into_iter().map(|i| i + line_base));
+}
+
+/// Cut every feature of a layer on the workers, then put them together in order: the
+/// same bytes as one after another, since each feature's indices only shift by what came
+/// before it.
+fn cut_features(
+    layer: &mvt::Layer,
+    mesh: &mut TileMesh,
+    cut: impl Fn(&mvt::Feature, &mut TileMesh) + Sync,
+) {
+    use rayon::prelude::*;
+    let parts: Vec<TileMesh> = layer
+        .features
+        .par_iter()
+        .map(|feature| {
+            let mut part = TileMesh::default();
+            cut(feature, &mut part);
+            part
+        })
+        .collect();
+    for part in parts {
+        append(mesh, part);
+    }
+}
+
 fn fill_layer(layer: &mvt::Layer, mesh: &mut TileMesh, use_code: bool) -> Span {
     let start = mesh.fill_indices.len() as u32;
-    for feature in &layer.features {
+    cut_features(layer, mesh, |feature, mesh| {
+        fill_feature(feature, mesh, use_code)
+    });
+    Span {
+        start,
+        count: mesh.fill_indices.len() as u32 - start,
+    }
+}
+
+fn fill_feature(feature: &mvt::Feature, mesh: &mut TileMesh, use_code: bool) {
+    {
         if feature.kind != GeomType::Polygon {
-            continue;
+            return;
         }
         let code = if use_code {
             feature.code.unwrap_or(0).min(u32::from(u16::MAX)) as u16
@@ -129,10 +174,6 @@ fn fill_layer(layer: &mvt::Layer, mesh: &mut TileMesh, use_code: bool) -> Span {
         if !rings.is_empty() {
             fill_polygon(&rings, code, mesh);
         }
-    }
-    Span {
-        start,
-        count: mesh.fill_indices.len() as u32 - start,
     }
 }
 
@@ -286,15 +327,15 @@ fn line_layer(layer: &mvt::Layer, extent: i16, mesh: &mut TileMesh) -> Span {
             || (a.0 >= extent && b.0 >= extent)
             || (a.1 >= extent && b.1 >= extent)
     };
-    for feature in &layer.features {
+    cut_features(layer, mesh, |feature, mesh| {
         if feature.kind == GeomType::Point {
-            continue;
+            return;
         }
         let closed = feature.kind == GeomType::Polygon;
         for part in &feature.parts {
             stroke(part, closed, on_edge, mesh);
         }
-    }
+    });
     Span {
         start,
         count: mesh.line_indices.len() as u32 - start,

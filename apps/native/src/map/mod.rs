@@ -332,8 +332,8 @@ pub fn tile_fetch(
                 Ok(fetched) => Err(format!("HTTP {}", fetched.status)),
                 Err(err) => Err(err),
             };
-            // Decoding is CPU work: off the async workers.
-            let _ = tokio::task::spawn_blocking(move || reply(answer)).await;
+            // Decoding is CPU work: on the worker pool, off the async workers.
+            rayon::spawn(move || reply(answer));
         });
     })
 }

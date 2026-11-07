@@ -62,10 +62,12 @@ pub fn bake(rgb: &[u8], size: u32, z: u32, y: u32) -> Option<Baked> {
     if rgb.len() != n * n * 3 || n < 2 {
         return None;
     }
+    // Each elevation once, not nine times: every pixel reads its 3×3 neighbourhood.
+    let heights: Vec<f32> = rgb.chunks_exact(3).map(elevation).collect();
     let at = |px: isize, py: isize| -> f32 {
         let x = px.clamp(0, n as isize - 1) as usize;
         let y = py.clamp(0, n as isize - 1) as usize;
-        elevation(&rgb[(y * n + x) * 3..(y * n + x) * 3 + 3])
+        heights[y * n + x]
     };
     let zoom = z as f32;
     let factor = if zoom < 2.0 {
@@ -88,31 +90,37 @@ pub fn bake(rgb: &[u8], size: u32, z: u32, y: u32) -> Option<Baked> {
     let lat_bottom = lat_of(f64::from(y + 1) / tiles) as f32;
 
     let mut pixels = vec![0u8; n * n * 2];
-    for py in 0..n as isize {
-        let v = (py as f32 + 0.5) / tile_size;
-        // cos(radians((top - bottom) * (1 - v) + bottom))
-        let scale_factor = ((lat_top - lat_bottom) * (1.0 - v) + lat_bottom)
-            .to_radians()
-            .cos();
-        for px in 0..n as isize {
-            let a = at(px - 1, py - 1);
-            let b = at(px, py - 1);
-            let c = at(px + 1, py - 1);
-            let d = at(px - 1, py);
-            let f = at(px + 1, py);
-            let g = at(px - 1, py + 1);
-            let h = at(px, py + 1);
-            let i = at(px + 1, py + 1);
-            let deriv = (
-                ((c + f + f + i) - (a + d + d + g)) * scale,
-                ((g + h + h + i) - (a + b + b + c)) * scale,
-            );
-            let out = bake_pixel(deriv, scale_factor);
-            let at = (py as usize * n + px as usize) * 2;
-            pixels[at] = out[0];
-            pixels[at + 1] = out[1];
-        }
-    }
+    // Rows are independent: one per task, as many at once as there are cores.
+    use rayon::prelude::*;
+    pixels
+        .par_chunks_mut(n * 2)
+        .enumerate()
+        .for_each(|(row, out)| {
+            let py = row as isize;
+            let v = (py as f32 + 0.5) / tile_size;
+            // cos(radians((top - bottom) * (1 - v) + bottom))
+            let scale_factor = ((lat_top - lat_bottom) * (1.0 - v) + lat_bottom)
+                .to_radians()
+                .cos();
+            for px in 0..n as isize {
+                let a = at(px - 1, py - 1);
+                let b = at(px, py - 1);
+                let c = at(px + 1, py - 1);
+                let d = at(px - 1, py);
+                let f = at(px + 1, py);
+                let g = at(px - 1, py + 1);
+                let h = at(px, py + 1);
+                let i = at(px + 1, py + 1);
+                let deriv = (
+                    ((c + f + f + i) - (a + d + d + g)) * scale,
+                    ((g + h + h + i) - (a + b + b + c)) * scale,
+                );
+                let shaded = bake_pixel(deriv, scale_factor);
+                let at = px as usize * 2;
+                out[at] = shaded[0];
+                out[at + 1] = shaded[1];
+            }
+        });
     Some(Baked { size, pixels })
 }
 

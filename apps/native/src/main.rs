@@ -101,6 +101,10 @@ fn main() {
         }
     };
     let _guard = rt.enter();
+    // The CPU pool: tiles, glyphs and the model's rows share it, one thread a core.
+    let _ = rayon::ThreadPoolBuilder::new()
+        .thread_name(|i| format!("trem-cpu-{i}"))
+        .build_global();
 
     if let Some(path) = args.screenshot.clone() {
         init_stderr_log();

@@ -35,6 +35,10 @@ tokio = { version = "1", default-features = false, features = ["rt-multi-thread"
 # on macOS or Windows.
 cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
+# One pool of worker threads, as many as cores, for the CPU work: tiles, glyphs, the model.
+rayon = "1.12"
+# Glyphs rasterized on the workers; the same version and features cosmic-text uses.
+swash = "0.2.10"
 log = { version = "0.4", default-features = false, features = ["std"] }
 pollster = { version = "0.4", default-features = false }
 # Script enum for the font fallback list. Already pulled in by cosmic-text.
