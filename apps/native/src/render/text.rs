@@ -55,6 +55,56 @@ const SYSTEM_FONTS: &[&str] = &[
 
 const FORBIDDEN: &[&str] = &[".LastResort"];
 
+/// Every face in the system font directories. The scan reads hundreds of files (about 50 ms
+/// on macOS, more on a crowded Windows), and the embedded Noto subset lacks characters the
+/// UI draws from its first frame, so it starts with the engine, on its own thread.
+static SYSTEM_FACES: std::sync::OnceLock<Vec<cosmic_text::fontdb::FaceInfo>> =
+    std::sync::OnceLock::new();
+
+fn scan_system_fonts() -> Vec<cosmic_text::fontdb::FaceInfo> {
+    let mut db = cosmic_text::fontdb::Database::new();
+    db.load_system_fonts();
+    // cosmic-text maps every font it opens (`FontSystem::get_font`), but matching a new
+    // weight reads every face's weight axis, and an unmapped face opens and maps its file
+    // each time: ~20 ms a weight with the system fonts loaded. Mapped once here instead,
+    // one mapping a file, the same bytes either way.
+    let ids: Vec<_> = db.faces().map(|face| face.id).collect();
+    let mut mapped = std::collections::HashSet::new();
+    for id in ids {
+        let path = match db.face(id).map(|face| &face.source) {
+            Some(cosmic_text::fontdb::Source::File(path)) => path.clone(),
+            _ => continue,
+        };
+        if mapped.insert(path) {
+            // SAFETY: as in cosmic-text's `get_font`: a font file rewritten while mapped
+            // could fault. These are the system and user font directories.
+            unsafe {
+                db.make_shared_face_data(id);
+            }
+        }
+    }
+    db.faces().cloned().collect()
+}
+
+pub fn prefetch_system_fonts() {
+    static STARTED: std::sync::Once = std::sync::Once::new();
+    STARTED.call_once(|| {
+        let spawned = std::thread::Builder::new()
+            .name("trem-fonts".to_string())
+            .spawn(|| {
+                SYSTEM_FACES.get_or_init(scan_system_fonts);
+            });
+        if let Err(err) = spawned {
+            log::debug!("無法在背景掃描系統字型：{err}");
+        }
+    });
+}
+
+/// Waits for the scan if it is still running, or runs it here if it never started.
+fn system_faces() -> &'static [cosmic_text::fontdb::FaceInfo] {
+    SYSTEM_FACES.get_or_init(scan_system_fonts)
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HAlign {
     Left,
@@ -271,6 +321,7 @@ pub struct TextEngine {
 
 impl TextEngine {
     pub fn new() -> Self {
+        prefetch_system_fonts();
         let mut db = cosmic_text::fontdb::Database::new();
         // The embedded bytes themselves, not a copy of them.
         db.load_font_source(cosmic_text::fontdb::Source::Binary(Arc::new(MANROPE)));
@@ -646,8 +697,12 @@ impl TextEngine {
         }
         if !self.scanned_system {
             self.scanned_system = true;
-            log::info!("嵌入字型仍缺字，改掃系統字型目錄");
-            self.fonts.db_mut().load_system_fonts();
+            log::info!("嵌入字型仍缺字，改用系統字型目錄");
+            // What `load_system_fonts` would add, in its order, without the wait.
+            let db = self.fonts.db_mut();
+            for face in system_faces() {
+                db.push_face_info(face.clone());
+            }
             return true;
         }
         false
@@ -1369,6 +1424,126 @@ fn text_bind_group(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const MIXED: [&str; 7] = [
+        "最大加速度",
+        "設定",
+        "5⁻ 6⁺",
+        "𝖬 6.4",
+        "震度 ㎞",
+        "（開關）｜",
+        "EEW 📨",
+    ];
+
+    fn style(weight: u16) -> TextStyle {
+        TextStyle {
+            size: 16.0,
+            weight,
+            ..TextStyle::default()
+        }
+    }
+
+    /// Each glyph by face name, id and position, so two engines can be compared.
+    fn fingerprint(engine: &TextEngine, layout: &TextLayout) -> Vec<(String, u16, u32, u32)> {
+        layout
+            .lines
+            .iter()
+            .flat_map(|line| &line.glyphs)
+            .map(|glyph| {
+                let face = engine.fonts.db().face(glyph.font_id);
+                (
+                    face.map(|face| face.post_script_name.clone())
+                        .unwrap_or_default(),
+                    glyph.glyph_id,
+                    glyph.x.to_bits(),
+                    glyph.w.to_bits(),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_pool_rasterizes_like_cosmic_text() {
+        let mut engine = TextEngine::new();
+        let mut keys = Vec::new();
+        for weight in [400, 700] {
+            for text in MIXED {
+                let layout = engine.layout_single(text, &style(weight));
+                for glyph in layout.lines.iter().flat_map(|line| &line.glyphs) {
+                    for (x, flags) in [
+                        (0.0, CacheKeyFlags::empty()),
+                        (0.4, CacheKeyFlags::empty()),
+                        (0.0, CacheKeyFlags::FAKE_ITALIC),
+                    ] {
+                        let (key, _, _) = CacheKey::new(
+                            glyph.font_id,
+                            glyph.glyph_id,
+                            glyph.font_size,
+                            (x, 0.0),
+                            Weight(glyph.weight),
+                            flags,
+                        );
+                        keys.push(key);
+                    }
+                }
+            }
+        }
+        assert!(keys.len() > 100);
+        let ours = engine.rasterize(&keys);
+        let mut theirs = cosmic_text::SwashCache::new();
+        for key in &keys {
+            let expected = theirs.get_image_uncached(&mut engine.fonts, *key);
+            let got = ours.get(key);
+            assert_eq!(expected.is_some(), got.is_some(), "{key:?}");
+            if let (Some(expected), Some(got)) = (expected, got) {
+                assert_eq!(expected.data, got.data, "{key:?}");
+                let place = |p: &swash::zeno::Placement| (p.left, p.top, p.width, p.height);
+                assert_eq!(place(&expected.placement), place(&got.placement), "{key:?}");
+                assert_eq!(expected.content, got.content, "{key:?}");
+            }
+        }
+    }
+
+    /// The faces scanned and mapped on their own thread shape as `load_system_fonts` run in
+    /// place would: the same faces, in the same order, picked for the same glyphs.
+    #[test]
+    fn prefetched_system_fonts_shape_like_loading_them_in_place() {
+        let mut prefetched = TextEngine::new();
+        let db = prefetched.fonts.db_mut();
+        for face in system_faces() {
+            db.push_face_info(face.clone());
+        }
+        let mut in_place = TextEngine::new();
+        in_place.fonts.db_mut().load_system_fonts();
+        for engine in [&mut prefetched, &mut in_place] {
+            engine.font_cursor = SYSTEM_FONTS.len();
+            engine.scanned_system = true;
+        }
+        for weight in [400, 500, 700] {
+            for text in MIXED {
+                let a = prefetched.layout_single(text, &style(weight));
+                let b = in_place.layout_single(text, &style(weight));
+                assert!(!a.lines.is_empty(), "{text}");
+                assert_eq!(
+                    fingerprint(&prefetched, &a),
+                    fingerprint(&in_place, &b),
+                    "{text} at {weight}"
+                );
+            }
+        }
+        // Not a vacuous match: 加 and 𝖬 come from the system, not the embedded subset.
+        let embedded = |name: &str| name.starts_with("Manrope") || name.starts_with("NotoSansTC");
+        for text in ["加", "𝖬"] {
+            let layout = prefetched.layout_single(text, &style(400));
+            let faces = fingerprint(&prefetched, &layout);
+            assert!(
+                faces
+                    .iter()
+                    .any(|(face, id, _, _)| !embedded(face) && *id != 0),
+                "{text}: {faces:?}"
+            );
+        }
+    }
 
     #[test]
     fn ellipsis_prefix_cases() {

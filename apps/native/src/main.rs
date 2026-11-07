@@ -77,7 +77,11 @@ pub struct Args {
     pub input: Vec<InputStep>,
 }
 
+/// When the process began, for the first-frame log line.
+pub static STARTED: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+
 fn main() {
+    STARTED.get_or_init(std::time::Instant::now);
     let args = match Args::from_env() {
         Ok(args) => args,
         Err(err) => {
@@ -131,6 +135,8 @@ fn main() {
         Some(platform::lifecycle::Instance::First(listener)) => Some(listener),
         None => None,
     };
+    // The first frame needs it, and the window and the GPU take longer to come up.
+    render::prefetch_system_fonts();
     backend::logging::init();
     log::info!(target: "app", "程式啟動（參數 {:?}）", std::env::args().skip(1).collect::<Vec<_>>());
     backend::awake::keep_awake();

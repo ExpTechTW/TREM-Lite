@@ -176,6 +176,7 @@ struct Runner {
     map_dragging: bool,
     quitting: bool,
     gave_up_on_device: bool,
+    first_frame_logged: bool,
 }
 
 pub fn run(
@@ -239,6 +240,7 @@ pub fn run(
         map_dragging: false,
         quitting: false,
         gave_up_on_device: false,
+        first_frame_logged: false,
     };
     event_loop
         .run_app(&mut runner)
@@ -962,6 +964,12 @@ impl Runner {
         ui.swap_input(&mut win.input);
         self.gpu.queue.submit([encoder.finish()]);
         self.gpu.queue.present(frame);
+        if !self.first_frame_logged {
+            self.first_frame_logged = true;
+            if let Some(started) = crate::STARTED.get() {
+                log::info!(target: "app", "第一幀：啟動後 {} ms", started.elapsed().as_millis());
+            }
+        }
         if suboptimal {
             if let Some(surface) = &win.surface {
                 surface.reconfigure(&self.gpu.device);
