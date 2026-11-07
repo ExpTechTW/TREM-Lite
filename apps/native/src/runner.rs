@@ -177,6 +177,7 @@ struct Runner {
     quitting: bool,
     gave_up_on_device: bool,
     first_frame_logged: bool,
+    speech_warmed: bool,
 }
 
 pub fn run(
@@ -241,6 +242,7 @@ pub fn run(
         quitting: false,
         gave_up_on_device: false,
         first_frame_logged: false,
+        speech_warmed: false,
     };
     event_loop
         .run_app(&mut runner)
@@ -324,6 +326,7 @@ impl ApplicationHandler<Msg> for Runner {
             }
         }
         self.recover_lost_device();
+        self.warm_speech();
         self.run_commands(event_loop);
         self.trim_if_hidden();
 
@@ -502,6 +505,21 @@ impl Runner {
             lifecycle::return_free_memory();
         } else if !hidden {
             self.trimmed = false;
+        }
+    }
+
+    /// The speech engine, made once the first frame is up (or when nothing will draw), so
+    /// the window does not wait for it and the first alert does not either.
+    fn warm_speech(&mut self) {
+        if self.speech_warmed {
+            return;
+        }
+        let late = crate::STARTED
+            .get()
+            .is_none_or(|started| started.elapsed() > Duration::from_secs(2));
+        if self.first_frame_logged || self.start_hidden || late {
+            self.speech_warmed = true;
+            self.app.speech.warm();
         }
     }
 

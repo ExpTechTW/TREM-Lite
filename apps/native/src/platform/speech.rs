@@ -13,7 +13,9 @@ struct Queue {
 }
 
 pub struct Speech {
-    engine: Option<Arc<Mutex<tts::Tts>>>,
+    /// Made on first use, on the main thread like before: it takes ~70 ms on macOS, which
+    /// the first frame need not wait for. `warm` makes it once the window is up.
+    engine: std::cell::OnceCell<Option<Arc<Mutex<tts::Tts>>>>,
     queue: Arc<Mutex<Queue>>,
     post: Post,
 }
@@ -45,7 +47,7 @@ impl Speech {
     /// No engine at all, for a screenshot.
     pub fn disabled(post: Post) -> Self {
         Self {
-            engine: None,
+            engine: std::cell::OnceCell::from(None),
             queue: Arc::new(Mutex::new(Queue {
                 waiting: VecDeque::new(),
                 speaking: None,
@@ -55,58 +57,36 @@ impl Speech {
     }
 
     pub fn new(post: Post) -> Self {
-        let queue = Arc::new(Mutex::new(Queue {
-            waiting: VecDeque::new(),
-            speaking: None,
-        }));
-        let engine = match tts::Tts::default() {
-            Ok(engine) => Some(Arc::new(Mutex::new(engine))),
-            Err(err) => {
-                log::warn!(target: "speech", "語音引擎無法使用：{err}");
-                None
-            }
-        };
-        if let Some(engine) = &engine {
-            if let Ok(mut locked) = engine.lock() {
-                pick_voice(&mut locked);
-                let done = locked.supported_features().utterance_callbacks;
-                if done {
-                    let (queue_end, engine_end, post_end) =
-                        (Arc::clone(&queue), Arc::clone(engine), Arc::clone(&post));
-                    let finished = move |_| {
-                        let ended = queue_end.lock().ok().and_then(|mut q| q.speaking.take());
-                        if let Some(end) = ended {
-                            post_end(Msg::SpeechEnded(end));
-                        }
-                        // Not under the engine's own callback: a new utterance starts freely.
-                        let (engine, queue, post) = (
-                            Arc::clone(&engine_end),
-                            Arc::clone(&queue_end),
-                            Arc::clone(&post_end),
-                        );
-                        std::thread::spawn(move || say_next(&engine, &queue, &post));
-                    };
-                    let _ = locked.on_utterance_end(Some(Box::new(finished.clone())));
-                    let _ = locked.on_utterance_stop(Some(Box::new(finished)));
-                }
-            }
-        }
         Self {
-            engine,
-            queue,
+            engine: std::cell::OnceCell::new(),
+            queue: Arc::new(Mutex::new(Queue {
+                waiting: VecDeque::new(),
+                speaking: None,
+            })),
             post,
         }
     }
 
+    /// Make the engine now, if not yet made.
+    pub fn warm(&self) {
+        let _ = self.engine();
+    }
+
+    fn engine(&self) -> Option<&Arc<Mutex<tts::Tts>>> {
+        self.engine
+            .get_or_init(|| start_engine(&self.queue, &self.post))
+            .as_ref()
+    }
+
     pub fn available(&self) -> bool {
-        self.engine.is_some()
+        self.engine().is_some()
     }
 
     pub fn speak(&mut self, text: &str, queue: bool, end: SpeechEnd) {
         if !queue {
             self.stop();
         }
-        let Some(engine) = &self.engine else {
+        let Some(engine) = self.engine() else {
             return;
         };
         if let Ok(mut q) = self.queue.lock() {
@@ -116,7 +96,8 @@ impl Speech {
     }
 
     pub fn stop(&mut self) {
-        let Some(engine) = &self.engine else {
+        // Not made yet: nothing has been said, so nothing to stop.
+        let Some(engine) = self.engine.get().and_then(Option::as_ref) else {
             return;
         };
         let mut ended = Vec::new();
@@ -131,6 +112,42 @@ impl Speech {
             (self.post)(Msg::SpeechEnded(end));
         }
     }
+}
+
+fn start_engine(queue: &Arc<Mutex<Queue>>, post: &Post) -> Option<Arc<Mutex<tts::Tts>>> {
+    let engine = match tts::Tts::default() {
+        Ok(engine) => Some(Arc::new(Mutex::new(engine))),
+        Err(err) => {
+            log::warn!(target: "speech", "語音引擎無法使用：{err}");
+            None
+        }
+    };
+    if let Some(engine) = &engine {
+        if let Ok(mut locked) = engine.lock() {
+            pick_voice(&mut locked);
+            let done = locked.supported_features().utterance_callbacks;
+            if done {
+                let (queue_end, engine_end, post_end) =
+                    (Arc::clone(queue), Arc::clone(engine), Arc::clone(post));
+                let finished = move |_| {
+                    let ended = queue_end.lock().ok().and_then(|mut q| q.speaking.take());
+                    if let Some(end) = ended {
+                        post_end(Msg::SpeechEnded(end));
+                    }
+                    // Not under the engine's own callback: a new utterance starts freely.
+                    let (engine, queue, post) = (
+                        Arc::clone(&engine_end),
+                        Arc::clone(&queue_end),
+                        Arc::clone(&post_end),
+                    );
+                    std::thread::spawn(move || say_next(&engine, &queue, &post));
+                };
+                let _ = locked.on_utterance_end(Some(Box::new(finished.clone())));
+                let _ = locked.on_utterance_stop(Some(Box::new(finished)));
+            }
+        }
+    }
+    engine
 }
 
 fn pick_voice(engine: &mut tts::Tts) {
@@ -149,5 +166,22 @@ fn pick_voice(engine: &mut tts::Tts) {
             }
         }
         None => log::warn!(target: "speech", "系統沒有中文語音，用預設語音"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_engine_waits_for_its_first_use() {
+        let mut speech = Speech::new(Arc::new(|_| {}));
+        assert!(speech.engine.get().is_none());
+        speech.stop();
+        assert!(
+            speech.engine.get().is_none(),
+            "stopping before anything was said makes no engine"
+        );
+        assert!(!Speech::disabled(Arc::new(|_| {})).available());
     }
 }
