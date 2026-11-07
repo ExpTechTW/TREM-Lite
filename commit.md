@@ -1,8 +1,8 @@
 # Commit 格式
 
-**一個 commit 只處理一件可以獨立說明、驗證與回退的事。** TREM-Lite 同時包含
-React/TypeScript 共用核心、Web shell、Tauri/Rust 桌面程式與 legacy 參考實作；提交前不只要
-確認能建置，也要確認受影響平台的實際行為。
+**一個 commit 只處理一件可以獨立說明、驗證與回退的事。** TREM-Lite 是一份 Rust 程式，
+編成三個桌面系統的 app，也編成瀏覽器版（WebAssembly + WebGPU）；提交前不只要確認能建置，
+也要確認受影響平台的實際行為。
 
 這份格式自文件加入後適用於新 commit，不回頭改寫既有歷史。
 
@@ -64,9 +64,8 @@ Fix(zh-Hant): 震度速報會念出最高震度地區的縣市名稱
 Fix(en-US): intensity alerts now announce the counties at the maximum intensity
 ```
 
-第一行給 `git log` 與開發者閱讀；分類條目描述使用者實際感受到的結果，由
-`tool/release/notes.sh` 原文組成 GitHub 發佈說明，再由 `tool/release/discord.py` 轉成
-Discord 公告。
+第一行給 `git log` 與開發者閱讀；分類條目描述使用者實際感受到的結果，是 GitHub 發佈說明與
+Discord 公告的原文。
 
 純內部變更不需要硬寫更新日誌條目：
 
@@ -112,7 +111,7 @@ scope 選填，使用小寫。常用範圍：
 - 地震資料與顯示：`eew`、`rts`、`intensity`、`lpgm`、`report`、`replay`。
 - 介面與地圖：`map`、`pip`、`settings`、`window`、`ui`。
 - 輸出：`audio`、`speech`、`notify`。
-- 平台與基礎設施：`core`、`desktop`、`web`、`tauri`、`release`、`deps`。
+- 平台與基礎設施：`native`、`desktop`、`web`、`render`、`release`、`deps`。
 
 同一件行為合理地跨越多個模組時可以不寫 scope，不要為了填欄位把它歸到錯的區域。
 
@@ -139,9 +138,8 @@ scope 選填，使用小寫。常用範圍：
 使用者可見的 commit 至少要有一組 `zh-Hant` 與 `en-US`，而且兩個語言的條目數及順序
 必須一致。
 
-**這些條目會原文公開。** 推上 `main` 後大約 12 分鐘，快照發布，`zh-Hant` 條目會出現在
-GitHub release 與 Discord 公告上；正式版在人工發布時公告。沒有任何條目的快照不公告。
-條目寫的是使用者讀得懂的結果，不是給開發者看的實作筆記。
+**這些條目會原文公開**，出現在 GitHub release 與 Discord 公告上（原生版的發佈流程重建之前，
+`main` 的 Tauri 版照舊發佈）。條目寫的是使用者讀得懂的結果，不是給開發者看的實作筆記。
 
 ```text
 perf(map): reduce terrain redraws while panning
@@ -181,14 +179,13 @@ Fix(en-US): desktop window capture no longer captures app sound unexpectedly
 
 - `all`：瀏覽器版與所有桌面版都受影響。
 - `web`：只影響瀏覽器版。
-- `desktop`：影響所有 Tauri 桌面版，不影響瀏覽器版。
+- `desktop`：影響三個桌面版，不影響瀏覽器版。
 - `macos`、`windows`、`linux`：只影響單一桌面作業系統。
 
-只改 Tauri，但三個桌面作業系統都受影響時使用 `desktop`，不要任選其中一個 OS。
+只改桌面專用的程式，但三個桌面作業系統都受影響時使用 `desktop`，不要任選其中一個 OS。
 
 **沒寫或寫錯都會被擋下**：commit-msg hook 與 CI 的閘門（`tool/check/commits.sh`）直接
-報錯，`tool/release/notes.sh` 遇到沒寫的 commit 也會中止，不產生發佈說明。以前「不寫就是
-全平台」，結果只影響桌面版的修正也被標成網頁版；`all` 是明確的判斷，不寫不是，所以不寫
+報錯。以前「不寫就是全平台」，結果只影響桌面版的修正也被標成網頁版；`all` 是明確的判斷，不寫不是，所以不寫
 就報錯。沒有更新日誌條目的 commit（`refactor`、`ci`、`chore` 等）不需要寫，寫了也會檢查值。
 
 **發佈說明的每一條都會標平台**，不只被收窄的那些：
@@ -235,45 +232,38 @@ git commit
 
 ### 所有程式變更
 
-先跑 CI 的平台無關 gate：
+在 `apps/native` 跑 CI 的同一組檢查：
 
 ```sh
-bun install
-bun run typecheck
-bun run build:web
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo clippy --target wasm32-unknown-unknown -- -D warnings
+cargo test
 ```
 
-`bun run lint` 目前帶有 `--fix`，會修改檔案；需要執行時必須在之後重新檢查 diff：
+CI 在 Linux、macOS、Windows 跑測試。本機單一平台通過只能證明本機 target；不要把它寫成所有
+平台已驗證。只有桌面或只有瀏覽器的程式，用 `#[cfg(target_arch = "wasm32")]` 分開，另一邊也要能編。
+
+### 桌面與瀏覽器整合
+
+修改視窗、GPU、音效、語音、通知、系統匣或網路層時，實際啟動：
 
 ```sh
-bun run lint
-git diff --stat
+TREM_FIXTURE_DIR=<目錄> cargo run --release   # 不連網、不出聲、不發通知
+web/build.sh && python3 -m http.server -d web/dist 8099
 ```
 
-### Rust／Tauri／桌面整合
+`TREM_FIXTURE_DIR` 只證明 fixture。即時連線、實際出聲與通知要另外驗證，並在描述中寫明。
 
-修改 `apps/desktop/`、Tauri command、桌面 plugin、原生視窗或音效引擎時：
-
-```sh
-cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
-(cd apps/desktop && bun run tauri build --no-bundle)
-```
-
-CI 會在 macOS arm64/x64、Linux arm64/x64、Windows arm64/x64/ia32 編譯桌面程式。本機
-單一平台通過只能證明本機 target；不要把它寫成所有平台已驗證。
-
-### UI、地圖與 legacy 視覺還原
+### UI、地圖與畫面
 
 涉及 UI、地圖、overlay、動畫、字型、PiP 或版面時，build 通過不等於完成：
 
-1. 背景啟動 legacy 與新版，使用相同視窗尺寸、地圖中心、縮放、資料與時間點。
-2. 分別截圖，做疊圖或像素差異比較。
+1. 跑 `cargo test`：`testdata/golden/render` 的畫面在容許差異內不變（只在 macOS 比對）。
+2. 用 `--screenshot` 截出受影響的頁面與狀態，對照改動前的截圖。
 3. 檢查尺寸、位置、字級、色彩、透明度、圖層順序、裁切與縮放。
 4. 再比較互動行為：點擊、拖曳、視窗切換、overlay 出現與消失時機。
-5. 對合理差異留下原因；無法還原的地方要明確列為驗證限制。
-
-不要為了讓比較通過而修改 `legacy/`。legacy 是基準；只有使用者明確要求更新基準時才改。
+5. 畫面本來就該變時才用 `UPDATE_GOLDEN=1` 重寫金圖，並在描述中說明哪裡變了、為什麼。
 
 ### Replay
 
@@ -293,11 +283,11 @@ CI 會在 macOS arm64/x64、Linux arm64/x64、Windows arm64/x64/ia32 編譯桌�
 
 這三條路徑分開驗證：
 
-- MP3 音效：TypeScript 事件路由後，實際由 Rust `rodio` 引擎播放；驗證 queue、優先級、
-  重疊、音量與設定開關。
-- TTS：由 WebView 的 `speechSynthesis` 播放；驗證送入引擎的完整文字、縣市去重、語序、
-  queue/cancel 與 `other-tts` 開關。
-- 桌面通知：驗證權限、標題、內容、點擊聚焦與非 Tauri 環境不會拋錯。
+- MP3 音效：桌面由 `rodio` 播放，瀏覽器由頁面的 audio 元素播放，規則共用 `backend/sound.rs`；
+  驗證 queue、優先級、重疊、音量與設定開關。
+- TTS：桌面用系統語音（`tts` crate），瀏覽器用 `speechSynthesis`；驗證送入引擎的完整文字、
+  縣市去重、語序、queue/cancel 與 `other-tts` 開關。測試的 `Output` 紀錄就是送入的文字。
+- 通知：驗證權限、標題、內容、點擊聚焦，以及沒有通知權限時不會出錯。
 
 聽到部分句子不能證明資料缺失；先記錄實際送入 TTS 的字串，再區分組字錯誤與系統語音
 引擎問題。
@@ -317,44 +307,12 @@ CI 會在 macOS arm64/x64、Linux arm64/x64、Windows arm64/x64/ia32 編譯桌�
 
 ## 版本與 release
 
-**版本不用手改。** `tool/release/version.sh` 從 git 狀態推導出所有值，
-`--write` 會把它蓋進所有帶版本號的檔案：根目錄、`packages/core`、`apps/web`、
-`apps/desktop` 的 `package.json`，加上 `apps/desktop/src-tauri/Cargo.toml` 與
-`tauri.conf.json`。檔案裡當下那個值是佔位用的，release 流程會重新蓋。
+原生版的版本是 `apps/native/Cargo.toml` 的 `version`，畫面上的名稱由 `backend/version.rs` 從它推導。
+原生版還沒有發佈流程：自動更新、程式碼簽章、安裝程式與 release workflow 都要重建。Tauri 版的
+版本工具（`tool/release/version.sh` 等）與 release workflow 留在 `main`。
 
-命名照搬 DPIP（Minecraft 式），四個值刻意互不相關：
-
-| 值 | 意義 | 發布版 | 快照版 |
-|---|---|---|---|
-| `label` | 人看的名字 | `26.2` | `26w39a` |
-| `train` | 這個快照在往哪個發布版走 | `26.2` | `26.2` |
-| `semver` | updater 拿來比大小的 | `26.2.0` | `26.2.0-26w39a` |
-| `code` | 單調遞增的建置序號 | `426000312` | `426000313` |
-
-- 發布版 tag 是 `v<yy>.<n>`（例：`v26.2`）。**`v` 前綴是唯一讓一個建置成為發布版
-  的東西**，也是唯一需要人手動打的部分。支援 `v26.2.1` 這種修補形式。
-- 快照 tag 是裸的 `<yy>w<week><letter>`（例：`26w39a`），沒有 `v`。週次是 ISO 週
-  且不補前導零，字母數的是這週**已發布**的快照數。
-- 週次用 **Asia/Taipei** 算。用 UTC 算的話，每個台北時間週一 00:00–08:00 都會落在
-  前一個 ISO 週。
-- `semver` 存在是因為 Tauri updater 是用 `tauri.conf.json` 的版本做 semver 比較，
-  而 `26.2` 不是合法 semver。快照是其 train 的 **pre-release**，semver 排序會把它
-  排在正式版**之前** —— 這正是正確的順序，也讓 updater 不會把快照推給已經在正式版
-  的人。
-
-```sh
-tool/release/version.sh           # 印出 TREM_LABEL / TREM_TRAIN / TREM_SEMVER / …
-tool/release/version.sh --json
-tool/release/version.sh --write   # 蓋進上面那些檔案
-```
-
-`code` 是 `4 | yy | 今年的 commit 數`：`426000312` 讀作「第 4 代、2026 年、今年第
-312 個 commit」。開頭那個世代數字是用來蓋過 app 已經發過的 `4.0.0` 以前的版本，讓
-任何舊版都不會排在新版前面。
-
-Release workflow 由 tag 觸發並建立 draft release。建立 tag 前必須確認 tag 名稱與應用版本
-一致、CI 綠燈、桌面簽章／updater 所需 secrets 可用，以及 draft 的各平台產物名稱正確。
-建立 GitHub draft 不等於已發布，也不等於 updater 已在真實安裝版驗證。
+建立任何 release 前必須確認 tag 名稱與應用版本一致、CI 綠燈，以及各平台產物名稱正確。建立
+GitHub draft 不等於已發布，也不等於更新機制已在真實安裝版驗證。
 
 ---
 
@@ -385,8 +343,8 @@ git rev-list --count HEAD..origin/main
 - `Generated with`、機器人 emoji 或宣傳文字。
 - `fix: update`、`feat: stuff`、`misc changes` 等無法判斷行為的摘要。
 - 把無關修改、格式化整個 repo 或臨時偵錯檔混入功能 commit。
-- 未驗證就寫「所有平台正常」、「完全符合 legacy」或「production 已確認」。
-- 為了通過視覺比較而改動 legacy 基準。
+- 未驗證就寫「所有平台正常」、「畫面完全一致」或「production 已確認」。
+- 為了讓測試通過而重寫金檔（`UPDATE_GOLDEN=1`），卻不說明行為為什麼該變。
 - 在未確認遠端協作狀態前 force push。
 
 commit 作者對內容負責；工具不應把自己寫進專案歷史。

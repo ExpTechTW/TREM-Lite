@@ -1,7 +1,8 @@
 # TREM-Lite Native
 
-The desktop app without a web view: Rust, winit and wgpu. A trial, to decide whether it is
-worth continuing. `PORTING.md` is how it was ported.
+The desktop app without a web view: Rust, winit and wgpu, and the same code in a browser.
+A trial, to decide whether it is worth continuing. `ARCHITECTURE.md` has its rules and
+layout.
 
 ```sh
 cargo run --release                 # with its windows

@@ -30,9 +30,14 @@ TREM（Taiwan Real-time Earthquake Monitoring，臺灣即時地震監測）是�
 | **語音與音效** | 速報、震度與報告的語音播報和提示音。音效在原生程序播放，OBS 視窗擷取不受影響 |
 | **通知與子母畫面** | 主視窗隱藏時，以系統通知和子母畫面小視窗提醒 |
 | **常駐系統匣** | 關閉視窗後持續監測，也可以隨開機在背景啟動 |
-| **自動更新** | 在背景下載新版本，下次啟動時套用，不會打斷正在使用的視窗 |
+| **瀏覽器版** | 同一份程式編成 WebAssembly，用 WebGPU 在瀏覽器裡畫出同樣的畫面 |
 
 ## 下載
+
+> [!NOTE]
+> 這個分支是原生版（Rust），還在試用，沒有正式發布，也還沒有自動更新、程式碼簽章與安裝程式。
+> 試用建置由手動觸發的 `Native trial build` workflow 產生。下面的 Releases 與網頁版是 `main`
+> 分支的 Tauri 版。
 
 到 [Releases 頁面](https://github.com/ExpTechTW/TREM-Lite/releases/latest)下載正式版：
 
@@ -72,37 +77,38 @@ Linux 在下載的資料夾執行 `sudo apt install ./<檔名>.deb`，需要的�
 
 ## 開發
 
-需要 [Bun](https://bun.sh)、[Rust](https://www.rust-lang.org/tools/install)，以及各平台的 [Tauri 系統依賴](https://tauri.app/start/prerequisites/)。
+需要 [Rust](https://www.rust-lang.org/tools/install)。Linux 另外要 ALSA、speech-dispatcher、D-Bus 與
+fontconfig 的開發套件。
 
 ```bash
 git clone https://github.com/ExpTechTW/TREM-Lite.git
 cd TREM-Lite
-bun install
 git config core.hooksPath .githooks   # 啟用 commit 規則檢查
+cd apps/native
+cargo run --release
 ```
+
+以下指令都在 `apps/native` 執行：
 
 | 要做什麼 | 指令 |
 |---|---|
-| 啟動桌面版（開發模式） | `bun run dev` |
-| 啟動網頁版 | `bun run dev:web` |
-| 建置桌面版 | `bun run build` |
-| 建置網頁版 | `bun run build:web` |
-| 型別檢查 | `bun run typecheck` |
-| Lint | `bun run lint` |
-| Rust 測試 | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` |
-| 重新產生 `.bin` 資料 | `bun scripts/encode-data.mjs` |
+| 啟動 | `cargo run --release` |
+| 只在系統匣啟動（開機自動啟動用） | `cargo run --release -- --start` |
+| 測試 | `cargo test` |
+| Lint（桌面與瀏覽器） | `cargo clippy --all-targets`、`cargo clippy --target wasm32-unknown-unknown` |
+| 格式 | `cargo fmt` |
+| 建置瀏覽器版 | `web/build.sh` |
+| 打包 macOS `.app` | `packaging/bundle-macos.sh` |
+| 改了 `assets/data/*.json` 後重新編碼 | `UPDATE_GOLDEN=1 cargo test encoded_data` |
 
 | 目錄 | 內容 |
 |---|---|
-| `packages/core` | 桌面版與網頁版共用的前端：React、MapLibre、地震資料處理 |
-| `apps/desktop` | Tauri 桌面版。Rust 負責音效、HTTP 代理與快取、自動更新、設定與視窗 |
-| `apps/web` | 網頁版（GitHub Pages） |
-| `apps/native` | 試驗中的原生版：Rust + winit + wgpu，不用 WebView；同一份程式也能編成 WebAssembly 在瀏覽器跑。見其 README |
-| `tool/` | commit 規則檢查、版本號與發布說明的產生 |
-| `legacy/` | 舊版 Electron 原始碼，僅作為移植參照，不再修改 |
+| `apps/native` | TREM-Lite 本體：Rust + winit + wgpu，不用 WebView；桌面版與瀏覽器版是同一份程式。見其 [README](apps/native/README.md) 與 [ARCHITECTURE](apps/native/ARCHITECTURE.md) |
+| `tool/check` | commit 規則檢查 |
+| `.githooks` | 寫 commit 與 push 之前的檢查 |
 
 > [!NOTE]
-> TREM-Lite v4 已從 Electron 遷移到 **Bun + Tauri v2 + Vite + React**。所有 HTTP 請求都經過 Rust 代理，統一處理 ETag 與 gzip；音效改由 Rust（rodio）在原生程序播放。
+> Tauri 桌面版、React 共用前端、網頁殼與舊版 Electron 原始碼都留在 `main` 分支。
 
 ## 貢獻
 

@@ -1,23 +1,15 @@
-# Dependencies
-node_modules/
-.pnp.*
-
-# Build output (any workspace: packages/*/dist, apps/*/dist, Rust target/)
-dist/
-dist-ssr/
+# Build output: Rust's target/, the browser build's web/dist
 target/
-.vite/
-*.tsbuildinfo
-*.local
+dist/
 
-# Tauri
+# What main's Tauri and TS apps leave in a checkout that switches here
+node_modules/
 **/src-tauri/gen/
 **/src-tauri/icons/_base1024.png
 
 # Logs
 logs
 *.log
-*-debug.log*
 
 # Editor / OS
 .DS_Store
@@ -30,6 +22,3 @@ logs
 .env
 .env.*
 !.env.example
-
-# Misc
-.eslintcache
