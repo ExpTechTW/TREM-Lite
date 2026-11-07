@@ -21,7 +21,7 @@ use crate::events::Event;
 use crate::features::rts::fill_derived;
 use crate::net::fixture;
 use crate::net::sse::{Cancel, Frame, Health, Stream, StreamSpec};
-use crate::net::{ProxyRequest, ProxyState};
+use crate::net::{Fetched, ProxyRequest, ProxyState};
 use crate::timers::{Task, TimerId};
 use crate::variable::{AudioCache, LastSeen, Replay, RtsTrigger};
 
@@ -63,20 +63,20 @@ impl LoopPace {
     const MAX: f64 = 10_000.0;
     const STEP: f64 = 500.0;
 
-    fn new() -> Self {
+    fn new(now: Instant) -> Self {
         Self {
-            last_adjust: Instant::now(),
+            last_adjust: now,
             failures: 0,
             interval: timeout::LOOP,
         }
     }
 
     /// Record a poll's outcome; false when it brought nothing and is skipped.
-    fn record(&mut self, got: bool) -> bool {
-        if self.last_adjust.elapsed() < Duration::from_secs(2) {
+    fn record(&mut self, got: bool, now: Instant) -> bool {
+        if now.duration_since(self.last_adjust) < Duration::from_secs(2) {
             return true;
         }
-        self.last_adjust = Instant::now();
+        self.last_adjust = now;
         if !got {
             self.failures = (self.failures + 1).min(10);
             self.interval = (self.interval + Self::STEP * f64::from(self.failures)).min(Self::MAX);
@@ -167,7 +167,7 @@ impl DataState {
             asleep: false,
             sleep_timer: None,
             transport_epoch: 0,
-            pace: LoopPace::new(),
+            pace: LoopPace::new(Instant::now()),
             request_counter: 0,
             file_list: Vec::new(),
             file_index: 0,
@@ -302,7 +302,7 @@ fn eew_summary(parsed: &Value, real_now: f64) -> String {
 /// reaches the main thread.
 fn open_streams(
     post: &Post,
-    proxy: &Arc<ProxyState>,
+    proxy: Option<&Arc<ProxyState>>,
     data: &DataState,
     real_now: Arc<dyn Fn() -> f64 + Send + Sync>,
 ) -> SseManager {
@@ -312,14 +312,14 @@ fn open_streams(
         "啟動即時連線：節點 {LB_API}，trem topic {TOPICS}（{}），eew 為 CWA 預警",
         if data.asleep { "休眠：rts 只收有測站觸發的資料" } else { "live" }
     );
-    // Fixture mode never touches the network: the streams stay closed.
-    if fixture::active() {
+    // Fixture mode and tests never touch the network: the streams stay closed.
+    let Some(proxy) = proxy.filter(|_| !fixture::active()) else {
         return SseManager {
             trem: None,
             eew: None,
             background,
         };
-    }
+    };
     let trem_url = {
         let background = Arc::clone(&background);
         Arc::new(move || {
@@ -480,7 +480,7 @@ impl App {
 
     /// Replay frames under `<data>/replay`, named by their time, mean a file replay.
     fn detect_replay(&mut self) {
-        let Some(dir) = crate::paths::data_dir().map(|d| d.join("replay")) else {
+        let Some(dir) = self.host.data_file("replay") else {
             return;
         };
         let Ok(entries) = std::fs::read_dir(&dir) else {
@@ -563,13 +563,10 @@ impl App {
         self.data_state.file_index += 1;
         let epoch = self.data_state.transport_epoch;
         let mode = self.var.play_mode;
-        let post = self.post.clone();
-        self.rt.spawn_blocking(move || {
+        let dir = self.host.data_file("replay");
+        self.host.background(move || {
             let read = || -> Result<FileFrame, String> {
-                let path = crate::paths::data_dir()
-                    .ok_or_else(|| "找不到資料目錄".to_string())?
-                    .join("replay")
-                    .join(&name);
+                let path = dir.ok_or_else(|| "找不到資料目錄".to_string())?.join(&name);
                 let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
                 let json: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
                 Ok(FileFrame {
@@ -579,12 +576,12 @@ impl App {
                 })
             };
             let frame = read();
-            post(Msg::FileFrame {
+            Some(Msg::FileFrame {
                 epoch,
                 mode,
                 name,
                 frame,
-            });
+            })
         });
     }
 
@@ -626,62 +623,48 @@ impl App {
         if self.data_state.polls.len() > 16 {
             self.data_state.polls.remove(0);
         }
-        let proxy = Arc::clone(&self.net);
-        let post = self.post.clone();
         let epoch = self.data_state.transport_epoch;
-        self.rt.spawn(async move {
-            let json = |url: String, ms: u64| {
-                let proxy = Arc::clone(&proxy);
-                async move {
-                    let reply = proxy
-                        .send(ProxyRequest::get(url, ms).no_store())
-                        .await
-                        .ok()?;
-                    if !reply.ok() {
-                        return None;
-                    }
-                    serde_json::from_slice::<Value>(&reply.body).ok()
-                }
+        let mut reqs = vec![
+            ProxyRequest::get(
+                format!("https://{CORE_API}/api/v3/trem/rts{suffix}"),
+                timeout::RTS,
+            ),
+            ProxyRequest::get(
+                format!("https://{CORE_API}/api/v2/eq/eew{suffix}"),
+                timeout::EEW,
+            ),
+        ];
+        if want_intensity {
+            reqs.push(ProxyRequest::get(
+                format!("https://{CORE_API}/api/v3/trem/intensity{suffix}"),
+                timeout::INTENSITY,
+            ));
+        }
+        if want_lpgm {
+            reqs.push(ProxyRequest::get(
+                format!("https://{TREM_ARCHIVE_HOST}/api/v2/trem/lpgm{suffix}"),
+                timeout::LPGM,
+            ));
+        }
+        let reqs = reqs.into_iter().map(ProxyRequest::no_store).collect();
+        self.host.fetch_all(reqs, Some(cancel), move |answers| {
+            let mut json = answers.into_iter().map(|answer| {
+                let reply = answer.ok().filter(Fetched::ok)?;
+                serde_json::from_slice::<Value>(&reply.body).ok()
+            });
+            let rts = json.next().flatten();
+            let eew = json.next().flatten();
+            let intensity = if want_intensity {
+                json.next().flatten()
+            } else {
+                None
             };
-            let requests = async {
-                let rts = json(
-                    format!("https://{CORE_API}/api/v3/trem/rts{suffix}"),
-                    timeout::RTS,
-                );
-                let eew = json(
-                    format!("https://{CORE_API}/api/v2/eq/eew{suffix}"),
-                    timeout::EEW,
-                );
-                let intensity = async {
-                    if want_intensity {
-                        json(
-                            format!("https://{CORE_API}/api/v3/trem/intensity{suffix}"),
-                            timeout::INTENSITY,
-                        )
-                        .await
-                    } else {
-                        None
-                    }
-                };
-                let lpgm = async {
-                    if want_lpgm {
-                        json(
-                            format!("https://{TREM_ARCHIVE_HOST}/api/v2/trem/lpgm{suffix}"),
-                            timeout::LPGM,
-                        )
-                        .await
-                    } else {
-                        None
-                    }
-                };
-                tokio::join!(rts, eew, intensity, lpgm)
+            let lpgm = if want_lpgm {
+                json.next().flatten()
+            } else {
+                None
             };
-            let answered = tokio::select! {
-                () = cancel.cancelled() => return,
-                answered = requests => answered,
-            };
-            let (rts, eew, intensity, lpgm) = answered;
-            post(Msg::Polled {
+            Some(Msg::Polled {
                 epoch,
                 data: Polled {
                     rts: rts
@@ -691,7 +674,7 @@ impl App {
                     intensity: intensity.as_ref().and_then(read_intensity_v1),
                     lpgm,
                 },
-            });
+            })
         });
     }
 
@@ -701,10 +684,11 @@ impl App {
         if epoch != self.data_state.transport_epoch || self.var.play_mode != 2 {
             return;
         }
+        let now = self.timers.now();
         if !self
             .data_state
             .pace
-            .record(data.eew.is_some() || data.rts.is_some())
+            .record(data.eew.is_some() || data.rts.is_some(), now)
         {
             return;
         }
@@ -770,10 +754,10 @@ impl App {
         }
         let offset = self.var.cache.time_offset;
         let real_now = Arc::new(move || chrono::Utc::now().timestamp_millis() as f64 + offset);
-        let _guard = self.rt.enter();
+        let _guard = self.host.rt.enter();
         self.data_state.sse = Some(open_streams(
-            &self.post,
-            &self.net,
+            &self.host.post,
+            self.host.net.as_ref(),
             &self.data_state,
             real_now,
         ));
@@ -789,7 +773,7 @@ impl App {
     /// The machine woke or the network came back.
     pub fn data_network_back(&mut self) {
         if let Some(sse) = &self.data_state.sse {
-            let _guard = self.rt.enter();
+            let _guard = self.host.rt.enter();
             sse.renew();
         }
     }
@@ -846,7 +830,7 @@ impl App {
             self.var.cache.last_data_time = self.var.real_now();
         }
         if let Some(sse) = &self.data_state.sse {
-            let _guard = self.rt.enter();
+            let _guard = self.host.rt.enter();
             sse.set_background(asleep);
         }
     }
@@ -1168,14 +1152,13 @@ mod tests {
 
     #[test]
     fn the_pace_slows_when_nothing_comes_and_eases_back() {
-        let mut pace = LoopPace::new();
+        let start = Instant::now();
+        let mut pace = LoopPace::new(start);
         // Within 2 s of the last adjustment nothing is decided.
-        assert!(pace.record(false));
-        pace.last_adjust = Instant::now() - Duration::from_secs(3);
-        assert!(!pace.record(false));
+        assert!(pace.record(false, start + Duration::from_secs(1)));
+        assert!(!pace.record(false, start + Duration::from_secs(3)));
         assert_eq!(pace.interval, 1500.0);
-        pace.last_adjust = Instant::now() - Duration::from_secs(3);
-        assert!(pace.record(true));
+        assert!(pace.record(true, start + Duration::from_secs(6)));
         assert_eq!(pace.interval, 1000.0);
     }
 

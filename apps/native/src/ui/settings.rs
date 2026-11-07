@@ -534,7 +534,7 @@ impl SettingsView {
         hint: Option<&str>,
         checked: bool,
         preview: Option<&str>,
-        app: &App,
+        app: &mut App,
     ) -> Option<bool> {
         let id = self.id();
         let row = ui.hit(id, Rect::new(rect.x, rect.y, rect.w, rect.h));

@@ -79,7 +79,7 @@ impl App {
     pub fn window_init(&mut self, main_shown: bool) {
         self.window.main_shown = main_shown;
         self.window.main_unavailable = !main_shown;
-        self.window.last_wall_ms = chrono::Utc::now().timestamp_millis();
+        self.window.last_wall_ms = self.var.wall_ms() as i64;
         // Started to the tray: the stream sleeps from the outset.
         if !main_shown {
             self.emit(Event::MainWindowHidden(true));
@@ -90,7 +90,7 @@ impl App {
     /// The 500 ms check, of the state the event loop keeps current. It is also what
     /// notices a machine that slept: the stream's connection may be dead.
     pub fn window_watch(&mut self) {
-        let wall = chrono::Utc::now().timestamp_millis();
+        let wall = self.var.wall_ms() as i64;
         if wall - self.window.last_wall_ms > 10_000 {
             self.data_network_back();
         }

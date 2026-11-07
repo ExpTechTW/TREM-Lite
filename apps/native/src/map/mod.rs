@@ -48,6 +48,8 @@ pub struct MapEngine {
     vector_draw: Vec<TileId>,
     dem_draw: Vec<TileId>,
     clock: Instant,
+    #[cfg(test)]
+    clock_override: Option<f64>,
     dragging: Option<(f64, f64)>,
     last_click: Option<(Instant, f64, f64)>,
     moved_since_down: bool,
@@ -74,6 +76,8 @@ impl MapEngine {
             vector_draw: Vec::new(),
             dem_draw: Vec::new(),
             clock: Instant::now(),
+            #[cfg(test)]
+            clock_override: None,
             dragging: None,
             last_click: None,
             moved_since_down: false,
@@ -81,7 +85,18 @@ impl MapEngine {
         }
     }
 
+    /// A test's clock for flights, in ms.
+    #[cfg(test)]
+    pub fn set_clock(&mut self, now_ms: f64) {
+        self.clock_override = Some(now_ms);
+        self.camera.tick(now_ms);
+    }
+
     fn now_ms(&self) -> f64 {
+        #[cfg(test)]
+        if let Some(ms) = self.clock_override {
+            return ms;
+        }
         self.clock.elapsed().as_secs_f64() * 1000.0
     }
 

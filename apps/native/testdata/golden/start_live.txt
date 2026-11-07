@@ -1,0 +1,11 @@
+    0.0 MapLoad
+    0.0 ReportListUpdate
+    1.0 InternetErrorChange true
+   65.0 = mode=0 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows= unstable=false net=true lock=false cam=121.000,23.520,6.76
+--- requests
+https://static.core.exptech.dev/resource/station
+https://api-1.exptech.dev/api/v1/trem/station
+https://api.core.exptech.dev/api/v2/eq/report?limit=75
+https://api.core.exptech.dev/api/v2/eq/report
+https://api.core.exptech.dev/api/v2/eq/report/115078-2026-1106-120113
+https://api.core.exptech.dev/api/v2/eq/report

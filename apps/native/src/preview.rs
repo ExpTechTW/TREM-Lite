@@ -223,7 +223,8 @@ fn preview_app(
         (f64::from(args.width), f64::from(args.height)),
     );
     let speech = Speech::disabled(post.clone());
-    let app = App::new(rt.handle().clone(), net, post, map, speech);
+    let host = crate::host::Host::live(rt.handle().clone(), post, net);
+    let app = App::new(host, crate::backend::config::load(), map, speech);
     Ok((app, rx))
 }
 
@@ -247,7 +248,7 @@ fn mock_report(
 }
 
 /// preview.tsx's mock state.
-fn apply_preview(app: &mut App, state: &str) {
+pub(crate) fn apply_preview(app: &mut App, state: &str) {
     let real = chrono::Utc::now().timestamp_millis() as f64;
     app.var.cache.time_offset = PREVIEW_NOW - real;
     app.ui.max_intensity = (0, "0級".to_string());
@@ -441,7 +442,9 @@ fn run_shot(
     // The predicted towns need the model: from disk, never fetched in a test.
     if let Some(dir) = crate::paths::local_data_dir().map(|d| d.join("models")) {
         if dir.is_dir() {
-            rt.spawn(crate::backend::ml_intensity::prepare(dir, app.net.client()));
+            if let Some(net) = &app.host.net {
+                rt.spawn(crate::backend::ml_intensity::prepare(dir, net.client()));
+            }
         }
     }
     app.start(true);

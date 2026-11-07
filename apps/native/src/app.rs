@@ -6,7 +6,6 @@ use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::backend::audio::AudioEngine;
 use crate::backend::config::{self, Config};
 use crate::backend::math::EewAreaResult;
 use crate::domain::types::{Area, IntensityReport, RtsData, Station, StationId};
@@ -22,8 +21,8 @@ use crate::features::report::{ReportFetch, ReportState};
 use crate::features::resource::{ResourceState, StationKind};
 use crate::features::rts::RtsState;
 use crate::features::window::{WindowCommand, WindowState};
+use crate::host::Host;
 use crate::map::MapEngine;
-use crate::net::ProxyState;
 use crate::platform::speech::Speech;
 use crate::timers::{Task, Timers};
 use crate::variable::{UiState, Variable};
@@ -91,11 +90,8 @@ pub struct App {
     pub ui: UiState,
     pub config: Config,
     pub map: MapEngine,
-    pub net: Arc<ProxyState>,
-    pub rt: tokio::runtime::Handle,
-    pub post: Post,
+    pub host: Host,
     pub timers: Timers,
-    pub audio: AudioEngine,
     pub speech: Speech,
     /// Asks of the windows, carried out by the event loop.
     pub commands: Vec<WindowCommand>,
@@ -114,6 +110,10 @@ pub struct App {
     pub speech_state: SpeechState,
     pub window: WindowState,
     pub clock_calibrated: Option<Instant>,
+
+    /// Every event, for a test to read.
+    #[cfg(test)]
+    pub trace: Vec<Event>,
 
     micro: Vec<Micro>,
     depth: u32,
@@ -143,14 +143,7 @@ const MODULES: [Module; 15] = [
 ];
 
 impl App {
-    pub fn new(
-        rt: tokio::runtime::Handle,
-        net: Arc<ProxyState>,
-        post: Post,
-        map: MapEngine,
-        speech: Speech,
-    ) -> Self {
-        let config = config::load();
+    pub fn new(host: Host, config: Config, map: MapEngine, speech: Speech) -> Self {
         log::info!(target: "config", "載入設定：{}", config.describe());
         let idle = config.idle_map;
         let auto_zoom = !config.checked("graphics-block-auto-zoom");
@@ -159,11 +152,8 @@ impl App {
             ui: UiState::default(),
             config,
             map,
-            net,
-            rt,
-            post,
+            host,
             timers: Timers::default(),
-            audio: AudioEngine::new(),
             speech,
             commands: Vec::new(),
             dirty: true,
@@ -179,6 +169,8 @@ impl App {
             speech_state: SpeechState::default(),
             window: WindowState::default(),
             clock_calibrated: None,
+            #[cfg(test)]
+            trace: Vec::new(),
             micro: Vec::new(),
             depth: 0,
             failures: HashMap::new(),
@@ -217,6 +209,8 @@ impl App {
     pub fn emit(&mut self, ev: Event) {
         self.depth += 1;
         self.dirty = true;
+        #[cfg(test)]
+        self.trace.push(ev.clone());
         for (name, handler) in MODULES {
             let ran = std::panic::catch_unwind(AssertUnwindSafe(|| handler(self, &ev)));
             if ran.is_err() {
@@ -258,7 +252,7 @@ impl App {
     /// The same failure, logged once a minute with how often it recurred.
     fn failed(&mut self, event: &str, module: &str) {
         let key = format!("{event}|{module}");
-        let now = Instant::now();
+        let now = self.timers.now();
         match self.failures.get_mut(&key) {
             Some((at, again)) if now.duration_since(*at).as_millis() < REPEAT_MS => *again += 1,
             seen => {
@@ -282,8 +276,10 @@ impl App {
         if !diff.is_empty() {
             log::info!(target: "config", "設定變更：{}", diff.join("；"));
         }
-        if let Err(err) = config::save(&next) {
-            log::warn!(target: "config", "設定寫入失敗：{err}");
+        if self.host.persists() {
+            if let Err(err) = config::save(&next) {
+                log::warn!(target: "config", "設定寫入失敗：{err}");
+            }
         }
         self.config = next;
         self.dirty = true;
@@ -291,7 +287,12 @@ impl App {
     }
 
     pub fn reset_config(&mut self) {
-        match config::reset() {
+        let reset = if self.host.persists() {
+            config::reset()
+        } else {
+            Ok(config::defaults())
+        };
+        match reset {
             Ok(next) => {
                 log::info!(target: "config", "所有設定還原為預設值：{}", next.describe());
                 self.config = next;
@@ -312,9 +313,12 @@ impl App {
 
     /// Measure the offset once; a failed or slow measurement keeps the last one.
     pub fn clock_sync(&self) {
-        let client = self.net.client();
-        let post = self.post.clone();
-        self.rt.spawn(async move {
+        let Some(net) = &self.host.net else {
+            return;
+        };
+        let client = net.client();
+        let post = self.host.post.clone();
+        self.host.rt.spawn(async move {
             post(Msg::Ntp(crate::net::ntp::ntp_sync(client).await));
         });
     }
@@ -328,7 +332,7 @@ impl App {
             Ok(r) => {
                 let before = self.var.cache.time_offset;
                 self.var.cache.time_offset = r.offset_ms;
-                self.clock_calibrated = Some(Instant::now());
+                self.clock_calibrated = Some(self.timers.now());
                 log::info!(
                     target: "clock",
                     "校時（{}）：本機時鐘差 {:+.1}ms（上次 {before:.1}ms），來回 {:.1}ms",
@@ -360,7 +364,7 @@ impl App {
         {
             return;
         }
-        let offset = ts * 1000.0 - chrono::Utc::now().timestamp_millis() as f64;
+        let offset = ts * 1000.0 - self.var.wall_ms();
         let before = self.var.cache.time_offset;
         if (offset - before).abs() < 5000.0 {
             return;

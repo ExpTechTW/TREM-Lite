@@ -9,6 +9,9 @@ mod domain;
 mod events;
 
 mod features;
+mod host;
+#[cfg(test)]
+mod testing;
 
 mod map;
 

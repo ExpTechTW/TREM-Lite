@@ -2,7 +2,6 @@
 //! rts.v1 reports, and the older network's decimal ids, which lpgm reports still name.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use crate::app::{App, Msg};
@@ -40,13 +39,11 @@ impl StationKind {
     }
 
     /// Kept as the bytes that arrived: parsed again at the next start.
-    fn cache(self) -> Option<PathBuf> {
-        crate::paths::data_dir().map(|d| {
-            d.join(match self {
-                Self::Current => "cache.stations.csv",
-                Self::Legacy => "cache.station.json",
-            })
-        })
+    fn cache_name(self) -> &'static str {
+        match self {
+            Self::Current => "cache.stations.csv",
+            Self::Legacy => "cache.station.json",
+        }
     }
 
     fn parse(self, text: &str) -> Result<HashMap<StationId, Station>, String> {
@@ -73,8 +70,9 @@ fn text_hash(text: &str) -> u64 {
 impl App {
     pub fn resource_init(&mut self) {
         for kind in [StationKind::Current, StationKind::Legacy] {
-            let cached = kind
-                .cache()
+            let cached = self
+                .host
+                .data_file(kind.cache_name())
                 .and_then(|path| std::fs::read_to_string(path).ok())
                 .and_then(|text| kind.parse(&text).ok())
                 .filter(|list| !list.is_empty())
@@ -93,53 +91,50 @@ impl App {
     /// empty or unreadable answer never replaces the list in hand.
     pub fn resource_fetch(&self) {
         for kind in [StationKind::Current, StationKind::Legacy] {
-            let proxy = Arc::clone(&self.net);
-            let post = self.post.clone();
             let last = Arc::clone(match kind {
                 StationKind::Current => &self.resource.last_current,
                 StationKind::Legacy => &self.resource.last_legacy,
             });
-            self.rt.spawn(async move {
+            let cache = self.host.data_file(kind.cache_name());
+            let req = ProxyRequest::get(kind.url(), timeout::RESOURCE);
+            self.host.fetch(req, move |answer| {
                 let name = kind.name();
-                let reply = match proxy
-                    .send(ProxyRequest::get(kind.url(), timeout::RESOURCE))
-                    .await
-                {
+                let reply = match answer {
                     Ok(reply) if reply.ok() => reply,
                     Ok(reply) => {
                         log::warn!(target: "station", "{name} 取得失敗（HTTP {}），沿用現有的", reply.status);
-                        return;
+                        return None;
                     }
                     Err(err) => {
                         log::warn!(target: "station", "{name} 取得失敗，沿用現有的：{err}");
-                        return;
+                        return None;
                     }
                 };
                 let text = String::from_utf8_lossy(&reply.body).into_owned();
                 let hash = text_hash(&text);
                 if last.lock().is_ok_and(|known| *known == Some(hash)) {
-                    return;
+                    return None;
                 }
                 let list = match kind.parse(&text) {
                     Ok(list) => list,
                     Err(err) => {
                         log::warn!(target: "station", "{name} 解析失敗，沿用現有的：{err}");
-                        return;
+                        return None;
                     }
                 };
                 if list.is_empty() {
                     log::warn!(target: "station", "{name} 上游回空表，沿用現有的");
-                    return;
+                    return None;
                 }
                 if let Ok(mut known) = last.lock() {
                     *known = Some(hash);
                 }
-                if let Some(path) = kind.cache() {
+                if let Some(path) = cache {
                     // A full disk only costs the cache.
-                    let _ = tokio::fs::write(path, text).await;
+                    let _ = std::fs::write(path, text);
                 }
                 log::info!(target: "station", "{name} 更新：{} 站", list.len());
-                post(Msg::StationList { kind, list });
+                Some(Msg::StationList { kind, list })
             });
         }
     }

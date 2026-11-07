@@ -1,0 +1,811 @@
+    0.0 MapLoad
+    0.0 ReportListUpdate
+    0.0 = mode=0 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows= unstable=false net=false lock=false cam=121.000,23.520,6.76
+    1.0 InternetErrorChange true
+    2.0 = replay 115057-2026-0825-150011
+    2.0 DataModeReset
+    2.0 DataRts none
+    2.0 ReplayStateChange active=false report=None
+    2.0 ReportListUpdate
+    2.0 DataModeReset
+    2.0 DataRts none
+    2.0 ReplayStateChange active=true report=Some("115057-2026-0825-150011")
+    2.0 ReportListUpdate
+    2.0   > StopSounds
+    2.0   > StopSpeech
+    2.0   > StopSounds
+    2.0   > StopSpeech
+    3.0 InternetErrorChange false
+    3.0 DataRts t=1787641206000 stations=117 boxes=0 int=0
+    4.0 DataRts t=1787641207000 stations=117 boxes=0 int=0
+    5.0 DataRts t=1787641208000 stations=117 boxes=0 int=0
+    6.0 DataRts t=1787641209000 stations=117 boxes=0 int=0
+    7.0 DataRts t=1787641210000 stations=117 boxes=0 int=0
+    7.0 = mode=2 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=116/0/0 op=1 | max=0 pga=0.95/0 lvl=2 trig=0 rows= unstable=false net=false lock=false cam=121.000,23.520,6.76
+    8.0 DataRts t=1787641211000 stations=116 boxes=0 int=0
+    9.0 DataRts t=1787641212000 stations=117 boxes=0 int=0
+   10.0 DataRts t=1787641213000 stations=117 boxes=0 int=0
+   11.0 DataRts t=1787641214000 stations=117 boxes=0 int=0
+   12.0 DataRts t=1787641215000 stations=117 boxes=0 int=0
+   12.0 = mode=2 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=116/0/0 op=1 | max=0 pga=0.91/0 lvl=2 trig=0 rows= unstable=false net=false lock=false cam=121.000,23.520,6.76
+   13.0 DataRts t=1787641216000 stations=117 boxes=0 int=0
+   14.0 DataRts t=1787641217000 stations=117 boxes=0 int=0
+   15.0 DataRts t=1787641218000 stations=117 boxes=0 int=0
+   16.0 DataRts t=1787641219000 stations=117 boxes=0 int=0
+   17.0 DataRts t=1787641220000 stations=117 boxes=0 int=0
+   17.0 = mode=2 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=116/0/0 op=1 | max=0 pga=1.00/0 lvl=2 trig=0 rows= unstable=false net=false lock=false cam=121.000,23.520,6.76
+   18.0 DataRts t=1787641221000 stations=117 boxes=0 int=0
+   19.0 DataRts t=1787641222000 stations=117 boxes=0 int=0
+   20.0 DataRts t=1787641223000 stations=117 boxes=1 int=1
+   20.0 RtsShindo0
+   20.0 RtsPga1
+   20.0 RtsShindo1
+   20.0   > Enqueue { queue: "shindo", sound: "SHINDO0" }
+   20.0   > Notify 🟩 弱反應 | 請注意今後的資訊。
+   20.0   > Enqueue { queue: "pga", sound: "PGA1" }
+   20.0   > Enqueue { queue: "shindo", sound: "SHINDO1" }
+   20.0   > Notify 🟧 震動檢測 | 請注意今後的資訊。
+   20.0   # HideSettings
+   20.0   # HideSettings
+   20.0   # HideSettings
+   20.0   # FocusMain { critical: false }
+   20.0   # FocusMain { critical: false }
+   20.0   # FocusMain { critical: false }
+   21.0 DataRts t=1787641224000 stations=117 boxes=1 int=1
+   22.0 DataRts t=1787641225000 stations=117 boxes=1 int=1
+   22.0 = mode=2 eew=[] alert=true boxes=1 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=113/0/3 op=1 | max=2 pga=7.15/2 lvl=8 trig=3 rows=臺東縣臺東市2 unstable=false net=false lock=false cam=121.157,22.770,8.00 | trigger=2 臺東縣臺東市
+   23.0 DataRts t=1787641226000 stations=117 boxes=1 int=1
+   24.0 DataRts t=1787641227000 stations=117 boxes=1 int=1
+   25.0 DataRts t=1787641228000 stations=117 boxes=1 int=1
+   25.0 RtsShindo2
+   25.0 EewRelease 1150062#2 status=1 max=5 M5.9 臺東縣近海
+   25.0 EewNewAreaAlert 臺東縣
+   25.0   > Enqueue { queue: "shindo", sound: "SHINDO2" }
+   25.0   > Notify 🟥 強震檢測 | 請注意今後的資訊。
+   25.0   > Enqueue { queue: "eew", sound: "ALERT" }
+   25.0   > Notify 🚨 緊急地震速報 2報 | 15:00 最大預估 5弱 / 臺東縣近海 M5.9 20km
+   25.0   > Speak queue=false 緊急地震速報，臺東縣，慎防強烈搖晃
+   25.0   # HideSettings
+   25.0   # FocusMain { critical: true }
+   25.0   # HideSettings
+   25.0   # FocusMain { critical: true }
+   25.0   # HideSettings
+   25.0   # FocusMain { critical: true }
+   26.0 DataRts t=1787641229000 stations=117 boxes=3 int=3
+   26.0 EewUpdate 1150062#3 status=1 max=5 M6.1 綠島附近
+   26.0   > ClearQueue("update")
+   26.0   > Enqueue { queue: "update", sound: "UPDATE" }
+   26.0   > Notify 🚨 緊急地震速報 3報 | 15:00 最大預估 5弱 / 綠島附近 M6.1 20km
+   27.0 DataRts t=1787641230000 stations=117 boxes=4 int=4
+   27.0 = mode=2 eew=[1150062#3/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/4/3 op=1 | max=4 pga=18.05/3 lvl=16 trig=7 rows=臺東縣臺東市4/臺東縣長濱鄉0/花蓮縣富里鄉0/花蓮縣玉里鎮0 unstable=false net=false lock=false cam=121.294,23.035,8.00 | card=Alert CWA 綠島附近 M6.1 max5
+   28.0 DataRts t=1787641231000 stations=117 boxes=4 int=4
+   28.0 EewUpdate 1150062#4 status=1 max=5 M5.9 臺東縣中部外海
+   28.0   > ClearQueue("update")
+   28.0   > Enqueue { queue: "update", sound: "UPDATE" }
+   28.0   > Notify 🚨 緊急地震速報 4報 | 15:00 最大預估 5弱 / 臺東縣中部外海 M5.9 20km
+   29.0 DataRts t=1787641232000 stations=116 boxes=4 int=4
+   30.0 DataRts t=1787641233000 stations=116 boxes=4 int=4
+   31.0 DataRts t=1787641234000 stations=116 boxes=4 int=4
+   32.0 DataRts t=1787641235000 stations=116 boxes=4 int=4
+   32.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/8 op=1 | max=4 pga=13.47/3 lvl=24 trig=8 rows=臺東縣臺東市4/臺東縣長濱鄉2/花蓮縣富里鄉1/花蓮縣玉里鎮1 unstable=false net=false lock=false cam=121.294,23.049,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   33.0 DataRts t=1787641236000 stations=116 boxes=7 int=7
+   34.0 DataRts t=1787641237000 stations=117 boxes=7 int=8
+   35.0 DataRts t=1787641238000 stations=117 boxes=8 int=9
+   36.0 DataRts t=1787641239000 stations=116 boxes=8 int=9
+   37.0 DataRts t=1787641240000 stations=116 boxes=8 int=9
+   37.0 IntensityRelease 1787641222000 serial=1 max=4 towns=4
+   37.0 DataRts t=1787641240000 stations=116 boxes=8 int=9
+   37.0 ReportListUpdate
+   37.0   > Play("INTENSITY")
+   37.0   > Notify 📨 震度速報 [15:00] | 震度4級 臺東縣
+   37.0   > Speak queue=true 震度速報，震度4，臺東縣
+   37.0   # HideSettings
+   37.0   # FocusMain { critical: true }
+   37.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=2 cross=1 waves=1 towns=4 imarks=4 lmarks=0 rmarks=0+0 dots=13/0/0 op=0.2 | max=4 pga=18.33/3 lvl=35 trig=13 rows=臺東縣4/花蓮縣2/屏東縣1/高雄市1 unstable=false net=false lock=false cam=120.914,23.157,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   38.0 DataRts t=1787641241000 stations=116 boxes=8 int=9
+   39.0 DataRts t=1787641242000 stations=116 boxes=7 int=7
+   40.0 DataRts t=1787641243000 stations=116 boxes=11 int=22
+   41.0 DataRts t=1787641244000 stations=116 boxes=12 int=25
+   42.0 DataRts t=1787641245000 stations=116 boxes=13 int=27
+   42.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=4 imarks=4 lmarks=0 rmarks=0+0 dots=32/0/0 op=0.2 | max=4 pga=6.70/2 lvl=49 trig=32 rows=臺東縣4/花蓮縣2/屏東縣1/高雄市1/臺南市1/南投縣1 unstable=false net=false lock=false cam=121.299,23.045,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   43.0 DataRts t=1787641246000 stations=116 boxes=14 int=29
+   44.0 DataRts t=1787641247000 stations=116 boxes=14 int=32
+   44.5 DataRts t=1787641247000 stations=116 boxes=14 int=32
+   45.0 DataRts t=1787641248000 stations=116 boxes=15 int=34
+   46.0 DataRts t=1787641249000 stations=116 boxes=15 int=35
+   47.0 DataRts t=1787641250000 stations=116 boxes=15 int=37
+   47.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/13/32 op=1 | max=4 pga=4.74/0 lvl=66 trig=45 rows=臺東縣4/花蓮縣2/高雄市2/嘉義縣2/屏東縣1/臺南市1 unstable=false net=false lock=false cam=120.915,23.051,7.23 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   48.0 DataRts t=1787641251000 stations=116 boxes=15 int=37
+   49.0 DataRts t=1787641252000 stations=116 boxes=15 int=39
+   50.0 DataRts t=1787641253000 stations=116 boxes=15 int=40
+   51.0 DataRts t=1787641254000 stations=116 boxes=16 int=43
+   52.0 DataRts t=1787641255000 stations=116 boxes=16 int=43
+   52.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/11/41 op=1 | max=4 pga=5.51/2 lvl=86 trig=52 rows=臺東縣4/花蓮縣2/屏東縣2/高雄市2/嘉義縣2/臺南市1 unstable=false net=false lock=false cam=120.895,23.258,6.98 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   53.0 DataRts t=1787641256000 stations=116 boxes=16 int=43
+   54.0 DataRts t=1787641257000 stations=116 boxes=16 int=44
+   55.0 DataRts t=1787641258000 stations=116 boxes=16 int=45
+   56.0 DataRts t=1787641259000 stations=116 boxes=17 int=46
+   57.0 DataRts t=1787641260000 stations=116 boxes=17 int=46
+   57.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/9/47 op=1 | max=4 pga=5.46/2 lvl=140 trig=56 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.895,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   58.0 DataRts t=1787641261000 stations=116 boxes=17 int=46
+   59.0 DataRts t=1787641262000 stations=117 boxes=17 int=46
+   60.0 DataRts t=1787641263000 stations=117 boxes=17 int=46
+   61.0 DataRts t=1787641264000 stations=117 boxes=17 int=46
+   62.0 DataRts t=1787641265000 stations=117 boxes=17 int=46
+   62.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/6/50 op=1 | max=4 pga=14.21/3 lvl=178 trig=56 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.895,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   63.0 DataRts t=1787641266000 stations=117 boxes=18 int=49
+   64.0 DataRts t=1787641267000 stations=117 boxes=18 int=49
+   65.0 DataRts t=1787641268000 stations=117 boxes=18 int=49
+   66.0 DataRts t=1787641269000 stations=117 boxes=18 int=49
+   67.0 DataRts t=1787641270000 stations=116 boxes=18 int=49
+   67.0 IntensityUpdate 1787641222000 serial=2 max=4 towns=40
+   67.0 DataRts t=1787641270000 stations=116 boxes=18 int=49
+   67.0 ReportListUpdate
+   67.0   > Play("INTENSITY")
+   67.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=40 imarks=40 lmarks=0 rmarks=0+0 dots=60/0/0 op=0.2 | max=4 pga=13.13/3 lvl=194 trig=60 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.915,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   68.0 DataRts t=1787641271000 stations=116 boxes=18 int=49
+   69.0 DataRts t=1787641272000 stations=116 boxes=18 int=49
+   70.0 DataRts t=1787641273000 stations=116 boxes=18 int=49
+   71.0 DataRts t=1787641274000 stations=117 boxes=18 int=49
+   72.0 DataRts t=1787641275000 stations=117 boxes=18 int=49
+   72.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=40 imarks=40 lmarks=0 rmarks=0+0 dots=60/0/0 op=0.2 | max=4 pga=11.86/3 lvl=202 trig=60 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.905,23.073,7.29 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   73.0 DataRts t=1787641276000 stations=117 boxes=18 int=49
+   74.0 DataRts t=1787641277000 stations=117 boxes=18 int=49
+   74.5 DataRts t=1787641277000 stations=117 boxes=18 int=49
+   75.0 DataRts t=1787641278000 stations=117 boxes=18 int=51
+   76.0 DataRts t=1787641279000 stations=117 boxes=18 int=51
+   77.0 DataRts t=1787641280000 stations=117 boxes=18 int=51
+   77.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/63 op=1 | max=4 pga=8.50/3 lvl=209 trig=63 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.915,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   78.0 DataRts t=1787641281000 stations=117 boxes=18 int=51
+   79.0 DataRts t=1787641282000 stations=117 boxes=18 int=51
+   80.0 DataRts t=1787641283000 stations=117 boxes=18 int=51
+   81.0 DataRts t=1787641284000 stations=117 boxes=18 int=51
+   82.0 DataRts t=1787641285000 stations=117 boxes=18 int=51
+   82.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/63 op=1 | max=4 pga=9.28/3 lvl=224 trig=63 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.915,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   83.0 DataRts t=1787641286000 stations=117 boxes=18 int=51
+   84.0 DataRts t=1787641287000 stations=117 boxes=18 int=51
+   85.0 DataRts t=1787641288000 stations=117 boxes=18 int=51
+   86.0 DataRts t=1787641289000 stations=117 boxes=18 int=51
+   87.0 DataRts t=1787641290000 stations=116 boxes=18 int=51
+   87.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/63 op=1 | max=3 pga=5.97/2 lvl=228 trig=63 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.915,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   88.0 DataRts t=1787641291000 stations=116 boxes=18 int=51
+   89.0 DataRts t=1787641292000 stations=116 boxes=18 int=51
+   90.0 DataRts t=1787641293000 stations=117 boxes=18 int=51
+   91.0 DataRts t=1787641294000 stations=117 boxes=18 int=51
+   92.0 DataRts t=1787641295000 stations=117 boxes=18 int=51
+   92.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/63 op=1 | max=3 pga=4.01/0 lvl=231 trig=63 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/花蓮縣2/屏東縣2 unstable=false net=false lock=false cam=120.915,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   93.0 DataRts t=1787641296000 stations=117 boxes=18 int=51
+   94.0 DataRts t=1787641297000 stations=117 boxes=18 int=51
+   95.0 DataRts t=1787641298000 stations=117 boxes=18 int=51
+   96.0 DataRts t=1787641299000 stations=117 boxes=18 int=51
+   97.0 DataRts t=1787641300000 stations=117 boxes=18 int=51
+   97.0 IntensityUpdate 1787641222000 serial=3 max=4 towns=52
+   97.0 DataRts t=1787641300000 stations=117 boxes=18 int=51
+   97.0 ReportListUpdate
+   97.0   > Play("INTENSITY")
+   97.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=52 imarks=52 lmarks=0 rmarks=0+0 dots=63/0/0 op=0.2 | max=3 pga=6.23/2 lvl=228 trig=63 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.915,23.468,6.77 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+   98.0 DataRts t=1787641301000 stations=117 boxes=18 int=51
+   99.0 DataRts t=1787641302000 stations=117 boxes=18 int=51
+  100.0 DataRts t=1787641303000 stations=117 boxes=20 int=54
+  101.0 DataRts t=1787641304000 stations=117 boxes=20 int=54
+  102.0 DataRts t=1787641305000 stations=117 boxes=20 int=54
+  102.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=52 imarks=52 lmarks=0 rmarks=0+0 dots=66/0/0 op=0.2 | max=3 pga=3.76/0 lvl=223 trig=66 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.889,23.498,6.80 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  103.0 DataRts t=1787641306000 stations=117 boxes=20 int=54
+  104.0 DataRts t=1787641307000 stations=117 boxes=20 int=55
+  104.5 DataRts t=1787641307000 stations=117 boxes=20 int=55
+  105.0 DataRts t=1787641308000 stations=117 boxes=20 int=55
+  106.0 DataRts t=1787641309000 stations=117 boxes=20 int=55
+  107.0 DataRts t=1787641310000 stations=117 boxes=20 int=57
+  107.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/70 op=1 | max=3 pga=4.09/0 lvl=216 trig=70 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.979,23.567,6.68 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  108.0 DataRts t=1787641311000 stations=117 boxes=20 int=57
+  109.0 DataRts t=1787641312000 stations=117 boxes=20 int=57
+  110.0 DataRts t=1787641313000 stations=117 boxes=20 int=55
+  111.0 DataRts t=1787641314000 stations=117 boxes=20 int=55
+  112.0 DataRts t=1787641315000 stations=117 boxes=20 int=55
+  112.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/1/67 op=1 | max=3 pga=2.10/0 lvl=210 trig=68 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.915,23.567,6.68 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  113.0 DataRts t=1787641316000 stations=117 boxes=20 int=55
+  114.0 DataRts t=1787641317000 stations=117 boxes=20 int=55
+  115.0 DataRts t=1787641318000 stations=117 boxes=20 int=55
+  116.0 DataRts t=1787641319000 stations=117 boxes=20 int=55
+  117.0 DataRts t=1787641320000 stations=117 boxes=20 int=55
+  117.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/3/65 op=1 | max=3 pga=1.93/0 lvl=187 trig=68 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.915,23.567,6.68 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  118.0 DataRts t=1787641321000 stations=117 boxes=20 int=55
+  119.0 DataRts t=1787641322000 stations=117 boxes=20 int=55
+  120.0 DataRts t=1787641323000 stations=117 boxes=20 int=55
+  121.0 DataRts t=1787641324000 stations=117 boxes=20 int=55
+  122.0 DataRts t=1787641325000 stations=117 boxes=20 int=55
+  122.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/6/62 op=1 | max=3 pga=1.06/0 lvl=161 trig=68 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.915,23.567,6.68 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  123.0 DataRts t=1787641326000 stations=117 boxes=19 int=54
+  124.0 DataRts t=1787641327000 stations=117 boxes=19 int=54
+  125.0 DataRts t=1787641328000 stations=117 boxes=19 int=54
+  126.0 DataRts t=1787641329000 stations=117 boxes=19 int=54
+  127.0 DataRts t=1787641330000 stations=117 boxes=19 int=53
+  127.0 IntensityUpdate 1787641222000 serial=4 max=4 towns=56
+  127.0 DataRts t=1787641330000 stations=117 boxes=19 int=53
+  127.0 ReportListUpdate
+  127.0   > Play("INTENSITY")
+  127.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=56 imarks=56 lmarks=0 rmarks=0+0 dots=66/0/0 op=0.2 | max=3 pga=1.16/0 lvl=138 trig=66 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.915,23.879,6.98 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  128.0 DataRts t=1787641331000 stations=117 boxes=19 int=53
+  129.0 DataRts t=1787641332000 stations=117 boxes=19 int=53
+  130.0 DataRts t=1787641333000 stations=116 boxes=19 int=53
+  131.0 DataRts t=1787641334000 stations=116 boxes=19 int=53
+  132.0 DataRts t=1787641335000 stations=116 boxes=18 int=52
+  132.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=56 imarks=56 lmarks=0 rmarks=0+0 dots=64/0/0 op=0.2 | max=3 pga=1.08/0 lvl=114 trig=64 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.889,23.596,6.71 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  133.0 DataRts t=1787641336000 stations=117 boxes=18 int=52
+  134.0 DataRts t=1787641337000 stations=117 boxes=18 int=51
+  134.5 DataRts t=1787641337000 stations=117 boxes=18 int=51
+  135.0 DataRts t=1787641338000 stations=117 boxes=17 int=50
+  136.0 DataRts t=1787641339000 stations=117 boxes=17 int=50
+  137.0 DataRts t=1787641340000 stations=117 boxes=16 int=49
+  137.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/20/39 op=1 | max=3 pga=1.05/0 lvl=95 trig=59 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.895,23.879,6.98 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  138.0 DataRts t=1787641341000 stations=117 boxes=16 int=49
+  139.0 DataRts t=1787641342000 stations=117 boxes=16 int=49
+  140.0 DataRts t=1787641343000 stations=117 boxes=15 int=47
+  141.0 DataRts t=1787641344000 stations=117 boxes=15 int=47
+  142.0 DataRts t=1787641345000 stations=117 boxes=14 int=46
+  142.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/21/34 op=1 | max=3 pga=1.10/0 lvl=75 trig=55 rows=臺東縣4/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.895,23.879,6.98 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  143.0 DataRts t=1787641346000 stations=117 boxes=13 int=44
+  144.0 DataRts t=1787641347000 stations=117 boxes=13 int=42
+  145.0 DataRts t=1787641348000 stations=117 boxes=12 int=40
+  146.0 DataRts t=1787641349000 stations=117 boxes=12 int=40
+  147.0 DataRts t=1787641350000 stations=115 boxes=12 int=37
+  147.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/16/30 op=1 | max=3 pga=1.09/0 lvl=61 trig=46 rows=臺東縣3/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.895,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  148.0 DataRts t=1787641351000 stations=116 boxes=12 int=37
+  149.0 DataRts t=1787641352000 stations=115 boxes=12 int=35
+  150.0 DataRts t=1787641353000 stations=115 boxes=12 int=32
+  151.0 DataRts t=1787641354000 stations=115 boxes=12 int=30
+  152.0 DataRts t=1787641355000 stations=117 boxes=12 int=30
+  152.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/14/23 op=1 | max=3 pga=0.94/0 lvl=45 trig=37 rows=臺東縣3/高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2 unstable=false net=false lock=false cam=120.895,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  153.0 DataRts t=1787641356000 stations=117 boxes=12 int=30
+  154.0 DataRts t=1787641357000 stations=117 boxes=12 int=29
+  155.0 DataRts t=1787641358000 stations=117 boxes=12 int=29
+  156.0 DataRts t=1787641359000 stations=117 boxes=12 int=27
+  157.0 DataRts t=1787641360000 stations=116 boxes=12 int=27
+  157.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/15/18 op=1 | max=2 pga=0.89/0 lvl=34 trig=33 rows=高雄市3/南投縣3/嘉義市3/苗栗縣3/臺東縣2/花蓮縣2 unstable=false net=false lock=false cam=120.895,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  158.0 DataRts t=1787641361000 stations=116 boxes=12 int=27
+  159.0 DataRts t=1787641362000 stations=116 boxes=11 int=24
+  160.0 DataRts t=1787641363000 stations=116 boxes=11 int=24
+  161.0 DataRts t=1787641364000 stations=116 boxes=11 int=24
+  162.0 DataRts t=1787641365000 stations=117 boxes=11 int=23
+  162.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/16/12 op=1 | max=2 pga=0.99/0 lvl=26 trig=28 rows=高雄市3/南投縣3/嘉義市3/苗栗縣3/臺東縣2/花蓮縣2 unstable=false net=false lock=false cam=120.895,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  163.0 DataRts t=1787641366000 stations=117 boxes=11 int=22
+  164.0 DataRts t=1787641367000 stations=117 boxes=11 int=21
+  165.0 DataRts t=1787641368000 stations=117 boxes=11 int=20
+  166.0 DataRts t=1787641369000 stations=117 boxes=10 int=19
+  167.0 DataRts t=1787641370000 stations=117 boxes=10 int=19
+  167.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/12/9 op=1 | max=2 pga=0.89/0 lvl=21 trig=21 rows=高雄市3/南投縣3/嘉義市3/苗栗縣3/臺東縣2/花蓮縣2 unstable=false net=false lock=false cam=120.870,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  168.0 DataRts t=1787641371000 stations=116 boxes=10 int=18
+  169.0 DataRts t=1787641372000 stations=116 boxes=10 int=17
+  170.0 DataRts t=1787641373000 stations=117 boxes=9 int=13
+  171.0 DataRts t=1787641374000 stations=117 boxes=9 int=13
+  172.0 DataRts t=1787641375000 stations=117 boxes=9 int=13
+  172.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/4/9 op=1 | max=1 pga=0.92/0 lvl=15 trig=13 rows=高雄市3/南投縣3/嘉義市3/苗栗縣3/花蓮縣2/臺南市2 unstable=false net=false lock=false cam=120.870,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  173.0 DataRts t=1787641376000 stations=117 boxes=9 int=12
+  174.0 DataRts t=1787641377000 stations=117 boxes=9 int=12
+  175.0 DataRts t=1787641378000 stations=116 boxes=9 int=12
+  176.0 DataRts t=1787641379000 stations=116 boxes=8 int=11
+  177.0 DataRts t=1787641380000 stations=116 boxes=8 int=11
+  177.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/5/6 op=1 | max=1 pga=0.85/0 lvl=12 trig=11 rows=高雄市3/苗栗縣3/花蓮縣2/臺南市2/南投縣2/嘉義市2 unstable=false net=false lock=false cam=120.870,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  178.0 DataRts t=1787641381000 stations=116 boxes=8 int=11
+  179.0 DataRts t=1787641382000 stations=117 boxes=7 int=10
+  180.0 DataRts t=1787641383000 stations=117 boxes=6 int=9
+  181.0 DataRts t=1787641384000 stations=117 boxes=5 int=8
+  182.0 DataRts t=1787641385000 stations=117 boxes=5 int=8
+  182.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/3/5 op=1 | max=1 pga=0.87/0 lvl=9 trig=8 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/南投縣2/嘉義市2 unstable=false net=false lock=false cam=120.926,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  183.0 DataRts t=1787641386000 stations=117 boxes=5 int=8
+  184.0 DataRts t=1787641387000 stations=117 boxes=5 int=8
+  185.0 DataRts t=1787641388000 stations=117 boxes=5 int=8
+  186.0 DataRts t=1787641389000 stations=117 boxes=5 int=8
+  187.0 DataRts t=1787641390000 stations=117 boxes=5 int=8
+  187.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/5/3 op=1 | max=1 pga=0.97/0 lvl=7 trig=8 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/嘉義縣2 unstable=false net=false lock=false cam=120.926,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  188.0 DataRts t=1787641391000 stations=117 boxes=5 int=7
+  192.0 DataRts none
+  192.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=1 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=120.885,23.908,7.02 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  193.0 DataRts none
+  194.0 DataRts none
+  195.0 DataRts none
+  196.0 DataRts none
+  197.0 DataRts none
+  197.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  198.0 DataRts none
+  199.0 DataRts none
+  200.0 DataRts none
+  201.0 DataRts none
+  202.0 DataRts none
+  202.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  203.0 DataRts none
+  204.0 DataRts none
+  205.0 DataRts none
+  206.0 DataRts none
+  207.0 DataRts none
+  207.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  208.0 DataRts none
+  209.0 DataRts none
+  210.0 DataRts none
+  211.0 DataRts none
+  212.0 DataRts none
+  212.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  213.0 DataRts none
+  214.0 DataRts none
+  215.0 DataRts none
+  216.0 DataRts none
+  217.0 DataRts none
+  217.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  218.0 DataRts none
+  219.0 DataRts none
+  220.0 DataRts none
+  221.0 DataRts none
+  222.0 DataRts none
+  222.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  223.0 DataRts none
+  224.0 DataRts none
+  225.0 DataRts none
+  226.0 DataRts none
+  227.0 DataRts none
+  227.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  228.0 DataRts none
+  229.0 DataRts none
+  230.0 DataRts none
+  231.0 DataRts none
+  232.0 DataRts none
+  232.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  233.0 DataRts none
+  234.0 DataRts none
+  235.0 DataRts none
+  236.0 DataRts none
+  237.0 DataRts none
+  237.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  238.0 DataRts none
+  239.0 DataRts none
+  240.0 DataRts none
+  241.0 DataRts none
+  242.0 DataRts none
+  242.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  243.0 DataRts none
+  244.0 DataRts none
+  245.0 DataRts none
+  246.0 DataRts none
+  247.0 DataRts none
+  247.0 = mode=2 eew=[1150062#4/1] alert=true boxes=0 eqwaves=0 cross=1 waves=1 towns=368 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00 | card=Alert CWA 臺東縣中部外海 M5.9 max5
+  248.0 DataRts none
+  249.0 DataRts none
+  250.0 DataRts none
+  251.0 DataRts none
+  252.0 DataRts none
+  252.0 EewEnd 1150062#4 status=1 max=5 M5.9 臺東縣中部外海
+  252.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.380,22.760,8.00
+  253.0 DataRts none
+  254.0 DataRts none
+  255.0 DataRts none
+  256.0 DataRts none
+  257.0 DataRts none
+  257.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  258.0 DataRts none
+  259.0 DataRts none
+  260.0 DataRts none
+  261.0 DataRts none
+  262.0 DataRts none
+  262.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  263.0 DataRts none
+  264.0 DataRts none
+  265.0 DataRts none
+  266.0 DataRts none
+  267.0 DataRts none
+  267.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  268.0 DataRts none
+  269.0 DataRts none
+  270.0 DataRts none
+  271.0 DataRts none
+  272.0 DataRts none
+  272.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  273.0 DataRts none
+  274.0 DataRts none
+  275.0 DataRts none
+  276.0 DataRts none
+  277.0 DataRts none
+  277.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  278.0 DataRts none
+  279.0 DataRts none
+  280.0 DataRts none
+  281.0 DataRts none
+  282.0 DataRts none
+  282.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  283.0 DataRts none
+  284.0 DataRts none
+  285.0 DataRts none
+  286.0 DataRts none
+  287.0 DataRts none
+  287.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  288.0 DataRts none
+  289.0 DataRts none
+  290.0 DataRts none
+  291.0 DataRts none
+  292.0 DataRts none
+  292.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  293.0 DataRts none
+  294.0 DataRts none
+  295.0 DataRts none
+  296.0 DataRts none
+  297.0 DataRts none
+  297.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  298.0 DataRts none
+  299.0 DataRts none
+  300.0 DataRts none
+  301.0 DataRts none
+  302.0 DataRts none
+  302.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  303.0 DataRts none
+  304.0 DataRts none
+  305.0 DataRts none
+  306.0 DataRts none
+  307.0 DataRts none
+  307.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  308.0 DataRts none
+  309.0 DataRts none
+  310.0 DataRts none
+  311.0 DataRts none
+  312.0 DataRts none
+  312.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  313.0 DataRts none
+  314.0 DataRts none
+  315.0 DataRts none
+  316.0 DataRts none
+  317.0 DataRts none
+  317.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  318.0 DataRts none
+  319.0 DataRts none
+  320.0 DataRts none
+  321.0 DataRts none
+  322.0 DataRts none
+  322.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  323.0 DataRts none
+  324.0 DataRts none
+  325.0 DataRts none
+  326.0 DataRts none
+  327.0 DataRts none
+  327.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  328.0 DataRts none
+  329.0 DataRts none
+  330.0 DataRts none
+  331.0 DataRts none
+  332.0 DataRts none
+  332.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  333.0 DataRts none
+  334.0 DataRts none
+  335.0 DataRts none
+  336.0 DataRts none
+  337.0 DataRts none
+  337.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  338.0 DataRts none
+  339.0 DataRts none
+  340.0 DataRts none
+  341.0 DataRts none
+  342.0 DataRts none
+  342.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  343.0 DataRts none
+  344.0 DataRts none
+  345.0 DataRts none
+  346.0 DataRts none
+  347.0 DataRts none
+  347.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  348.0 DataRts none
+  349.0 DataRts none
+  350.0 DataRts none
+  351.0 DataRts none
+  352.0 DataRts none
+  352.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  353.0 DataRts none
+  354.0 DataRts none
+  355.0 DataRts none
+  356.0 DataRts none
+  357.0 DataRts none
+  357.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  358.0 DataRts none
+  359.0 DataRts none
+  360.0 DataRts none
+  361.0 DataRts none
+  362.0 DataRts none
+  362.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  363.0 DataRts none
+  364.0 DataRts none
+  365.0 DataRts none
+  366.0 DataRts none
+  367.0 DataRts none
+  367.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  368.0 DataRts none
+  369.0 DataRts none
+  370.0 DataRts none
+  371.0 DataRts none
+  372.0 DataRts none
+  372.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  373.0 DataRts none
+  374.0 DataRts none
+  375.0 DataRts none
+  376.0 DataRts none
+  377.0 DataRts none
+  377.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  378.0 DataRts none
+  379.0 DataRts none
+  380.0 DataRts none
+  381.0 DataRts none
+  382.0 DataRts none
+  382.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  383.0 DataRts none
+  384.0 DataRts none
+  385.0 DataRts none
+  386.0 DataRts none
+  387.0 DataRts none
+  387.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  388.0 DataRts none
+  389.0 DataRts none
+  390.0 DataRts none
+  391.0 DataRts none
+  392.0 DataRts none
+  392.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  393.0 DataRts none
+  394.0 DataRts none
+  395.0 DataRts none
+  396.0 DataRts none
+  397.0 DataRts none
+  397.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  398.0 DataRts none
+  399.0 DataRts none
+  400.0 DataRts none
+  401.0 DataRts none
+  402.0 DataRts none
+  402.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  403.0 DataRts none
+  404.0 DataRts none
+  405.0 DataRts none
+  406.0 DataRts none
+  407.0 DataRts none
+  407.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  408.0 DataRts none
+  409.0 DataRts none
+  410.0 DataRts none
+  411.0 DataRts none
+  412.0 DataRts none
+  412.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  413.0 DataRts none
+  414.0 DataRts none
+  415.0 DataRts none
+  416.0 DataRts none
+  417.0 DataRts none
+  417.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  418.0 DataRts none
+  419.0 DataRts none
+  420.0 DataRts none
+  421.0 DataRts none
+  422.0 DataRts none
+  422.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  423.0 DataRts none
+  424.0 DataRts none
+  425.0 DataRts none
+  426.0 DataRts none
+  427.0 DataRts none
+  427.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  428.0 DataRts none
+  429.0 DataRts none
+  430.0 DataRts none
+  431.0 DataRts none
+  432.0 DataRts none
+  432.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  433.0 DataRts none
+  434.0 DataRts none
+  435.0 DataRts none
+  436.0 DataRts none
+  437.0 DataRts none
+  437.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  438.0 DataRts none
+  439.0 DataRts none
+  440.0 DataRts none
+  441.0 DataRts none
+  442.0 DataRts none
+  442.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  443.0 DataRts none
+  444.0 DataRts none
+  445.0 DataRts none
+  446.0 DataRts none
+  447.0 DataRts none
+  447.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  448.0 DataRts none
+  449.0 DataRts none
+  450.0 DataRts none
+  451.0 DataRts none
+  452.0 DataRts none
+  452.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  453.0 DataRts none
+  454.0 DataRts none
+  455.0 DataRts none
+  456.0 DataRts none
+  457.0 DataRts none
+  457.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  458.0 DataRts none
+  459.0 DataRts none
+  460.0 DataRts none
+  461.0 DataRts none
+  462.0 DataRts none
+  462.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  463.0 DataRts none
+  464.0 DataRts none
+  465.0 DataRts none
+  466.0 DataRts none
+  467.0 DataRts none
+  467.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  468.0 DataRts none
+  469.0 DataRts none
+  470.0 DataRts none
+  471.0 DataRts none
+  472.0 DataRts none
+  472.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  473.0 DataRts none
+  474.0 DataRts none
+  475.0 DataRts none
+  476.0 DataRts none
+  477.0 DataRts none
+  477.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  478.0 DataRts none
+  479.0 DataRts none
+  480.0 DataRts none
+  481.0 DataRts none
+  482.0 DataRts none
+  482.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  483.0 DataRts none
+  484.0 DataRts none
+  485.0 DataRts none
+  486.0 DataRts none
+  487.0 DataRts none
+  487.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  488.0 DataRts none
+  489.0 DataRts none
+  490.0 DataRts none
+  491.0 DataRts none
+  492.0 DataRts none
+  492.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  493.0 DataRts none
+  494.0 DataRts none
+  495.0 DataRts none
+  496.0 DataRts none
+  497.0 DataRts none
+  497.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  498.0 DataRts none
+  499.0 DataRts none
+  500.0 DataRts none
+  501.0 DataRts none
+  502.0 DataRts none
+  502.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  503.0 DataRts none
+  504.0 DataRts none
+  505.0 DataRts none
+  506.0 DataRts none
+  507.0 DataRts none
+  507.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  508.0 DataRts none
+  509.0 DataRts none
+  510.0 DataRts none
+  511.0 DataRts none
+  512.0 DataRts none
+  512.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  513.0 DataRts none
+  514.0 DataRts none
+  515.0 DataRts none
+  516.0 DataRts none
+  517.0 DataRts none
+  517.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  518.0 DataRts none
+  519.0 DataRts none
+  520.0 DataRts none
+  521.0 DataRts none
+  522.0 DataRts none
+  522.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  523.0 DataRts none
+  524.0 DataRts none
+  525.0 DataRts none
+  526.0 DataRts none
+  527.0 DataRts none
+  527.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  528.0 DataRts none
+  529.0 DataRts none
+  530.0 DataRts none
+  531.0 DataRts none
+  532.0 DataRts none
+  532.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  533.0 DataRts none
+  534.0 DataRts none
+  535.0 DataRts none
+  536.0 DataRts none
+  537.0 DataRts none
+  537.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  538.0 DataRts none
+  539.0 DataRts none
+  540.0 DataRts none
+  541.0 DataRts none
+  542.0 DataRts none
+  542.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  543.0 DataRts none
+  544.0 DataRts none
+  545.0 DataRts none
+  546.0 DataRts none
+  547.0 DataRts none
+  547.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  548.0 DataRts none
+  549.0 DataRts none
+  550.0 DataRts none
+  551.0 DataRts none
+  552.0 DataRts none
+  552.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  553.0 DataRts none
+  554.0 DataRts none
+  555.0 DataRts none
+  556.0 DataRts none
+  557.0 DataRts none
+  557.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  558.0 DataRts none
+  559.0 DataRts none
+  560.0 DataRts none
+  561.0 DataRts none
+  562.0 DataRts none
+  562.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  563.0 DataRts none
+  564.0 DataRts none
+  565.0 DataRts none
+  566.0 DataRts none
+  567.0 DataRts none
+  567.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  568.0 DataRts none
+  569.0 DataRts none
+  570.0 DataRts none
+  571.0 DataRts none
+  572.0 DataRts none
+  572.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  573.0 DataRts none
+  574.0 DataRts none
+  575.0 DataRts none
+  576.0 DataRts none
+  577.0 DataRts none
+  577.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  578.0 DataRts none
+  579.0 DataRts none
+  580.0 DataRts none
+  581.0 DataRts none
+  582.0 DataRts none
+  582.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  583.0 DataRts none
+  584.0 DataRts none
+  585.0 DataRts none
+  586.0 DataRts none
+  587.0 DataRts none
+  587.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  588.0 DataRts none
+  589.0 DataRts none
+  590.0 DataRts none
+  591.0 DataRts none
+  592.0 DataRts none
+  592.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  593.0 DataRts none
+  594.0 DataRts none
+  595.0 DataRts none
+  596.0 DataRts none
+  597.0 DataRts none
+  597.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  598.0 DataRts none
+  599.0 DataRts none
+  600.0 DataRts none
+  601.0 DataRts none
+  602.0 DataRts none
+  602.0 = mode=2 eew=[] alert=true boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows=苗栗縣3/花蓮縣2/高雄市2/臺南市2/嘉義市2/臺中市2 unstable=false net=false lock=false cam=121.000,23.520,6.76
+  603.0 DataRts none
+  604.0 IntensityEnd 1787641222000 serial=4 max=4 towns=56
+  604.0 ReportListUpdate
+  604.0 DataModeReset
+  604.0 DataRts none
+  604.0 ReplayStateChange active=false report=None
+  604.0 ReportListUpdate
+  604.0   > StopSounds
+  604.0   > StopSpeech
+  605.0 InternetErrorChange true
+  607.0 = mode=0 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows= unstable=false net=true lock=false cam=121.000,23.520,6.76
+  612.0 = mode=0 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows= unstable=false net=true lock=false cam=121.000,23.520,6.76
+  617.0 = mode=0 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows= unstable=false net=true lock=false cam=121.000,23.520,6.76
+  622.0 = mode=0 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows= unstable=false net=true lock=false cam=121.000,23.520,6.76
+  627.0 = mode=0 eew=[] alert=false boxes=0 eqwaves=0 cross=0 waves=0 towns=0 imarks=0 lmarks=0 rmarks=0+0 dots=0/0/0 op=1 | max=0 pga=0.00/0 lvl=0 trig=0 rows= unstable=false net=true lock=false cam=121.000,23.520,6.76

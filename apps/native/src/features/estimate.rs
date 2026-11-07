@@ -52,18 +52,17 @@ impl App {
         let id = data.id.clone();
         let serial = data.serial;
         let reported = data.eq.area.clone();
-        let post = self.post.clone();
         // The model takes tens of milliseconds: off the main thread.
-        self.rt.spawn_blocking(move || {
+        self.host.background(move || {
             let started = Instant::now();
             let result = crate::backend::math::eew_area_intensity(lat, lon, depth, mag);
-            post(Msg::EewArea {
+            Some(Msg::EewArea {
                 id,
                 serial,
                 reported,
                 result,
                 elapsed: started.elapsed(),
-            });
+            })
         });
     }
 

@@ -123,12 +123,24 @@ pub struct Variable {
     /// Decimal-id stations of the older network, still named by lpgm reports.
     pub legacy_station: Option<Stations>,
     pub cache: Cache,
+    /// A test's wall clock, in place of the system's.
+    #[cfg(test)]
+    pub wall_override: Option<f64>,
 }
 
 impl Variable {
+    /// The local clock in ms, uncalibrated.
+    pub fn wall_ms(&self) -> f64 {
+        #[cfg(test)]
+        if let Some(ms) = self.wall_override {
+            return ms;
+        }
+        chrono::Utc::now().timestamp_millis() as f64
+    }
+
     /// Calibrated wall-clock time in ms.
     pub fn real_now(&self) -> f64 {
-        chrono::Utc::now().timestamp_millis() as f64 + self.cache.time_offset
+        self.wall_ms() + self.cache.time_offset
     }
 
     /// Replay-aware standard time: the replay's clock during a replay.

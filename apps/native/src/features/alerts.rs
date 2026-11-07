@@ -9,6 +9,7 @@ use crate::domain::region;
 use crate::domain::types::{EewData, LpgmData, ReportListItem, StationId};
 use crate::domain::utils::{chinese_time, extract_location, format_timestamp, int_to_string};
 use crate::events::Event;
+use crate::host::Output;
 use crate::timers::Task;
 
 /// How long an update is shown when there is no speech to wait for.
@@ -65,29 +66,27 @@ impl App {
         on
     }
 
-    fn enqueue(&self, queue: &str, sound: &str) {
+    fn enqueue(&mut self, queue: &str, sound: &str) {
         log::info!(target: "audio", "音效排入 {queue} 佇列：{sound}");
-        // Fixture data is a test: logged, not heard.
-        if !crate::net::fixture::active() {
-            self.audio.enqueue(queue, sound);
-        }
+        self.host.output(Output::Enqueue {
+            queue: queue.to_string(),
+            sound: sound.to_string(),
+        });
     }
 
-    fn play(&self, sound: &str) {
+    fn play(&mut self, sound: &str) {
         log::info!(target: "audio", "播放音效：{sound}");
-        if !crate::net::fixture::active() {
-            self.audio.play_direct(sound);
-        }
+        self.host.output(Output::Play(sound.to_string()));
     }
 
-    pub fn audio_stop_all(&self) {
+    pub fn audio_stop_all(&mut self) {
         log::info!(target: "audio", "停止所有音效（播放中與排隊中的）");
-        self.audio.stop_all();
+        self.host.output(Output::StopSounds);
     }
 
-    pub fn audio_preview(&self, sound: &str) {
+    pub fn audio_preview(&mut self, sound: &str) {
         log::info!(target: "audio", "試聽音效：{sound}");
-        self.audio.preview(sound);
+        self.host.output(Output::Preview(sound.to_string()));
     }
 
     pub fn audio_on(&mut self, ev: &Event) {
@@ -108,7 +107,7 @@ impl App {
             }
             Event::EewUpdate(_) => {
                 log::debug!(target: "audio", "清空 update 佇列裡還沒播的音效");
-                self.audio.clear("update");
+                self.host.output(Output::ClearQueue("update".to_string()));
                 if self.sfx("sound-effects-Update") {
                     self.enqueue("update", "UPDATE");
                 }
@@ -155,21 +154,12 @@ impl App {
     // ---- Notifications ----------------------------------------------------
 
     /// Supplementary: a denied permission must not affect the alerts.
-    fn notify(&self, title: String, body: String) {
+    fn notify(&mut self, title: String, body: String) {
         log::info!(target: "notify", "系統通知：{title}｜{}", body.replace('\n', " "));
-        if crate::net::fixture::active() {
-            return;
-        }
-        // Its own thread: a system that never answers strands only this notification.
-        let spawned = std::thread::Builder::new()
-            .name("notify".into())
-            .spawn(move || crate::platform::notify::send(&title, &body));
-        if let Err(err) = spawned {
-            log::warn!(target: "notify", "系統通知送不出去：{err}");
-        }
+        self.host.output(Output::Notify { title, body });
     }
 
-    fn eew_notice(&self, data: &EewData) {
+    fn eew_notice(&mut self, data: &EewData) {
         let kind = if data.status == 1 {
             "🚨 緊急地震速報"
         } else {
@@ -188,7 +178,7 @@ impl App {
         );
     }
 
-    fn intensity_notice(&self, id: f64, max: i32, area: &crate::domain::types::Area) {
+    fn intensity_notice(&mut self, id: f64, max: i32, area: &crate::domain::types::Area) {
         if self.var.cache.intensity_max >= max {
             return;
         }
@@ -288,8 +278,12 @@ impl App {
 
     // ---- Speech -----------------------------------------------------------
 
+    fn speech_available(&self) -> bool {
+        self.speech.available() || self.host.records()
+    }
+
     fn speech_enabled(&self) -> bool {
-        self.speech.available() && self.config.checked("other-tts")
+        self.speech_available() && self.config.checked("other-tts")
     }
 
     fn speak(&mut self, text: &str, queue: bool, end: SpeechEnd) {
@@ -297,7 +291,7 @@ impl App {
             log::debug!(
                 target: "speech",
                 "語音{}，不念：{text}",
-                if self.speech.available() { "設定關閉" } else { "在這個環境無法使用" }
+                if self.speech_available() { "設定關閉" } else { "在這個環境無法使用" }
             );
             return;
         }
@@ -306,12 +300,17 @@ impl App {
             "語音{}：{text}",
             if queue { "" } else { "（插隊，先停掉正在念的）" }
         );
+        self.host.output(Output::Speak {
+            text: text.to_string(),
+            queue,
+        });
         self.speech.speak(text, queue, end);
     }
 
     /// Drop what is being said and what is queued, at a live/replay boundary.
     pub fn speech_stop(&mut self) {
         log::info!(target: "speech", "停止語音（念到一半的與排隊中的）");
+        self.host.output(Output::StopSpeech);
         self.speech.stop();
     }
 

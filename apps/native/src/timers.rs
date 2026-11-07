@@ -45,9 +45,21 @@ pub struct Timers {
     heap: BinaryHeap<Reverse<(Instant, TimerId)>>,
     items: HashMap<TimerId, Item>,
     next: TimerId,
+    /// A test's clock: time moves only when the test says.
+    #[cfg(test)]
+    pub virtual_now: Option<Instant>,
 }
 
 impl Timers {
+    /// Now, as the timers count it.
+    pub fn now(&self) -> Instant {
+        #[cfg(test)]
+        if let Some(now) = self.virtual_now {
+            return now;
+        }
+        Instant::now()
+    }
+
     pub fn timeout(&mut self, ms: f64, task: Task) -> TimerId {
         self.add(ms, task, false)
     }
@@ -60,7 +72,7 @@ impl Timers {
         let wait = Duration::from_secs_f64(ms.max(0.0) / 1000.0);
         let id = self.next;
         self.next += 1;
-        let due = Instant::now() + wait;
+        let due = self.now() + wait;
         self.items.insert(
             id,
             Item {

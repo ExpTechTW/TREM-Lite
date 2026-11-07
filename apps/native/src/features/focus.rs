@@ -51,12 +51,11 @@ impl App {
         if self.focus.pending.is_some() {
             return;
         }
-        let wait = self
-            .focus
-            .last_focus
-            .map_or(0.0, |at| FOCUS_GAP_MS - at.elapsed().as_secs_f64() * 1000.0);
+        let wait = self.focus.last_focus.map_or(0.0, |at| {
+            FOCUS_GAP_MS - self.timers.now().duration_since(at).as_secs_f64() * 1000.0
+        });
         if wait <= 0.0 {
-            self.focus.last_focus = Some(Instant::now());
+            self.focus.last_focus = Some(self.timers.now());
             self.focus_now();
             return;
         }
@@ -65,7 +64,7 @@ impl App {
 
     pub fn focus_pending_fired(&mut self) {
         self.focus.pending = None;
-        self.focus.last_focus = Some(Instant::now());
+        self.focus.last_focus = Some(self.timers.now());
         self.focus_now();
     }
 

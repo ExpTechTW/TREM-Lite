@@ -241,8 +241,8 @@ impl App {
 
     pub fn loop_init(&mut self) {
         self.timers.interval(1000.0, Task::LoopInternet);
-        // Fixture mode never touches the network.
-        if !crate::net::fixture::active() {
+        // Fixture mode and tests never touch the network.
+        if self.host.online() {
             self.clock_sync();
             self.timers.interval(600_000.0, Task::ClockSync);
         }

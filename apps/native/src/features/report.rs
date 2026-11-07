@@ -2,7 +2,6 @@
 //! (features/report/report.ts, features/replay/replay.ts).
 
 use std::rc::Rc;
-use std::sync::Arc;
 
 use crate::app::{App, Msg};
 use crate::backend::config::IdleMap;
@@ -67,9 +66,7 @@ fn report_key(r: &ReportListItem) -> String {
     format!("{}|{}|{}|{}|{}", r.time, r.lat, r.lon, r.depth, r.mag)
 }
 
-fn cache_file() -> Option<std::path::PathBuf> {
-    crate::paths::data_dir().map(|d| d.join("cache.report.json"))
-}
+const CACHE_FILE: &str = "cache.report.json";
 
 impl App {
     fn remember(&mut self, r: &ReportListItem) {
@@ -81,10 +78,9 @@ impl App {
     }
 
     fn report_fetch(&self, url: String, purpose: ReportFetch) {
-        let proxy = Arc::clone(&self.net);
-        let post = self.post.clone();
-        self.rt.spawn(async move {
-            let text = match proxy.send(ProxyRequest::get(url.clone(), timeout::REPORT)).await {
+        let req = ProxyRequest::get(url.clone(), timeout::REPORT);
+        self.host.fetch(req, move |answer| {
+            let text = match answer {
                 Ok(reply) if reply.ok() => {
                     Some(String::from_utf8_lossy(&reply.body).into_owned())
                 }
@@ -97,7 +93,7 @@ impl App {
                     None
                 }
             };
-            post(Msg::ReportText { purpose, text });
+            Some(Msg::ReportText { purpose, text })
         });
     }
 
@@ -308,9 +304,10 @@ impl App {
         self.report.latest_full.clone_from(&list);
         self.apply_visible_list(&list);
         self.emit(Event::ReportListUpdate);
-        if let Some(path) = cache_file() {
-            self.rt.spawn_blocking(move || {
+        if let Some(path) = self.host.data_file(CACHE_FILE) {
+            self.host.background(move || {
                 let _ = std::fs::write(path, text);
+                None
             });
         }
 
@@ -442,7 +439,9 @@ impl App {
 
     pub fn report_init(&mut self) {
         // Cold start: the last list at once, the fetch replaces it.
-        let cached = cache_file()
+        let cached = self
+            .host
+            .data_file(CACHE_FILE)
             .and_then(|path| std::fs::read_to_string(path).ok())
             .and_then(|text| serde_json::from_str::<Vec<ReportListItem>>(&text).ok());
         if let Some(list) = cached.filter(|list| !list.is_empty()) {

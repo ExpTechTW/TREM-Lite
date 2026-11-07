@@ -290,7 +290,6 @@ pub fn reset() -> Result<Config, String> {
 }
 
 /// For headless runs: the defaults, without touching the disk.
-#[cfg(test)]
 pub fn defaults() -> Config {
     Config::from_value(&default_value())
 }

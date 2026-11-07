@@ -218,7 +218,8 @@ pub fn run(
         (1280.0, 815.0),
     );
     let speech = Speech::new(post.clone());
-    let app = App::new(rt.handle().clone(), net, post.clone(), map, speech);
+    let host = crate::host::Host::live(rt.handle().clone(), post.clone(), net);
+    let app = App::new(host, crate::backend::config::load(), map, speech);
     let mut runner = Runner {
         gpu,
         app,
