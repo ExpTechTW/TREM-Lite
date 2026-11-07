@@ -22,17 +22,17 @@ use super::sound::{preempts, volume_for, QUEUES};
 /// The 11 bundled clips, embedded straight into the binary (~245 KB total).
 fn sound_bytes(name: &str) -> Option<&'static [u8]> {
     let bytes: &'static [u8] = match name {
-        "ALERT" => include_bytes!("../../../../packages/core/static/audio/ALERT.mp3"),
-        "EEW" => include_bytes!("../../../../packages/core/static/audio/EEW.mp3"),
-        "UPDATE" => include_bytes!("../../../../packages/core/static/audio/UPDATE.mp3"),
-        "PGA1" => include_bytes!("../../../../packages/core/static/audio/PGA1.mp3"),
-        "PGA2" => include_bytes!("../../../../packages/core/static/audio/PGA2.mp3"),
-        "SHINDO0" => include_bytes!("../../../../packages/core/static/audio/SHINDO0.mp3"),
-        "SHINDO1" => include_bytes!("../../../../packages/core/static/audio/SHINDO1.mp3"),
-        "SHINDO2" => include_bytes!("../../../../packages/core/static/audio/SHINDO2.mp3"),
-        "INTENSITY" => include_bytes!("../../../../packages/core/static/audio/INTENSITY.mp3"),
-        "REPORT" => include_bytes!("../../../../packages/core/static/audio/REPORT.mp3"),
-        "TSUNAMI" => include_bytes!("../../../../packages/core/static/audio/TSUNAMI.mp3"),
+        "ALERT" => include_bytes!("../../assets/audio/ALERT.mp3"),
+        "EEW" => include_bytes!("../../assets/audio/EEW.mp3"),
+        "UPDATE" => include_bytes!("../../assets/audio/UPDATE.mp3"),
+        "PGA1" => include_bytes!("../../assets/audio/PGA1.mp3"),
+        "PGA2" => include_bytes!("../../assets/audio/PGA2.mp3"),
+        "SHINDO0" => include_bytes!("../../assets/audio/SHINDO0.mp3"),
+        "SHINDO1" => include_bytes!("../../assets/audio/SHINDO1.mp3"),
+        "SHINDO2" => include_bytes!("../../assets/audio/SHINDO2.mp3"),
+        "INTENSITY" => include_bytes!("../../assets/audio/INTENSITY.mp3"),
+        "REPORT" => include_bytes!("../../assets/audio/REPORT.mp3"),
+        "TSUNAMI" => include_bytes!("../../assets/audio/TSUNAMI.mp3"),
         _ => return None,
     };
     Some(bytes)

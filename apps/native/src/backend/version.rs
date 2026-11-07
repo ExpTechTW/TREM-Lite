@@ -1,6 +1,5 @@
-//! The name a build goes by — tool/release/version.sh's `label` — read back
-//! from the semver it was stamped with (packages/core/src/lib/version.ts is
-//! the same rule for the webview):
+//! The name a build goes by — the release `label` — read back from the semver it was
+//! stamped with (the TS app on `main` reads it the same way):
 //!
 //!   26.1.0         → 26.1     a release
 //!   26.1.2         → 26.1.2   a patch release

@@ -128,7 +128,7 @@ pub fn text_hash(text: &str) -> u64 {
 
 // ---- Travel times -------------------------------------------------------------
 
-static TIME_BIN: &[u8] = include_bytes!("../../../../packages/core/src/data/time.bin");
+static TIME_BIN: &[u8] = include_bytes!("../../assets/data/time.bin");
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct PsWaveDist {

@@ -26,13 +26,15 @@ use std::time::Duration;
 
 use sha2::{Digest, Sha256};
 
-/// The file's name, in the web build (packages/core/static/models) and here.
+/// The file's name, as published and as kept on disk.
 const FILE: &str = "intensity_ml_v1.onnx";
 /// Where it is fetched from, in order: the web build on GitHub Pages, then the
-/// repository's copy through jsDelivr.
-const SOURCES: [&str; 2] = [
+/// repository's copy through jsDelivr, where `main` keeps it now and where this
+/// app keeps it (assets/models) once it is on `main`.
+const SOURCES: [&str; 3] = [
     "https://exptechtw.github.io/TREM-Lite/models/intensity_ml_v1.onnx",
     "https://cdn.jsdelivr.net/gh/ExpTechTW/TREM-Lite@main/packages/core/static/models/intensity_ml_v1.onnx",
+    "https://cdn.jsdelivr.net/gh/ExpTechTW/TREM-Lite@main/apps/native/assets/models/intensity_ml_v1.onnx",
 ];
 /// The file's SHA-256. Anything else — a truncated download, an error page, a
 /// different model — is not used.
@@ -838,8 +840,7 @@ pub fn build_for_bench(onnx: &[u8]) -> Result<Model, String> {
 /// Tests read the repository's copy instead of downloading it.
 #[cfg(test)]
 pub fn load_for_tests() -> &'static Model {
-    const ONNX: &[u8] =
-        include_bytes!("../../../../packages/core/static/models/intensity_ml_v1.onnx");
+    const ONNX: &[u8] = include_bytes!("../../assets/models/intensity_ml_v1.onnx");
     assert!(sha256_matches(ONNX), "the model in the repository changed");
     MODEL.get_or_init(|| parse_model(ONNX).and_then(|g| compile(&g)).unwrap())
 }

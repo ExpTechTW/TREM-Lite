@@ -3,6 +3,7 @@
 
 #[cfg(test)]
 mod bench;
+mod data;
 mod pins;
 mod render;
 mod scenarios;

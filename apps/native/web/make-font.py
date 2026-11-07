@@ -19,14 +19,13 @@ import sys
 from fontTools.ttLib import TTFont
 
 NATIVE = pathlib.Path(__file__).resolve().parent.parent
-REPO = NATIVE.parent.parent
 OUT = NATIVE / "assets/fonts/web"
 
 
 def app_text() -> set:
     chars = set()
     files = list((NATIVE / "src").rglob("*.rs")) + [NATIVE / "assets/default.yml"]
-    files += list((REPO / "packages/core/src/data").glob("*.json"))
+    files += list((NATIVE / "assets/data").glob("*.json"))
     for path in files:
         chars |= set(path.read_text(encoding="utf-8"))
     chars |= {chr(c) for c in TTFont(NATIVE / "assets/fonts/NotoSansTC.ttf").getBestCmap()}

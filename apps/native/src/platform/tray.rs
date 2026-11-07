@@ -11,7 +11,7 @@ pub enum TrayCommand {
     Quit,
 }
 
-const ICON_PNG: &[u8] = include_bytes!("../../../desktop/src-tauri/icons/32x32.png");
+const ICON_PNG: &[u8] = include_bytes!("../../assets/icons/32x32.png");
 
 fn icon_rgba() -> Option<(Vec<u8>, u32, u32)> {
     let image = image::load_from_memory_with_format(ICON_PNG, image::ImageFormat::Png).ok()?;

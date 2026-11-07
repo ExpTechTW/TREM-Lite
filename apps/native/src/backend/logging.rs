@@ -7,8 +7,8 @@
 //! 時整理等於沒整理。
 //!
 //! 用標準的 `log` 門面（`log::info!` 等），writer 自己寫，格式與 Tauri 版相同；
-//! 自訂 target 沿用它前端的模組名（`sse`、`eew`…）。網頁版沒有檔案系統，同樣的
-//! 格式與規則改存 localStorage（packages/core/src/lib/logStore.ts）。
+//! 自訂 target 沿用它前端的模組名（`sse`、`eew`…）。瀏覽器版沒有檔案系統，同樣的
+//! 格式與等級規則寫到開發者工具的 console。
 //!
 //! 寫入的等級：本程式（本 crate 的模組與自訂 target）到 DEBUG，相依套件到 INFO。
 

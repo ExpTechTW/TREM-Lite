@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 cargo build --release
 
 app="target/release/TREM-Lite Native.app"
-icon="../desktop/src-tauri/icons/icon.icns"
+icon="assets/icons/icon.icns"
 version="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)"
 
 rm -rf "$app"

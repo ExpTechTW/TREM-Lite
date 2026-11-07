@@ -6,8 +6,8 @@ use std::sync::{Mutex, OnceLock};
 
 use super::bindata::{self, BoxFeature, Town};
 
-static REGION_BIN: &[u8] = include_bytes!("../../../../packages/core/src/data/region.bin");
-static BOX_BIN: &[u8] = include_bytes!("../../../../packages/core/src/data/box.bin");
+static REGION_BIN: &[u8] = include_bytes!("../../assets/data/region.bin");
+static BOX_BIN: &[u8] = include_bytes!("../../assets/data/box.bin");
 
 struct Region {
     towns: Vec<Town>,

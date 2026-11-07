@@ -14,13 +14,12 @@ use serde::Serialize;
 
 use crate::backend::ml_intensity;
 
-// Shared compact binary produced by scripts/encode-data.mjs (also decoded by the
-// frontend, packages/core/src/lib/bindata.ts). Single source of truth — the old
-// duplicated src-tauri/region.json is gone. Format per region.bin:
+// Compact binary encoded from assets/data/region.json; the test `encoded_data` keeps the
+// two in step (UPDATE_GOLDEN=1 re-encodes). Format per region.bin:
 //   varint version | varint numCities
 //   per city: varint nameLen + utf8 | varint numTowns
 //   per town: varint nameLen + utf8 | varint code | f64 lat | f64 lon
-const REGION_BIN: &[u8] = include_bytes!("../../../../packages/core/src/data/region.bin");
+const REGION_BIN: &[u8] = include_bytes!("../../assets/data/region.bin");
 
 struct Town {
     code: i64,

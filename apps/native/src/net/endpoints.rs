@@ -13,8 +13,7 @@
 //! at least twice as fast. Staying put is the point — every move is a chance of
 //! drift.
 //!
-//! The web build has no Rust side and does the same in
-//! `packages/core/src/lib/http/regions.ts`. The two tables must agree.
+//! A browser asks the address it is given: routing is the desktop's.
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

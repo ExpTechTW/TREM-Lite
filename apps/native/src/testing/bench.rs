@@ -55,8 +55,7 @@ fn bench_cpu_work() {
         n += 0.001;
         crate::backend::math::eew_area_intensity(22.8 + n, 121.3, 20.0, 5.9)
     });
-    let onnx: &[u8] =
-        include_bytes!("../../../../packages/core/static/models/intensity_ml_v1.onnx");
+    let onnx: &[u8] = include_bytes!("../../assets/models/intensity_ml_v1.onnx");
     time("ML model parse + compile", 3, || {
         crate::backend::ml_intensity::build_for_bench(onnx)
     });
