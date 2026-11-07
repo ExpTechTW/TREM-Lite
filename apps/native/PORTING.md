@@ -116,11 +116,11 @@ town 的 feature id 來自屬性 `CODE`），DEM `.../terrain/{z}/{x}/{y}.png`�
 
 ## 進度
 
-- [ ] R1 繪圖核心：crate、gpu、quad/text/image、截圖模式
-- [ ] R2 後端：config、logging、http、cache、endpoints、ntp、math、ml_intensity、audio、awake、version
-- [ ] R3 地圖引擎：相機、圖磚、切割、DEM、圖層、互動
-- [ ] R4 資料與功能：types、events、data、rts、eew、box、cross、estimate、focus、intensity、lpgm、report、replay、loop、log
-- [ ] R5 主畫面 UI：overlays、PiP、預覽狀態
-- [ ] R6 設定視窗
-- [ ] R7 平台：視窗生命週期、系統匣、單一實例、開機啟動、Dock、通知、語音、更新
-- [ ] R8 打包與驗收
+- [x] R1 繪圖核心：crate、gpu、quad/text/image、截圖模式
+- [x] R2 後端：config、logging、http、cache、endpoints、ntp、math、ml_intensity、audio、awake、version
+- [x] R3 地圖引擎：相機、圖磚、切割、DEM、圖層、互動
+- [x] R4 資料與功能：types、events、data、rts、eew、box、cross、estimate、focus、intensity、lpgm、report、replay、loop、log
+- [x] R5 主畫面 UI：overlays、PiP、預覽狀態
+- [x] R6 設定視窗
+- [x] R7 平台：視窗生命週期、系統匣、單一實例、開機啟動、Dock、通知、語音、更新
+- [x] R8 打包與驗收

@@ -47,7 +47,8 @@ struct VsOut {
 
 @vertex
 fn vs_main(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VsOut {
-    let inst = instances[ii];
+    // Field by field, here and in the fragment shaders: `let inst = instances[i]` would copy
+    // all 224 bytes per invocation to use a few of them.
     // Two triangles, y down in pixel space: (0,0) (1,0) (0,1) (0,1) (1,0) (1,1).
     var corner = vec2f(0.0, 0.0);
     if vi == 1u || vi == 4u || vi == 5u {
@@ -56,14 +57,16 @@ fn vs_main(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
     if vi == 2u || vi == 3u || vi == 5u {
         corner.y = 1.0;
     }
-    let px = inst.quad.xy + corner * inst.quad.zw;
+    let quad = instances[ii].quad;
+    let uv = instances[ii].uv;
+    let px = quad.xy + corner * quad.zw;
     let ndc = vec2f(
         px.x / globals.screen.x * 2.0 - 1.0,
         1.0 - px.y / globals.screen.y * 2.0,
     );
     var out: VsOut;
     out.pos = vec4f(ndc, 0.0, 1.0);
-    out.uv = mix(inst.uv.xy, inst.uv.zw, corner);
+    out.uv = mix(uv.xy, uv.zw, corner);
     out.index = ii;
     return out;
 }
@@ -100,18 +103,18 @@ fn gradient(local: vec2f, half_size: vec2f, c0: vec4f, c1: vec4f, angle: f32) ->
     return mix(c0, c1, clamp(t * 0.5 + 0.5, 0.0, 1.0));
 }
 
-fn clip_coverage(px: vec2f, inst: Instance) -> f32 {
-    let clip = inst.clip;
+fn clip_coverage(px: vec2f, index: u32) -> f32 {
+    let clip = instances[index].clip;
     if clip.z <= 0.0 || clip.w <= 0.0 {
         return 0.0;
     }
     let center = clip.xy + clip.zw * 0.5;
     let sd = sd_round_box(px - center, clip.zw * 0.5, vec4f(0.0, 0.0, 0.0, 0.0));
     var cov = aa(sd);
-    let round_box = inst.round_box;
+    let round_box = instances[index].round_box;
     if round_box.z > 0.0 && round_box.w > 0.0 {
         let rc = round_box.xy + round_box.zw * 0.5;
-        let rsd = sd_round_box(px - rc, round_box.zw * 0.5, inst.round_radii);
+        let rsd = sd_round_box(px - rc, round_box.zw * 0.5, instances[index].round_radii);
         cov = cov * aa(rsd);
     }
     return cov;
@@ -125,29 +128,37 @@ fn over(dst_rgb: vec3f, dst_a: f32, src_rgb: vec3f, src_a: f32) -> vec4f {
 
 @fragment
 fn fs_rect(in: VsOut) -> @location(0) vec4f {
-    let inst = instances[in.index];
     let px = in.pos.xy;
-    let rect = inst.rect;
+    let rect = instances[in.index].rect;
+    let params = instances[in.index].params;
+    let shadow = instances[in.index].shadow;
+    let border = instances[in.index].border;
     let center = rect.xy + rect.zw * 0.5;
     let half_size = rect.zw * 0.5;
     let local = px - center;
-    let radii = inst.radii;
+    let radii = instances[in.index].radii;
     let sd_outer = sd_round_box(local, half_size, radii);
 
-    let border_w = inst.params.x;
+    let border_w = params.x;
     let inner_half = max(half_size - vec2f(border_w, border_w), vec2f(0.0, 0.0));
     let inner_radii = max(radii - vec4f(border_w, border_w, border_w, border_w), vec4f(0.0, 0.0, 0.0, 0.0));
     let sd_inner = sd_round_box(local, inner_half, inner_radii);
 
     let fill_cov = aa(sd_outer);
     let border_cov = select(0.0, fill_cov * (1.0 - aa(sd_inner)), border_w > 0.001);
-    let fill = gradient(local, half_size, inst.color0, inst.color1, inst.params.y);
+    let fill = gradient(
+        local,
+        half_size,
+        instances[in.index].color0,
+        instances[in.index].color1,
+        params.y,
+    );
 
     var shadow_a = 0.0;
-    if inst.shadow.a > 0.0 {
-        let blur = inst.params.z;
-        let spread = inst.params.w;
-        let off = inst.shadow_off.xy;
+    if shadow.a > 0.0 {
+        let blur = params.z;
+        let spread = params.w;
+        let off = instances[in.index].shadow_off.xy;
         let shadow_half = max(half_size + vec2f(spread, spread), vec2f(0.0, 0.0));
         let shadow_radii = max(radii + vec4f(spread, spread, spread, spread), vec4f(0.0, 0.0, 0.0, 0.0));
         let sd_shadow = sd_round_box(local - off, shadow_half, shadow_radii);
@@ -158,34 +169,34 @@ fn fs_rect(in: VsOut) -> @location(0) vec4f {
             let sigma = max(blur * 0.5, 0.001);
             shadow_a = clamp(0.5 * erfc_approx(sd_shadow / (sigma * 1.41421356)), 0.0, 1.0);
         }
-        shadow_a = shadow_a * inst.shadow.a;
+        shadow_a = shadow_a * shadow.a;
     }
 
-    var acc = over(vec3f(0.0, 0.0, 0.0), 0.0, inst.shadow.rgb, shadow_a);
+    var acc = over(vec3f(0.0, 0.0, 0.0), 0.0, shadow.rgb, shadow_a);
     acc = over(acc.rgb, acc.a, fill.rgb, fill.a * fill_cov);
-    acc = over(acc.rgb, acc.a, inst.border.rgb, inst.border.a * border_cov);
+    acc = over(acc.rgb, acc.a, border.rgb, border.a * border_cov);
 
-    let clip_cov = clip_coverage(px, inst);
+    let clip_cov = clip_coverage(px, in.index);
     return vec4f(acc.rgb * clip_cov, acc.a * clip_cov);
 }
 
 @fragment
 fn fs_text(in: VsOut) -> @location(0) vec4f {
-    let inst = instances[in.index];
+    let tint = instances[in.index].tint;
     // Blending happens in gamma space, which thins text. Browsers and CoreText counter it
     // with a contrast curve on coverage; this is the same idea, in one exponent.
     let cov = pow(textureSample(tex, tex_sampler, in.uv).r, 0.72);
-    let clip_cov = clip_coverage(in.pos.xy, inst);
-    let a = cov * inst.tint.a * clip_cov;
-    return vec4f(inst.tint.rgb * a, a);
+    let clip_cov = clip_coverage(in.pos.xy, in.index);
+    let a = cov * tint.a * clip_cov;
+    return vec4f(tint.rgb * a, a);
 }
 
 @fragment
 fn fs_image(in: VsOut) -> @location(0) vec4f {
-    let inst = instances[in.index];
+    let tint = instances[in.index].tint;
     let texel = textureSample(tex, tex_sampler, in.uv);
-    let clip_cov = clip_coverage(in.pos.xy, inst);
-    let rgb = texel.rgb * inst.tint.rgb;
-    let a = texel.a * inst.tint.a * clip_cov;
+    let clip_cov = clip_coverage(in.pos.xy, in.index);
+    let rgb = texel.rgb * tint.rgb;
+    let a = texel.a * tint.a * clip_cov;
     return vec4f(rgb * a, a);
 }

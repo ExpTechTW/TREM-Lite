@@ -124,6 +124,45 @@ impl Gpu {
     }
 }
 
+impl Gpu {
+    /// The usages for a buffer rewritten every frame.
+    pub fn dynamic_usage(&self, usage: wgpu::BufferUsages) -> wgpu::BufferUsages {
+        if self.writes_in_place() {
+            usage | wgpu::BufferUsages::MAP_WRITE
+        } else {
+            usage | wgpu::BufferUsages::COPY_DST
+        }
+    }
+
+    fn writes_in_place(&self) -> bool {
+        self.device
+            .features()
+            .contains(wgpu::Features::MAPPABLE_PRIMARY_BUFFERS)
+    }
+
+    /// Write a buffer made with [`Self::dynamic_usage`]. In place where the memory is shared,
+    /// waiting for a frame still using it; a queued copy elsewhere.
+    pub fn write_dynamic(&self, buffer: &wgpu::Buffer, bytes: &[u8]) {
+        if bytes.is_empty() {
+            return;
+        }
+        if !self.writes_in_place() {
+            self.queue.write_buffer(buffer, 0, bytes);
+            return;
+        }
+        let slice = buffer.slice(..bytes.len() as u64);
+        slice.map_async(wgpu::MapMode::Write, |_| {});
+        if let Err(err) = self.device.poll(wgpu::PollType::wait_indefinitely()) {
+            log::warn!("等 GPU 完成時出錯：{err}");
+        }
+        match slice.get_mapped_range_mut() {
+            Ok(mut range) => range.copy_from_slice(bytes),
+            Err(err) => log::warn!("緩衝區寫不進去：{err}"),
+        }
+        buffer.unmap();
+    }
+}
+
 impl GpuSurface {
     pub fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
         if width == 0 || height == 0 {
@@ -207,9 +246,18 @@ fn open_device(adapter: &wgpu::Adapter) -> Result<(wgpu::Device, wgpu::Queue), S
     } else {
         supported
     };
+    // Metal's memory is shared with the CPU, so per-frame data can be written in place. A
+    // copy would need a blit encoder, and on Apple GPUs the first one in a while makes the
+    // driver hold about 160 MB more until the blits stop for two seconds. Measured on an
+    // M4 Max in a plain Metal program: a render encoder holds 243 MB, a blit encoder 160.
+    let required_features = if adapter.get_info().backend == wgpu::Backend::Metal {
+        adapter.features() & wgpu::Features::MAPPABLE_PRIMARY_BUFFERS
+    } else {
+        wgpu::Features::empty()
+    };
     let desc = wgpu::DeviceDescriptor {
         label: Some("trem-lite"),
-        required_features: wgpu::Features::empty(),
+        required_features,
         required_limits: limits,
         experimental_features: wgpu::ExperimentalFeatures::disabled(),
         memory_hints: wgpu::MemoryHints::MemoryUsage,

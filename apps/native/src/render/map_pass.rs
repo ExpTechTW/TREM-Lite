@@ -88,7 +88,7 @@ impl DynBuffer {
         Self {
             buffer: None,
             capacity: 0,
-            usage: usage | wgpu::BufferUsages::COPY_DST,
+            usage,
             label,
         }
     }
@@ -103,13 +103,13 @@ impl DynBuffer {
             self.buffer = Some(gpu.device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some(self.label),
                 size: capacity,
-                usage: self.usage,
+                usage: gpu.dynamic_usage(self.usage),
                 mapped_at_creation: false,
             }));
             self.capacity = capacity;
         }
         if let Some(buffer) = &self.buffer {
-            gpu.queue.write_buffer(buffer, 0, bytes);
+            gpu.write_dynamic(buffer, bytes);
         }
     }
 }
@@ -417,7 +417,7 @@ impl MapPass {
         let globals = gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("map-globals"),
             size: std::mem::size_of::<Globals>() as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: gpu.dynamic_usage(wgpu::BufferUsages::UNIFORM),
             mapped_at_creation: false,
         });
         let align = u64::from(gpu.device.limits().min_uniform_buffer_offset_alignment);
@@ -425,7 +425,7 @@ impl MapPass {
         let draws = gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("map-draws"),
             size: draw_stride * MAX_DRAWS as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: gpu.dynamic_usage(wgpu::BufferUsages::UNIFORM),
             mapped_at_creation: false,
         });
         let lookup = gpu.device.create_texture(&wgpu::TextureDescriptor {
@@ -754,9 +754,8 @@ impl MapPass {
         } = *frame;
         let width = (camera.width * dpr) as f32;
         let height = (camera.height * dpr) as f32;
-        gpu.queue.write_buffer(
+        gpu.write_dynamic(
             &self.globals,
-            0,
             bytemuck::bytes_of(&Globals {
                 viewport: [width, height],
                 dpr: dpr as f32,
@@ -875,8 +874,7 @@ impl MapPass {
 
         let used = self.draw_count * self.draw_stride as usize;
         if used > 0 {
-            gpu.queue
-                .write_buffer(&self.draws, 0, &self.draw_data[..used]);
+            gpu.write_dynamic(&self.draws, &self.draw_data[..used]);
         }
 
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

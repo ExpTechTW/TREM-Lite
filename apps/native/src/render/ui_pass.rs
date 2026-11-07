@@ -185,7 +185,7 @@ impl UiPass {
         let uniform = gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("ui-uniform"),
             size: 16,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: gpu.dynamic_usage(wgpu::BufferUsages::UNIFORM),
             mapped_at_creation: false,
         });
         let storage_cap = storage_bytes(64);
@@ -348,10 +348,8 @@ impl UiPass {
         if !self.instances.is_empty() {
             self.ensure_storage(gpu);
             let globals = [screen[0], screen[1], 0.0, 0.0];
-            gpu.queue
-                .write_buffer(&self.uniform, 0, bytemuck::cast_slice(&globals));
-            gpu.queue
-                .write_buffer(&self.storage, 0, bytemuck::cast_slice(&self.instances));
+            gpu.write_dynamic(&self.uniform, bytemuck::cast_slice(&globals));
+            gpu.write_dynamic(&self.storage, bytemuck::cast_slice(&self.instances));
         }
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("ui"),
@@ -478,7 +476,7 @@ fn storage_buffer(gpu: &Gpu, size: u64) -> wgpu::Buffer {
     gpu.device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("ui-instances"),
         size,
-        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        usage: gpu.dynamic_usage(wgpu::BufferUsages::STORAGE),
         mapped_at_creation: false,
     })
 }
