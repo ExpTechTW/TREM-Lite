@@ -37,15 +37,15 @@ const KIND_TRUNCATE: u8 = 1;
 const KIND_WRAP: u8 = 2;
 
 /// One file at a time, smallest useful face first. Stop once nothing is missing.
+/// macOS keeps PingFang among its downloadable assets with no stable path, so Han
+/// the embedded subset lacks falls through to the directory scan below, which
+/// finds it with all its weights.
 const SYSTEM_FONTS: &[&str] = &[
     "/System/Library/Fonts/Apple Symbols.ttf",
-    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-    "/System/Library/Fonts/SFNS.ttf",
     r"C:\Windows\Fonts\seguisym.ttf",
     r"C:\Windows\Fonts\msjh.ttc",
-    r"C:\Windows\Fonts\msyh.ttc",
+    r"C:\Windows\Fonts\msjhbd.ttc",
     r"C:\Windows\Fonts\segoeui.ttf",
-    r"C:\Windows\Fonts\arialuni.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",

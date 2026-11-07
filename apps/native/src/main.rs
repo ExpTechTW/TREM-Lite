@@ -1,6 +1,12 @@
 //! TREM-Lite native. This round is the drawing core: one shared GPU device,
 //! an SDF UI pass, and an offscreen screenshot path.
 
+#[allow(dead_code)]
+mod backend;
+#[allow(dead_code)]
+mod net;
+#[allow(dead_code)]
+mod paths;
 mod render;
 mod ui;
 
