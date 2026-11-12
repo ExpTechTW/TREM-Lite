@@ -59,12 +59,14 @@ export function ReportPanel() {
       document.body.style.userSelect = "";
     };
 
+    list.addEventListener("mouseenter", updateScrollbar);
     list.addEventListener("scroll", updateScrollbar);
     window.addEventListener("resize", updateScrollbar);
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", stopDragging);
     updateScrollbar();
     return () => {
+      list.removeEventListener("mouseenter", updateScrollbar);
       list.removeEventListener("scroll", updateScrollbar);
       window.removeEventListener("resize", updateScrollbar);
       window.removeEventListener("pointermove", onPointerMove);
