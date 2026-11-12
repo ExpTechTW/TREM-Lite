@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft } from "lucide-react";
 
 import { IntensityBadge } from "@/components/IntensityBadge";
 import { extractLocation, formatReportTime } from "@/domain/utils";
@@ -88,10 +87,19 @@ export function ReportPanel() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        title="地震報告"
+        title={open ? "收合地震報告" : "展開地震報告"}
+        aria-label={open ? "收合地震報告" : "展開地震報告"}
+        aria-expanded={open}
         className="legacy-report-toggle"
       >
-        <ChevronLeft className={cn("h-4 w-4", open && "rotate-180")} />
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <rect width="20" height="20" fill="#464646" />
+          <path
+            d="M12.646 14.166 11.257 15.605 5.52 10.076 11.249 4.419 12.649 5.843 8.382 10.058z"
+            fill="var(--light)"
+            transform={open ? "translate(20 0) scale(-1 1)" : undefined}
+          />
+        </svg>
       </button>
 
       <div

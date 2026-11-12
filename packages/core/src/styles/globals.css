@@ -401,7 +401,7 @@
 .legacy-report-toggle {
   position: absolute;
   top: 5px;
-  left: 0;
+  left: 4px;
   display: flex;
   width: 20px;
   height: 20px;
@@ -409,7 +409,13 @@
   justify-content: center;
   color: #464646;
   cursor: pointer;
-  background: var(--light);
+  overflow: hidden;
+  background: #464646;
+  border-radius: 5px;
+}
+
+.legacy-report-panel.is-closed .legacy-report-toggle {
+  left: 0px;
 }
 
 .legacy-report-list {
@@ -555,7 +561,7 @@
 }
 
 .legacy-report-panel.is-closed ~ .legacy-version {
-  transform: translateX(320px);
+  transform: translateX(313px);
 }
 
 .legacy-report-panel.is-closed ~ .legacy-warning-banners {
@@ -808,7 +814,7 @@
   }
 
   .legacy-version {
-    transform: translateX(50px);
+    transform: translateX(51.36px);
   }
 
   .legacy-warning-banners {

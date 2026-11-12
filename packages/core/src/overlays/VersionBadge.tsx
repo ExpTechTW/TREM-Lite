@@ -17,7 +17,7 @@ export function VersionBadge() {
   if (!version) return null;
   return (
     <div
-      className="legacy-version pointer-events-none absolute right-[350px] top-[0.3em] z-40 text-[15px]"
+      className="legacy-version pointer-events-none absolute right-[341px] top-[0.3em] z-40 text-[15px]"
       style={{ color: "#ffffff4f" }}
     >
       {version}
