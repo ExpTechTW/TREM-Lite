@@ -1,0 +1,14 @@
+/* The full scale is 210px for 9 steps (185px below 660px of window height,
+   the rule in globals.css). An EEW keeps that step size and drops the unused
+   steps off the top, so the lower colours stay put.
+   The short-window rule is more specific than globals.css's fixed 185px, so a
+   trimmed scale is not stretched back out. */
+.legacy-intensity-legend .legacy-intensity-legend-list {
+  height: calc(210px * var(--legend-steps, 9) / 9);
+}
+
+@media (max-height: 660px) {
+  .legacy-intensity-legend .legacy-intensity-legend-list {
+    height: calc(185px * var(--legend-steps, 9) / 9) !important;
+  }
+}
