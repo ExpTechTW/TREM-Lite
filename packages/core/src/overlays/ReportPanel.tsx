@@ -53,9 +53,12 @@ export function ReportPanel() {
       const nextTop = Math.max(0, Math.min(maxTop, event.clientY - rect.top - scrollbarSizeRef.current / 2));
       list.scrollTop = (nextTop / maxTop) * (list.scrollHeight - list.clientHeight);
     };
-    const stopDragging = () => {
+    const stopDragging = (event: PointerEvent) => {
+      if (!draggingRef.current) return;
       draggingRef.current = false;
       document.body.style.userSelect = "";
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      setScrollbarVisible(Boolean(target && (list.contains(target) || scrollbarRef.current?.contains(target))));
     };
 
     list.addEventListener("mouseenter", updateScrollbar);
@@ -63,6 +66,7 @@ export function ReportPanel() {
     window.addEventListener("resize", updateScrollbar);
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
     updateScrollbar();
     return () => {
       list.removeEventListener("mouseenter", updateScrollbar);
@@ -70,6 +74,7 @@ export function ReportPanel() {
       window.removeEventListener("resize", updateScrollbar);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
     };
   }, []);
 
@@ -133,7 +138,7 @@ export function ReportPanel() {
           setScrollbarVisible(true);
         }}
         aria-hidden="true"
-        style={{ opacity: scrollbarVisible ? 1 : 0 }}
+        style={{ opacity: scrollbarVisible ? 1 : 0, pointerEvents: scrollbarVisible ? "auto" : "none" }}
       >
         <div ref={scrollbarThumbRef} className="legacy-report-scrollbar" />
       </div>
