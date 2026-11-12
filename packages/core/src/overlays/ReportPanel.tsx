@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { IntensityBadge } from "@/components/IntensityBadge";
 import { extractLocation, formatReportTime } from "@/domain/utils";
@@ -160,6 +160,12 @@ function SurveyCard({ time, int }: { time: number; int: number }) {
   );
 }
 
+function setRippleOrigin(event: ReactPointerEvent<HTMLDivElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--x", `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty("--y", `${event.clientY - rect.top}px`);
+}
+
 function FeaturedReport({ report }: { report: ReportListItem }) {
   return (
     <div
@@ -167,6 +173,7 @@ function FeaturedReport({ report }: { report: ReportListItem }) {
         "legacy-report-card legacy-report-featured",
         isReplayActive(report) && "legacy-report-flashing",
       )}
+      onPointerDown={setRippleOrigin}
     >
       <div className="legacy-report-featured-content">
         <div className="flex flex-col items-center">
@@ -206,6 +213,7 @@ function CompactReportRow({ item }: { item: ReportListItem }) {
         "legacy-report-card flex items-center gap-2",
         isReplayActive(item) && "legacy-report-flashing",
       )}
+      onPointerDown={setRippleOrigin}
     >
       <IntensityBadge
         i={item.int ?? 0}
