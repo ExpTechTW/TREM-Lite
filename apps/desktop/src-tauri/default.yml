@@ -1,4 +1,4 @@
-ver: 7
+ver: 8
 
 realtime-station-id: "1C10848"
 
@@ -10,6 +10,9 @@ check-box:
   show-window-report: true
   show-window-detect: true
   show-window-rts-intensity: true
+  # Picture-in-picture while the main window is hidden. Old files omit this;
+  # a missing key is treated as on, same as this default.
+  show-pip: true
   other-auto-start: true
   update-auto-restart: true
   other-tts: true
