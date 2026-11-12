@@ -39,7 +39,7 @@ function describe(config: TremConfig): string {
 
 /** Mirrors src-tauri/default.yml — used as the browser-mode / fallback config. */
 export const DEFAULT_CONFIG: TremConfig = {
-  ver: 7,
+  ver: 8,
   "realtime-station-id": "1C10848",
   /** No earthquake on the map: the latest report, as before this setting existed. */
   "idle-map": "report",
@@ -48,6 +48,7 @@ export const DEFAULT_CONFIG: TremConfig = {
     "show-window-report": true,
     "show-window-detect": true,
     "show-window-rts-intensity": true,
+    "show-pip": true,
     "other-auto-start": true,
     "update-auto-restart": true,
     "other-tts": true,
@@ -71,9 +72,15 @@ let cache: TremConfig | null = null;
  * Old files predate `idle-map`. Anything other than the live-station choice
  * stays on the report, which is what those files already showed. Not written
  * back here — the next save persists it.
+ *
+ * `show-pip` is the same kind of addition: missing means the picture-in-picture
+ * window stays available, which is what those installs already did.
  */
 function normalize(config: TremConfig): TremConfig {
   if (config["idle-map"] !== "rts") config["idle-map"] = "report";
+  if (config["check-box"] && typeof config["check-box"]["show-pip"] !== "boolean") {
+    config["check-box"]["show-pip"] = true;
+  }
   return config;
 }
 

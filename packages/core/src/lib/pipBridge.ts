@@ -6,6 +6,7 @@
 import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
+import { getConfig } from "./config";
 import { inTauri } from "./env";
 import { events } from "./events";
 import type { EewDisplay, RtsTriggerDisplay } from "./variable.ui";
@@ -41,6 +42,11 @@ interface PublishedPipState {
   revision: number;
   noEew: boolean;
   serialized: string;
+}
+
+/** Picture-in-picture is on unless the user turned the setting off. A missing key stays on. */
+export function isPipEnabled(): boolean {
+  return getConfig()["check-box"]["show-pip"] !== false;
 }
 
 async function publish(force = false): Promise<PublishedPipState | null> {
@@ -99,7 +105,7 @@ export function hasPipContent(): boolean {
 export async function showPipForCurrentAlert(
   canShow?: () => Promise<boolean>,
 ): Promise<boolean> {
-  if (!inTauri || !hasPipContent()) return false;
+  if (!inTauri || !hasPipContent() || !isPipEnabled()) return false;
   try {
     await ensurePipWindow();
     if (!pipReady) await emit("pip-sync-request");
@@ -124,8 +130,17 @@ export async function showPipForCurrentAlert(
       hidePip();
       return false;
     }
+    // The toggle can flip while this handshake is in flight.
+    if (!isPipEnabled()) {
+      hidePip();
+      return false;
+    }
     await invoke("pip_show");
     shown = true;
+    if (!isPipEnabled()) {
+      hidePip();
+      return false;
+    }
     return true;
   } catch {
     return false;
@@ -163,8 +178,13 @@ export function initPipBridge(): void {
       }
     }),
   ])
-    .then(() => ensurePipWindow())
-    .then(() => emit("pip-sync-request"))
+    .then(async () => {
+      // A user who turned PiP off should not get the window at startup.
+      // Showing later creates it (see showPipForCurrentAlert).
+      if (!isPipEnabled()) return;
+      await ensurePipWindow();
+      await emit("pip-sync-request");
+    })
     .catch(() => {});
   // What PiP shows (ui.currentEew / currentTrigger) changes only where
   // EewDisplayUpdate is emitted; publishing then replaces a 500 ms poll.

@@ -1,14 +1,15 @@
 /**
  * Native window attention controller. This is the Tauri counterpart of
  * legacy/src/js/index/core/window.js: alert events respect the same four
- * settings and bring the main window back to the foreground.
+ * settings and bring the main window back to the foreground. PiP, which
+ * stands in for that window while it is hidden, has its own toggle.
  */
 import { invoke } from "@tauri-apps/api/core";
 
-import { getConfig } from "@/lib/config";
+import { getConfig, onConfigUpdated } from "@/lib/config";
 import { inTauri } from "@/lib/env";
 import { events } from "@/lib/events";
-import { hasPipContent, hidePip, showPipForCurrentAlert } from "@/lib/pipBridge";
+import { hasPipContent, hidePip, isPipEnabled, showPipForCurrentAlert } from "@/lib/pipBridge";
 
 let initialized = false;
 let mainUnavailable = false;
@@ -62,7 +63,8 @@ async function isMainUnavailable(): Promise<boolean> {
 /**
  * Legacy shows PiP as a substitute only while the main window is hidden or
  * minimized. The async visibility read also lets the originating EEW/RTS
- * handler finish updating PiP content before it is displayed.
+ * handler finish updating PiP content before it is displayed. With PiP turned
+ * off, showPipForCurrentAlert declines and this falls through to the main window.
  */
 function surfaceAlert(critical: boolean, pipEligible: boolean): void {
   if (!inTauri) return;
@@ -157,5 +159,19 @@ export function initWindowControl(): void {
       })
       .catch(() => {});
     window.setInterval(() => void syncVisibilityTransition(), 500);
+
+    // Read at show time. Off hides a window that is already up; on again
+    // restores one when the main window is still hidden and an alert remains.
+    let pipOn = isPipEnabled();
+    void onConfigUpdated(() => {
+      const next = isPipEnabled();
+      if (next === pipOn) return;
+      pipOn = next;
+      if (!next) {
+        hidePip();
+        return;
+      }
+      if (mainUnavailable && hasPipContent()) void showPipForCurrentAlert(isMainUnavailable);
+    });
   }
 }

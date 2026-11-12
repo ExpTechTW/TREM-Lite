@@ -25,7 +25,8 @@ import { StationPicker, type CityStations } from "./StationPicker";
  *
  *   一般  the station shown on the map, what an idle map shows, starting
  *         with the system, the map's automatic zoom
- *   警報  which events bring the window forward, speech announcements
+ *   警報  which events bring the window forward, the picture-in-picture
+ *         window, speech announcements
  *   音效  each sound effect, on or off
  *   關於  version and updates, data sources, links, and the reset
  *
@@ -35,7 +36,7 @@ import { StationPicker, type CityStations } from "./StationPicker";
  *
  * The web has no second window: the same page opens over the map
  * (`SettingsModal`), without what only the desktop does — bringing a window
- * forward, starting with the system, updating itself.
+ * forward, the picture-in-picture window, starting with the system, updating itself.
  */
 const TABS = [
   { id: "general", label: "一般", icon: SlidersHorizontal },
@@ -311,6 +312,19 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
                   {WINDOW_EVENTS.map(([key, label]) => (
                     <Toggle key={key} label={label} checked={check(key)} onChange={(on) => setCheck(key, on)} />
                   ))}
+                </Group>
+              )}
+              {inTauri && (
+                <Group
+                  title="子母畫面"
+                  note="主視窗縮小或隱藏，而且正在地震預警或檢知時，用置頂小視窗顯示。預設開著。"
+                >
+                  <Toggle
+                    label="顯示子母畫面"
+                    hint="關掉之後不再跳出這個小視窗。若上面的跳出主視窗有開，會改把主視窗叫回前景"
+                    checked={check("show-pip")}
+                    onChange={(on) => setCheck("show-pip", on)}
+                  />
                 </Group>
               )}
               <Group title="語音">
