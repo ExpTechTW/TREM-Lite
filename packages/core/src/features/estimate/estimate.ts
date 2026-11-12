@@ -71,8 +71,23 @@ async function updateEewArea(ans: Ans<EewData>): Promise<void> {
   drawEewArea();
 }
 
-/** Repaint the "town" fill-color for the currently active eew intensity areas. */
+/**
+ * Repaint the town wash, then tell the legend.
+ *
+ * The event also fires when the wash is skipped — a measured report or
+ * long-period overlay is covering the map, or the map is not ready — so the
+ * scale can return to the full range instead of staying cut.
+ */
 export function drawEewArea(end = false): void {
+  try {
+    paintEewArea(end);
+  } finally {
+    events.emit("EewAreaPaint");
+  }
+}
+
+/** Repaint the "town" fill-color for the currently active eew intensity areas. */
+function paintEewArea(end = false): void {
   // The episode is over whether or not anything is painted below: a city that
   // was alerted for this EEW has to be able to alert again for the next one.
   if (end) alertedCities.clear();

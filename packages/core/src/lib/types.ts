@@ -116,6 +116,8 @@ export type TremEvents = {
   EewAlert: Ans<EewData>;
   EewCancel: Ans<EewData>;
   EewNewAreaAlert: Ans<{ city_alert_list: string[] }>;
+  /** 預估震度著色更新或被蓋掉。圖例照 cache 重畫。 */
+  EewAreaPaint: void;
 
   IntensityRelease: Ans<{ id: number; max: number; area: Record<number, number[]> }>;
   IntensityUpdate: Ans<{ id: number; max: number; area: Record<number, number[]> }>;
