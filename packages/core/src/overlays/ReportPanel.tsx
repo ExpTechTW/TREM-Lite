@@ -139,9 +139,11 @@ function SurveyCard({ time, int }: { time: number; int: number }) {
           <IntensityBadge i={int} className="legacy-report-featured-badge h-[80px] w-[80px] rounded-[12px] text-[48px]" />
           <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
         </div>
-        <div className="ml-2 flex min-w-0 flex-1 flex-col">
-          <div className="legacy-report-featured-loc whitespace-nowrap text-[28px] font-bold leading-tight">震源調查中</div>
-          <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(time)}</div>
+        <div className="ml-2 flex w-full min-w-0 flex-col items-stretch max-[640px]:ml-0">
+          <div className="min-w-0 font-bold">
+            <div className="truncate text-[28px] max-[980px]:text-[21px] max-[640px]:text-[17px]">震源調查中</div>
+            <div className="text-[13px] max-[980px]:text-[12px] max-[640px]:text-[11px]">{formatReportTime(time)}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -162,22 +164,22 @@ function FeaturedReport({ report }: { report: ReportListItem }) {
           <div className="legacy-report-featured-label mt-[0.3em] text-center text-[13px] font-bold">觀測最大震度</div>
         </div>
 
-        <div className="ml-2 flex min-w-0 flex-1 flex-col">
-          <div className="legacy-report-featured-loc whitespace-nowrap text-[28px] font-bold leading-tight">
-            {extractLocation(report.loc)}
+        <div className="ml-2 flex w-full min-w-0 flex-col items-stretch max-[640px]:ml-0">
+          <div className="min-w-0 font-bold">
+            <div className="w-[7em] break-all text-[28px] max-[980px]:text-[21px] max-[640px]:text-[17px]">{extractLocation(report.loc)}</div>
+            <div className="text-[13px] max-[980px]:text-[12px] max-[640px]:text-[11px]">{formatReportTime(report.time)}</div>
           </div>
-          <div className="legacy-report-featured-time text-[13px] font-bold">{formatReportTime(report.time)}</div>
-          <div className="mt-auto flex w-full items-baseline justify-between pt-[0.3em]">
+          <div className="mt-[0.5em] mr-[0.3em] flex w-full justify-between">
             <div
-              className="legacy-report-featured-mag -mt-[5px] text-[30px] font-bold leading-none tabular-nums"
+              className="relative isolate flex h-[28px] tabular-nums"
               style={isNumbered(report) ? { color: "var(--warning)" } : undefined}
             >
-              <span className="mr-1">𝖬</span>
-              {report.mag ? report.mag.toFixed(1) : "--"}
+              <span className="pointer-events-none absolute text-[28px] leading-[28px] font-bold opacity-[0.15] max-[640px]:text-[19px]">規模</span>
+              <span className="-mt-[5px] text-[30px] font-bold max-[980px]:mt-1 max-[980px]:text-[20px] max-[640px]:mt-0 max-[640px]:text-[19px]"><span className="mr-1">𝖬</span>{report.mag ? report.mag.toFixed(1) : "--"}</span>
             </div>
-            <div className="legacy-report-featured-depth -mt-[3px] text-[24px] font-bold leading-9 tabular-nums">
-              {report.depth}
-              <span className="ml-1 text-[14px] font-normal">km</span>
+            <div className="relative isolate flex h-[28px] w-[110px] justify-end tabular-nums max-[980px]:w-[95px] max-[640px]:w-auto">
+              <span className="pointer-events-none absolute text-[28px] leading-[28px] font-bold opacity-[0.15] max-[640px]:text-[19px]">深度</span>
+              <span className="-mt-[3px] text-[30px] leading-9 font-bold max-[980px]:mt-0 max-[980px]:text-[20px] max-[640px]:text-[15px] max-[640px]:leading-[1.4]">{report.depth}<span className="ml-1 inline-block text-[14px] leading-7 font-normal max-[640px]:text-[11px]">km</span></span>
             </div>
           </div>
         </div>
@@ -197,14 +199,14 @@ function CompactReportRow({ item }: { item: ReportListItem }) {
     >
       <IntensityBadge
         i={item.int ?? 0}
-        className="legacy-report-row-badge h-[50px] w-[55px] shrink-0 rounded-[12px] text-[30px]"
+        className="h-[50px] w-[55px] shrink-0 rounded-[12px] text-[30px] max-[980px]:h-[40px] max-[980px]:w-[43px] max-[980px]:text-[22px] max-[640px]:h-[38px] max-[640px]:w-[38px] max-[640px]:rounded-[9px] max-[640px]:text-[21px]"
       />
       <div className="flex min-w-0 flex-1 items-center justify-between pr-[0.3em]">
         <div className="min-w-0">
-          <div className="legacy-report-row-loc max-w-[180px] truncate text-[21px] font-bold leading-tight">
+          <div className="max-w-[180px] truncate text-[21px] font-bold leading-tight max-[980px]:text-[17px] max-[640px]:max-w-none max-[640px]:text-[14px]">
             {extractLocation(item.loc)}
           </div>
-          <div className="legacy-report-row-time text-[13px] font-bold">{formatReportTime(item.time)}</div>
+          <div className="text-[13px] font-bold max-[980px]:text-[12px] max-[640px]:text-[11px]">{formatReportTime(item.time)}</div>
         </div>
         <div
           className="legacy-report-row-mag w-[60px] shrink-0 pl-2 text-right text-[20px] font-bold tabular-nums"

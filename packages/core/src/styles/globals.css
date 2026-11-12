@@ -474,7 +474,33 @@
 .legacy-report-featured-content {
   display: flex;
   width: 100%;
-  padding: 8px;
+  padding: 10px;
+}
+
+.legacy-report-card:hover:not(.is-survey) {
+  background-color: #8a8a8ac7;
+}
+
+.legacy-report-card:not(.is-survey)::after {
+  position: absolute;
+  top: var(--y, 50%);
+  left: var(--x, 50%);
+  width: 200%;
+  height: 200%;
+  background-image: radial-gradient(circle, var(--light) 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(10);
+  transition: transform 0.8s, opacity 0.8s;
+}
+
+.legacy-report-card:not(.is-survey):active::after {
+  opacity: 0.3;
+  transform: translate(-50%, -50%) scale(0);
+  transition: 0s;
 }
 
 .legacy-report-actions {
@@ -1061,47 +1087,8 @@
     font-size: 10px !important;
   }
 
-  .legacy-report-featured-loc {
-    max-width: none !important;
-    overflow: visible !important;
-    font-size: 17px !important;
-    white-space: nowrap !important;
-  }
-
-  .legacy-report-featured-time,
-  .legacy-report-row-time {
-    font-size: 11px !important;
-  }
-
-  .legacy-report-featured-mag {
-    margin-top: 0 !important;
-    font-size: 19px !important;
-  }
-
-  .legacy-report-featured-depth {
-    margin-top: 0 !important;
-    font-size: 15px !important;
-    line-height: 1.4 !important;
-  }
-
-  .legacy-report-featured-depth > span {
-    font-size: 11px !important;
-  }
-
   .legacy-report-card:not(.legacy-report-featured) {
     gap: 6px !important;
-  }
-
-  .legacy-report-row-badge {
-    width: 38px !important;
-    height: 38px !important;
-    border-radius: 9px !important;
-    font-size: 21px !important;
-  }
-
-  .legacy-report-row-loc {
-    max-width: none !important;
-    font-size: 14px !important;
   }
 
   .legacy-report-row-mag {
