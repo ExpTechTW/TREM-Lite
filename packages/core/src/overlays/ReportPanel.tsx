@@ -22,6 +22,7 @@ export function ReportPanel() {
   const scrollbarSizeRef = useRef(0);
   const updateScrollbarRef = useRef<() => void>(() => {});
   const [scrollbarVisible, setScrollbarVisible] = useState(false);
+  const [canScroll, setCanScroll] = useState(false);
 
   useEffect(() => {
     const list = listRef.current;
@@ -29,6 +30,7 @@ export function ReportPanel() {
 
     const updateScrollbar = () => {
       const canScroll = list.scrollHeight > list.clientHeight;
+      setCanScroll(canScroll);
       const height = canScroll
         ? Math.max(20, (list.clientHeight / list.scrollHeight) * list.clientHeight)
         : 0;
@@ -144,7 +146,7 @@ export function ReportPanel() {
           setScrollbarVisible(true);
         }}
         aria-hidden="true"
-        style={{ opacity: scrollbarVisible ? 1 : 0, pointerEvents: scrollbarVisible ? "auto" : "none" }}
+        style={{ opacity: scrollbarVisible && canScroll ? 1 : 0, pointerEvents: scrollbarVisible && canScroll ? "auto" : "none" }}
       >
         <div ref={scrollbarThumbRef} className="legacy-report-scrollbar" />
       </div>
