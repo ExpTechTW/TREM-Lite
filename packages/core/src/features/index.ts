@@ -11,6 +11,7 @@ import { initNotifications } from "@/lib/notificationClient";
 import { initSpeech } from "@/lib/speechClient";
 
 import { initEventLog } from "./log/eventLog";
+import { initPlugins } from "./plugin";
 import { initData } from "./data/data";
 import { initResource } from "./data/resource";
 import { initRts } from "./rts/rts";
@@ -39,6 +40,10 @@ function guard(name: string, fn: () => void) {
 export function initFeatures(): void {
   // First: every event is logged before any module acts on it.
   guard("event-log", initEventLog);
+  // Then the extensions, before the modules that emit: V3 built its plugin
+  // loader ahead of every feature (index/require.js), and a plugin that
+  // subscribes to `DataRts` must hear the session's first frame.
+  guard("plugin", initPlugins);
   guard("autostart", initAutostart);
   guard("audio", initAudio);
   guard("notifications", initNotifications);
