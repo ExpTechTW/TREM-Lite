@@ -20,6 +20,7 @@ export function ReportPanel() {
   const scrollbarThumbRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
   const scrollbarSizeRef = useRef(0);
+  const updateScrollbarRef = useRef<() => void>(() => {});
   const [scrollbarVisible, setScrollbarVisible] = useState(false);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export function ReportPanel() {
       setScrollbarVisible(Boolean(target && (list.contains(target) || scrollbarRef.current?.contains(target))));
     };
 
+    updateScrollbarRef.current = updateScrollbar;
     list.addEventListener("mouseenter", updateScrollbar);
     list.addEventListener("scroll", updateScrollbar);
     window.addEventListener("resize", updateScrollbar);
@@ -69,6 +71,7 @@ export function ReportPanel() {
     window.addEventListener("pointercancel", stopDragging);
     updateScrollbar();
     return () => {
+      updateScrollbarRef.current = () => {};
       list.removeEventListener("mouseenter", updateScrollbar);
       list.removeEventListener("scroll", updateScrollbar);
       window.removeEventListener("resize", updateScrollbar);
@@ -82,6 +85,9 @@ export function ReportPanel() {
   // the map at the 900px minimum window width.
   const [open, setOpen] = useState(() => window.innerWidth >= 1080);
   useRerenderOn("ReportListUpdate", "ReportRelease");
+  useEffect(() => {
+    updateScrollbarRef.current();
+  });
 
   // An intensity survey under way is featured above every report; otherwise
   // the latest report is.
