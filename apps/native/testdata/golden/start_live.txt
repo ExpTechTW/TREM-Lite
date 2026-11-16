@@ -6,6 +6,4 @@
 https://static.core.exptech.dev/resource/station
 https://api-1.exptech.dev/api/v1/trem/station
 https://api.core.exptech.dev/api/v2/eq/report?limit=75
-https://api.core.exptech.dev/api/v2/eq/report
 https://api.core.exptech.dev/api/v2/eq/report/115078-2026-1106-120113
-https://api.core.exptech.dev/api/v2/eq/report

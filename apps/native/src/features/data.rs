@@ -93,8 +93,8 @@ pub struct DataState {
     file_list: Vec<String>,
     file_index: usize,
     polls: Vec<Cancel>,
-    pub trem_health: Arc<Health>,
-    pub eew_health: Arc<Health>,
+    /// The live stream's one connection, behind both the EEW and the RTS light.
+    pub sse_health: Arc<Health>,
 }
 
 impl DataState {
@@ -113,8 +113,7 @@ impl DataState {
             file_list: Vec::new(),
             file_index: 0,
             polls: Vec::new(),
-            trem_health: Arc::new(Health::default()),
-            eew_health: Arc::new(Health::default()),
+            sse_health: Arc::new(Health::default()),
         }
     }
 }

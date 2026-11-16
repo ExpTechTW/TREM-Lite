@@ -19,8 +19,6 @@ pub enum Task {
     LpgmOff,
     ReplayLimit,
     ReplayReturn,
-    ReportNewest,
-    ReportFull,
     ResourceFetch,
     SpeechTick,
     SpeechDone(String),

@@ -26,8 +26,8 @@ pub const STALE: Duration = Duration::from_secs(90);
 /// connect must not wait forever, nor hold two connections open.
 const READY: Duration = Duration::from_secs(10);
 /// Reconnect delays double from `reconnect_delay` up to this. Kept short: the
-/// eew stream is the early-warning path, and a node that comes back must not
-/// sit unused for a minute.
+/// stream carries the early warnings, and a node that comes back must not sit
+/// unused for a minute.
 const BACKOFF_MAX: Duration = Duration::from_secs(15);
 /// 每條連線每隔多久在日誌寫一次統計。
 const SUMMARY_EVERY: Duration = Duration::from_secs(300);
@@ -199,9 +199,7 @@ impl ConnLog {
         self.pings += 1;
         self.last_ping = Some(now);
         self.maybe_summary();
-        text.strip_prefix("ping")
-            .and_then(|t| t.trim().parse::<f64>().ok())
-            .filter(|t| t.is_finite() && *t > 0.0)
+        ping_seconds(text)
     }
 
     fn stats(&self) -> String {
@@ -253,6 +251,13 @@ impl ConnLog {
             log::info!(target: "sse", "{line}");
         }
     }
+}
+
+/// The server time of a `: ping <unix s>` comment, without its colon.
+pub(crate) fn ping_seconds(text: &str) -> Option<f64> {
+    text.strip_prefix("ping")
+        .and_then(|t| t.trim().parse::<f64>().ok())
+        .filter(|t| t.is_finite() && *t > 0.0)
 }
 
 pub type UrlFn = Arc<dyn Fn() -> String + Send + Sync>;
@@ -410,7 +415,7 @@ async fn run_connection(shared: Arc<Shared>, id: u64, attempt: Cancel) {
     };
 
     if let Some(message) = outcome {
-        // Entering replay aborts both streams on purpose, and a handover closes the
+        // Entering replay aborts the stream on purpose, and a handover closes the
         // connection it replaced. Neither is a failure: no warning, no reconnect.
         if !attempt.is_cancelled() {
             conn.outcome = Some(message);

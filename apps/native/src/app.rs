@@ -10,7 +10,7 @@ use web_time::Instant;
 use trem_core::ml::area::EewAreaResult;
 
 use crate::backend::config::{self, Config};
-use crate::domain::types::{Area, IntensityReport, RtsData, Station, StationId};
+use crate::domain::types::{Area, IntensityReport, ReportListItem, RtsData, Station, StationId};
 use crate::events::Event;
 use crate::features::alerts::{SpeechEnd, SpeechState};
 use crate::features::data::{DataState, FileFrame, Polled};
@@ -42,6 +42,13 @@ pub enum Msg {
     StreamPing {
         ts: f64,
         label: String,
+    },
+    /// A connection of the live stream had its greeting: subscribed from now on.
+    StreamUp,
+    /// An `eq.report.v1` message: its reason (0 real-time, 1–3 once stored) and report.
+    ReportStream {
+        reason: i64,
+        item: Box<ReportListItem>,
     },
     Ntp(Result<crate::net::ntp::NtpResult, String>),
     Polled {
@@ -403,8 +410,6 @@ impl App {
                 self.focus_reset(false);
                 self.focus_now();
             }
-            Task::ReportNewest => self.report_check_newest(),
-            Task::ReportFull => self.report_refresh(),
             Task::ResourceFetch => self.resource_fetch(),
             Task::SpeechTick => self.speech_tick(),
             Task::SpeechDone(id) => self.emit(Event::ReportSpeechEnd(id)),
@@ -427,6 +432,8 @@ impl App {
             Msg::EewFrame(parsed) => self.data_eew_frame(&parsed),
             Msg::IntensityFrame(report) => self.data_intensity_frame(report),
             Msg::StreamPing { ts, label } => self.clock_on_ping(ts, &label),
+            Msg::StreamUp => self.report_stream_up(),
+            Msg::ReportStream { reason, item } => self.report_stream(reason, *item),
             Msg::Ntp(result) => self.clock_result(result),
             Msg::Polled { epoch, data } => self.data_polled(epoch, data),
             Msg::FileFrame {

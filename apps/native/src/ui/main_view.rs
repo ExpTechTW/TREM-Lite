@@ -920,17 +920,14 @@ fn draw_nav(
         }
     }
 
-    // The lights: which stream works, small and dim.
-    let (eew_ok, eew_why) = app.data_state.eew_health.status();
-    let (rts_ok, rts_why) = app.data_state.trem_health.status();
-    let rts_why = if rts_ok {
-        if error {
-            "超過 3 秒沒有即時測站資料".to_string()
-        } else {
-            String::new()
-        }
+    // The lights: what works, small and dim. EEWs and RTS come on one connection.
+    let (eew_ok, eew_why) = app.data_state.sse_health.status();
+    let rts_why = if !eew_ok {
+        eew_why.clone()
+    } else if error {
+        "超過 3 秒沒有即時測站資料".to_string()
     } else {
-        rts_why
+        String::new()
     };
     let lights = [
         (ID_LIGHT_EEW, "EEW", eew_ok, eew_why),

@@ -294,3 +294,208 @@ fn reports_are_seeded_silently_then_new_ones_released() {
         .collect();
     assert_eq!(released, ["2:false"]);
 }
+
+const REPORT_LIST: &str = "https://api.core.exptech.dev/api/v2/eq/report?limit=75";
+
+fn listed(id: &str, time: f64, mag: f64) -> String {
+    format!(
+        r#"{{"id":"{id}","lat":23,"lon":121,"depth":10,"loc":"花蓮縣秀林鄉","mag":{mag},"time":{time},"int":3}}"#
+    )
+}
+
+fn report_page(id: &str) -> String {
+    format!("https://api.core.exptech.dev/api/v2/eq/report/{id}")
+}
+
+/// An `eq.report.v1` message as the stream's worker hands it over.
+fn pushed(reason: i64, id: &str, time: f64, mag: f64, lat: f64, int: i32) -> crate::app::Msg {
+    let text = serde_json::json!({
+        "reason": reason,
+        "data": {
+            "id": id, "lat": lat, "lon": 121, "depth": 10, "loc": "花蓮縣秀林鄉",
+            "mag": mag, "time": time,
+            "list": {"花蓮縣": {"int": int, "town": {"秀林": {"lat": 24.1, "lon": 121.6, "int": int}}}}
+        }
+    })
+    .to_string();
+    let (reason, item) =
+        crate::features::report::parse_stream_report(&text).expect("a report message");
+    crate::app::Msg::ReportStream {
+        reason,
+        item: Box::new(item),
+    }
+}
+
+/// The list's changes and releases since the last call.
+fn report_events(h: &mut Harness) -> Vec<String> {
+    h.settle();
+    std::mem::take(&mut h.app.trace)
+        .iter()
+        .filter_map(|e| match e {
+            Event::ReportListUpdate => Some("list".to_string()),
+            Event::ReportRelease { data, update } => Some(format!("release {}:{update}", data.id)),
+            _ => None,
+        })
+        .collect()
+}
+
+fn report_ids(h: &Harness) -> Vec<String> {
+    h.app.var.data.report.iter().map(|r| r.id.clone()).collect()
+}
+
+fn list_fetches(h: &Harness) -> usize {
+    h.requests
+        .lock()
+        .map(|r| r.iter().filter(|url| *url == REPORT_LIST).count())
+        .unwrap_or_default()
+}
+
+fn report_harness(answers: &'static HashMap<String, String>) -> Harness {
+    let mut h = Harness::new(NOW, answers, Harness::default_config());
+    h.app.window.main_shown = true;
+    h.logging = false;
+    h.app.report_init();
+    h.settle();
+    std::mem::take(&mut h.app.trace);
+    h
+}
+
+#[test]
+fn reports_are_fetched_once_then_follow_the_stream() {
+    static ANSWERS: OnceLock<HashMap<String, String>> = OnceLock::new();
+    let answers = ANSWERS.get_or_init(|| {
+        let mut m = HashMap::new();
+        m.insert(
+            REPORT_LIST.to_string(),
+            format!("[{}]", listed("1", NOW - 3_600_000.0, 4.1)),
+        );
+        m.insert(
+            report_page("3"),
+            r#"{"id":"3","lat":23.5,"lon":121,"depth":10,"loc":"花蓮縣秀林鄉","mag":3.8,"time":1787641091000,"int":2,"trem":1787641090000,"list":{}}"#
+                .to_string(),
+        );
+        m
+    });
+    let mut h = report_harness(answers);
+    assert_eq!(report_ids(&h), ["1"]);
+    assert_eq!(list_fetches(&h), 1);
+    // Nothing polls.
+    h.advance(30 * 60_000);
+    assert_eq!(list_fetches(&h), 1);
+    assert!(report_events(&mut h).is_empty());
+
+    // In real time: its single report is not stored yet (404), so what came is released.
+    h.app.on_msg(pushed(0, "2", NOW - 60_000.0, 4.2, 23.623, 4));
+    assert_eq!(report_events(&mut h), ["list", "release 2:false"]);
+    assert_eq!(report_ids(&h), ["2", "1"]);
+    assert_eq!(h.app.var.data.report[0].int, 4);
+    // The same message again changes nothing.
+    h.app.on_msg(pushed(0, "2", NOW - 60_000.0, 4.2, 23.623, 4));
+    assert!(report_events(&mut h).is_empty());
+    // Stored: rounded, with the same time and size. The row takes it, and it is no news.
+    h.app.on_msg(pushed(1, "2", NOW - 60_000.0, 4.2, 23.62, 4));
+    assert_eq!(report_events(&mut h), ["list"]);
+    assert_eq!(h.app.var.data.report[0].lat, 23.62);
+    // A later revision of its size is an update.
+    h.app.on_msg(pushed(2, "2", NOW - 60_000.0, 4.4, 23.62, 4));
+    assert_eq!(report_events(&mut h), ["list", "release 2:true"]);
+
+    // Maintenance re-sending an old report, and one felt nowhere, which the list leaves out.
+    h.app
+        .on_msg(pushed(3, "old", NOW - 40.0 * 86_400_000.0, 5.0, 23.0, 3));
+    h.app
+        .on_msg(pushed(1, "quiet", NOW - 30_000.0, 3.0, 23.0, 0));
+    assert!(report_events(&mut h).is_empty());
+    assert_eq!(report_ids(&h), ["2", "1"]);
+
+    // A recent one with reason 3 counts. Stored, its single report is fetched and released.
+    h.app.on_msg(pushed(3, "3", NOW - 120_000.0, 3.8, 23.5, 2));
+    assert_eq!(report_events(&mut h), ["list", "release 3:false"]);
+    assert_eq!(report_ids(&h), ["2", "3", "1"]);
+    let shown = h.app.var.cache.last_report.as_ref().map(|r| r.trem);
+    assert_eq!(shown, Some(1_787_641_090_000.0));
+    assert_eq!(list_fetches(&h), 1);
+}
+
+#[test]
+fn each_connection_fetches_the_list_again_and_keeps_what_is_not_stored_yet() {
+    static ANSWERS: OnceLock<HashMap<String, String>> = OnceLock::new();
+    let answers = ANSWERS.get_or_init(|| {
+        let mut m = HashMap::new();
+        m.insert(
+            REPORT_LIST.to_string(),
+            format!("[{}]", listed("1", NOW - 3_600_000.0, 4.1)),
+        );
+        m.insert(report_page("4"), listed("4", NOW - 20_000.0, 3.5));
+        m
+    });
+    let mut h = report_harness(answers);
+    // The stream is up: the list once more, the same, so nothing changes.
+    h.app.on_msg(crate::app::Msg::StreamUp);
+    assert!(report_events(&mut h).is_empty());
+    assert_eq!(list_fetches(&h), 2);
+
+    h.app.on_msg(pushed(0, "5", NOW - 10_000.0, 4.0, 23.004, 3));
+    assert_eq!(report_events(&mut h), ["list", "release 5:false"]);
+
+    // A reconnect: the list fetched then has one missed meanwhile, and not yet "5".
+    h.app.on_msg(crate::app::Msg::StreamUp);
+    h.settle();
+    assert_eq!(list_fetches(&h), 3);
+    let reconnected = format!(
+        "[{},{}]",
+        listed("4", NOW - 20_000.0, 3.5),
+        listed("1", NOW - 3_600_000.0, 4.1)
+    );
+    h.app.report_text(
+        crate::features::report::ReportFetch::List,
+        Some(reconnected),
+    );
+    assert_eq!(report_events(&mut h), ["list", "release 4:false"]);
+    assert_eq!(report_ids(&h), ["5", "4", "1"]);
+
+    // Stored, "5" is in the list, rounded: no news.
+    let stored = format!(
+        "[{},{},{}]",
+        listed("5", NOW - 10_000.0, 4.0),
+        listed("4", NOW - 20_000.0, 3.5),
+        listed("1", NOW - 3_600_000.0, 4.1)
+    );
+    h.app
+        .report_text(crate::features::report::ReportFetch::List, Some(stored));
+    assert_eq!(report_events(&mut h), ["list"]);
+    assert_eq!(report_ids(&h), ["5", "4", "1"]);
+    assert_eq!(h.app.var.data.report[0].lat, 23.0);
+    // Its real-time copy, should it come late, is older news.
+    h.app.on_msg(pushed(0, "5", NOW - 10_000.0, 4.0, 23.004, 3));
+    assert!(report_events(&mut h).is_empty());
+}
+
+#[test]
+fn the_list_stays_newest_first_and_as_long_as_the_fetched_one() {
+    static ANSWERS: OnceLock<HashMap<String, String>> = OnceLock::new();
+    let answers = ANSWERS.get_or_init(|| {
+        let items: Vec<String> = (0..75)
+            .map(|i| listed(&format!("r{i}"), NOW - f64::from(i + 1) * 3_600_000.0, 4.0))
+            .collect();
+        HashMap::from([(REPORT_LIST.to_string(), format!("[{}]", items.join(",")))])
+    });
+    let mut h = report_harness(answers);
+    assert_eq!(h.app.var.data.report.len(), 75);
+    h.app.on_msg(pushed(1, "new", NOW - 60_000.0, 4.0, 23.0, 2));
+    assert_eq!(report_events(&mut h), ["list", "release new:false"]);
+    let ids = report_ids(&h);
+    assert_eq!(ids.len(), 75);
+    assert_eq!((ids[0].as_str(), ids[74].as_str()), ("new", "r73"));
+    // One older than every listed report has no place in it.
+    h.app.on_msg(pushed(
+        2,
+        "ancient",
+        NOW - 100.0 * 3_600_000.0,
+        4.0,
+        23.0,
+        2,
+    ));
+    assert!(report_events(&mut h).is_empty());
+    assert_eq!(report_ids(&h), ids);
+}
