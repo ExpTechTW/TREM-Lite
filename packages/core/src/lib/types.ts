@@ -125,6 +125,14 @@ export type TremEvents = {
 
   LpgmRelease: Ans<{ id: number; time: number; list: { id: number; lpgm: number }[] }>;
 
+  /** An earthquake report from the live stream (eq.report.v1): `data` is one report, unchecked. */
+  DataReport: { reason: number; data: unknown };
+  /**
+   * A live stream connection came up — the first, a reconnect or a handover.
+   * Reports issued while there was none are not replayed by the stream.
+   */
+  DataStreamUp: void;
+
   /** `update`: a report already released whose earthquake CWA has revised. */
   ReportRelease: Ans<ReportListItem> & { update?: boolean };
   /** An update's announcement is over — spoken, cut off, or never started. */

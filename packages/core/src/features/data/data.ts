@@ -233,6 +233,16 @@ class DataManager {
         if (variable.play_mode !== 0) return;
         this.processIntensityData(reports as never[]);
       },
+      // Reports are report.ts's: it keeps the list, and fetches it again on
+      // each connection to fill what the stream does not replay.
+      onReport: (message) => {
+        if (variable.play_mode !== 0) return;
+        events.emit("DataReport", message);
+      },
+      onConnect: () => {
+        if (variable.play_mode !== 0) return;
+        events.emit("DataStreamUp");
+      },
     });
   }
 
@@ -259,7 +269,7 @@ class DataManager {
     this.asleep = asleep;
     log.info(
       asleep
-        ? "休眠模式生效：rts 只收有測站觸發的資料，eew／intensity 照常即時"
+        ? "休眠模式生效：rts 只收有測站觸發的資料，eew／intensity／報告照常即時"
         : "視窗叫回：立即切回 live 模式",
     );
     // Frames stopped coming on purpose; the first live one is a moment away.

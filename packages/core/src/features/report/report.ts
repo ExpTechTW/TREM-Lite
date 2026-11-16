@@ -19,56 +19,32 @@ import { inTauri } from "@/lib/env";
 import { isAutoFocusLocked, updateMapBounds } from "@/features/focus/focus";
 import { startReplay, stopReplay } from "@/features/replay/replay";
 
+import { ReportBook, type ReportChange } from "./reportBook";
+
 let mapInitialized = false;
-let polling = false;
+let started = false;
 let activeReplayReportId: string | null = null;
-let latestFullReportList: ReportListItem[] = [];
 let replayStateEpoch = 0;
-let seeded = false; // first (empty) fetch must NOT emit a report event
 
 const log = createLogger("report");
 
-// Each report is remembered by id, with a key of what makes it that
-// earthquake: origin time, epicentre, depth and magnitude. An id not seen
-// before is a new report; a seen id whose key has changed is an update (CWA
-// revised it). Only an earthquake under 48 h old is released either way.
-//
-// Not the list's md5: the server hashes the whole station list into it, and
-// the two core nodes stored different station lists for the 2026-08-25 15:00
-// report — tyo1 kept a station CWA later removed — so every switch between
-// them released that report again. And the age limit also keeps out an old
-// id a node whose list lags one report reaches back to. The id list is capped
-// at 200 (oldest evicted).
+/**
+ * How the list is kept current: the whole list once at start, then the live
+ * stream's eq.report.v1 messages (relayed by data.ts as DataReport). The
+ * stream does not replay what was issued before a connection, so the list is
+ * fetched again each time one comes up (DataStreamUp) — the first one too,
+ * since the start's fetch can be well before it. No timer polls it.
+ *
+ * Which reports are new, revised or already seen is reportBook.ts's: by id
+ * and earthquake, not md5, and only one under 48 h old is announced.
+ */
 const SEEN_LIMIT = 200;
 const FRESH_MS = 48 * 60 * 60 * 1000;
 const REPORT_CACHE_KEY = "cache.report"; // 上次的報告列表，供冷啟動秒開
-const seen = new Map<string, string>();
+/** The HTTP list's own default `minIntensity`: unfelt reports are not on it. */
+const MIN_INT = 1;
 
-const reportKey = (r: ReportListItem) => [r.time, r.lat, r.lon, r.depth, r.mag].join("|");
-
-function remember(r: ReportListItem): void {
-  seen.delete(r.id); // re-inserted last, so an update counts as recent
-  seen.set(r.id, reportKey(r));
-  while (seen.size > SEEN_LIMIT) {
-    const oldest = seen.keys().next().value;
-    if (oldest === undefined) break;
-    seen.delete(oldest);
-  }
-}
-
-/**
- * How the list is kept current:
- *
- *   every NEWEST_MS  the newest report alone — ETag-revalidated, so almost
- *                    always a 304 — and a full fetch as soon as it changes
- *   every FULL_MS    the whole list anyway, at start too: a revision of an
- *                    older report changes nothing at the top
- *
- * The newest alone is /api/v2/eq/report without a limit: `?limit=1` is only a
- * redirect to it.
- */
-const NEWEST_MS = 60_000;
-const FULL_MS = 600_000;
+const book = new ReportBook({ limit: REPORT_LIMIT, seenLimit: SEEN_LIMIT, freshMs: FRESH_MS, minInt: MIN_INT });
 
 /** A report list's body, verbatim, or null on any failure. */
 async function getReportListText(url: string): Promise<string | null> {
@@ -83,21 +59,16 @@ async function getReportListText(url: string): Promise<string | null> {
 }
 
 const listUrl = () => `https://${HOST.coreApi}/api/v2/eq/report?limit=${REPORT_LIMIT}`;
-const newestUrl = () => `https://${HOST.coreApi}/api/v2/eq/report`;
-
-/** The newest report's body, as last fetched. */
-let lastNewestText = "";
-
-async function checkNewest(): Promise<void> {
-  const text = await getReportListText(newestUrl());
-  if (text === null || text === lastNewestText) return;
-  const first = lastNewestText === "";
-  lastNewestText = text;
-  if (!first) await refresh();
-}
 
 /** The list `refresh` last acted on, verbatim. */
 let lastListText = "";
+/**
+ * Set by a replay. The stream is closed while one runs, so reports issued
+ * meanwhile come with the next list fetched after it: they are remembered
+ * without being announced, as they were when the list was polled through a
+ * replay.
+ */
+let quietNextList = false;
 
 async function getReportById(id: string): Promise<ReportListItem | null> {
   return fetchJson<ReportListItem>(`https://${HOST.coreApi}/api/v2/eq/report/${id}`, HTTP_TIMEOUT.REPORT);
@@ -253,55 +224,97 @@ export function showReportPoint(data: ReportListItem | null): void {
   setFeatures(map, "report-markers-geojson", features);
 }
 
-async function refresh() {
+/** The panel's rows, and the copy kept for the next cold start. */
+function publishList(): void {
+  // Keep the full list separate from the replay-filtered panel. Persisting
+  // the filtered list used to discard newer reports from the cold-start cache
+  // and made them look newly released after replay ended.
+  applyVisibleReportList(book.list);
+  // 立即通知面板刷新，讓列表一載入就顯示（不必等 ReportPanel 的輪詢 tick）。
+  events.emit("ReportListUpdate");
+  // 寫入快取，供下次冷啟動秒開。
+  try {
+    localStorage.setItem(REPORT_CACHE_KEY, JSON.stringify(book.list));
+  } catch {
+    /* 配額滿等情況忽略 */
+  }
+}
+
+/**
+ * Announce a new or revised report, with its town intensities (the detail).
+ * One issued a moment ago may not be stored yet (404 until then); the
+ * stream's own copy, when there is one, carries them too.
+ */
+async function release(change: ReportChange, fallback: ReportListItem | null = null): Promise<void> {
+  if (!SHOW_REPORT) return;
+  const detailEpoch = replayStateEpoch;
+  const detail = (await getReportById(change.report.id)) ?? fallback;
+  if (detail && detailEpoch === replayStateEpoch && !variable.replay.start_time) {
+    events.emit("ReportRelease", { data: detail, update: change.update });
+  }
+}
+
+/**
+ * A report shown from its realtime copy (the stream's first message) is now
+ * stored: show the stored version, whose station list may differ.
+ */
+async function adoptStored(id: string): Promise<void> {
+  const shown = () => (variable.cache.last_report as ReportListItem | null)?.id === id;
+  if (!SHOW_REPORT || variable.play_mode !== 0 || !shown()) return;
+  const detail = await getReportById(id);
+  if (!detail || !shown() || variable.play_mode !== 0) return;
+  variable.cache.last_report = detail;
+  // Redrawn by the RTS handler, which shows the report only while the map
+  // is not taken by an alert.
+  events.emit("DataRts", { info: { type: variable.play_mode }, data: variable.data.rts });
+}
+
+function logChange(c: ReportChange, via: string): void {
+  // Named in the log, so the next "why did this report pop up" has an answer.
+  const r = c.report;
+  log.info(
+    `${c.update ? "報告修正" : "新報告"} ${r.id}｜${r.loc} M${r.mag} 深 ${r.depth} km（${via}）${c.fresh ? "" : "｜發震超過 48 小時，不發布"}`,
+  );
+}
+
+/** Fetch the whole list: at start, and each time the live stream connects. */
+async function refresh(why: string) {
   const text = await getReportListText(listUrl());
+  if (text === null) return;
+  const quiet = quietNextList && !variable.replay.start_time;
+  if (quiet) quietNextList = false;
 
   // An unchanged list is the usual answer — the proxy revalidates it with an
   // ETag and the server says 304 — and nothing below does anything with one:
   // the panel gets the rows it already shows, the cache the bytes it already
   // holds, and every id in it has been seen. Stopping here skips re-parsing
   // the list, re-rendering its rows and re-writing localStorage.
-  if (seeded && text !== null && text === lastListText) return;
+  if (book.seeded && text === lastListText) return;
 
   let list: ReportListItem[] | null;
   try {
-    list = text === null ? null : (JSON.parse(text) as ReportListItem[] | null);
+    list = JSON.parse(text) as ReportListItem[] | null;
   } catch {
     list = null;
   }
-  if (!list) return;
-  lastListText = text!;
+  if (!Array.isArray(list)) return;
+  lastListText = text;
+  const { first, changes, confirmed } = book.applyList(list, now());
   // 首次載入用 info（里程碑）；之後的更新降為 debug，避免洗版日誌檔。
-  if (seeded) log.debug(`報告列表有變動，共 ${list.length} 筆`);
-  else log.info(`報告列表首次載入，共 ${list.length} 筆`);
+  if (first) log.info(`報告列表首次載入（${why}），共 ${list.length} 筆`);
+  else log.debug(`報告列表有變動（${why}），共 ${list.length} 筆`);
   mark("report-loaded");
+  publishList();
 
-  // Keep the live response separate from the replay-filtered panel. Persisting
-  // the filtered list used to discard newer reports from the cold-start cache
-  // and made them look newly released after replay ended.
-  latestFullReportList = list;
-  applyVisibleReportList(list);
-  // 立即通知面板刷新，讓列表一載入就顯示（不必等 ReportPanel 的輪詢 tick）。
-  events.emit("ReportListUpdate");
-  // 寫入快取，供下次冷啟動秒開。
-  try {
-    localStorage.setItem(REPORT_CACHE_KEY, JSON.stringify(list));
-  } catch {
-    /* 配額滿等情況忽略 */
-  }
-
-  // First (empty) load: seed the seen ids, DO NOT emit a report event.
-  // Seed oldest→newest so the FIFO evicts genuinely-old reports first.
-  if (!seeded) {
-    seeded = true;
-    [...list].reverse().forEach(remember);
+  // The first list only seeds what has been seen: no report event.
+  if (first) {
     // Seed the idle map with the most recent quake's shaking points (legacy sets
     // cache.last_report on first load WITHOUT emitting ReportRelease). Without
     // this, the idle RTS handler clears the live station dots and has no report
     // point to fall back to → a completely blank map ("沒有點").
     // last_report 仍要留下，之後從「即時測站」切回「地震報告」才有得畫。
     // 閒置選了即時測站時不畫上地圖；地震進行中仍畫，跟以前一樣。
-    const newestVisibleReport = visibleReportList(list)[0];
+    const newestVisibleReport = visibleReportList(book.list)[0];
     if (SHOW_REPORT && newestVisibleReport) {
       const detailEpoch = replayStateEpoch;
       const detail = await getReportById(newestVisibleReport.id);
@@ -313,34 +326,34 @@ async function refresh() {
     return;
   }
 
-  // Afterwards: a new id, or a seen id whose earthquake changed — either for
-  // an earthquake under 48 h old.
-  const changes: { report: ReportListItem; update: boolean }[] = [];
-  for (const r of list) {
-    const before = seen.get(r.id);
-    if (before === reportKey(r)) continue;
-    remember(r);
-    const update = before !== undefined;
-    const fresh = now() - r.time < FRESH_MS;
-    // Named in the log, so the next "why did this report pop up" has an answer.
-    log.info(
-      `${update ? "報告修正" : "新報告"} ${r.id}｜${r.loc} M${r.mag} 深 ${r.depth} km${fresh ? "" : "｜發震超過 48 小時，不發布"}`,
-    );
-    if (fresh) changes.push({ report: r, update });
-  }
+  for (const id of confirmed) void adoptStored(id);
+  for (const c of changes) logChange(c, why);
+  if (quiet && changes.length) log.info(`重播期間發布的 ${changes.length} 筆報告只記下，不發布`);
 
   // Remember live arrivals while replaying so they do not become false "new"
   // reports afterwards, but never surface live report alerts in replay mode.
-  if (variable.replay.start_time) return;
+  if (variable.replay.start_time || quiet) return;
 
-  const target = changes[0]; // list is newest-first
-  if (!target || !SHOW_REPORT) return;
+  const target = changes.find((c) => c.fresh); // list is newest-first
+  if (target) await release(target);
+}
 
-  const detailEpoch = replayStateEpoch;
-  const detail = await getReportById(target.report.id);
-  if (detail && detailEpoch === replayStateEpoch && !variable.replay.start_time) {
-    events.emit("ReportRelease", { data: detail, update: target.update });
+/** An eq.report.v1 message from the live stream. */
+function onStreamReport(message: { reason: number; data: unknown }): void {
+  const result = book.applyStream(message, now());
+  if (result.skipped) {
+    const id = (message.data as { id?: unknown } | null)?.id;
+    if (result.skipped === "invalid") log.warn(`即時報告訊息格式不對，略過：reason ${message.reason}`);
+    else log.debug(`即時報告 ${String(id)} 略過：${result.skipped === "old-backfill" ? "維護回填的舊報告" : "全臺最大震度未達列表門檻"}`);
+    return;
   }
+  if (result.listChanged) publishList();
+  if (result.confirmed) void adoptStored(result.detail!.id);
+  const change = result.change;
+  if (!change) return;
+  logChange(change, `即時 reason ${message.reason}`);
+  if (!change.fresh || variable.replay.start_time) return;
+  void release(change, result.detail);
 }
 
 /**
@@ -354,7 +367,7 @@ let updateOnShow: string | null = null;
 async function endUpdate(id: string): Promise<void> {
   if (updateOnShow !== id) return; // a later report has taken over
   updateOnShow = null;
-  const latest = latestFullReportList[0];
+  const latest = book.list[0];
   if (!latest || latest.id === id) return; // the update is the latest report
   const detail = await getReportById(latest.id);
   if (!detail || updateOnShow !== null) return;
@@ -405,7 +418,7 @@ export function getReports(): ReportListItem[] {
   return reportList();
 }
 
-/** Wire up report layers + polling. */
+/** Wire up report layers, the list fetch and the live stream's reports. */
 export function initReport(): void {
   // 冷啟動先用上次快取立即顯示列表（fetch 完成會覆蓋為最新），避免等網路。
   try {
@@ -413,7 +426,7 @@ export function initReport(): void {
     if (cached && !variable.data.report.length) {
       const list = JSON.parse(cached) as ReportListItem[];
       if (Array.isArray(list) && list.length) {
-        latestFullReportList = list;
+        book.restore(list);
         variable.data.report = list as never[];
         events.emit("ReportListUpdate");
       }
@@ -422,16 +435,15 @@ export function initReport(): void {
     /* 壞快取忽略 */
   }
 
-  // The report LIST is independent of the map — poll immediately so the panel
-  // populates even if the basemap is slow to load. showReportPoint() safely
-  // no-ops until variable.map exists, and the epicenter map layers are added
-  // when MapLoad fires.
-  if (!polling) {
-    polling = true;
-    void refresh();
-    void checkNewest();
-    setInterval(() => void checkNewest(), NEWEST_MS);
-    setInterval(() => void refresh(), FULL_MS);
+  // The report LIST is independent of the map — fetch it immediately so the
+  // panel populates even if the basemap is slow to load (the live stream
+  // waits for it). showReportPoint() safely no-ops until variable.map exists,
+  // and the epicenter map layers are added when MapLoad fires.
+  if (!started) {
+    started = true;
+    void refresh("啟動");
+    events.on("DataStreamUp", () => void refresh("即時連線連上"));
+    events.on("DataReport", (message) => onStreamReport(message));
   }
   events.on("MapLoad", () => {
     if (mapInitialized) return;
@@ -456,7 +468,8 @@ export function initReport(): void {
   events.on("ReplayStateChange", ({ active, reportId }) => {
     replayStateEpoch++;
     activeReplayReportId = active ? (reportId ?? null) : null;
-    const source = latestFullReportList.length ? latestFullReportList : [...reportList()];
+    if (active) quietNextList = true;
+    const source = book.list.length ? book.list : [...reportList()];
     applyVisibleReportList(source);
     events.emit("ReportListUpdate");
   });

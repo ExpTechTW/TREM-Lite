@@ -89,6 +89,7 @@ git config core.hooksPath .githooks   # 啟用 commit 規則檢查
 | 建置網頁版 | `bun run build:web` |
 | 型別檢查 | `bun run typecheck` |
 | Lint | `bun run lint` |
+| 單元測試 | `bun run test` |
 | Rust 測試 | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` |
 | 重新產生 `.bin` 資料 | `bun scripts/encode-data.mjs` |
 

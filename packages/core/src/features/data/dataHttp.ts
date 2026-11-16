@@ -1,31 +1,35 @@
 /**
  * SSE + multi-endpoint HTTP client — ported from legacy/src/js/index/data/http.js.
  *
- * Everything here is realtime: the SSE streams never end, and the polling path
+ * Everything here is realtime: the SSE stream never ends, and the polling path
  * (used by HTTP replay) asks for a different second each time. Both run with
  * `store: false` — an ETag could never match, and writing 1 Hz payloads into
  * the 250 MB LRU would evict the station/report/tile entries that do benefit
  * from it. They still go through `@/lib/http` so timeouts, gzip and transport
  * selection stay in one place.
  *
- * Two live streams, each connecting and reconnecting on its own:
+ * One live stream, ExpTech's SSE server at api/v1/sse, carries every topic the
+ * app takes, each frame named by its topic and sent as base64(gzip(…)) — the
+ * format and the dispatch are sseFrames.ts:
  *
- *   trem  api/v1/trem/sse?topics=trem.intensity.v1,trem.rts.v1 — ExpTech's
- *         SSE server, one topic per named event, each frame base64(gzip(…)):
- *         rts.v1 as JSON (rtsV1.ts), intensity.v1 as TREM XML
- *         (intensityV1.ts). Both public, so no token. The server also carries
- *         trem.eew.v1, TREM's own EEW, which is not this app's business and is
- *         never asked for.
- *   eew   api/v2/eq/eew?sse=1 — public, plain JSON: the agencies' EEWs, of
- *         which the app shows CWA's (EEW_AUTHOR). The same path answers a
- *         plain GET with the current list; `sse=1` (or an Accept of
- *         text/event-stream, which is also sent) makes it the stream.
+ *   trem.intensity.v1  TREM XML (intensityV1.ts)
+ *   eq.eew.v1          the agencies' EEWs in force, a JSON array that replaces
+ *                      the last one; the app shows CWA's (EEW_AUTHOR). It used
+ *                      to be a second connection, api/v2/eq/eew?sse=1.
+ *   eq.report.v1       earthquake reports as they are issued (report.ts merges
+ *                      them into the list). Not replayed on connect: report.ts
+ *                      fetches the list again each time a connection comes up.
+ *   trem.rts.v1        station frames, JSON (rtsV1.ts)
+ *
+ * All public, so no token. The server also carries trem.eew.v1, TREM's own
+ * EEW, which is not this app's business and is never asked for.
  *
  * `mode=live` asks for every RTS frame, about 2 Hz; without it the server
- * sends only frames with a triggered station (intensity is never filtered). While the main window is hidden the stream sleeps, as
- * trem-monitor does: the map is not seen, and an alert frame still arrives —
- * which is also what brings the window back. Switching is make-before-break:
- * the new connection opens, and the old one is closed once it is up.
+ * sends only frames with a triggered station (it affects no other topic).
+ * While the main window is hidden the stream sleeps, as trem-monitor does: the
+ * map is not seen, and an alert frame still arrives — which is also what
+ * brings the window back. Switching is make-before-break: the new connection
+ * opens, and the old one is closed once it is up.
  */
 
 import { search_loc_name } from "@/domain/utils";
@@ -41,7 +45,16 @@ import type { RtsData } from "@/lib/types";
 import { variable } from "@/lib/variable";
 
 import { readIntensityV1, readIntensityXml, type IntensityReport } from "./intensityV1";
-import { decodePayload, readRtsV1, type RtsV1, type RtsV1Lookups } from "./rtsV1";
+import { readRtsV1, type RtsV1, type RtsV1Lookups } from "./rtsV1";
+import {
+  dispatchFrame,
+  frameReader,
+  LIVE_TOPICS,
+  TOPIC,
+  type FrameHandlers,
+  type Greeting,
+  type ReportMessage,
+} from "./sseFrames";
 
 let sseController: AbortController | null = null;
 let requestCounter = 0;
@@ -68,12 +81,12 @@ const STALE_MS = 90_000;
 const READY_MS = 10_000;
 /**
  * Reconnect delays double from `reconnectDelay` up to this. Kept short: the
- * eew stream is the early-warning path, and a node that comes back must not
- * sit unused for a minute.
+ * stream is the early-warning path, and a node that comes back must not sit
+ * unused for a minute.
  */
 const BACKOFF_MAX_MS = 15_000;
 
-const TOPICS = "trem.intensity.v1,trem.rts.v1";
+const TOPICS = LIVE_TOPICS.join(",");
 
 /** 每條連線每隔多久在日誌寫一次統計。 */
 const SUMMARY_EVERY_MS = 300_000;
@@ -120,18 +133,13 @@ class ConnLog {
   }
 
   /** `event: info` 的內容：節點名稱、拿到的 topic、被拒的 topic 與原因。 */
-  greeting(data: string): void {
+  greeting(g: Greeting | null, data: string): void {
     log.info(`${this.label} 問候（撥出後 ${this.since()}）：${data}`);
-    try {
-      const g = JSON.parse(data) as { location?: string; topics?: string[]; denied?: Record<string, string> };
-      const wanted = this.label.startsWith("trem") ? TOPICS.split(",") : [];
-      if (g.topics) log.info(`${this.label} 連上 ${g.location ?? "?"}：收 ${g.topics.length}/${wanted.length} 個 topic`);
-      else log.info(`${this.label} 連上 ${g.location ?? "?"}`);
-      for (const [topic, reason] of Object.entries(g.denied ?? {})) {
-        log.warn(`${this.label} ${topic} 沒拿到：${reason}。其他 topic 照收，這個等下次重連再要`);
-      }
-    } catch {
-      /* 問候不是 JSON：原文已經記下 */
+    if (!g) return; // 問候不是 JSON：原文已經記下
+    if (g.topics) log.info(`${this.label} 連上 ${g.location ?? "?"}：收 ${g.topics.length}/${LIVE_TOPICS.length} 個 topic`);
+    else log.info(`${this.label} 連上 ${g.location ?? "?"}`);
+    for (const [topic, reason] of Object.entries(g.denied ?? {})) {
+      log.warn(`${this.label} ${topic} 沒拿到：${reason}。其他 topic 照收，這個等下次重連再要`);
     }
   }
 
@@ -221,14 +229,28 @@ interface Health {
 const health: Record<string, Health> = {};
 
 /**
- * Whether a stream is working: connected, and heard from within STALE_MS (the
- * server's heartbeat comes each 60 s). `why` says what is wrong when it is not.
+ * Topics the connection in use does not carry, with the server's reason
+ * (refused in the greeting, or stopped by `unsubscribed`). Cleared by the next
+ * connection, which asks for every topic again.
  */
-export function streamStatus(name: "trem" | "eew"): { ok: boolean; why: string } {
-  const h = health[name];
+const lostTopics = new Map<string, string>();
+
+/** The topic each status light stands for. */
+const LIGHT_TOPIC = { eew: TOPIC.eew, rts: TOPIC.rts } as const;
+
+/**
+ * Whether the data behind a status light is coming: the stream connected and
+ * heard from within STALE_MS (the server's heartbeat comes each 60 s), and its
+ * topic granted. `why` says what is wrong when it is not — in words a user
+ * reads, so never the topic's name.
+ */
+export function streamStatus(light: keyof typeof LIGHT_TOPIC): { ok: boolean; why: string } {
+  const h = health.live;
   if (!h?.up) return { ok: false, why: h ? "連線中斷，重連中" : "尚未連線" };
   const quiet = performance.now() - h.last;
   if (quiet > STALE_MS) return { ok: false, why: `${fmtDur(quiet)} 沒有收到任何資料` };
+  const lost = lostTopics.get(LIGHT_TOPIC[light]);
+  if (lost !== undefined) return { ok: false, why: `伺服器沒有傳送這項資料${lost ? `（${lost}）` : ""}，下次重連再要` };
   return { ok: true, why: "" };
 }
 
@@ -271,8 +293,16 @@ export function abortAll(): void {
 
 export interface SseHandlers {
   onRts?: (v: RtsData) => void;
+  /** Every EEW in force: replaces the previous list. */
   onEew?: (v: unknown) => void;
   onIntensity?: (v: IntensityReport[]) => void;
+  /** An eq.report.v1 message. */
+  onReport?: (v: ReportMessage) => void;
+  /**
+   * A connection came up — the first, a reconnect, or a handover. Reports are
+   * not replayed on connect: whatever was issued before it is the HTTP list's.
+   */
+  onConnect?: () => void;
   reconnectDelay?: number;
   /** Start asleep: RTS alert frames only (see the top of this file). */
   background?: boolean;
@@ -280,55 +310,18 @@ export interface SseHandlers {
 
 export interface SseManager {
   abort: () => void;
-  /** Sleep (true) or wake the trem stream, handing over to a new connection. */
+  /** Sleep (true) or wake the stream, handing over to a new connection. */
   setBackground: (background: boolean) => void;
-}
-
-interface SseFrame {
-  event?: string;
-  data: string;
-  /** A `:` comment line — the server's `: ping <unix s>` heartbeat. */
-  comment?: string;
-}
-
-/** One SSE block. `:` comments (the server's `: ping`) carry no data. */
-function parseFrame(block: string): SseFrame {
-  let event: string | undefined;
-  let comment: string | undefined;
-  const data: string[] = [];
-  for (const line of block.split("\n")) {
-    if (!line) continue;
-    if (line.startsWith(":")) {
-      comment = line.slice(1).trim();
-      continue;
-    }
-    const colon = line.indexOf(":");
-    const field = colon === -1 ? line : line.slice(0, colon);
-    let value = colon === -1 ? "" : line.slice(colon + 1);
-    if (value.startsWith(" ")) value = value.slice(1);
-    if (field === "event") event = value;
-    else if (field === "data") data.push(value);
-  }
-  return { event, data: data.join("\n"), comment };
-}
-
-/** Splits a byte stream into SSE frames, holding a partial one for the next chunk. */
-function frameReader() {
-  let buffer = "";
-  const decoder = new TextDecoder();
-  return (chunk: Uint8Array): SseFrame[] => {
-    buffer += decoder.decode(chunk, { stream: true }).replace(/\r/g, "");
-    const blocks = buffer.split("\n\n");
-    buffer = blocks.pop() ?? "";
-    return blocks.map(parseFrame);
-  };
 }
 
 interface Stream {
   name: string;
   /** Read at every connection, so a reconnect or handover takes the current mode. */
   url: () => string;
-  onFrame: (frame: SseFrame, conn: ConnLog) => void;
+  /** One connection's handlers, made when it is dialled. */
+  handlers: (conn: ConnLog) => FrameHandlers;
+  /** A connection became the one in use: its greeting arrived. */
+  onUp?: (conn: ConnLog) => void;
 }
 
 /**
@@ -403,15 +396,14 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
         alive();
         const reader = res.body.getReader();
         const split = frameReader();
+        const on = s.handlers(conn);
         for (;;) {
           const { value, done } = await reader.read();
           if (done) throw new Error("stream ended");
           alive();
           if (attempt === active) state.last = performance.now();
           for (const frame of split(value)) {
-            if (frame.comment?.startsWith("ping")) conn.ping(frame.comment);
-            if (!frame.data && !frame.event) continue;
-            if (!up) {
+            if ((frame.data || frame.event) && !up) {
               up = true;
               conn.up();
               clearTimeout(notReady);
@@ -430,21 +422,29 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
               activeLabel = conn.label;
               state.up = true;
               state.last = performance.now();
+              s.onUp?.(conn);
             }
-            conn.frame(frame.event ?? "message", frame.data.length);
-            if (frame.event === "info") conn.greeting(frame.data);
+            if (frame.data || frame.event) conn.frame(frame.event ?? "message", frame.data.length);
+            let closing = false;
             try {
-              s.onFrame(frame, conn);
+              closing = dispatchFrame(frame, on) === "close";
             } catch (e) {
               // A frame this app failed to process is the app's fault, not
               // the connection's: dropping it would lose every frame after.
               frameFailed(conn.label, frame.event ?? "message", e);
             }
+            if (closing) {
+              // The server is closing it: reconnect now, not when the
+              // connection finally drops.
+              conn.outcome = "伺服器主動關閉";
+              attempt.abort();
+              throw new Error("closed by the server");
+            }
           }
         }
       })
       .catch((e) => {
-        // Entering replay aborts both streams on purpose, and a handover
+        // Entering replay aborts the stream on purpose, and a handover
         // closes the connection it replaced. Neither is a failure: no warning,
         // no reconnect. (Node health is the HTTP layer's; it ignores aborts too.)
         if (!attempt.signal.aborted) conn.outcome = e instanceof Error ? e.message : String(e);
@@ -472,9 +472,9 @@ function openStream(s: Stream, signal: AbortSignal, reconnectDelay: number): { h
   return { handover: () => connect(true) };
 }
 
-/** Open the live streams and dispatch parsed events. */
+/** Open the live stream and dispatch parsed events. */
 export function init(options: SseHandlers = {}): SseManager {
-  const { onRts, onEew, onIntensity, reconnectDelay = 3000 } = options;
+  const { onRts, onEew, onIntensity, onReport, onConnect, reconnectDelay = 3000 } = options;
   let background = !!options.background;
 
   if (sseController) sseController.abort();
@@ -482,74 +482,59 @@ export function init(options: SseHandlers = {}): SseManager {
   sseController = controller;
   const { signal } = controller;
   log.info(
-    `啟動即時連線：節點 ${lbApiHost()}，trem topic ${TOPICS}（${background ? "休眠：rts 只收有測站觸發的資料" : "live"}），eew 為 CWA 預警`,
+    `啟動即時連線：節點 ${lbApiHost()}，topic ${TOPICS}（${background ? "休眠：rts 只收有測站觸發的資料" : "live"}）`,
   );
 
-  const trem = openStream(
+  const live = openStream(
     {
-      name: "trem",
-      url: () => `https://${lbApiHost()}/api/v1/trem/sse?topics=${TOPICS}${background ? "" : "&mode=live"}`,
-      onFrame: (frame, conn) => {
-        switch (frame.event) {
-          case "info":
-            return; // the greeting: logged by the connection
-          case "trem.rts.v1": {
-            let payload: RtsV1;
-            try {
-              payload = JSON.parse(decodePayload(frame.data)) as RtsV1;
-            } catch {
-              return; // not a frame this client understands
-            }
-            const rts = readRtsV1(payload, lookups);
-            if (rts) onRts?.(rts);
-            return;
-          }
-          case "trem.intensity.v1": {
-            const report = readIntensityXml(decodePayload(frame.data));
-            if (report) {
-              log.info(
-                `${conn.label} 收到 trem.intensity.v1：EventID=${report.id} 第 ${report.serial} 報 ${report.status} 最大震度 ${shindo(report.max)}（${fmtBytes(frame.data.length)}）`,
-              );
-              onIntensity?.([report]);
-            } else {
-              log.warn(`${conn.label} trem.intensity.v1 解不開，略過（${fmtBytes(frame.data.length)}）`);
-            }
-            return;
-          }
-          case "unsubscribed":
-            log.warn(`${conn.label} topic 被伺服器停掉：${frame.data}。其他 topic 照收，等下次重連再要`);
-            return;
-          case "close":
-            log.warn(`${conn.label} 伺服器主動關閉：${frame.data}`);
-            return;
-          default:
-            log.info(`${conn.label} 略過 app 不認得的 event ${frame.event ?? "message"}`);
-            return;
-        }
+      name: "live",
+      url: () => `https://${lbApiHost()}/api/v1/sse?topics=${TOPICS}${background ? "" : "&mode=live"}`,
+      onUp: () => {
+        // A new connection asks for every topic again.
+        lostTopics.clear();
+        onConnect?.();
       },
-    },
-    signal,
-    reconnectDelay,
-  );
-
-  const eew = openStream(
-    {
-      name: "eew",
-      url: () => `https://${lbApiHost()}/api/v2/eq/eew?sse=1`,
-      onFrame: (frame, conn) => {
-        // The `info` greeting names the node that answered (logged by the
-        // connection); EEWs come unnamed.
-        if (frame.event) return;
-        try {
-          const parsed: unknown = JSON.parse(frame.data);
-          if (parsed != null) {
-            log.info(`${conn.label} 收到 EEW：${eewSummary(parsed)}（${fmtBytes(frame.data.length)}）`);
-            onEew?.(parsed);
+      handlers: (conn): FrameHandlers => ({
+        ping: (text) => conn.ping(text),
+        info: (greeting, raw) => {
+          conn.greeting(greeting, raw);
+          if (!greeting?.topics) return;
+          for (const topic of LIVE_TOPICS) {
+            if (!greeting.topics.includes(topic)) lostTopics.set(topic, greeting.denied?.[topic] ?? "");
           }
-        } catch {
-          log.warn(`${conn.label} EEW 不是合法的 JSON，略過：${frame.data.slice(0, 200)}`);
-        }
-      },
+        },
+        rts: (payload: RtsV1) => {
+          const rts = readRtsV1(payload, lookups);
+          if (rts) onRts?.(rts);
+        },
+        intensity: (xml) => {
+          const report = readIntensityXml(xml);
+          if (report) {
+            log.info(
+              `${conn.label} 收到 ${TOPIC.intensity}：EventID=${report.id} 第 ${report.serial} 報 ${report.status} 最大震度 ${shindo(report.max)}`,
+            );
+            onIntensity?.([report]);
+          } else {
+            log.warn(`${conn.label} ${TOPIC.intensity} 解不開，略過`);
+          }
+        },
+        eew: (list) => {
+          log.info(`${conn.label} 收到 EEW：${eewSummary(list)}`);
+          onEew?.(list);
+        },
+        report: (message) => {
+          const d = message.data as { id?: unknown; loc?: unknown; mag?: unknown };
+          log.info(`${conn.label} 收到 ${TOPIC.report}：reason ${message.reason} ${String(d.id)}｜${String(d.loc)} M${String(d.mag)}`);
+          onReport?.(message);
+        },
+        unsubscribed: (topic, reason) => {
+          if (topic) lostTopics.set(topic, reason);
+          log.warn(`${conn.label} ${topic ?? "topic"} 被伺服器停掉：${reason}。其他 topic 照收，等下次重連再要`);
+        },
+        close: (reason) => log.warn(`${conn.label} 伺服器主動關閉：${reason}，立即重連`),
+        unknown: (event) => log.info(`${conn.label} 略過 app 不認得的 event ${event}`),
+        bad: (event, e) => frameFailed(conn.label, event, e),
+      }),
     },
     signal,
     reconnectDelay,
@@ -557,13 +542,12 @@ export function init(options: SseHandlers = {}): SseManager {
 
   // A network that comes back (another Wi-Fi, the machine waking) can leave
   // a connection that looks open and is dead, which STALE_MS takes a minute
-  // and a half to notice, or one still waiting out its backoff. Both streams
-  // take a fresh connection at once, each keeping the old until it is up.
+  // and a half to notice, or one still waiting out its backoff. Take a fresh
+  // connection at once, keeping the old until it is up.
   if (typeof window !== "undefined") {
     const renew = () => {
-      log.info("網路恢復：trem 與 eew 各建立新連線，舊的留到交接完成");
-      trem.handover();
-      eew.handover();
+      log.info("網路恢復：建立新連線，舊的留到交接完成");
+      live.handover();
     };
     window.addEventListener("online", renew);
     signal.addEventListener("abort", () => window.removeEventListener("online", renew), { once: true });
@@ -578,8 +562,8 @@ export function init(options: SseHandlers = {}): SseManager {
     setBackground: (value) => {
       if (value === background || signal.aborted) return;
       background = value;
-      log.info(`切成${background ? "休眠" : " live "}模式，trem 建立新連線，舊的留到交接完成`);
-      trem.handover();
+      log.info(`切成${background ? "休眠" : " live "}模式，建立新連線，舊的留到交接完成`);
+      live.handover();
     },
   };
 }

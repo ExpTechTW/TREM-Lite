@@ -15,10 +15,11 @@ import { useRerenderOn, useTick } from "@/hooks/useTremEvent";
  * takes no room from anything; a click restarts now.
  *
  * Right of the time, small and unboxed so they stay out of the way, a light
- * for each realtime stream: EEW (the CWA EEW stream) and RTS (the station
- * stream). Green when it works, red when it does not — not connected, silent past its
- * heartbeat, or, for RTS while the map is live, no station data. Grey during
- * a replay, when the streams are closed on purpose. Hovering says which.
+ * for each kind of realtime data: EEW (the CWA EEW topic) and RTS (the station
+ * topic), both on the one live connection. Green when it works, red when it
+ * does not — not connected, silent past its heartbeat, the server not sending
+ * that topic, or, for RTS while the map is live, no station data. Grey during
+ * a replay, when the stream is closed on purpose. Hovering says which.
  */
 function StatusLight({ label, state, why }: { label: string; state: "ok" | "down" | "paused"; why: string }) {
   return (
@@ -43,7 +44,7 @@ export function TimeBar() {
   const timeColor = error ? "#ce3333" : replay ? "#ffca00" : "var(--light)";
 
   const eew = streamStatus("eew");
-  const rts = streamStatus("trem");
+  const rts = streamStatus("rts");
   const rtsWhy = rts.ok ? (error ? "超過 3 秒沒有即時測站資料" : "") : rts.why;
   const light = (ok: boolean) => (replay ? "paused" : ok ? "ok" : "down");
   const title = (name: string, ok: boolean, why: string) =>

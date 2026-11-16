@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --fix"
   },

@@ -29,8 +29,6 @@
  * after its origin, as `eq`: [[lat, lon, depth km, origin unix s], …]. It is
  * passed on as is; box.ts draws their wavefronts in place of the boxes.
  */
-import { gunzipSync, strFromU8 } from "fflate";
-
 import { intensity_float_to_int } from "@/domain/utils";
 import type { RtsData, RtsEq, RtsStation } from "@/lib/types";
 
@@ -49,24 +47,6 @@ export interface RtsV1Lookups {
   boxOf: (lon: number, lat: number) => number | null;
   /** A town code's city and town, or null. */
   townOf: (code: number) => { city: string; town: string } | null;
-}
-
-/**
- * An SSE data field of the rts.v1 stream: base64 of gzip of the JSON. A field
- * that is not — the `info` greeting, a plain-JSON archive — comes back as is.
- */
-export function decodePayload(data: string): string {
-  const compact = data.replace(/\s+/g, "");
-  let bytes: Uint8Array;
-  try {
-    const binary = atob(compact);
-    bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  } catch {
-    return data;
-  }
-  if (bytes.length < 2 || bytes[0] !== 0x1f || bytes[1] !== 0x8b) return data;
-  return strFromU8(gunzipSync(bytes));
 }
 
 /** The server writes `"alert":1`; other clients have been lenient about 1 vs "1". */

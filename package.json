@@ -23,6 +23,7 @@
     "build:core": "bun run --filter @trem/core build",
     "tauri": "bun run --filter @trem/desktop tauri",
     "lint": "bun run --filter @trem/core lint",
-    "typecheck": "bun run --filter @trem/core typecheck"
+    "typecheck": "bun run --filter @trem/core typecheck",
+    "test": "bun run --filter @trem/core test"
   }
 }
