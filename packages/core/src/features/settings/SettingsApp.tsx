@@ -375,6 +375,14 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
                     onChange={(on) => setCheck("update-auto-restart", on)}
                   />
                 )}
+                {inTauri && (
+                  <Toggle
+                    label="更新完成後自動開啟主視窗"
+                    hint="重新啟動套用更新後把主視窗叫回前景；開機時在背景啟動或原本縮在系統匣的電腦，更新完也會打開，直播擷取才不會中斷"
+                    checked={check("update-show-window")}
+                    onChange={(on) => setCheck("update-show-window", on)}
+                  />
+                )}
                 {system && (
                   <Row label="系統">
                     <span className="settings-value">{system}</span>

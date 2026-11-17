@@ -111,7 +111,8 @@ pub fn run() {
                 std::env::args_os().any(|arg| arg == "--start"),
                 updater::restart_hidden(app.handle()),
                 updater::update_relaunch(app.handle()),
-                true,
+                // Same default as default.yml: a missing key means on.
+                config::check_box(app.handle(), "update-show-window").unwrap_or(true),
             );
             #[cfg(not(desktop))]
             let start_hidden = std::env::args_os().any(|arg| arg == "--start");
