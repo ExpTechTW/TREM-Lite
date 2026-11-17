@@ -107,13 +107,20 @@ pub fn run() {
             }
             config::ensure_initialized(app.handle());
             #[cfg(desktop)]
-            let start_hidden = std::env::args_os().any(|arg| arg == "--start")
-                || updater::restart_hidden(app.handle());
+            let start_hidden = updater::launch_hidden(
+                std::env::args_os().any(|arg| arg == "--start"),
+                updater::restart_hidden(app.handle()),
+                updater::update_relaunch(app.handle()),
+                true,
+            );
             #[cfg(not(desktop))]
             let start_hidden = std::env::args_os().any(|arg| arg == "--start");
             let reveal = move |app: &tauri::AppHandle| {
                 #[cfg(desktop)]
-                updater::clear_restart_hidden(app);
+                {
+                    updater::clear_restart_hidden(app);
+                    updater::clear_update_relaunch(app);
+                }
                 if start_hidden {
                     log::info!(target: "app", "隱藏啟動（開機自動啟動或更新後重啟）：只在系統匣");
                     window::hide_main(app);
