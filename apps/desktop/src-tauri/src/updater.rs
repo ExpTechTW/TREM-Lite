@@ -41,6 +41,13 @@ const SNAPSHOT_MANIFEST: &str = "https://exptechtw.github.io/TREM-Lite/updater/s
 const HIDDEN_MARKER: &str = "restart-hidden";
 const HIDDEN_MARKER_TTL: Duration = Duration::from_secs(120);
 
+/// Left just before an installed update restarts the app. The relaunch inherits
+/// this process's arguments — `--start` among them when it came from the login
+/// item — and they would otherwise keep the updated app in the tray. This says
+/// the launch is the update's, not the login item's.
+const RELAUNCH_MARKER: &str = "update-relaunch";
+const RELAUNCH_MARKER_TTL: Duration = Duration::from_secs(30 * 60);
+
 /// One check at a time: the timer and the settings button share it, and two
 /// concurrent downloads would race to write the same staged package.
 #[derive(Default)]
@@ -247,6 +254,55 @@ pub fn clear_restart_hidden(app: &AppHandle) {
     }
 }
 
+fn marker_path(app: &AppHandle, name: &str) -> Option<PathBuf> {
+    app.path()
+        .app_local_data_dir()
+        .ok()
+        .map(|dir| dir.join(name))
+}
+
+fn write_marker(app: &AppHandle, name: &str) {
+    if let Some(path) = marker_path(app, name) {
+        if let Some(dir) = path.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(path, "");
+    }
+}
+
+fn fresh_marker(app: &AppHandle, name: &str, ttl: Duration) -> bool {
+    marker_path(app, name)
+        .and_then(|path| std::fs::metadata(path).and_then(|m| m.modified()).ok())
+        .and_then(|at| at.elapsed().ok())
+        .is_some_and(|age| age < ttl)
+}
+
+/// Whether this launch is the restart an installed update asked for.
+pub fn update_relaunch(app: &AppHandle) -> bool {
+    fresh_marker(app, RELAUNCH_MARKER, RELAUNCH_MARKER_TTL)
+}
+
+pub fn clear_update_relaunch(app: &AppHandle) {
+    if let Some(path) = marker_path(app, RELAUNCH_MARKER) {
+        let _ = std::fs::remove_file(path);
+    }
+}
+
+/// Whether to keep the main window in the tray at launch. The `--start`
+/// argument and a hidden restart both mean "come up hidden", but an installed
+/// update's relaunch inherits them from the launch it replaced: with the
+/// setting on, that launch shows the window instead, so a machine that runs
+/// TREM Lite from the login item (the livestream PC) still gets a window after
+/// an update.
+pub fn launch_hidden(
+    login_launch: bool,
+    hidden_restart: bool,
+    update_relaunch: bool,
+    show_after_update: bool,
+) -> bool {
+    (login_launch || hidden_restart) && !(update_relaunch && show_after_update)
+}
+
 /// Installs the package staged by an earlier session, if it is still the
 /// latest. Returns only when nothing was installed: installing restarts the app
 /// (or, on Windows, exits it for the installer, which relaunches it).
@@ -286,7 +342,14 @@ async fn apply_staged(app: &AppHandle) -> Result<(), String> {
     })?;
 
     log::info!("安裝已下載的更新 {version}，完成後重新啟動");
-    update.install(bytes).map_err(|e| e.to_string())?;
+    // The relaunch keeps this process's arguments (and, on Windows, is done by
+    // the installer with them), so the marker is what tells the next launch it
+    // is the update's rather than the login item's.
+    write_marker(app, RELAUNCH_MARKER);
+    if let Err(e) = update.install(bytes) {
+        clear_update_relaunch(app);
+        return Err(e.to_string());
+    }
     app.restart()
 }
 
@@ -409,6 +472,33 @@ mod channel_tests {
         assert_eq!(snapshot_order("26.2.0-26w45a", "26.1.0-26w44z"), None);
         assert_eq!(snapshot_order("26.1.0", "26.1.0-26w40a"), None);
         assert_eq!(snapshot_order("26.1.0-rc.1", "26.1.0-26w40a"), None);
+    }
+}
+
+#[cfg(test)]
+mod launch_tests {
+    use super::launch_hidden;
+
+    #[test]
+    fn a_login_launch_stays_in_the_tray() {
+        assert!(launch_hidden(true, false, false, true));
+    }
+
+    #[test]
+    fn an_installed_update_shows_the_window_it_inherited_the_args_from() {
+        assert!(!launch_hidden(true, true, true, true));
+    }
+
+    #[test]
+    fn the_setting_off_keeps_the_inherited_hidden_launch() {
+        assert!(launch_hidden(true, true, true, false));
+        assert!(launch_hidden(false, true, true, false));
+    }
+
+    #[test]
+    fn an_ordinary_launch_shows_the_window() {
+        assert!(!launch_hidden(false, false, false, true));
+        assert!(!launch_hidden(false, false, true, true));
     }
 }
 
