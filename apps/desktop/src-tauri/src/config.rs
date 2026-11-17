@@ -133,3 +133,11 @@ pub fn config_reset(app: tauri::AppHandle) -> Result<serde_json::Value, String> 
 pub fn ensure_initialized(app: &tauri::AppHandle) {
     let _ = load_or_init(app);
 }
+
+/// One `check-box` switch, read natively before the webview exists (the launch
+/// window decision). `None` when the file or key is unreadable; the caller
+/// supplies the default.
+pub fn check_box(app: &tauri::AppHandle, key: &str) -> Option<bool> {
+    let value = load_or_init(app).ok()?;
+    value.get("check-box")?.get(key)?.as_bool()
+}

@@ -1,4 +1,4 @@
-ver: 8
+ver: 9
 
 realtime-station-id: "1C10848"
 
@@ -15,6 +15,9 @@ check-box:
   show-pip: true
   other-auto-start: true
   update-auto-restart: true
+  # After an update is installed, the relaunch shows the main window even when
+  # this launch came from the login item (`--start`) or was hidden at restart.
+  update-show-window: true
   other-tts: true
   graphics-block-auto-zoom: false
   sound-effects-EEW: true
