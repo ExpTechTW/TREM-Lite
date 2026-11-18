@@ -1377,6 +1377,33 @@
   border-top: 1px solid #ffffff0d;
 }
 
+.settings-dependent {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 220ms ease, opacity 180ms ease;
+}
+
+.settings-dependent.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.settings-dependent-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settings-dependent .settings-row {
+  border-top: 1px solid #ffffff0d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-dependent {
+    transition: none;
+  }
+}
+
 .settings-label {
   display: flex;
   flex-direction: column;

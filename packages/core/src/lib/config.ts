@@ -39,7 +39,7 @@ function describe(config: TremConfig): string {
 
 /** Mirrors src-tauri/default.yml — used as the browser-mode / fallback config. */
 export const DEFAULT_CONFIG: TremConfig = {
-  ver: 9,
+  ver: 10,
   "realtime-station-id": "1C10848",
   /** No earthquake on the map: the latest report, as before this setting existed. */
   "idle-map": "report",
@@ -50,6 +50,7 @@ export const DEFAULT_CONFIG: TremConfig = {
     "show-window-rts-intensity": true,
     "show-pip": true,
     "other-auto-start": true,
+    "autostart-show-window": false,
     "update-auto-restart": true,
     "update-show-window": true,
     "other-tts": true,

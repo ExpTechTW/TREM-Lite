@@ -288,19 +288,16 @@ pub fn clear_update_relaunch(app: &AppHandle) {
     }
 }
 
-/// Whether to keep the main window in the tray at launch. The `--start`
-/// argument and a hidden restart both mean "come up hidden", but an installed
-/// update's relaunch inherits them from the launch it replaced: with the
-/// setting on, that launch shows the window instead, so a machine that runs
-/// TREM Lite from the login item (the livestream PC) still gets a window after
-/// an update.
+/// Decide whether to hide the window, including when an update relaunch
+/// inherits the login argument before the first window has been shown.
 pub fn launch_hidden(
     login_launch: bool,
+    show_at_login: bool,
     hidden_restart: bool,
     update_relaunch: bool,
     show_after_update: bool,
 ) -> bool {
-    (login_launch || hidden_restart) && !(update_relaunch && show_after_update)
+    (hidden_restart || (login_launch && !show_at_login)) && !(update_relaunch && show_after_update)
 }
 
 /// Installs the package staged by an earlier session, if it is still the
@@ -480,25 +477,27 @@ mod launch_tests {
     use super::launch_hidden;
 
     #[test]
-    fn a_login_launch_stays_in_the_tray() {
-        assert!(launch_hidden(true, false, false, true));
+    fn login_launch_respects_window_setting() {
+        assert!(launch_hidden(true, false, false, false, true));
+        assert!(!launch_hidden(true, true, false, false, true));
     }
 
     #[test]
-    fn an_installed_update_shows_the_window_it_inherited_the_args_from() {
-        assert!(!launch_hidden(true, true, true, true));
+    fn update_relaunch_respects_update_setting_and_previous_window_state() {
+        for show_at_login in [false, true] {
+            assert!(!launch_hidden(true, show_at_login, true, true, true));
+            assert!(launch_hidden(true, show_at_login, true, true, false));
+            assert_eq!(
+                launch_hidden(true, show_at_login, false, true, false),
+                !show_at_login
+            );
+        }
     }
 
     #[test]
-    fn the_setting_off_keeps_the_inherited_hidden_launch() {
-        assert!(launch_hidden(true, true, true, false));
-        assert!(launch_hidden(false, true, true, false));
-    }
-
-    #[test]
-    fn an_ordinary_launch_shows_the_window() {
-        assert!(!launch_hidden(false, false, false, true));
-        assert!(!launch_hidden(false, false, true, true));
+    fn ordinary_launch_shows_the_window() {
+        assert!(!launch_hidden(false, false, false, false, true));
+        assert!(!launch_hidden(false, true, false, false, false));
     }
 }
 
