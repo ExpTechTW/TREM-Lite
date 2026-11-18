@@ -1,4 +1,4 @@
-ver: 9
+ver: 10
 
 realtime-station-id: "1C10848"
 
@@ -14,6 +14,8 @@ check-box:
   # a missing key is treated as on, same as this default.
   show-pip: true
   other-auto-start: true
+  # Preserve the existing tray-only behavior for login launches.
+  autostart-show-window: false
   update-auto-restart: true
   # After an update is installed, the relaunch shows the main window even when
   # this launch came from the login item (`--start`) or was hidden at restart.

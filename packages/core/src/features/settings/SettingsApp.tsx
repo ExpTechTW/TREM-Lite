@@ -296,10 +296,20 @@ export function SettingsApp({ onClose }: { onClose?: () => void }) {
                 <Group title="系統">
                   <Toggle
                     label="開機時自動啟動"
-                    hint="登入後在背景啟動，縮在系統匣"
+                    hint="登入電腦後自動啟動 TREM Lite"
                     checked={check("other-auto-start")}
                     onChange={(on) => void toggleAutostart(on)}
                   />
+                  <div className={`settings-dependent${check("other-auto-start") ? " is-open" : ""}`} inert={!check("other-auto-start")}>
+                    <div className="settings-dependent-content">
+                      <Toggle
+                        label="開機啟動時顯示主視窗"
+                        hint="關閉時在背景啟動，可從系統匣開啟主視窗；不影響手動啟動"
+                        checked={check("autostart-show-window")}
+                        onChange={(on) => setCheck("autostart-show-window", on)}
+                      />
+                    </div>
+                  </div>
                 </Group>
               )}
             </>

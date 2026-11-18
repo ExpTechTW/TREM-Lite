@@ -109,6 +109,7 @@ pub fn run() {
             #[cfg(desktop)]
             let start_hidden = updater::launch_hidden(
                 std::env::args_os().any(|arg| arg == "--start"),
+                config::check_box(app.handle(), "autostart-show-window").unwrap_or(false),
                 updater::restart_hidden(app.handle()),
                 updater::update_relaunch(app.handle()),
                 // Same default as default.yml: a missing key means on.
