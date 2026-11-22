@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "plugin-window",
+  "description": "擴充功能自己的視窗：只讓它把訊息送回去，以及操作自己那個視窗。",
+  "windows": ["plugin-*"],
+  "permissions": ["core:default"]
+}
